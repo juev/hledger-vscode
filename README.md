@@ -14,7 +14,7 @@ Syntax highlighting and IntelliSense support for [hledger](https://hledger.org) 
 - **Smart Indentation**: Automatic indentation for transactions and postings
 - **Performance Optimized**: Efficient caching system for large codebases
 - **Language Configuration**: 
-  - Comment support (`;`, `#`, `*`)
+  - Comment support (`;`, `#`)
   - Bracket matching and auto-closing pairs
   - Smart indentation rules
 
@@ -32,7 +32,7 @@ Syntax highlighting and IntelliSense support for [hledger](https://hledger.org) 
 
 1. Open Visual Studio Code
 2. Go to Extensions (Ctrl+Shift+X)
-3. Search for "hledger"
+3. Search for "hledger-vscode"
 4. Click Install
 
 ## Usage
@@ -45,7 +45,7 @@ All hledger syntax elements are highlighted using standard TextMate scopes:
 - Transaction dates (full and short format)
 - Account names with Unicode support
 - Amounts with and without commodities
-- Comments (`;`, `#`, `*`)
+- Comments (`;`, `#`)
 - Directives and keywords
 
 ### IntelliSense Features

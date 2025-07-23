@@ -25,10 +25,6 @@
         {
           "name": "comment.line",
           "match": "^\\s*#.*$"
-        },
-        {
-          "name": "comment.line",
-          "match": "^\\s*\\*.*$"
         }
       ]
     },
