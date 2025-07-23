@@ -72,8 +72,41 @@
     "transaction": {
       "patterns": [
         {
-          "name": "meta.transaction.hledger",
+          "name": "meta.transaction.full-date.hledger",
           "begin": "^(\\d{4}[-/]\\d{1,2}[-/]\\d{1,2})((?:=\\d{4}[-/]\\d{1,2}[-/]\\d{1,2})?)\\s*(\\*|!)?\\s*(\\([^)]+\\))?\\s*(.*?)(?:\\s{2,}|\\t|$)(;.*)?$",
+          "beginCaptures": {
+            "1": {
+              "name": "constant.numeric.date.hledger"
+            },
+            "2": {
+              "name": "constant.numeric.date.auxiliary.hledger"
+            },
+            "3": {
+              "name": "keyword.transaction.status.hledger"
+            },
+            "4": {
+              "name": "entity.name.tag.transaction-code.hledger"
+            },
+            "5": {
+              "name": "string.unquoted.description.hledger"
+            },
+            "6": {
+              "name": "comment.line.semicolon.hledger"
+            }
+          },
+          "end": "^(?=\\S)|^$",
+          "patterns": [
+            {
+              "include": "#posting"
+            },
+            {
+              "include": "#comment"
+            }
+          ]
+        },
+        {
+          "name": "meta.transaction.short-date.hledger",
+          "begin": "^(\\d{1,2}[-/]\\d{1,2})((?:=\\d{1,2}[-/]\\d{1,2})?)\\s*(\\*|!)?\\s*(\\([^)]+\\))?\\s*(.*?)(?:\\s{2,}|\\t|$)(;.*)?$",
           "beginCaptures": {
             "1": {
               "name": "constant.numeric.date.hledger"

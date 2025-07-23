@@ -16,7 +16,7 @@
     "finance",
     "ledger"
   ],
-  "main": "./src/extension/main.js",
+  "main": "./out/extension/main.js",
   "activationEvents": [
     "onLanguage:hledger"
   ],
@@ -32,6 +32,9 @@
           ".journal",
           ".hledger",
           ".ledger"
+        ],
+        "filenames": [
+          "journal"
         ],
         "configuration": "./language-configuration.json"
       }
