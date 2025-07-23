@@ -1,22 +1,22 @@
 # hledger for Visual Studio Code
 
-Language support for [hledger](https://hledger.org) journal files in Visual Studio Code.
+Syntax highlighting and IntelliSense support for [hledger](https://hledger.org) journal files in Visual Studio Code.
 
 ## Features
 
-- **Syntax Highlighting**: Full syntax highlighting for hledger journal files
-- **Color Themes**: Dedicated dark and light themes optimized for hledger
-- **Auto-completion**: 
-  - Directives (account, commodity, include, etc.)
-  - Account names (based on existing accounts in the file)
-  - Common commodities and currencies
-  - Today's date
-- **Smart Indentation**: Automatic indentation for transactions and directives
+- **Syntax Highlighting**: Full syntax highlighting for hledger journal files using standard TextMate scopes
+- **IntelliSense Auto-completion**: 
+  - **Smart Account Completion**: Suggests accounts from `account` directives and used accounts from transactions
+  - **Date Completion**: Smart date suggestions with last used date, today, and yesterday
+  - **Commodity Completion**: Common currencies and cryptocurrencies
+  - **Directive Completion**: hledger directives (account, commodity, include, etc.)
+- **Multi-language Support**: Full support for Cyrillic and other Unicode characters in account names
+- **Smart Indentation**: Automatic indentation for transactions and postings
+- **Performance Optimized**: Efficient caching system for large codebases
 - **Language Configuration**: 
   - Comment support (`;`, `#`, `*`)
-  - Bracket matching
-  - Auto-closing pairs
-  - Folding support for comment blocks
+  - Bracket matching and auto-closing pairs
+  - Smart indentation rules
 
 ## Supported File Extensions
 
@@ -27,7 +27,6 @@ Language support for [hledger](https://hledger.org) journal files in Visual Stud
 ## Requirements
 
 - Visual Studio Code 1.74.0 or higher
-- hledger binary should be installed and available in PATH (for external commands)
 
 ## Installation
 
@@ -38,35 +37,44 @@ Language support for [hledger](https://hledger.org) journal files in Visual Stud
 
 ## Usage
 
-The extension automatically activates when you open a file with a supported extension. Features include:
+The extension automatically activates when you open a file with a supported extension (`.journal`, `.hledger`, `.ledger`).
 
 ### Syntax Highlighting
 
-All hledger syntax elements are highlighted:
-- Dates and transactions
-- Account names
-- Amounts and commodities
-- Comments
-- Directives
+All hledger syntax elements are highlighted using standard TextMate scopes:
+- Transaction dates (full and short format)
+- Account names with Unicode support
+- Amounts with and without commodities
+- Comments (`;`, `#`, `*`)
+- Directives and keywords
 
-### Auto-completion
+### IntelliSense Features
 
-- Start typing on a new line to see directive suggestions
-- Type an account name to see existing accounts from your file
-- After entering an amount, get commodity suggestions
+**Account Completion**: 
+- Type in posting lines to see intelligent account suggestions
+- **Defined accounts** (from `account` directives) appear first
+- **Used accounts** (from existing transactions) appear second
+- **Standard prefixes** (Assets, Liabilities, etc.) appear last
+- Partial matching - continues completion from where you left off
 
-### Indentation
+**Date Completion**:
+- Type at the beginning of lines to get date suggestions
+- **Last used date** from the document appears first
+- **Today's date** and **yesterday's date** as alternatives
+- Supports both full (YYYY-MM-DD) and short (MM-DD) date formats
 
-The extension automatically handles indentation for:
-- Postings within transactions
-- Multi-line directives
-- Comment blocks
+**Smart Indentation**:
+- Automatic indentation after transaction dates
+- Proper posting alignment within transactions
+- Maintains indentation context
 
-## Configuration
+### Dynamic Configuration
 
-The extension works out of the box, but you can customize colors by selecting:
-- **hledger Dark**: Optimized dark theme for hledger files
-- **hledger Light**: Optimized light theme for hledger files
+The extension automatically scans your workspace for:
+- `account` directive definitions
+- Account usage patterns from transactions
+- Commodity declarations
+- Performance-optimized caching system
 
 ## Contributing
 

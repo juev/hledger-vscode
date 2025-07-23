@@ -1,0 +1,74 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+    
+    - name: Use Node.js 20
+      uses: actions/setup-node@v4
+      with:
+        node-version: 20
+        cache: 'npm'
+    
+    - name: Install dependencies
+      run: npm ci
+    
+    - name: Compile TypeScript
+      run: npm run compile
+    
+    - name: Run tests
+      run: npm test
+    
+    - name: Extract version from tag
+      id: extract_version
+      run: |
+        VERSION=${GITHUB_REF#refs/tags/v}
+        echo "version=$VERSION" >> $GITHUB_OUTPUT
+        echo "Version: $VERSION"
+    
+    - name: Update package.json version
+      run: |
+        npm version ${{ steps.extract_version.outputs.version }} --no-git-tag-version
+    
+    - name: Package extension
+      run: npx vsce package
+    
+    - name: Publish to Visual Studio Marketplace
+      run: npx vsce publish -p ${{ secrets.VSCE_PAT }}
+      env:
+        VSCE_PAT: ${{ secrets.VSCE_PAT }}
+    
+    - name: Publish to Open VSX Registry
+      run: npx ovsx publish *.vsix -p ${{ secrets.OVSX_PAT }}
+      env:
+        OVSX_PAT: ${{ secrets.OVSX_PAT }}
+      continue-on-error: true
+    
+    - name: Create GitHub Release
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: ${{ github.ref }}
+        release_name: Release ${{ steps.extract_version.outputs.version }}
+        draft: false
+        prerelease: false
+    
+    - name: Upload Release Asset
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: ./hledger-vscode-${{ steps.extract_version.outputs.version }}.vsix
+        asset_name: hledger-vscode-${{ steps.extract_version.outputs.version }}.vsix
+        asset_content_type: application/zip
