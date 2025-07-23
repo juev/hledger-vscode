@@ -1,0 +1,210 @@
+{
+  "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+  "name": "hledger",
+  "patterns": [
+    {
+      "include": "#comment"
+    },
+    {
+      "include": "#directive"
+    },
+    {
+      "include": "#transaction"
+    },
+    {
+      "include": "#posting"
+    }
+  ],
+  "repository": {
+    "comment": {
+      "patterns": [
+        {
+          "name": "comment.line.semicolon.hledger",
+          "match": "^\\s*;.*$"
+        },
+        {
+          "name": "comment.line.number-sign.hledger",
+          "match": "^\\s*#.*$"
+        },
+        {
+          "name": "comment.line.asterisk.hledger",
+          "match": "^\\s*\\*.*$"
+        }
+      ]
+    },
+    "directive": {
+      "patterns": [
+        {
+          "name": "keyword.directive.hledger",
+          "match": "^(account|commodity|D|include|P|year|alias|apply account|end apply account|comment|end comment|Y)\\b",
+          "captures": {
+            "1": {
+              "name": "keyword.control.directive.hledger"
+            }
+          }
+        },
+        {
+          "name": "meta.directive.default-commodity.hledger",
+          "match": "^(D)\\s+(.*)$",
+          "captures": {
+            "1": {
+              "name": "keyword.control.directive.hledger"
+            },
+            "2": {
+              "name": "string.commodity.hledger"
+            }
+          }
+        },
+        {
+          "name": "meta.directive.include.hledger",
+          "match": "^(include)\\s+(.*)$",
+          "captures": {
+            "1": {
+              "name": "keyword.control.directive.hledger"
+            },
+            "2": {
+              "name": "string.unquoted.filepath.hledger"
+            }
+          }
+        }
+      ]
+    },
+    "transaction": {
+      "patterns": [
+        {
+          "name": "meta.transaction.hledger",
+          "begin": "^(\\d{4}[-/]\\d{1,2}[-/]\\d{1,2})((?:=\\d{4}[-/]\\d{1,2}[-/]\\d{1,2})?)\\s*(\\*|!)?\\s*(\\([^)]+\\))?\\s*(.*?)(?:\\s{2,}|\\t|$)(;.*)?$",
+          "beginCaptures": {
+            "1": {
+              "name": "constant.numeric.date.hledger"
+            },
+            "2": {
+              "name": "constant.numeric.date.auxiliary.hledger"
+            },
+            "3": {
+              "name": "keyword.transaction.status.hledger"
+            },
+            "4": {
+              "name": "entity.name.tag.transaction-code.hledger"
+            },
+            "5": {
+              "name": "string.unquoted.description.hledger"
+            },
+            "6": {
+              "name": "comment.line.semicolon.hledger"
+            }
+          },
+          "end": "^(?=\\S)|^$",
+          "patterns": [
+            {
+              "include": "#posting"
+            },
+            {
+              "include": "#comment"
+            }
+          ]
+        }
+      ]
+    },
+    "posting": {
+      "patterns": [
+        {
+          "name": "meta.posting.hledger",
+          "match": "^\\s+(\\S.*?)(?:\\s{2,}|\\t)(.*?)(?:\\s*;(.*))?$",
+          "captures": {
+            "1": {
+              "name": "entity.name.account.hledger"
+            },
+            "2": {
+              "patterns": [
+                {
+                  "include": "#amount"
+                },
+                {
+                  "include": "#assertion"
+                }
+              ]
+            },
+            "3": {
+              "name": "comment.line.semicolon.hledger"
+            }
+          }
+        },
+        {
+          "name": "meta.posting.account-only.hledger",
+          "match": "^\\s+(\\S[^;]+?)\\s*(?:;(.*))?$",
+          "captures": {
+            "1": {
+              "name": "entity.name.account.hledger"
+            },
+            "2": {
+              "name": "comment.line.semicolon.hledger"
+            }
+          }
+        }
+      ]
+    },
+    "amount": {
+      "patterns": [
+        {
+          "name": "constant.numeric.amount.hledger",
+          "match": "[-+]?\\d+([.,]\\d+)*\\s*[A-Za-z$£€¥₹]+",
+          "captures": {
+            "0": {
+              "patterns": [
+                {
+                  "name": "constant.numeric.hledger",
+                  "match": "[-+]?\\d+([.,]\\d+)*"
+                },
+                {
+                  "name": "string.commodity.hledger",
+                  "match": "[A-Za-z$£€¥₹]+"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "constant.numeric.amount.hledger",
+          "match": "[A-Za-z$£€¥₹]+\\s*[-+]?\\d+([.,]\\d+)*",
+          "captures": {
+            "0": {
+              "patterns": [
+                {
+                  "name": "string.commodity.hledger",
+                  "match": "[A-Za-z$£€¥₹]+"
+                },
+                {
+                  "name": "constant.numeric.hledger",
+                  "match": "[-+]?\\d+([.,]\\d+)*"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    "assertion": {
+      "patterns": [
+        {
+          "name": "keyword.operator.assertion.hledger",
+          "match": "=\\s*[-+]?\\d+([.,]\\d+)*\\s*[A-Za-z$£€¥₹]+",
+          "captures": {
+            "0": {
+              "patterns": [
+                {
+                  "name": "keyword.operator.hledger",
+                  "match": "="
+                },
+                {
+                  "include": "#amount"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    }
+  },
+  "scopeName": "source.hledger"
+}

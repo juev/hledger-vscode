@@ -1,0 +1,70 @@
+{
+  "name": "hledger-vscode",
+  "displayName": "hledger",
+  "description": "Language support for hledger journal files",
+  "version": "0.1.0",
+  "publisher": "hledger-vscode",
+  "engines": {
+    "vscode": "^1.74.0"
+  },
+  "categories": [
+    "Programming Languages"
+  ],
+  "keywords": [
+    "hledger",
+    "accounting",
+    "finance",
+    "ledger"
+  ],
+  "main": "./src/extension/main.js",
+  "activationEvents": [
+    "onLanguage:hledger"
+  ],
+  "contributes": {
+    "languages": [
+      {
+        "id": "hledger",
+        "aliases": [
+          "hledger",
+          "HLedger"
+        ],
+        "extensions": [
+          ".journal",
+          ".hledger",
+          ".ledger"
+        ],
+        "configuration": "./language-configuration.json"
+      }
+    ],
+    "grammars": [
+      {
+        "language": "hledger",
+        "scopeName": "source.hledger",
+        "path": "./syntaxes/hledger.tmLanguage.json"
+      }
+    ],
+    "themes": [
+      {
+        "label": "hledger Dark",
+        "uiTheme": "vs-dark",
+        "path": "./themes/hledger-dark.json"
+      },
+      {
+        "label": "hledger Light",
+        "uiTheme": "vs",
+        "path": "./themes/hledger-light.json"
+      }
+    ]
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./"
+  },
+  "devDependencies": {
+    "@types/vscode": "^1.74.0",
+    "@types/node": "16.x",
+    "typescript": "^4.9.4"
+  },
+  "license": "MIT"
+}

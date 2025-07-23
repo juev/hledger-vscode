@@ -1,0 +1,110 @@
+{
+  "name": "hledger Dark",
+  "type": "dark",
+  "colors": {},
+  "tokenColors": [
+    {
+      "name": "Comment",
+      "scope": [
+        "comment.line.semicolon.hledger",
+        "comment.line.number-sign.hledger",
+        "comment.line.asterisk.hledger"
+      ],
+      "settings": {
+        "foreground": "#6A9955"
+      }
+    },
+    {
+      "name": "Directive",
+      "scope": [
+        "keyword.control.directive.hledger"
+      ],
+      "settings": {
+        "foreground": "#C586C0",
+        "fontStyle": "bold"
+      }
+    },
+    {
+      "name": "Date",
+      "scope": [
+        "constant.numeric.date.hledger",
+        "constant.numeric.date.auxiliary.hledger"
+      ],
+      "settings": {
+        "foreground": "#B5CEA8"
+      }
+    },
+    {
+      "name": "Transaction Status",
+      "scope": [
+        "keyword.transaction.status.hledger"
+      ],
+      "settings": {
+        "foreground": "#569CD6"
+      }
+    },
+    {
+      "name": "Transaction Code",
+      "scope": [
+        "entity.name.tag.transaction-code.hledger"
+      ],
+      "settings": {
+        "foreground": "#4EC9B0"
+      }
+    },
+    {
+      "name": "Description",
+      "scope": [
+        "string.unquoted.description.hledger"
+      ],
+      "settings": {
+        "foreground": "#CE9178"
+      }
+    },
+    {
+      "name": "Account",
+      "scope": [
+        "entity.name.account.hledger"
+      ],
+      "settings": {
+        "foreground": "#9CDCFE"
+      }
+    },
+    {
+      "name": "Amount",
+      "scope": [
+        "constant.numeric.hledger"
+      ],
+      "settings": {
+        "foreground": "#B5CEA8"
+      }
+    },
+    {
+      "name": "Commodity",
+      "scope": [
+        "string.commodity.hledger"
+      ],
+      "settings": {
+        "foreground": "#DCDCAA"
+      }
+    },
+    {
+      "name": "Assertion Operator",
+      "scope": [
+        "keyword.operator.hledger"
+      ],
+      "settings": {
+        "foreground": "#D4D4D4"
+      }
+    },
+    {
+      "name": "Filepath",
+      "scope": [
+        "string.unquoted.filepath.hledger"
+      ],
+      "settings": {
+        "foreground": "#CE9178"
+      }
+    }
+  ]
+}
