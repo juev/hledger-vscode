@@ -76,9 +76,15 @@ The extension automatically scans your workspace for:
 - Commodity declarations
 - Performance-optimized caching system
 
+## Documentation
+
+This extension follows the official [hledger manual (1.43)](https://hledger.org/1.43/hledger.html) specification. For complete hledger syntax and usage information, please refer to the official documentation.
+
 ## Contributing
 
 Contributions are welcome! Please feel free to submit issues and pull requests.
+
+When contributing, please ensure that any syntax additions or changes align with the official hledger documentation.
 
 ## License
 

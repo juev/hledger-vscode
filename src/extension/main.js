@@ -4,8 +4,8 @@ const path = require('path');
 
 const hledgerKeywords = [
     'account', 'alias', 'apply account', 'end apply account',
-    'comment', 'end comment', 'commodity', 'D', 'include',
-    'P', 'year', 'Y'
+    'comment', 'end comment', 'commodity', 'D', 'decimal-mark',
+    'include', 'P', 'payee', 'tag', 'year', 'Y'
 ];
 
 const defaultAccountPrefixes = [
