@@ -34,7 +34,8 @@
           ".ledger"
         ],
         "filenames": [
-          "journal"
+          "journal",
+          ".journal"
         ],
         "configuration": "./language-configuration.json"
       }
@@ -46,18 +47,14 @@
         "path": "./syntaxes/hledger.tmLanguage.json"
       }
     ],
-    "themes": [
-      {
-        "label": "hledger Dark",
-        "uiTheme": "vs-dark",
-        "path": "./themes/hledger-dark.json"
-      },
-      {
-        "label": "hledger Light",
-        "uiTheme": "vs",
-        "path": "./themes/hledger-light.json"
+    "configurationDefaults": {
+      "files.associations": {
+        "*.journal": "hledger",
+        "*.hledger": "hledger",
+        "*.ledger": "hledger",
+        "journal": "hledger"
       }
-    ]
+    }
   },
   "scripts": {
     "vscode:prepublish": "npm run compile",
