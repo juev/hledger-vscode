@@ -1,0 +1,44 @@
+Y2025
+
+; Аккаунты
+account Активы        ; type:Asset
+account Расходы       ; type:Expense
+account Пассивы       ; type:Liability
+account Собственные   ; type:Equity
+account Доходы        ; type:Revenue
+
+; aliases for beancount compatibility
+alias Активы = Assets
+alias Расходы = Expenses
+alias Пассивы = Liabilities
+alias Собственные = Equity
+alias Доходы = Income
+
+commodity RUB
+  format 1 000,00 RUB
+D 1000,00 RUB
+commodity 1 000,00 $
+commodity 1 000,00 EUR
+
+2025-01-15 * Test transaction
+    Активы:Наличные         100.50 RUB
+    Расходы:Продукты        -50.25 RUB
+    Активы:Альфа:Текущий    25
+    Расходы:Еда             15.75
+    Доходы                  -40.00 RUB
+    
+01-16 Короткая дата
+    Активы:Наличные         100
+    Расходы:Магазин         -100
+
+2025-01-17 ! Pending transaction
+    Активы:Расчётный        = 500.00 RUB
+    Активы:Сбережения       = 1500
+    Расходы:Прочие          10.50 RUB
+
+2025-01-18 * Новые счета для демо
+    Активы:Банк:Сбербанк    1000.00 RUB
+    Активы:Банк:Тинькофф    -500.00 RUB
+    Расходы:Транспорт       350.00 RUB
+    Расходы:Связь           200.00 RUB
+    Доходы:Зарплата         -1050.00 RUB
