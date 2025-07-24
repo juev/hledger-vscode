@@ -7,23 +7,31 @@ import {
     HLedgerConfig 
 } from '../main';
 
-// Mock only the getConfig function, keep other exports
-jest.mock('../main', () => {
-    const actual = jest.requireActual('../main');
-    return {
-        ...actual,
-        getConfig: jest.fn()
-    };
-});
+// No module mocking - use actual implementation
 
-import { getConfig } from '../main';
-const mockGetConfig = getConfig as jest.MockedFunction<typeof getConfig>;
+// Create test content with accounts, commodities, and dates
+const testJournalContent = `
+account Assets:Bank
+account Expenses:Food
+
+commodity RUB
+commodity EUR
+
+2025-01-14 Previous transaction
+    Assets:Bank    50.00 EUR
+    Expenses:Food
+
+2025-01-15 Test transaction
+    Assets:Cash    100.00 USD
+    Активы:Наличные    200.00 RUB
+    Expenses:Food
+`;
 
 const mockDocument = {
     uri: vscode.Uri.file('/test/test.journal'),
     languageId: 'hledger',
     lineAt: jest.fn(),
-    getText: jest.fn().mockReturnValue('')
+    getText: jest.fn().mockReturnValue(testJournalContent)
 } as any;
 
 const mockPosition = (line: number, character: number): vscode.Position => ({
@@ -68,26 +76,9 @@ describe('KeywordCompletionProvider', () => {
 
 describe('AccountCompletionProvider', () => {
     let provider: AccountCompletionProvider;
-    let mockConfig: HLedgerConfig;
     
     beforeEach(() => {
         provider = new AccountCompletionProvider();
-        mockConfig = new HLedgerConfig();
-        
-        // Add test data to config
-        mockConfig.definedAccounts.add('Assets:Bank');
-        mockConfig.definedAccounts.add('Expenses:Food');
-        mockConfig.usedAccounts.add('Assets:Cash');
-        mockConfig.usedAccounts.add('Активы:Наличные');
-        
-        // Update all sets
-        mockConfig.accounts = new Set([
-            ...mockConfig.definedAccounts,
-            ...mockConfig.usedAccounts
-        ]);
-        
-        mockGetConfig.mockReturnValue(mockConfig);
-        
         jest.clearAllMocks();
     });
     
@@ -150,17 +141,9 @@ describe('AccountCompletionProvider', () => {
 
 describe('CommodityCompletionProvider', () => {
     let provider: CommodityCompletionProvider;
-    let mockConfig: HLedgerConfig;
     
     beforeEach(() => {
         provider = new CommodityCompletionProvider();
-        mockConfig = new HLedgerConfig();
-        
-        mockConfig.commodities.add('RUB');
-        mockConfig.commodities.add('EUR');
-        
-        mockGetConfig.mockReturnValue(mockConfig);
-        
         jest.clearAllMocks();
     });
     
@@ -211,21 +194,14 @@ describe('CommodityCompletionProvider', () => {
 
 describe('DateCompletionProvider', () => {
     let provider: DateCompletionProvider;
-    let mockConfig: HLedgerConfig;
     
     beforeEach(() => {
         provider = new DateCompletionProvider();
-        mockConfig = new HLedgerConfig();
-        
-        mockConfig.lastDate = '2025-01-14';
-        
-        mockGetConfig.mockReturnValue(mockConfig);
+        jest.clearAllMocks();
         
         // Mock Date to have consistent test results
         jest.useFakeTimers();
         jest.setSystemTime(new Date('2025-01-15T12:00:00Z'));
-        
-        jest.clearAllMocks();
     });
     
     afterEach(() => {

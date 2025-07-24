@@ -31,7 +31,10 @@ function findHLedgerFiles(dir: string, recursive: boolean = true): string[] {
             }
         }
     } catch (error) {
-        console.error('Error reading directory:', dir, error);
+        // Only log errors in non-test environment
+        if (process.env.NODE_ENV !== 'test') {
+            console.error('Error reading directory:', dir, error);
+        }
     }
     
     return results;
@@ -246,18 +249,30 @@ export class HLedgerConfig implements IHLedgerConfig {
     
     scanWorkspace(workspacePath: string): void {
         try {
-            console.log('Scanning workspace:', workspacePath);
+            if (process.env.NODE_ENV !== 'test') {
+                console.log('Scanning workspace:', workspacePath);
+            }
             const files = findHLedgerFiles(workspacePath, true);
-            console.log('Found files:', files);
+            if (process.env.NODE_ENV !== 'test') {
+                console.log('Found files:', files);
+            }
             
             for (const file of files) {
-                console.log('Parsing file:', file);
+                if (process.env.NODE_ENV !== 'test') {
+                    console.log('Parsing file:', file);
+                }
                 this.parseFile(file);
             }
             
-            console.log('Total accounts found:', this.accounts.size);
-            console.log('Defined accounts:', Array.from(this.definedAccounts));
-            console.log('Used accounts:', Array.from(this.usedAccounts));
+            if (process.env.NODE_ENV !== 'test') {
+                console.log('Total accounts found:', this.accounts.size);
+            }
+            if (process.env.NODE_ENV !== 'test') {
+                console.log('Defined accounts:', Array.from(this.definedAccounts));
+            }
+            if (process.env.NODE_ENV !== 'test') {
+                console.log('Used accounts:', Array.from(this.usedAccounts));
+            }
         } catch (error) {
             console.error('Error scanning workspace:', error);
         }
@@ -276,12 +291,16 @@ export class WorkspaceCache implements IWorkspaceCache {
     }
     
     update(workspacePath: string): void {
-        console.log('Updating workspace cache for:', workspacePath);
+        if (process.env.NODE_ENV !== 'test') {
+            console.log('Updating workspace cache for:', workspacePath);
+        }
         this.workspacePath = workspacePath;
         this.config = new HLedgerConfig();
         this.config.scanWorkspace(workspacePath);
         this.lastUpdate = Date.now();
-        console.log('Cache updated with', this.config.accounts.size, 'accounts');
+        if (process.env.NODE_ENV !== 'test') {
+            console.log('Cache updated with', this.config.accounts.size, 'accounts');
+        }
     }
     
     getConfig(): IHLedgerConfig | null {
@@ -289,7 +308,9 @@ export class WorkspaceCache implements IWorkspaceCache {
     }
     
     invalidate(): void {
-        console.log('Cache invalidated');
+        if (process.env.NODE_ENV !== 'test') {
+            console.log('Cache invalidated');
+        }
         this.config = null;
         this.lastUpdate = 0;
     }
@@ -345,7 +366,9 @@ export class ProjectCache implements IProjectCache {
     
     clear(): void {
         this.projects.clear();
-        console.log('Project cache cleared');
+        if (process.env.NODE_ENV !== 'test') {
+            console.log('Project cache cleared');
+        }
     }
 }
 
