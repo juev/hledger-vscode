@@ -14,5 +14,5 @@
     "checkJs": false
   },
   "include": ["src/**/*"],
-  "exclude": ["node_modules", ".vscode-test", "out"]
+  "exclude": ["node_modules", ".vscode-test", "out", "**/*.test.ts", "**/__tests__/**"]
 }
