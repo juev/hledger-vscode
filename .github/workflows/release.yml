@@ -52,12 +52,6 @@ jobs:
       env:
         VSCE_PAT: ${{ secrets.VSCE_PAT }}
     
-    - name: Publish to Open VSX Registry
-      run: npx @vscode/ovsx publish *.vsix -p ${{ secrets.OVSX_PAT }}
-      env:
-        OVSX_PAT: ${{ secrets.OVSX_PAT }}
-      continue-on-error: true
-    
     - name: Create GitHub Release
       uses: softprops/action-gh-release@v1
       with:
