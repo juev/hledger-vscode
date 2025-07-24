@@ -1,6 +1,6 @@
 {
   "name": "hledger",
-  "displayName": "hledger",
+  "displayName": "hledger Language Support",
   "description": "Full-featured hledger extension with syntax highlighting, intelligent code completion, and project-based caching for journal files",
   "version": "0.1.0",
   "publisher": "evsyukov",
