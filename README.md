@@ -1,6 +1,6 @@
 # hledger for Visual Studio Code
 
-Syntax highlighting and IntelliSense support for [hledger](https://hledger.org) journal files in Visual Studio Code.
+Full-featured Visual Studio Code extension providing comprehensive syntax highlighting, intelligent code completion, and project-based caching for [hledger](https://hledger.org) journal files.
 
 ## Features
 
@@ -76,9 +76,31 @@ All hledger syntax elements are highlighted using standard TextMate scopes:
 **Date Completion**:
 
 - Type at the beginning of lines to get date suggestions
-- **Last used date** from the document appears first
+- **Last used date** from the document appears first (highest priority)
 - **Today's date** and **yesterday's date** as alternatives
-- Supports both full (YYYY-MM-DD) and short (MM-DD) date formats
+- Works with partial date input and supports all hledger date formats
+- Automatically adds a space after date insertion
+
+**Payee/Store Completion**:
+
+- Auto-complete payees and store names from transaction history
+- Supports both single payee format and `payee|note` format
+- Intelligent parsing from transaction descriptions
+- Unicode support for international store names
+
+**Tag Completion**:
+
+- Smart completion for both `#hashtag` and `tag:value` formats
+- Learns from existing tags in transaction and posting comments
+- Context-aware insertion (adds `:` for tag:value format)
+- Full Unicode support including Cyrillic characters
+
+**Commodity/Currency Completion**:
+
+- Triggers after amount values in postings
+- Includes configured commodities from `commodity` directives
+- Default commodities: USD, EUR, GBP, CAD, AUD, JPY, CHF, RUB, BTC, ETH
+- Supports both prefix ($ 100) and suffix (100 USD) formats
 
 **Smart Indentation**:
 
@@ -86,14 +108,24 @@ All hledger syntax elements are highlighted using standard TextMate scopes:
 - Proper posting alignment within transactions
 - Maintains indentation context
 
-### Dynamic Configuration
+### Project-Based Caching System
 
-The extension automatically scans your workspace for:
+The extension features an advanced caching system that:
 
-- `account` directive definitions
-- Account usage patterns from transactions
-- Commodity declarations
-- Performance-optimized caching system
+- **Persistent Caching**: Maintains cache across VS Code sessions for optimal performance
+- **Project-Based**: Separate caches for different projects/workspaces
+- **Intelligent Scanning**: Automatically discovers hledger files in your workspace
+- **Multi-File Support**: Handles `include` directives and scans multiple journal files
+- **Performance Optimized**: No automatic cache invalidation - caches persist until extension deactivation
+
+### Auto-Completion Configuration
+
+You can control auto-completion behavior:
+
+- **Setting**: `hledger.autoCompletion.enabled` (default: `true`)
+- **When enabled**: Auto-completion triggers automatically while typing
+- **When disabled**: Use Ctrl+Space to manually trigger completion
+- **Trigger characters**: `[' ', ':', '/', '-', '.', '#', ';']`
 
 ## Documentation
 

@@ -1,20 +1,24 @@
 {
   "name": "hledger",
   "displayName": "hledger",
-  "description": "Syntax highlighting and IntelliSense support for hledger journal files",
+  "description": "Full-featured hledger extension with syntax highlighting, intelligent code completion, and project-based caching for journal files",
   "version": "0.1.0",
   "publisher": "evsyukov",
   "engines": {
     "vscode": "^1.74.0"
   },
   "categories": [
-    "Language Packs"
+    "Language Packs",
+    "Other"
   ],
   "keywords": [
     "hledger",
     "accounting",
     "finance",
-    "ledger"
+    "ledger",
+    "intellisense",
+    "autocomplete",
+    "plain text accounting"
   ],
   "main": "./out/extension/main.js",
   "activationEvents": [

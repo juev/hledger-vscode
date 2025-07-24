@@ -8,17 +8,22 @@ import {
 } from '../main';
 
 // Mock only the getConfig function, keep other exports
-const mockGetConfig = jest.fn();
-jest.mock('../main', () => ({
-    ...jest.requireActual('../main'),
-    getConfig: mockGetConfig
-}));
+jest.mock('../main', () => {
+    const actual = jest.requireActual('../main');
+    return {
+        ...actual,
+        getConfig: jest.fn()
+    };
+});
+
+import { getConfig } from '../main';
+const mockGetConfig = getConfig as jest.MockedFunction<typeof getConfig>;
 
 const mockDocument = {
     uri: vscode.Uri.file('/test/test.journal'),
     languageId: 'hledger',
     lineAt: jest.fn(),
-    getText: jest.fn()
+    getText: jest.fn().mockReturnValue('')
 } as any;
 
 const mockPosition = (line: number, character: number): vscode.Position => ({
