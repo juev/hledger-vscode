@@ -6,8 +6,8 @@ export interface IHLedgerConfig {
     commodities: Set<string>;
     defaultCommodity: string | null;
     lastDate: string | null;
-    payees: Set<string>; // Магазины/получатели платежей
-    tags: Set<string>;   // Теги/категории
+    payees: Set<string>; // Stores/payees
+    tags: Set<string>;   // Tags/categories
     
     parseFile(filePath: string): void;
     parseContent(content: string, basePath?: string): void;

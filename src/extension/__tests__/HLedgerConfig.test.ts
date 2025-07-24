@@ -3,7 +3,6 @@ import * as fs from 'fs';
 import * as path from 'path';
 
 jest.mock('fs');
-jest.mock('glob');
 
 describe('HLedgerConfig', () => {
     let config: HLedgerConfig;

@@ -1,0 +1,53 @@
+Y2025
+
+; === DIRECTIVES ===
+account Assets:Bank:Checking     ; type:Asset
+account Expenses:Food           ; type:Expense  
+account Income:Salary          ; type:Revenue
+
+commodity USD
+commodity RUB
+D 1000.00 RUB
+
+; === TRANSACTIONS WITH DIFFERENT DATE FORMATS ===
+2025-01-15 * Grocery Store|Milk and bread ; category:food, #groceries
+    Assets:Cash                 -150.50 RUB
+    Expenses:Food                150.50 RUB
+
+2025/01/16 ! Pending Payment
+    Assets:Bank:Checking        -500 USD @ 95.50 RUB
+    Expenses:Utilities          47750 RUB
+
+2025.01.17 * Investment Purchase
+    Assets:Stocks               10 AAPL @@ 1500.00 USD ; date:2025-01-20
+    Assets:Cash                 -1500.00 USD = 5000.00 USD
+
+; === VARIOUS COMMODITIES ===
+2025-01-20 * Cryptocurrency & Foreign Exchange
+    Assets:Crypto:Bitcoin       0.01 BTC @ 42000 USD
+    Assets:Crypto:Ethereum      1.5 ETH @ 2500 USD  
+    Assets:FX:Euro              1000 EUR @ 1.08 USD
+    Assets:FX:Pound             500 GBP @ 1.27 USD
+    Assets:FX:Yen               100000 JPY @ 0.0067 USD
+    Assets:FX:Yuan              7000 CNY @ 0.14 USD
+    Assets:Precious:Gold        10 "oz gold" @ 2000 USD
+    Assets:Precious:Silver      100 "oz silver" @ 25 USD
+    Assets:Cash                 -110340 USD
+
+01-18 Salary Payment ; #income
+    Assets:Bank:Checking        = 3000.00 USD
+    Income:Salary               -3000.00 USD
+
+01/19 * Balance Check
+    Assets:Savings              == 10000.00 RUB ; #savings
+    Assets:Checking             -100.00 RUB
+
+01.20 Store Name|Purchase details ; category:shopping, priority:high, #retail
+    Активы:Наличные             -2500 RUB
+    Расходы:Магазин             2500 RUB ; subcategory:clothes, #fashion
+
+; === COMPLEX POSTINGS ===
+2025-01-21 * Multi-currency with costs and assertions
+    Assets:USD                  100 USD @ 95.50 RUB ; cost:total
+    Assets:RUB                  -9550 RUB = 50000 RUB
+    Expenses:Exchange           50 RUB ; fee:currency_exchange, #fees

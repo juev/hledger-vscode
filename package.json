@@ -1,14 +1,14 @@
 {
-  "name": "hledger-vscode",
+  "name": "hledger",
   "displayName": "hledger",
   "description": "Syntax highlighting and IntelliSense support for hledger journal files",
   "version": "0.1.0",
-  "publisher": "hledger-vscode",
+  "publisher": "org.evsyukov",
   "engines": {
     "vscode": "^1.74.0"
   },
   "categories": [
-    "Programming Languages"
+    "Language Packs"
   ],
   "keywords": [
     "hledger",
@@ -66,11 +66,7 @@
     "package": "vsce package",
     "publish": "vsce publish"
   },
-  "dependencies": {
-    "glob": "^8.0.3"
-  },
   "devDependencies": {
-    "@types/glob": "^8.1.0",
     "@types/jest": "^30.0.0",
     "@types/node": "16.x",
     "@types/vscode": "^1.74.0",

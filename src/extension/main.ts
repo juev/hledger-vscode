@@ -1,7 +1,6 @@
 import * as vscode from 'vscode';
 import * as fs from 'fs';
 import * as path from 'path';
-import * as glob from 'glob';
 import { 
     IHLedgerConfig, 
     IWorkspaceCache, 
@@ -11,6 +10,33 @@ import {
     DEFAULT_COMMODITIES 
 } from './types';
 
+// Safe file search without shell execution
+function findHLedgerFiles(dir: string, recursive: boolean = true): string[] {
+    const hledgerExtensions = ['.journal', '.hledger', '.ledger'];
+    const results: string[] = [];
+    
+    try {
+        const entries = fs.readdirSync(dir, { withFileTypes: true });
+        
+        for (const entry of entries) {
+            const fullPath = path.join(dir, entry.name);
+            
+            if (entry.isFile()) {
+                const ext = path.extname(entry.name).toLowerCase();
+                if (hledgerExtensions.includes(ext) || entry.name === 'journal') {
+                    results.push(fullPath);
+                }
+            } else if (entry.isDirectory() && recursive && entry.name !== 'node_modules' && !entry.name.startsWith('.')) {
+                results.push(...findHLedgerFiles(fullPath, true));
+            }
+        }
+    } catch (error) {
+        console.error('Error reading directory:', dir, error);
+    }
+    
+    return results;
+}
+
 export class HLedgerConfig implements IHLedgerConfig {
     accounts: Set<string> = new Set();
     definedAccounts: Set<string> = new Set();
@@ -19,8 +45,8 @@ export class HLedgerConfig implements IHLedgerConfig {
     commodities: Set<string> = new Set();
     defaultCommodity: string | null = null;
     lastDate: string | null = null;
-    payees: Set<string> = new Set(); // Магазины/получатели
-    tags: Set<string> = new Set();   // Теги/категории
+    payees: Set<string> = new Set(); // Stores/payees
+    tags: Set<string> = new Set();   // Tags/categories
     
     parseFile(filePath: string): void {
         try {
@@ -221,20 +247,12 @@ export class HLedgerConfig implements IHLedgerConfig {
     scanWorkspace(workspacePath: string): void {
         try {
             console.log('Scanning workspace:', workspacePath);
-            const patterns = [
-                path.join(workspacePath, '**/*.journal'),
-                path.join(workspacePath, '**/*.hledger'), 
-                path.join(workspacePath, '**/*.ledger')
-            ];
+            const files = findHLedgerFiles(workspacePath, true);
+            console.log('Found files:', files);
             
-            for (const pattern of patterns) {
-                console.log('Checking pattern:', pattern);
-                const files = glob.sync(pattern, { ignore: '**/node_modules/**' });
-                console.log('Found files:', files);
-                for (const file of files) {
-                    console.log('Parsing file:', file);
-                    this.parseFile(file);
-                }
+            for (const file of files) {
+                console.log('Parsing file:', file);
+                this.parseFile(file);
             }
             
             console.log('Total accounts found:', this.accounts.size);
@@ -314,8 +332,8 @@ export class ProjectCache implements IProjectCache {
         // Check if file is in any parent directory that could be a project
         let currentDir = fileDir;
         while (currentDir !== path.dirname(currentDir)) {
-            // Look for hledger files in this directory
-            const hledgerFiles = glob.sync(path.join(currentDir, '*.{journal,hledger,ledger}'));
+            // Look for hledger files in this directory (non-recursive)
+            const hledgerFiles = findHLedgerFiles(currentDir, false);
             if (hledgerFiles.length > 0) {
                 return currentDir;
             }
