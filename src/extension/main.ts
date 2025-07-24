@@ -703,35 +703,56 @@ export function activate(context: vscode.ExtensionContext): void {
     // No cache invalidation - caches are persistent for better performance
     console.log('HLedger extension activated with persistent caching');
 
+    // Get auto completion setting
+    const config = vscode.workspace.getConfiguration('hledger');
+    const autoCompletionEnabled = config.get<boolean>('autoCompletion.enabled', true);
+    
+    // Define trigger characters based on setting
+    const triggerChars = autoCompletionEnabled ? [' ', ':', '/', '-', '.', '#', ';'] : [];
+
     const keywordProvider = vscode.languages.registerCompletionItemProvider(
         'hledger',
-        new KeywordCompletionProvider()
+        new KeywordCompletionProvider(),
+        ...triggerChars
     );
 
     const accountProvider = vscode.languages.registerCompletionItemProvider(
         'hledger',
-        new AccountCompletionProvider()
+        new AccountCompletionProvider(),
+        ...triggerChars
     );
 
     const commodityProvider = vscode.languages.registerCompletionItemProvider(
         'hledger',
-        new CommodityCompletionProvider()
+        new CommodityCompletionProvider(),
+        ...triggerChars
     );
 
     const dateProvider = vscode.languages.registerCompletionItemProvider(
         'hledger',
-        new DateCompletionProvider()
+        new DateCompletionProvider(),
+        ...triggerChars
     );
 
     const payeeProvider = vscode.languages.registerCompletionItemProvider(
         'hledger',
-        new PayeeCompletionProvider()
+        new PayeeCompletionProvider(),
+        ...triggerChars
     );
 
     const tagProvider = vscode.languages.registerCompletionItemProvider(
         'hledger',
-        new TagCompletionProvider()
+        new TagCompletionProvider(),
+        ...triggerChars
     );
+
+    // Listen for configuration changes and re-register providers
+    const configChangeDisposable = vscode.workspace.onDidChangeConfiguration(event => {
+        if (event.affectsConfiguration('hledger.autoCompletion.enabled')) {
+            // Restart extension to apply new settings
+            vscode.commands.executeCommand('workbench.action.reloadWindow');
+        }
+    });
 
     context.subscriptions.push(
         keywordProvider, 
@@ -739,7 +760,8 @@ export function activate(context: vscode.ExtensionContext): void {
         commodityProvider, 
         dateProvider,
         payeeProvider,
-        tagProvider
+        tagProvider,
+        configChangeDisposable
     );
 }
 

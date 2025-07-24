@@ -47,6 +47,16 @@
         "path": "./syntaxes/hledger.tmLanguage.json"
       }
     ],
+    "configuration": {
+      "title": "HLedger",
+      "properties": {
+        "hledger.autoCompletion.enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable automatic completion without keyboard shortcuts (Ctrl+Space)"
+        }
+      }
+    },
     "configurationDefaults": {
       "files.associations": {
         "*.journal": "hledger",
