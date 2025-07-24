@@ -20,14 +20,14 @@ D 1000,00 RUB
 commodity 1 000,00 $
 commodity 1 000,00 EUR
 
-2025-01-15 * Test transaction
+2025-01-15 * Магазин Пятёрочка ; category:groceries, #food
     Активы:Наличные         100.50 RUB
     Расходы:Продукты        -50.25 RUB
     Активы:Альфа:Текущий    25
     Расходы:Еда             15.75
     Доходы                  -40.00 RUB
     
-01-16 Короткая дата
+01-16 ТЦ Европейский ; #shopping
     Активы:Наличные         100
     Расходы:Магазин         -100
 
@@ -36,9 +36,21 @@ commodity 1 000,00 EUR
     Активы:Сбережения       = 1500
     Расходы:Прочие          10.50 RUB
 
-2025-01-18 * Новые счета для демо
+2025-01-18 * Заправка Лукойл ; type:gas, #transport
     Активы:Банк:Сбербанк    1000.00 RUB
     Активы:Банк:Тинькофф    -500.00 RUB
     Расходы:Транспорт       350.00 RUB
     Расходы:Связь           200.00 RUB
     Доходы:Зарплата         -1050.00 RUB
+
+2025-01-19 * Currency Exchange ; date:2025-01-20
+    Assets:USD              100 USD @ 95.50 RUB
+    Assets:RUB              -9550 RUB
+
+2025-01-20 Stock Purchase
+    Assets:Stocks:AAPL      10 AAPL @@ 1500.00 USD ; cost:total
+    Assets:Cash             -1500.00 USD = 5000.00 USD
+
+2025-01-21 Balance Check
+    Assets:Checking         = 2500.00 RUB ; #balance
+    Assets:Savings          == 10000.00 RUB

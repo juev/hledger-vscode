@@ -16,6 +16,8 @@ describe('WorkspaceCache', () => {
             commodities: new Set(),
             defaultCommodity: null,
             lastDate: null,
+            payees: new Set(),
+            tags: new Set(),
             parseFile: jest.fn(),
             parseContent: jest.fn(),
             scanWorkspace: jest.fn(),
@@ -25,7 +27,9 @@ describe('WorkspaceCache', () => {
             getUndefinedAccounts: jest.fn(() => []),
             getCommodities: jest.fn(() => []),
             getAliases: jest.fn(() => new Map()),
-            getLastDate: jest.fn(() => null)
+            getLastDate: jest.fn(() => null),
+            getPayees: jest.fn(() => []),
+            getTags: jest.fn(() => [])
         };
         
         // Mock the HLedgerConfig constructor

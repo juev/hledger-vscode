@@ -6,6 +6,8 @@ export interface IHLedgerConfig {
     commodities: Set<string>;
     defaultCommodity: string | null;
     lastDate: string | null;
+    payees: Set<string>; // Магазины/получатели платежей
+    tags: Set<string>;   // Теги/категории
     
     parseFile(filePath: string): void;
     parseContent(content: string, basePath?: string): void;
@@ -17,6 +19,16 @@ export interface IHLedgerConfig {
     getCommodities(): string[];
     getAliases(): Map<string, string>;
     getLastDate(): string | null;
+    getPayees(): string[];
+    getTags(): string[];
+}
+
+export interface IProjectCache {
+    getConfig(projectPath: string): IHLedgerConfig | null;
+    initialize(projectPath: string): IHLedgerConfig;
+    hasProject(projectPath: string): boolean;
+    findProjectForFile(filePath: string): string | null;
+    clear(): void;
 }
 
 export interface IWorkspaceCache {

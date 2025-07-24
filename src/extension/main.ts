@@ -5,6 +5,7 @@ import * as glob from 'glob';
 import { 
     IHLedgerConfig, 
     IWorkspaceCache, 
+    IProjectCache,
     HLEDGER_KEYWORDS, 
     DEFAULT_ACCOUNT_PREFIXES, 
     DEFAULT_COMMODITIES 
@@ -18,6 +19,8 @@ export class HLedgerConfig implements IHLedgerConfig {
     commodities: Set<string> = new Set();
     defaultCommodity: string | null = null;
     lastDate: string | null = null;
+    payees: Set<string> = new Set(); // Магазины/получатели
+    tags: Set<string> = new Set();   // Теги/категории
     
     parseFile(filePath: string): void {
         try {
@@ -39,9 +42,55 @@ export class HLedgerConfig implements IHLedgerConfig {
             const trimmed = line.trim();
             
             // Extract dates from transactions for date completion (keep the most recent)
-            const dateMatch = trimmed.match(/^(\d{4}[-/]\d{1,2}[-/]\d{1,2}|\d{1,2}[-/]\d{1,2})/);
+            // Support all hledger date formats: YYYY-MM-DD, YYYY/MM/DD, YYYY.MM.DD, MM-DD, MM/DD, MM.DD
+            const dateMatch = trimmed.match(/^(\d{4}[-/.]\d{1,2}[-/.]\d{1,2}|\d{1,2}[-/.]\d{1,2})/);
             if (dateMatch) {
                 this.lastDate = dateMatch[1];
+                
+                // Extract payee from transaction line
+                // Format: DATE [*|!] [CODE] DESCRIPTION [; COMMENT]
+                // Support payee|note format as per hledger spec
+                const transactionMatch = trimmed.match(/^(\d{4}[-/.]\d{1,2}[-/.]\d{1,2}|\d{1,2}[-/.]\d{1,2})\s*(\*|!)?\s*(\([^)]+\))?\s*([^;]+)(?:;(.*))?$/);
+                if (transactionMatch) {
+                    const description = transactionMatch[4]?.trim();
+                    if (description) {
+                        // Handle payee|note format as per hledger spec
+                        if (description.includes('|')) {
+                            const parts = description.split('|');
+                            const payee = parts[0].trim();
+                            if (payee) {
+                                this.payees.add(payee);
+                            }
+                            // Note part could be added to a notes set if needed
+                        } else {
+                            // Entire description is treated as payee
+                            this.payees.add(description);
+                        }
+                    }
+                    
+                    // Extract tags from comment
+                    const comment = transactionMatch[5]?.trim();
+                    if (comment) {
+                        // Look for tags in format: tag:value or #tag
+                        const tagMatches = comment.match(/(^|[,\s])([a-zA-Z\u0400-\u04FF][a-zA-Z\u0400-\u04FF0-9_]*):([^\s,;]+)/g);
+                        if (tagMatches) {
+                            tagMatches.forEach(match => {
+                                const tagMatch = match.trim().match(/([a-zA-Z\u0400-\u04FF][a-zA-Z\u0400-\u04FF0-9_]*):(.+)/);
+                                if (tagMatch) {
+                                    this.tags.add(tagMatch[1]);
+                                }
+                            });
+                        }
+                        
+                        // Also look for hashtags
+                        const hashtagMatches = comment.match(/#([a-zA-Z\u0400-\u04FF][a-zA-Z\u0400-\u04FF0-9_]*)/g);
+                        if (hashtagMatches) {
+                            hashtagMatches.forEach(match => {
+                                this.tags.add(match.substring(1));
+                            });
+                        }
+                    }
+                }
             }
             
             // Account definitions
@@ -90,11 +139,44 @@ export class HLedgerConfig implements IHLedgerConfig {
             
             // Extract accounts from transactions
             if (/^\s+/.test(line)) { // Check that line starts with spaces
-                const postingMatch = line.match(/^\s+([A-Za-z\u0400-\u04FF][A-Za-z\u0400-\u04FF0-9:_\-\s]*?)(?:\s{2,}|\t|$)/);
+                // Parse posting line: ACCOUNT [AMOUNT] [@ PRICE] [= BALANCE_ASSERTION] [; COMMENT]
+                // Support cost/price notation: @ unit_price, @@ total_price
+                // Support balance assertions: = expected_balance, == strict_balance
+                const postingMatch = line.match(/^\s+([A-Za-z\u0400-\u04FF][A-Za-z\u0400-\u04FF0-9:_\-\s]*?)(?:\s{2,}([^@=;]+))?(?:\s*@@?\s*[^=;]+)?(?:\s*==?\s*[^;]+)?(?:\s*;(.*))?$/);
                 if (postingMatch) {
                     const account = postingMatch[1].trim();
                     this.accounts.add(account);
                     this.usedAccounts.add(account);
+                    
+                    // Parse posting comment for tags including date:
+                    const postingComment = postingMatch[3]?.trim();
+                    if (postingComment) {
+                        // Look for date:DATE tags specifically
+                        const dateTagMatch = postingComment.match(/\bdate:(\d{4}[-/.]\d{1,2}[-/.]\d{1,2}|\d{1,2}[-/.]\d{1,2})/);
+                        if (dateTagMatch) {
+                            // Store posting dates for date completion
+                            this.lastDate = dateTagMatch[1];
+                        }
+                        
+                        // Parse other tags from posting comments
+                        const tagMatches = postingComment.match(/(^|[,\s])([a-zA-Z\u0400-\u04FF][a-zA-Z\u0400-\u04FF0-9_]*):([^\s,;]+)/g);
+                        if (tagMatches) {
+                            tagMatches.forEach(match => {
+                                const tagMatch = match.trim().match(/([a-zA-Z\u0400-\u04FF][a-zA-Z\u0400-\u04FF0-9_]*):(.+)/);
+                                if (tagMatch) {
+                                    this.tags.add(tagMatch[1]);
+                                }
+                            });
+                        }
+                        
+                        // Parse hashtags from posting comments
+                        const hashtagMatches = postingComment.match(/#([a-zA-Z\u0400-\u04FF][a-zA-Z\u0400-\u04FF0-9_]*)/g);
+                        if (hashtagMatches) {
+                            hashtagMatches.forEach(match => {
+                                this.tags.add(match.substring(1));
+                            });
+                        }
+                    }
                 }
             }
         }
@@ -126,6 +208,14 @@ export class HLedgerConfig implements IHLedgerConfig {
     
     getLastDate(): string | null {
         return this.lastDate;
+    }
+    
+    getPayees(): string[] {
+        return Array.from(this.payees);
+    }
+    
+    getTags(): string[] {
+        return Array.from(this.tags);
     }
     
     scanWorkspace(workspacePath: string): void {
@@ -187,30 +277,89 @@ export class WorkspaceCache implements IWorkspaceCache {
     }
 }
 
-const workspaceCache = new WorkspaceCache();
-
-export function getConfig(document: vscode.TextDocument): IHLedgerConfig {
-    const workspaceFolder = vscode.workspace.getWorkspaceFolder(document.uri);
-    if (!workspaceFolder) {
-        // If no workspace, parse only current document
+export class ProjectCache implements IProjectCache {
+    private projects: Map<string, IHLedgerConfig> = new Map();
+    
+    getConfig(projectPath: string): IHLedgerConfig | null {
+        return this.projects.get(projectPath) || null;
+    }
+    
+    initialize(projectPath: string): IHLedgerConfig {
+        console.log('Initializing project cache for:', projectPath);
+        
         const config = new HLedgerConfig();
-        config.parseContent(document.getText(), path.dirname(document.uri.fsPath));
+        config.scanWorkspace(projectPath);
+        
+        this.projects.set(projectPath, config);
+        console.log(`Project cache initialized with ${config.accounts.size} accounts, ${config.payees.size} payees, ${config.tags.size} tags`);
+        
         return config;
     }
     
-    const workspacePath = workspaceFolder.uri.fsPath;
-    
-    // Check cache
-    if (!workspaceCache.isValid(workspacePath)) {
-        workspaceCache.update(workspacePath);
+    hasProject(projectPath: string): boolean {
+        return this.projects.has(projectPath);
     }
     
-    // Get cached configuration and add current document
-    const cachedConfig = workspaceCache.getConfig();
+    findProjectForFile(filePath: string): string | null {
+        // Find the closest project that contains this file
+        const fileDir = path.dirname(filePath);
+        
+        // First check exact matches
+        for (const [projectPath] of this.projects) {
+            if (filePath.startsWith(projectPath + path.sep) || filePath === projectPath) {
+                return projectPath;
+            }
+        }
+        
+        // Check if file is in any parent directory that could be a project
+        let currentDir = fileDir;
+        while (currentDir !== path.dirname(currentDir)) {
+            // Look for hledger files in this directory
+            const hledgerFiles = glob.sync(path.join(currentDir, '*.{journal,hledger,ledger}'));
+            if (hledgerFiles.length > 0) {
+                return currentDir;
+            }
+            currentDir = path.dirname(currentDir);
+        }
+        
+        return null;
+    }
+    
+    clear(): void {
+        this.projects.clear();
+        console.log('Project cache cleared');
+    }
+}
+
+const workspaceCache = new WorkspaceCache();
+const projectCache = new ProjectCache();
+
+export function getConfig(document: vscode.TextDocument): IHLedgerConfig {
+    const filePath = document.uri.fsPath;
+    
+    // Try to find existing project for this file
+    let projectPath = projectCache.findProjectForFile(filePath);
+    
+    if (!projectPath) {
+        // If no project found, try to determine project from workspace
+        const workspaceFolder = vscode.workspace.getWorkspaceFolder(document.uri);
+        if (workspaceFolder) {
+            projectPath = workspaceFolder.uri.fsPath;
+        } else {
+            // No workspace, parse only current document
+            const config = new HLedgerConfig();
+            config.parseContent(document.getText(), path.dirname(filePath));
+            return config;
+        }
+    }
+    
+    // Get or initialize project cache
+    let cachedConfig = projectCache.getConfig(projectPath);
     if (!cachedConfig) {
-        throw new Error('Failed to get cached configuration');
+        cachedConfig = projectCache.initialize(projectPath);
     }
     
+    // Create a copy of cached config and merge with current document
     const config = new HLedgerConfig();
     
     // Copy data from cache
@@ -218,12 +367,14 @@ export function getConfig(document: vscode.TextDocument): IHLedgerConfig {
     cachedConfig.definedAccounts.forEach(acc => config.definedAccounts.add(acc));
     cachedConfig.usedAccounts.forEach(acc => config.usedAccounts.add(acc));
     cachedConfig.commodities.forEach(comm => config.commodities.add(comm));
+    cachedConfig.payees.forEach(payee => config.payees.add(payee));
+    cachedConfig.tags.forEach(tag => config.tags.add(tag));
     config.aliases = new Map(cachedConfig.getAliases());
     config.defaultCommodity = cachedConfig.defaultCommodity;
     config.lastDate = cachedConfig.lastDate;
     
     // Parse current document to get latest changes
-    config.parseContent(document.getText(), path.dirname(document.uri.fsPath));
+    config.parseContent(document.getText(), path.dirname(filePath));
     
     return config;
 }
@@ -358,8 +509,8 @@ export class DateCompletionProvider implements vscode.CompletionItemProvider {
     ): vscode.ProviderResult<vscode.CompletionItem[]> {
         const linePrefix = document.lineAt(position).text.substring(0, position.character);
         
-        // Trigger on empty line or partial date input
-        if (linePrefix.match(/^$/) || linePrefix.match(/^\d{0,4}[-/]?\d{0,2}[-/]?\d{0,2}$/)) {
+        // Trigger on empty line or partial date input (support all hledger date formats)
+        if (linePrefix.match(/^$/) || linePrefix.match(/^\d{0,4}[-/.]?\d{0,2}[-/.]?\d{0,2}$/)) {
             const suggestions: vscode.CompletionItem[] = [];
             
             // Extract what user has typed
@@ -425,25 +576,114 @@ export class DateCompletionProvider implements vscode.CompletionItemProvider {
     }
 }
 
-export function activate(context: vscode.ExtensionContext): void {
-    // Event handlers for cache invalidation
-    const onDidOpenTextDocument = vscode.workspace.onDidOpenTextDocument(document => {
-        if (document.languageId === 'hledger') {
-            console.log('HLedger file opened, invalidating cache');
-            workspaceCache.invalidate();
-        }
-    });
-    
-    const onDidSaveTextDocument = vscode.workspace.onDidSaveTextDocument(document => {
-        if (document.languageId === 'hledger') {
-            // Only invalidate cache on explicit save (not auto-save)
-            // Check if this is an explicit save by checking if the document is dirty after save
-            if (!document.isDirty) {
-                console.log('HLedger file explicitly saved, invalidating cache');
-                workspaceCache.invalidate();
+export class PayeeCompletionProvider implements vscode.CompletionItemProvider {
+    provideCompletionItems(
+        document: vscode.TextDocument, 
+        position: vscode.Position
+    ): vscode.ProviderResult<vscode.CompletionItem[]> {
+        const linePrefix = document.lineAt(position).text.substring(0, position.character);
+        
+        // Trigger after date pattern in transaction lines (support all hledger date formats)
+        // Format: DATE [*|!] [CODE] DESCRIPTION
+        if (linePrefix.match(/^(\d{4}[-/.]\d{1,2}[-/.]\d{1,2}|\d{1,2}[-/.]\d{1,2})\s*(\*|!)?\s*(\([^)]+\))?\s*\S*/)) {
+            const config = getConfig(document);
+            const payees = config.getPayees();
+            
+            if (payees.length === 0) {
+                return undefined;
             }
+            
+            // Extract what user has typed (support all hledger date formats)
+            const transactionMatch = linePrefix.match(/^(\d{4}[-/.]\d{1,2}[-/.]\d{1,2}|\d{1,2}[-/.]\d{1,2})\s*(\*|!)?\s*(\([^)]+\))?\s*(.*)$/);
+            const typedText = transactionMatch ? transactionMatch[4] : '';
+            
+            const suggestions = payees
+                .filter(payee => payee.toLowerCase().startsWith(typedText.toLowerCase()))
+                .map(payee => {
+                    const item = new vscode.CompletionItem(payee, vscode.CompletionItemKind.Value);
+                    item.detail = 'Payee/Store';
+                    item.sortText = payee;
+                    
+                    if (typedText) {
+                        const range = new vscode.Range(
+                            position.line,
+                            position.character - typedText.length,
+                            position.line,
+                            position.character
+                        );
+                        item.range = range;
+                    }
+                    
+                    return item;
+                });
+            
+            return suggestions;
         }
-    });
+        
+        return undefined;
+    }
+}
+
+export class TagCompletionProvider implements vscode.CompletionItemProvider {
+    provideCompletionItems(
+        document: vscode.TextDocument, 
+        position: vscode.Position
+    ): vscode.ProviderResult<vscode.CompletionItem[]> {
+        const linePrefix = document.lineAt(position).text.substring(0, position.character);
+        
+        // Trigger in comments (after semicolon) when typing tag: or #
+        if (linePrefix.match(/;\s*.*([a-zA-Z\u0400-\u04FF][a-zA-Z\u0400-\u04FF0-9_]*)?:?$/) || 
+            linePrefix.match(/;\s*.*#([a-zA-Z\u0400-\u04FF][a-zA-Z\u0400-\u04FF0-9_]*)?$/)) {
+            
+            const config = getConfig(document);
+            const tags = config.getTags();
+            
+            if (tags.length === 0) {
+                return undefined;
+            }
+            
+            // Determine if we're in tag:value or #tag format
+            const isHashTag = linePrefix.includes('#');
+            const tagMatch = linePrefix.match(/([a-zA-Z\u0400-\u04FF][a-zA-Z\u0400-\u04FF0-9_]*)(:?)$/);
+            const typedText = tagMatch ? tagMatch[1] : '';
+            
+            const suggestions = tags
+                .filter(tag => tag.toLowerCase().startsWith(typedText.toLowerCase()))
+                .map(tag => {
+                    const item = new vscode.CompletionItem(tag, vscode.CompletionItemKind.Keyword);
+                    item.detail = 'Tag/Category';
+                    item.sortText = tag;
+                    
+                    // Set insert text based on context
+                    if (isHashTag) {
+                        item.insertText = tag;
+                    } else {
+                        item.insertText = tag + ':';
+                    }
+                    
+                    if (typedText) {
+                        const range = new vscode.Range(
+                            position.line,
+                            position.character - typedText.length,
+                            position.line,
+                            position.character
+                        );
+                        item.range = range;
+                    }
+                    
+                    return item;
+                });
+            
+            return suggestions;
+        }
+        
+        return undefined;
+    }
+}
+
+export function activate(context: vscode.ExtensionContext): void {
+    // No cache invalidation - caches are persistent for better performance
+    console.log('HLedger extension activated with persistent caching');
 
     const keywordProvider = vscode.languages.registerCompletionItemProvider(
         'hledger',
@@ -465,16 +705,28 @@ export function activate(context: vscode.ExtensionContext): void {
         new DateCompletionProvider()
     );
 
+    const payeeProvider = vscode.languages.registerCompletionItemProvider(
+        'hledger',
+        new PayeeCompletionProvider()
+    );
+
+    const tagProvider = vscode.languages.registerCompletionItemProvider(
+        'hledger',
+        new TagCompletionProvider()
+    );
+
     context.subscriptions.push(
         keywordProvider, 
         accountProvider, 
         commodityProvider, 
         dateProvider,
-        onDidOpenTextDocument,
-        onDidSaveTextDocument
+        payeeProvider,
+        tagProvider
     );
 }
 
 export function deactivate(): void {
-    // Clean up if needed
+    // Clean up project caches
+    projectCache.clear();
+    console.log('HLedger extension deactivated, caches cleared');
 }

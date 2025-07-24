@@ -128,7 +128,7 @@ describe('AccountCompletionProvider', () => {
         const definedAccount = items.find(item => item.label === 'Assets:Bank');
         const usedAccount = items.find(item => item.label === 'Assets:Cash');
         
-        expect(definedAccount?.sortText || '').localeCompare(usedAccount?.sortText || '').toBeLessThan(0);
+        expect((definedAccount?.sortText || '').localeCompare(usedAccount?.sortText || '')).toBeLessThan(0);
     });
     
     it('should not provide completions on non-posting lines', () => {
