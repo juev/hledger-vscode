@@ -81,5 +81,6 @@
   "bugs": {
     "url": "https://github.com/juev/hledger-vscode/issues"
   },
-  "homepage": "https://github.com/juev/hledger-vscode#readme"
+  "homepage": "https://github.com/juev/hledger-vscode#readme",
+  "icon": "images/icon.png"
 }

@@ -5,7 +5,7 @@ Syntax highlighting and IntelliSense support for [hledger](https://hledger.org) 
 ## Features
 
 - **Syntax Highlighting**: Full syntax highlighting for hledger journal files using standard TextMate scopes
-- **IntelliSense Auto-completion**: 
+- **IntelliSense Auto-completion**:
   - **Smart Account Completion**: Suggests accounts from `account` directives and used accounts from transactions
   - **Date Completion**: Smart date suggestions with last used date, today, and yesterday
   - **Commodity Completion**: Common currencies and cryptocurrencies
@@ -13,7 +13,7 @@ Syntax highlighting and IntelliSense support for [hledger](https://hledger.org) 
 - **Multi-language Support**: Full support for Cyrillic and other Unicode characters in account names
 - **Smart Indentation**: Automatic indentation for transactions and postings
 - **Performance Optimized**: Efficient caching system for large codebases
-- **Language Configuration**: 
+- **Language Configuration**:
   - Comment support (`;`, `#`)
   - Bracket matching and auto-closing pairs
   - Smart indentation rules
@@ -42,6 +42,7 @@ The extension automatically activates when you open a file with a supported exte
 ### Syntax Highlighting
 
 All hledger syntax elements are highlighted using standard TextMate scopes:
+
 - Transaction dates (full and short format)
 - Account names with Unicode support
 - Amounts with and without commodities
@@ -50,7 +51,8 @@ All hledger syntax elements are highlighted using standard TextMate scopes:
 
 ### IntelliSense Features
 
-**Account Completion**: 
+**Account Completion**:
+
 - Type in posting lines to see intelligent account suggestions
 - **Defined accounts** (from `account` directives) appear first
 - **Used accounts** (from existing transactions) appear second
@@ -58,12 +60,14 @@ All hledger syntax elements are highlighted using standard TextMate scopes:
 - Partial matching - continues completion from where you left off
 
 **Date Completion**:
+
 - Type at the beginning of lines to get date suggestions
 - **Last used date** from the document appears first
 - **Today's date** and **yesterday's date** as alternatives
 - Supports both full (YYYY-MM-DD) and short (MM-DD) date formats
 
 **Smart Indentation**:
+
 - Automatic indentation after transaction dates
 - Proper posting alignment within transactions
 - Maintains indentation context
@@ -71,6 +75,7 @@ All hledger syntax elements are highlighted using standard TextMate scopes:
 ### Dynamic Configuration
 
 The extension automatically scans your workspace for:
+
 - `account` directive definitions
 - Account usage patterns from transactions
 - Commodity declarations
@@ -85,6 +90,10 @@ This extension follows the official [hledger manual (1.43)](https://hledger.org/
 Contributions are welcome! Please feel free to submit issues and pull requests.
 
 When contributing, please ensure that any syntax additions or changes align with the official hledger documentation.
+
+## Credits
+
+The extension icon is taken from the official [hledger website](https://hledger.org).
 
 ## License
 
