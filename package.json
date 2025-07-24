@@ -3,7 +3,7 @@
   "displayName": "hledger",
   "description": "Syntax highlighting and IntelliSense support for hledger journal files",
   "version": "0.1.0",
-  "publisher": "org.evsyukov",
+  "publisher": "evsyukov",
   "engines": {
     "vscode": "^1.74.0"
   },

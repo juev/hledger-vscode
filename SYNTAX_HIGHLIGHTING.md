@@ -9,7 +9,7 @@ This document describes improvements in syntax highlighting for hledger files.
 - **Scope**: `entity.name.type.commodity`
 - **Usage**: Highlighting currencies (USD, RUB, EUR) and commodities in amounts
 - **Examples**: `100 USD`, `1000.00 RUB`, `AAPL`
-- **Color**: Can be customized to maroon (#800000) for better visibility
+- **Highlighting**: Uses standard TextMate scope `entity.name.type.commodity`
 
 ### 2. Account Types
 
@@ -84,7 +84,7 @@ account Income:Salary       ; income
 
 The syntax highlighting uses standard TextMate scopes that are supported by most VS Code themes:
 
-- `entity.name.type.commodity` - currencies and commodities (can be customized to maroon color)
+- `entity.name.type.commodity` - currencies and commodities
 - `support.class.*` - account types will use class colors  
 - `entity.name.function` - payees and accounts use function color
 - `entity.name.tag` - hashtags use tag color
@@ -93,26 +93,4 @@ The syntax highlighting uses standard TextMate scopes that are supported by most
 - `keyword.operator` - operators use keyword color
 - `string.unquoted` - notes and tag values use string color
 
-No additional theme configuration is needed - existing themes will automatically provide appropriate colors for these standard scopes.
-
-### Customizing Currency Colors
-
-To make currencies more visible with maroon color, add this to your VS Code `settings.json`:
-
-```json
-{
-  "editor.tokenColorCustomizations": {
-    "textMateRules": [
-      {
-        "scope": "entity.name.type.commodity",
-        "settings": {
-          "foreground": "#800000",
-          "fontStyle": "bold"
-        }
-      }
-    ]
-  }
-}
-```
-
-This will display all currencies (USD, RUB, EUR, BTC, etc.) in maroon color (#800000) with bold formatting for better visibility.
+The extension uses standard TextMate scopes that work with all VS Code themes. Colors will depend on your selected VS Code theme.

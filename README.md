@@ -4,9 +4,9 @@ Syntax highlighting and IntelliSense support for [hledger](https://hledger.org) 
 
 ## Features
 
-- **Enhanced Syntax Highlighting**: Advanced syntax highlighting with dedicated colors for:
+- **Enhanced Syntax Highlighting**: Advanced syntax highlighting for:
   - **Currencies and commodities** (USD, RUB, EUR, BTC, etc.)
-  - **Account types** (Assets, Expenses, Income, Liabilities, Equity) with different colors
+  - **Account types** (Assets, Expenses, Income, Liabilities, Equity)
   - **Tags and categories** in comments (`#hashtags`, `key:value` pairs)
   - **Payee|note format** with separate highlighting for payees and notes
   - **Cost/price notation** (`@` and `@@`) and balance assertions (`=`, `==`)
@@ -37,27 +37,6 @@ Syntax highlighting and IntelliSense support for [hledger](https://hledger.org) 
 - `.journal`
 - `.hledger`
 - `.ledger`
-
-## Currency Highlighting
-
-To make currencies (USD, RUB, EUR, BTC, etc.) appear in maroon color, add this to your VS Code `settings.json`:
-
-```json
-{
-  "editor.tokenColorCustomizations": {
-    "textMateRules": [
-      {
-        "scope": "entity.name.type.commodity",
-        "settings": {
-          "foreground": "#800000"
-        }
-      }
-    ]
-  }
-}
-```
-
-This will make all currencies and commodities display in maroon color (#800000) while other elements use your theme's default colors.
 
 ## Requirements
 
