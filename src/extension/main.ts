@@ -100,7 +100,7 @@ export class HLedgerConfig implements IHLedgerConfig {
                     // Extract tags from comment
                     const comment = transactionMatch[5]?.trim();
                     if (comment) {
-                        // Look for tags in format: tag:value or #tag
+                        // Look for tags in format: tag:value
                         const tagMatches = comment.match(/(^|[,\s])([a-zA-Z\u0400-\u04FF][a-zA-Z\u0400-\u04FF0-9_]*):([^\s,;]+)/g);
                         if (tagMatches) {
                             tagMatches.forEach(match => {
@@ -108,14 +108,6 @@ export class HLedgerConfig implements IHLedgerConfig {
                                 if (tagMatch) {
                                     this.tags.add(tagMatch[1]);
                                 }
-                            });
-                        }
-                        
-                        // Also look for hashtags
-                        const hashtagMatches = comment.match(/#([a-zA-Z\u0400-\u04FF][a-zA-Z\u0400-\u04FF0-9_]*)/g);
-                        if (hashtagMatches) {
-                            hashtagMatches.forEach(match => {
-                                this.tags.add(match.substring(1));
                             });
                         }
                     }
@@ -195,14 +187,6 @@ export class HLedgerConfig implements IHLedgerConfig {
                                 if (tagMatch) {
                                     this.tags.add(tagMatch[1]);
                                 }
-                            });
-                        }
-                        
-                        // Parse hashtags from posting comments
-                        const hashtagMatches = postingComment.match(/#([a-zA-Z\u0400-\u04FF][a-zA-Z\u0400-\u04FF0-9_]*)/g);
-                        if (hashtagMatches) {
-                            hashtagMatches.forEach(match => {
-                                this.tags.add(match.substring(1));
                             });
                         }
                     }
@@ -683,8 +667,7 @@ export class TagCompletionProvider implements vscode.CompletionItemProvider {
                 return undefined;
             }
             
-            // Determine if we're in tag:value or #tag format
-            const isHashTag = linePrefix.includes('#');
+            // Look for tag:value format
             const tagMatch = linePrefix.match(/([a-zA-Z\u0400-\u04FF][a-zA-Z\u0400-\u04FF0-9_]*)(:?)$/);
             const typedText = tagMatch ? tagMatch[1] : '';
             
@@ -695,12 +678,8 @@ export class TagCompletionProvider implements vscode.CompletionItemProvider {
                     item.detail = 'Tag/Category';
                     item.sortText = tag;
                     
-                    // Set insert text based on context
-                    if (isHashTag) {
-                        item.insertText = tag;
-                    } else {
-                        item.insertText = tag + ':';
-                    }
+                    // Set insert text for tag:value format
+                    item.insertText = tag + ':';
                     
                     if (typedText) {
                         const range = new vscode.Range(
@@ -731,7 +710,7 @@ export function activate(context: vscode.ExtensionContext): void {
     const autoCompletionEnabled = config.get<boolean>('autoCompletion.enabled', true);
     
     // Define trigger characters based on setting
-    const triggerChars = autoCompletionEnabled ? [' ', ':', '/', '-', '.', '#', ';'] : [];
+    const triggerChars = autoCompletionEnabled ? [' ', ':', '/', '-', '.', ';'] : [];
 
     const keywordProvider = vscode.languages.registerCompletionItemProvider(
         'hledger',

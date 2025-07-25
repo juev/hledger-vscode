@@ -545,10 +545,6 @@
             "0": {
               "patterns": [
                 {
-                  "name": "entity.name.tag",
-                  "match": "#([a-zA-Z\\u0400-\\u04FF][a-zA-Z\\u0400-\\u04FF0-9_]*)"
-                },
-                {
                   "name": "meta.tag",
                   "match": "([a-zA-Z\\u0400-\\u04FF][a-zA-Z\\u0400-\\u04FF0-9_]*)(:)([^\\s,;]+)",
                   "captures": {

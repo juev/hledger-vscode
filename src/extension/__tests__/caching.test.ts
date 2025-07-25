@@ -34,13 +34,13 @@ describe('Enhanced Caching System', () => {
         
         it('should extract tags from transaction comments', () => {
             const content = `
-2025-01-15 * Shop ; category:groceries, #food
+2025-01-15 * Shop ; category:groceries, type:food
     Assets:Cash    100
     
-2025-01-16 Gas Station ; type:gas, #transport
+2025-01-16 Gas Station ; type:gas, category:transport
     Assets:Cash    -50
     
-2025-01-17 Restaurant ; #dining, cuisine:italian
+2025-01-17 Restaurant ; category:dining, cuisine:italian
     Assets:Cash    -30
 `;
             
@@ -49,17 +49,14 @@ describe('Enhanced Caching System', () => {
             const tags = config.getTags();
             expect(tags).toEqual(expect.arrayContaining([
                 'category',
-                'food',
                 'type',
-                'transport',
-                'dining',
                 'cuisine'
             ]));
         });
         
         it('should handle Cyrillic payees and tags', () => {
             const content = `
-2025-01-15 * Магазин Пятёрочка ; категория:продукты, #еда
+2025-01-15 * Магазин Пятёрочка ; категория:продукты, тип:еда
     Активы:Наличные    1000 RUB
     Расходы:Продукты   -1000 RUB
 `;
@@ -67,7 +64,7 @@ describe('Enhanced Caching System', () => {
             config.parseContent(content);
             
             expect(config.getPayees()).toContain('Магазин Пятёрочка');
-            expect(config.getTags()).toEqual(expect.arrayContaining(['категория', 'еда']));
+            expect(config.getTags()).toEqual(expect.arrayContaining(['категория', 'тип']));
         });
     });
     
@@ -123,7 +120,7 @@ describe('Enhanced Caching System', () => {
 2025-01-15 * (REF123) Магазин Пятёрочка ; category:groceries
     Assets:Cash    100
     
-2025-01-16 ! (CODE456) ТЦ Европейский ; #shopping
+2025-01-16 ! (CODE456) ТЦ Европейский ; type:shopping
     Assets:Cash    -50
 `;
             
@@ -135,13 +132,13 @@ describe('Enhanced Caching System', () => {
             ]));
             expect(config.getTags()).toEqual(expect.arrayContaining([
                 'category',
-                'shopping'
+                'type'
             ]));
         });
         
         it('should handle multiple tags in one comment', () => {
             const content = `
-2025-01-15 * Store ; category:food, subcategory:fruits, #healthy, priority:high
+2025-01-15 * Store ; category:food, subcategory:fruits, type:healthy, priority:high
     Assets:Cash    100
 `;
             
@@ -151,7 +148,7 @@ describe('Enhanced Caching System', () => {
             expect(tags).toEqual(expect.arrayContaining([
                 'category',
                 'subcategory', 
-                'healthy',
+                'type',
                 'priority'
             ]));
         });
