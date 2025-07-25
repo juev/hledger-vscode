@@ -35,7 +35,6 @@ Different highlighting for different account types:
 
 ### 5. Tags and Categories in Comments
 
-- **Hashtags**: `entity.name.tag` (e.g.: `#food`)
 - **Tag keys**: `variable.other` (e.g.: `category:`)
 - **Tag values**: `string.unquoted` (e.g.: `:groceries`)
 
@@ -87,7 +86,6 @@ The syntax highlighting uses standard TextMate scopes that are supported by most
 - `entity.name.type.commodity` - currencies and commodities
 - `support.class.*` - account types will use class colors  
 - `entity.name.function` - payees and accounts use function color
-- `entity.name.tag` - hashtags use tag color
 - `variable.other` - tag keys use variable color
 - `constant.numeric` - dates and numbers use numeric color
 - `keyword.operator` - operators use keyword color

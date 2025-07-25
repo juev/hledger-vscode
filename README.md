@@ -7,7 +7,7 @@ Full-featured Visual Studio Code extension providing comprehensive syntax highli
 - **Enhanced Syntax Highlighting**: Advanced syntax highlighting for:
   - **Currencies and commodities** (USD, RUB, EUR, BTC, etc.)
   - **Account types** (Assets, Expenses, Income, Liabilities, Equity)
-  - **Tags and categories** in comments (`#hashtags`, `key:value` pairs)
+  - **Tags and categories** in comments (`key:value` pairs)
   - **Payee|note format** with separate highlighting for payees and notes
   - **Cost/price notation** (`@` and `@@`) and balance assertions (`=`, `==`)
   - **Multiple date formats** (YYYY-MM-DD, YYYY/MM/DD, YYYY.MM.DD, MM-DD, etc.)
@@ -16,13 +16,13 @@ Full-featured Visual Studio Code extension providing comprehensive syntax highli
   - **Date Completion**: Smart date suggestions with last used date, today, and yesterday (supports all hledger date formats)
   - **Commodity Completion**: Common currencies and cryptocurrencies
   - **Payee Completion**: Auto-completion for payees/stores from transaction history
-  - **Tag Completion**: Smart completion for tags and categories (`#hashtags` and `key:value` pairs)
+  - **Tag Completion**: Smart completion for tags and categories (`key:value` pairs)
   - **Directive Completion**: hledger directives (account, commodity, include, etc.)
 - **hledger 1.43 Compliance**: Full support for the latest hledger specification including:
   - All date formats (YYYY-MM-DD, YYYY/MM/DD, YYYY.MM.DD with . / - separators)
   - Payee|note format in transactions
   - Cost/price notation (@ unit cost, @@ total cost)
-  - Balance assertions (= soft, == strict)
+  - Balance assertions (= single commodity, == sole commodity)
   - Posting date tags (`date:YYYY-MM-DD`)
 - **Multi-language Support**: Full support for Cyrillic and other Unicode characters in account names and tags
 - **Smart Indentation**: Automatic indentation for transactions and postings
@@ -90,9 +90,9 @@ All hledger syntax elements are highlighted using standard TextMate scopes:
 
 **Tag Completion**:
 
-- Smart completion for both `#hashtag` and `tag:value` formats
+- Smart completion for `tag:value` format
 - Learns from existing tags in transaction and posting comments
-- Context-aware insertion (adds `:` for tag:value format)
+- Automatically adds `:` for tag:value format
 - Full Unicode support including Cyrillic characters
 
 **Commodity/Currency Completion**:

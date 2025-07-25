@@ -25,22 +25,17 @@
       "end": "^\\s*end\\s+comment\\s*$"
     }
   },
-  "indentationRules": {
-    "increaseIndentPattern": "^\\s*(account|comment|apply\\s+account)\\s+.*$",
-    "decreaseIndentPattern": "^\\s*(end\\s+comment|end\\s+apply\\s+account)\\s*$",
-    "indentNextLinePattern": "^(\\d{4}[-/]\\d{1,2}[-/]\\d{1,2}|\\d{1,2}[-/]\\d{1,2}).*$"
-  },
   "onEnterRules": [
     {
-      "beforeText": "^(\\d{4}[-/]\\d{1,2}[-/]\\d{1,2}|\\d{1,2}[-/]\\d{1,2})\\s*(\\*|!)?\\s*(\\([^)]+\\))?\\s*.*$",
+      "beforeText": "^\\s*$",
       "action": {
-        "indent": "indent"
+        "indent": "none"
       }
     },
     {
-      "beforeText": "^\\s+.*$",
+      "beforeText": "^(\\d{4}[-/.]\\d{1,2}[-/.]\\d{1,2}|\\d{1,2}[-/.]\\d{1,2})\\s*(\\*|!)?\\s*(\\([^)]+\\))?\\s*\\S+.*$",
       "action": {
-        "indent": "none"
+        "indent": "indent"
       }
     }
   ],

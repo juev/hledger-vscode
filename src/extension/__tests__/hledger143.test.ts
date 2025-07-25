@@ -121,7 +121,7 @@ describe('hledger 1.43 Compliance', () => {
             const content = `
 2025-01-15 * Complex Transaction
     Assets:Investment    10 SHARES @ 150.00 USD = 1500.00 USD ; cost:total
-    Assets:Cash    -1500.00 USD == 5000.00 USD ; #investment
+    Assets:Cash    -1500.00 USD == 5000.00 USD ; type:investment
 `;
             
             config.parseContent(content);
@@ -132,7 +132,7 @@ describe('hledger 1.43 Compliance', () => {
             
             const tags = config.getTags();
             expect(tags).toContain('cost');
-            expect(tags).toContain('investment');
+            expect(tags).toContain('type');
         });
     });
     

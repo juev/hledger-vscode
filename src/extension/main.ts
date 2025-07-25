@@ -10,6 +10,55 @@ import {
     DEFAULT_COMMODITIES 
 } from './types';
 
+// Fuzzy matching score interface
+interface FuzzyMatch {
+    item: string;
+    score: number;
+}
+
+// Fuzzy finding algorithm for payees and tags
+export function fuzzyMatch(query: string, items: string[]): FuzzyMatch[] {
+    if (!query) return items.map(item => ({ item, score: 1 }));
+    
+    const queryLower = query.toLowerCase();
+    const matches: FuzzyMatch[] = [];
+    
+    for (const item of items) {
+        const itemLower = item.toLowerCase();
+        let score = 0;
+        let queryIndex = 0;
+        let matchedChars = 0;
+        
+        // Calculate fuzzy match score
+        for (let i = 0; i < itemLower.length && queryIndex < queryLower.length; i++) {
+            if (itemLower[i] === queryLower[queryIndex]) {
+                matchedChars++;
+                // Higher score for consecutive matches
+                score += queryIndex === 0 ? 100 : 50; // First character match gets highest score
+                // Bonus for word boundaries
+                if (i === 0 || itemLower[i - 1] === ' ' || itemLower[i - 1] === '-' || itemLower[i - 1] === '_') {
+                    score += 30;
+                }
+                queryIndex++;
+            }
+        }
+        
+        // Only include items that match all query characters in order
+        if (matchedChars === queryLower.length) {
+            // Bonus for exact prefix matches
+            if (itemLower.startsWith(queryLower)) {
+                score += 200;
+            }
+            // Penalty for longer strings (prefer shorter matches)
+            score -= item.length;
+            matches.push({ item, score });
+        }
+    }
+    
+    // Sort by score (higher score first)
+    return matches.sort((a, b) => b.score - a.score);
+}
+
 // Safe file search without shell execution
 function findHLedgerFiles(dir: string, recursive: boolean = true): string[] {
     const hledgerExtensions = ['.journal', '.hledger', '.ledger'];
@@ -100,7 +149,7 @@ export class HLedgerConfig implements IHLedgerConfig {
                     // Extract tags from comment
                     const comment = transactionMatch[5]?.trim();
                     if (comment) {
-                        // Look for tags in format: tag:value or #tag
+                        // Look for tags in format: tag:value
                         const tagMatches = comment.match(/(^|[,\s])([a-zA-Z\u0400-\u04FF][a-zA-Z\u0400-\u04FF0-9_]*):([^\s,;]+)/g);
                         if (tagMatches) {
                             tagMatches.forEach(match => {
@@ -108,14 +157,6 @@ export class HLedgerConfig implements IHLedgerConfig {
                                 if (tagMatch) {
                                     this.tags.add(tagMatch[1]);
                                 }
-                            });
-                        }
-                        
-                        // Also look for hashtags
-                        const hashtagMatches = comment.match(/#([a-zA-Z\u0400-\u04FF][a-zA-Z\u0400-\u04FF0-9_]*)/g);
-                        if (hashtagMatches) {
-                            hashtagMatches.forEach(match => {
-                                this.tags.add(match.substring(1));
                             });
                         }
                     }
@@ -170,7 +211,7 @@ export class HLedgerConfig implements IHLedgerConfig {
             if (/^\s+/.test(line)) { // Check that line starts with spaces
                 // Parse posting line: ACCOUNT [AMOUNT] [@ PRICE] [= BALANCE_ASSERTION] [; COMMENT]
                 // Support cost/price notation: @ unit_price, @@ total_price
-                // Support balance assertions: = expected_balance, == strict_balance
+                // Support balance assertions: = single commodity balance, == sole commodity balance
                 const postingMatch = line.match(/^\s+([A-Za-z\u0400-\u04FF][A-Za-z\u0400-\u04FF0-9:_\-\s]*?)(?:\s{2,}([^@=;]+))?(?:\s*@@?\s*[^=;]+)?(?:\s*==?\s*[^;]+)?(?:\s*;(.*))?$/);
                 if (postingMatch) {
                     const account = postingMatch[1].trim();
@@ -195,14 +236,6 @@ export class HLedgerConfig implements IHLedgerConfig {
                                 if (tagMatch) {
                                     this.tags.add(tagMatch[1]);
                                 }
-                            });
-                        }
-                        
-                        // Parse hashtags from posting comments
-                        const hashtagMatches = postingComment.match(/#([a-zA-Z\u0400-\u04FF][a-zA-Z\u0400-\u04FF0-9_]*)/g);
-                        if (hashtagMatches) {
-                            hashtagMatches.forEach(match => {
-                                this.tags.add(match.substring(1));
                             });
                         }
                     }
@@ -372,7 +405,7 @@ export class ProjectCache implements IProjectCache {
     }
 }
 
-const workspaceCache = new WorkspaceCache();
+const workspaceCache = new WorkspaceCache(); // Available for future workspace-level caching features
 const projectCache = new ProjectCache();
 
 export function getConfig(document: vscode.TextDocument): IHLedgerConfig {
@@ -581,9 +614,8 @@ export class DateCompletionProvider implements vscode.CompletionItemProvider {
                 return null;
             };
             
-            // Get config for last used date
-            const config = getConfig(document);
-            const lastDate = config.getLastDate();
+            // Find the most recent date before current position
+            const lastTransactionDate = this.findLastTransactionDate(document, position);
             
             // Today's date
             const today = new Date();
@@ -594,9 +626,9 @@ export class DateCompletionProvider implements vscode.CompletionItemProvider {
             yesterday.setDate(yesterday.getDate() - 1);
             const yesterdayStr = yesterday.toISOString().split('T')[0];
             
-            // Add last used date first (if available and different from today)
-            if (lastDate && lastDate !== todayStr) {
-                const item = createDateItem(lastDate, 'Last used date', '0');
+            // Add last transaction date first (if available and different from today)
+            if (lastTransactionDate && lastTransactionDate !== todayStr) {
+                const item = createDateItem(lastTransactionDate, 'Last transaction date', '0');
                 if (item) suggestions.push(item);
             }
             
@@ -604,16 +636,54 @@ export class DateCompletionProvider implements vscode.CompletionItemProvider {
             const todayItem = createDateItem(todayStr, 'Today\'s date', '1');
             if (todayItem) suggestions.push(todayItem);
             
-            // Add yesterday's date (if different from last used)
-            if (yesterdayStr !== lastDate) {
+            // Add yesterday's date (if different from last transaction)
+            if (yesterdayStr !== lastTransactionDate) {
                 const yesterdayItem = createDateItem(yesterdayStr, 'Yesterday\'s date', '2');
                 if (yesterdayItem) suggestions.push(yesterdayItem);
             }
+            
+            // Add all previous dates from document
+            const allDates = this.getAllPreviousDates(document, position);
+            allDates.forEach((date, index) => {
+                if (date !== lastTransactionDate && date !== todayStr && date !== yesterdayStr) {
+                    const item = createDateItem(date, 'Previous date', '3_' + index.toString().padStart(3, '0'));
+                    if (item) suggestions.push(item);
+                }
+            });
             
             return suggestions;
         }
         
         return undefined;
+    }
+    
+    private findLastTransactionDate(document: vscode.TextDocument, position: vscode.Position): string | null {
+        // Search backwards from current position to find the most recent transaction date
+        for (let i = position.line - 1; i >= 0; i--) {
+            const line = document.lineAt(i);
+            const dateMatch = line.text.trim().match(/^(\d{4}[-/.]\d{1,2}[-/.]\d{1,2}|\d{1,2}[-/.]\d{1,2})/);
+            if (dateMatch) {
+                return dateMatch[1];
+            }
+        }
+        return null;
+    }
+    
+    private getAllPreviousDates(document: vscode.TextDocument, position: vscode.Position): string[] {
+        const dates: string[] = [];
+        const seenDates = new Set<string>();
+        
+        // Search all lines before current position
+        for (let i = position.line - 1; i >= 0; i--) {
+            const line = document.lineAt(i);
+            const dateMatch = line.text.trim().match(/^(\d{4}[-/.]\d{1,2}[-/.]\d{1,2}|\d{1,2}[-/.]\d{1,2})/);
+            if (dateMatch && !seenDates.has(dateMatch[1])) {
+                dates.push(dateMatch[1]);
+                seenDates.add(dateMatch[1]);
+            }
+        }
+        
+        return dates;
     }
 }
 
@@ -638,25 +708,27 @@ export class PayeeCompletionProvider implements vscode.CompletionItemProvider {
             const transactionMatch = linePrefix.match(/^(\d{4}[-/.]\d{1,2}[-/.]\d{1,2}|\d{1,2}[-/.]\d{1,2})\s*(\*|!)?\s*(\([^)]+\))?\s*(.*)$/);
             const typedText = transactionMatch ? transactionMatch[4] : '';
             
-            const suggestions = payees
-                .filter(payee => payee.toLowerCase().startsWith(typedText.toLowerCase()))
-                .map(payee => {
-                    const item = new vscode.CompletionItem(payee, vscode.CompletionItemKind.Value);
-                    item.detail = 'Payee/Store';
-                    item.sortText = payee;
-                    
-                    if (typedText) {
-                        const range = new vscode.Range(
-                            position.line,
-                            position.character - typedText.length,
-                            position.line,
-                            position.character
-                        );
-                        item.range = range;
-                    }
-                    
-                    return item;
-                });
+            // Use fuzzy matching for payees
+            const fuzzyMatches = fuzzyMatch(typedText, payees);
+            
+            const suggestions = fuzzyMatches.map((match, index) => {
+                const item = new vscode.CompletionItem(match.item, vscode.CompletionItemKind.Value);
+                item.detail = 'Payee/Store';
+                // Use fuzzy score for sorting, with index as tie-breaker
+                item.sortText = (1000 - match.score).toString().padStart(4, '0') + '_' + index.toString().padStart(3, '0');
+                
+                if (typedText) {
+                    const range = new vscode.Range(
+                        position.line,
+                        position.character - typedText.length,
+                        position.line,
+                        position.character
+                    );
+                    item.range = range;
+                }
+                
+                return item;
+            });
             
             return suggestions;
         }
@@ -683,37 +755,34 @@ export class TagCompletionProvider implements vscode.CompletionItemProvider {
                 return undefined;
             }
             
-            // Determine if we're in tag:value or #tag format
-            const isHashTag = linePrefix.includes('#');
+            // Look for tag:value format
             const tagMatch = linePrefix.match(/([a-zA-Z\u0400-\u04FF][a-zA-Z\u0400-\u04FF0-9_]*)(:?)$/);
             const typedText = tagMatch ? tagMatch[1] : '';
             
-            const suggestions = tags
-                .filter(tag => tag.toLowerCase().startsWith(typedText.toLowerCase()))
-                .map(tag => {
-                    const item = new vscode.CompletionItem(tag, vscode.CompletionItemKind.Keyword);
-                    item.detail = 'Tag/Category';
-                    item.sortText = tag;
-                    
-                    // Set insert text based on context
-                    if (isHashTag) {
-                        item.insertText = tag;
-                    } else {
-                        item.insertText = tag + ':';
-                    }
-                    
-                    if (typedText) {
-                        const range = new vscode.Range(
-                            position.line,
-                            position.character - typedText.length,
-                            position.line,
-                            position.character
-                        );
-                        item.range = range;
-                    }
-                    
-                    return item;
-                });
+            // Use fuzzy matching for tags
+            const fuzzyMatches = fuzzyMatch(typedText, tags);
+            
+            const suggestions = fuzzyMatches.map((match, index) => {
+                const item = new vscode.CompletionItem(match.item, vscode.CompletionItemKind.Keyword);
+                item.detail = 'Tag/Category';
+                // Use fuzzy score for sorting, with index as tie-breaker
+                item.sortText = (1000 - match.score).toString().padStart(4, '0') + '_' + index.toString().padStart(3, '0');
+                
+                // Set insert text for tag:value format
+                item.insertText = match.item + ':';
+                
+                if (typedText) {
+                    const range = new vscode.Range(
+                        position.line,
+                        position.character - typedText.length,
+                        position.line,
+                        position.character
+                    );
+                    item.range = range;
+                }
+                
+                return item;
+            });
             
             return suggestions;
         }
@@ -730,8 +799,10 @@ export function activate(context: vscode.ExtensionContext): void {
     const config = vscode.workspace.getConfiguration('hledger');
     const autoCompletionEnabled = config.get<boolean>('autoCompletion.enabled', true);
     
-    // Define trigger characters based on setting
-    const triggerChars = autoCompletionEnabled ? [' ', ':', '/', '-', '.', '#', ';'] : [];
+    // Define trigger characters based on setting - include letters and numbers for auto-trigger
+    const baseTriggerChars = [' ', ':', '/', '-', '.', ';'];
+    const autoTriggerChars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789абвгдеёжзийклмнопрстуфхцчшщъыьэюяАБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ'.split('');
+    const triggerChars = autoCompletionEnabled ? [...baseTriggerChars, ...autoTriggerChars] : [];
 
     const keywordProvider = vscode.languages.registerCompletionItemProvider(
         'hledger',
