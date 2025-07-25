@@ -211,7 +211,7 @@ export class HLedgerConfig implements IHLedgerConfig {
             if (/^\s+/.test(line)) { // Check that line starts with spaces
                 // Parse posting line: ACCOUNT [AMOUNT] [@ PRICE] [= BALANCE_ASSERTION] [; COMMENT]
                 // Support cost/price notation: @ unit_price, @@ total_price
-                // Support balance assertions: = expected_balance, == strict_balance
+                // Support balance assertions: = single commodity balance, == sole commodity balance
                 const postingMatch = line.match(/^\s+([A-Za-z\u0400-\u04FF][A-Za-z\u0400-\u04FF0-9:_\-\s]*?)(?:\s{2,}([^@=;]+))?(?:\s*@@?\s*[^=;]+)?(?:\s*==?\s*[^;]+)?(?:\s*;(.*))?$/);
                 if (postingMatch) {
                     const account = postingMatch[1].trim();

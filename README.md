@@ -22,7 +22,7 @@ Full-featured Visual Studio Code extension providing comprehensive syntax highli
   - All date formats (YYYY-MM-DD, YYYY/MM/DD, YYYY.MM.DD with . / - separators)
   - Payee|note format in transactions
   - Cost/price notation (@ unit cost, @@ total cost)
-  - Balance assertions (= soft, == strict)
+  - Balance assertions (= single commodity, == sole commodity)
   - Posting date tags (`date:YYYY-MM-DD`)
 - **Multi-language Support**: Full support for Cyrillic and other Unicode characters in account names and tags
 - **Smart Indentation**: Automatic indentation for transactions and postings
