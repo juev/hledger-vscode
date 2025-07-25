@@ -356,7 +356,7 @@ export class ProjectCache implements IProjectCache {
     }
 }
 
-const workspaceCache = new WorkspaceCache();
+const workspaceCache = new WorkspaceCache(); // Available for future workspace-level caching features
 const projectCache = new ProjectCache();
 
 export function getConfig(document: vscode.TextDocument): IHLedgerConfig {

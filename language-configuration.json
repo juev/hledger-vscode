@@ -32,13 +32,25 @@
   },
   "onEnterRules": [
     {
-      "beforeText": "^(\\d{4}[-/]\\d{1,2}[-/]\\d{1,2}|\\d{1,2}[-/]\\d{1,2})\\s*(\\*|!)?\\s*(\\([^)]+\\))?\\s*.*$",
+      "beforeText": "^(\\d{4}[-/.]\\d{1,2}[-/.]\\d{1,2}|\\d{1,2}[-/.]\\d{1,2})\\s*(\\*|!)?\\s*(\\([^)]+\\))?\\s*.*\\S.*$",
       "action": {
         "indent": "indent"
       }
     },
     {
-      "beforeText": "^\\s+.*$",
+      "beforeText": "^\\s+[^\\s].*$",
+      "action": {
+        "indent": "indent"
+      }
+    },
+    {
+      "beforeText": "^\\s*$",
+      "action": {
+        "indent": "none"
+      }
+    },
+    {
+      "beforeText": ".*",
       "action": {
         "indent": "none"
       }
