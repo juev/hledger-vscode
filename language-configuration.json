@@ -27,22 +27,15 @@
   },
   "onEnterRules": [
     {
-      "beforeText": "^(\\d{4}[-/.]\\d{1,2}[-/.]\\d{1,2}|\\d{1,2}[-/.]\\d{1,2})\\s*(\\*|!)?\\s*(\\([^)]+\\))?\\s*.*\\S.*$",
+      "beforeText": "^\\s*$",
       "action": {
-        "indent": "indent"
+        "indent": "none"
       }
     },
     {
-      "beforeText": "^\\s+\\S.*$",
+      "beforeText": "^(\\d{4}[-/.]\\d{1,2}[-/.]\\d{1,2}|\\d{1,2}[-/.]\\d{1,2})\\s*(\\*|!)?\\s*(\\([^)]+\\))?\\s*\\S+.*$",
       "action": {
         "indent": "indent"
-      }
-    },
-    {
-      "beforeText": ".*",
-      "action": {
-        "indent": "none",
-        "removeText": 1000
       }
     }
   ],
