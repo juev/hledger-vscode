@@ -127,6 +127,30 @@ You can control auto-completion behavior:
 - **When disabled**: Use Ctrl+Space to manually trigger completion
 - **Trigger characters**: `[' ', ':', '/', '-', '.', '#', ';']`
 
+### Color Customization
+
+You can customize syntax highlighting colors through VS Code settings. The extension provides the following color settings:
+
+- `hledger.colors.date` - Color for dates in transactions (default: `#00D7FF`)
+- `hledger.colors.account` - Color for account names (default: `#FFD700`)
+- `hledger.colors.amount` - Color for numeric amounts (default: `#228B22`)
+- `hledger.colors.commodity` - Color for currency/commodity symbols (default: `#FF6B6B`)
+- `hledger.colors.payee` - Color for payee/description (default: `#D2691E`)
+- `hledger.colors.comment` - Color for comments (default: `#87CEEB`)
+- `hledger.colors.tag` - Color for tags in comments (default: `#DA70D6`)
+- `hledger.colors.directive` - Color for hledger directives (default: `#DA70D6`)
+- `hledger.colors.accountDefined` - Color for explicitly defined accounts (default: `#9CDCFE`)
+- `hledger.colors.accountVirtual` - Color for virtual accounts (default: `#A0A0A0`)
+
+**Example**: To change the date color to red, add this to your VS Code settings:
+```json
+{
+    "hledger.colors.date": "#FF0000"
+}
+```
+
+Colors update immediately when changed in settings.
+
 ## Documentation
 
 This extension follows the official [hledger manual (1.43)](https://hledger.org/1.43/hledger.html) specification. For complete hledger syntax and usage information, please refer to the official documentation.

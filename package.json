@@ -119,6 +119,56 @@
           "type": "boolean",
           "default": true,
           "description": "Automatically enable semantic highlighting when extension activates for enhanced syntax coloring"
+        },
+        "hledger.colors.date": {
+          "type": "string",
+          "default": "#00D7FF",
+          "description": "Color for dates in hledger transactions"
+        },
+        "hledger.colors.account": {
+          "type": "string", 
+          "default": "#FFD700",
+          "description": "Color for account names"
+        },
+        "hledger.colors.amount": {
+          "type": "string",
+          "default": "#228B22", 
+          "description": "Color for numeric amounts"
+        },
+        "hledger.colors.commodity": {
+          "type": "string",
+          "default": "#FF6B6B",
+          "description": "Color for currency and commodity symbols"
+        },
+        "hledger.colors.payee": {
+          "type": "string",
+          "default": "#D2691E",
+          "description": "Color for payee/description in transactions"
+        },
+        "hledger.colors.comment": {
+          "type": "string",
+          "default": "#87CEEB",
+          "description": "Color for comments"
+        },
+        "hledger.colors.tag": {
+          "type": "string",
+          "default": "#DA70D6",
+          "description": "Color for tags in comments"
+        },
+        "hledger.colors.directive": {
+          "type": "string",
+          "default": "#DA70D6",
+          "description": "Color for hledger directives"
+        },
+        "hledger.colors.accountDefined": {
+          "type": "string",
+          "default": "#9CDCFE",
+          "description": "Color for explicitly defined accounts"
+        },
+        "hledger.colors.accountVirtual": {
+          "type": "string",
+          "default": "#A0A0A0",
+          "description": "Color for virtual accounts in brackets/parentheses"
         }
       }
     },

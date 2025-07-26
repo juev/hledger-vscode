@@ -867,6 +867,131 @@ export class TagCompletionProvider implements vscode.CompletionItemProvider {
     }
 }
 
+// Function to apply custom color settings
+async function applyCustomColors(): Promise<void> {
+    try {
+        const hledgerConfig = vscode.workspace.getConfiguration('hledger.colors');
+        const editorConfig = vscode.workspace.getConfiguration('editor');
+        
+        // Get custom colors from settings
+        const dateColor = hledgerConfig.get<string>('date', '#00D7FF');
+        const accountColor = hledgerConfig.get<string>('account', '#FFD700');
+        const amountColor = hledgerConfig.get<string>('amount', '#228B22');
+        const commodityColor = hledgerConfig.get<string>('commodity', '#FF6B6B');
+        const payeeColor = hledgerConfig.get<string>('payee', '#D2691E');
+        const commentColor = hledgerConfig.get<string>('comment', '#87CEEB');
+        const tagColor = hledgerConfig.get<string>('tag', '#DA70D6');
+        const directiveColor = hledgerConfig.get<string>('directive', '#DA70D6');
+        const accountDefinedColor = hledgerConfig.get<string>('accountDefined', '#9CDCFE');
+        const accountVirtualColor = hledgerConfig.get<string>('accountVirtual', '#A0A0A0');
+        
+        // Apply semantic token color customizations
+        const semanticColors = {
+            "[*]": {
+                "enabled": true,
+                "rules": {
+                    "hledger.date": {
+                        "foreground": dateColor,
+                        "bold": true
+                    },
+                    "hledger.account": accountColor,
+                    "hledger.amount": {
+                        "foreground": amountColor,
+                        "bold": true
+                    },
+                    "hledger.commodity": {
+                        "foreground": commodityColor,
+                        "bold": true
+                    },
+                    "hledger.payee": payeeColor,
+                    "hledger.comment": commentColor,
+                    "hledger.tag": {
+                        "foreground": tagColor,
+                        "bold": true
+                    },
+                    "hledger.directive": {
+                        "foreground": directiveColor,
+                        "bold": true
+                    },
+                    "hledger.account.defined": accountDefinedColor,
+                    "hledger.account.virtual": accountVirtualColor
+                }
+            }
+        };
+        
+        // Apply TextMate rules for themes that don't support semantic tokens
+        const textMateRules = [
+            {
+                "scope": "hledger.date",
+                "settings": { 
+                    "foreground": dateColor,
+                    "fontStyle": "bold"
+                }
+            },
+            {
+                "scope": "hledger.account",
+                "settings": { 
+                    "foreground": accountColor,
+                    "fontStyle": ""
+                }
+            },
+            {
+                "scope": "hledger.amount",
+                "settings": { 
+                    "foreground": amountColor,
+                    "fontStyle": "bold"
+                }
+            },
+            {
+                "scope": "hledger.commodity",
+                "settings": { 
+                    "foreground": commodityColor,
+                    "fontStyle": "bold"
+                }
+            },
+            {
+                "scope": "hledger.payee",
+                "settings": { 
+                    "foreground": payeeColor,
+                    "fontStyle": ""
+                }
+            },
+            {
+                "scope": "hledger.comment",
+                "settings": { 
+                    "foreground": commentColor,
+                    "fontStyle": ""
+                }
+            },
+            {
+                "scope": "hledger.tag",
+                "settings": { 
+                    "foreground": tagColor,
+                    "fontStyle": "bold"
+                }
+            }
+        ];
+        
+        // Update semantic token colors
+        await editorConfig.update('semanticTokenColorCustomizations', semanticColors, vscode.ConfigurationTarget.Global);
+        
+        // Update TextMate rules
+        const currentTextMateCustomizations = editorConfig.get('tokenColorCustomizations') || {};
+        const updatedTextMateCustomizations = {
+            ...currentTextMateCustomizations,
+            "[*]": {
+                ...((currentTextMateCustomizations as any)["[*]"] || {}),
+                "textMateRules": textMateRules
+            }
+        };
+        await editorConfig.update('tokenColorCustomizations', updatedTextMateCustomizations, vscode.ConfigurationTarget.Global);
+        
+        console.log('HLedger: Applied custom color settings');
+    } catch (error) {
+        console.warn('HLedger: Could not apply custom colors:', error);
+    }
+}
+
 // Function to automatically enable semantic highlighting
 async function ensureSemanticHighlightingEnabled(): Promise<void> {
     try {
@@ -917,6 +1042,9 @@ export function activate(context: vscode.ExtensionContext): void {
 
     // Automatically enable semantic highlighting for better hledger experience
     ensureSemanticHighlightingEnabled();
+    
+    // Apply custom color settings
+    applyCustomColors();
 
     // Get auto completion setting
     const config = vscode.workspace.getConfiguration('hledger');
@@ -975,6 +1103,11 @@ export function activate(context: vscode.ExtensionContext): void {
         if (event.affectsConfiguration('hledger.autoCompletion.enabled')) {
             // Restart extension to apply new settings
             vscode.commands.executeCommand('workbench.action.reloadWindow');
+        }
+        
+        // Apply color changes immediately
+        if (event.affectsConfiguration('hledger.colors')) {
+            applyCustomColors();
         }
     });
 
