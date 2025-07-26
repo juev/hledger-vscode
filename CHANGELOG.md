@@ -1,5 +1,18 @@
 # Change Log
 
+## [0.1.5] - 2025-07-26
+
+### Added
+- feat: add color customization
+- feat: add CHANGELOG.md
+- feat: update CHANGELOG.md
+- feat: change color theme
+- feat: auto-enable semanticHighlighting
+
+### Fixed
+- fix: add missing class mock
+
+
 All notable changes to the "hledger" extension will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
