@@ -45,6 +45,25 @@ jobs:
     - name: Update package.json version
       run: |
         npm version ${{ steps.extract_version.outputs.version }} --no-git-tag-version --allow-same-version
+
+    - name: Update CHANGELOG.md
+      run: |
+        chmod +x .github/scripts/update-changelog.js
+        node .github/scripts/update-changelog.js
+      env:
+        GITHUB_REF_NAME: ${{ github.ref_name }}
+
+    - name: Commit CHANGELOG.md
+      run: |
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+        git add CHANGELOG.md
+        if git diff --staged --quiet; then
+          echo "No changes to CHANGELOG.md"
+        else
+          git commit -m "chore: update CHANGELOG.md for v${{ steps.extract_version.outputs.version }}"
+          git push origin HEAD:main
+        fi
     
     - name: Package extension
       run: npx vsce package
