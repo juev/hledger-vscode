@@ -492,7 +492,8 @@ export class AccountCompletionProvider implements vscode.CompletionItemProvider 
     ): vscode.ProviderResult<vscode.CompletionItem[]> {
         const linePrefix = document.lineAt(position).text.substring(0, position.character);
         
-        if (linePrefix.match(/^\s+\S*/)) {
+        // Only provide account completions if there's no amount in the line yet
+        if (linePrefix.match(/^\s+\S*/) && !linePrefix.match(/\s+[-+]?\d+([.,]\d+)*\s*\S*$/)) {
             const config = getConfig(document);
             const definedAccounts = config.getDefinedAccounts();
             const usedAccounts = config.getUsedAccounts();
