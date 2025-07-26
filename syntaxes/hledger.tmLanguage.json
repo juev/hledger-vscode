@@ -56,7 +56,7 @@
               "name": "keyword.control"
             },
             "2": {
-              "name": "entity.name.type.commodity"
+              "name": "hledger.commodity"
             }
           }
         },
@@ -80,7 +80,7 @@
               "name": "keyword.control"
             },
             "2": {
-              "name": "entity.name.function"
+              "name": "hledger.payee"
             },
             "3": {
               "name": "comment.line"
@@ -95,10 +95,10 @@
               "name": "keyword.control"
             },
             "2": {
-              "name": "entity.name.function"
+              "name": "hledger.payee"
             },
             "3": {
-              "name": "entity.name.function"
+              "name": "hledger.payee"
             }
           }
         },
@@ -110,7 +110,7 @@
               "name": "keyword.control"
             },
             "2": {
-              "name": "entity.name.type.commodity"
+              "name": "hledger.commodity"
             }
           }
         }
@@ -123,10 +123,10 @@
           "begin": "^(\\d{4}[-/.]\\d{1,2}[-/.]\\d{1,2})((?:=\\d{4}[-/.]\\d{1,2}[-/.]\\d{1,2})?)\\s*(\\*|!)?\\s*(\\([^)]+\\))?\\s*([^;]*?)(;.*)?$",
           "beginCaptures": {
             "1": {
-              "name": "constant.numeric"
+              "name": "hledger.amount"
             },
             "2": {
-              "name": "constant.numeric"
+              "name": "hledger.amount"
             },
             "3": {
               "name": "keyword.operator"
@@ -141,7 +141,7 @@
                   "match": "([^|]+?)\\s*\\|\\s*(.*)",
                   "captures": {
                     "1": {
-                      "name": "entity.name.function"
+                      "name": "hledger.payee"
                     },
                     "2": {
                       "name": "string.unquoted"
@@ -149,7 +149,7 @@
                   }
                 },
                 {
-                  "name": "entity.name.function",
+                  "name": "hledger.payee",
                   "match": ".*"
                 }
               ]
@@ -177,10 +177,10 @@
           "begin": "^(\\d{1,2}[-/.]\\d{1,2})((?:=\\d{1,2}[-/.]\\d{1,2})?)\\s*(\\*|!)?\\s*(\\([^)]+\\))?\\s*([^;]*?)(;.*)?$",
           "beginCaptures": {
             "1": {
-              "name": "constant.numeric"
+              "name": "hledger.amount"
             },
             "2": {
-              "name": "constant.numeric"
+              "name": "hledger.amount"
             },
             "3": {
               "name": "keyword.operator"
@@ -195,7 +195,7 @@
                   "match": "([^|]+?)\\s*\\|\\s*(.*)",
                   "captures": {
                     "1": {
-                      "name": "entity.name.function"
+                      "name": "hledger.payee"
                     },
                     "2": {
                       "name": "string.unquoted"
@@ -203,7 +203,7 @@
                   }
                 },
                 {
-                  "name": "entity.name.function",
+                  "name": "hledger.payee",
                   "match": ".*"
                 }
               ]
@@ -288,13 +288,13 @@
     "amount": {
       "patterns": [
         {
-          "name": "constant.numeric.amount.quoted-commodity.hledger",
+          "name": "hledger.amount.amount.quoted-commodity.hledger",
           "match": "[-+]?\\d+([.,]\\d+)*\\s*\"[^\"]+\"",
           "captures": {
             "0": {
               "patterns": [
                 {
-                  "name": "constant.numeric",
+                  "name": "hledger.amount",
                   "match": "[-+]?\\d+([.,]\\d+)*"
                 },
                 {
@@ -306,7 +306,7 @@
           }
         },
         {
-          "name": "constant.numeric.amount.quoted-commodity-prefix.hledger",
+          "name": "hledger.amount.amount.quoted-commodity-prefix.hledger",
           "match": "\"[^\"]+\"\\s*[-+]?\\d+([.,]\\d+)*",
           "captures": {
             "0": {
@@ -316,7 +316,7 @@
                   "match": "\"[^\"]+\""
                 },
                 {
-                  "name": "constant.numeric",
+                  "name": "hledger.amount",
                   "match": "[-+]?\\d+([.,]\\d+)*"
                 }
               ]
@@ -324,17 +324,17 @@
           }
         },
         {
-          "name": "constant.numeric.amount.hledger",
+          "name": "hledger.amount.amount.hledger",
           "match": "[-+]?\\d+([.,]\\d+)*\\s*[A-Za-z0-9$£€¥₹₽₿₩₪₨₦₡₵₺₴₼₢₸₷₶₹₵₫₪₨₽]+",
           "captures": {
             "0": {
               "patterns": [
                 {
-                  "name": "constant.numeric",
+                  "name": "hledger.amount",
                   "match": "[-+]?\\d+([.,]\\d+)*"
                 },
                 {
-                  "name": "entity.name.type.commodity",
+                  "name": "hledger.commodity",
                   "match": "[A-Za-z0-9$£€¥₹₽₿₩₪₨₦₡₵₺₴₼₢₸₷₶₹₵₫₪₨₽]+"
                 }
               ]
@@ -342,17 +342,17 @@
           }
         },
         {
-          "name": "constant.numeric.amount.hledger",
+          "name": "hledger.amount.amount.hledger",
           "match": "[A-Za-z0-9$£€¥₹₽₿₩₪₨₦₡₵₺₴₼₢₸₷₶₹₵₫₪₨₽]+\\s*[-+]?\\d+([.,]\\d+)*",
           "captures": {
             "0": {
               "patterns": [
                 {
-                  "name": "entity.name.type.commodity",
+                  "name": "hledger.commodity",
                   "match": "[A-Za-z0-9$£€¥₹₽₿₩₪₨₦₡₵₺₴₼₢₸₷₶₹₵₫₪₨₽]+"
                 },
                 {
-                  "name": "constant.numeric",
+                  "name": "hledger.amount",
                   "match": "[-+]?\\d+([.,]\\d+)*"
                 }
               ]
@@ -360,11 +360,11 @@
           }
         },
         {
-          "name": "constant.numeric.amount-no-commodity.hledger",
+          "name": "hledger.amount.amount-no-commodity.hledger",
           "match": "(?<!\\w)[-+]?\\d+([.,]\\d+)*(?!\\s*[A-Za-z0-9$£€¥₹₽₿₩₪₨₦₡₵₺₴₼₢₸₷₶₹₵₫₪₨₽])(?=\\s|$|;|=)",
           "captures": {
             "0": {
-              "name": "constant.numeric.hledger"
+              "name": "hledger.amount.hledger"
             }
           }
         }
@@ -400,7 +400,7 @@
                   "match": "=={0,1}"
                 },
                 {
-                  "name": "constant.numeric",
+                  "name": "hledger.amount",
                   "match": "[-+]?\\d+([.,]\\d+)*"
                 }
               ]
@@ -448,7 +448,7 @@
           "match": "^\\s+(\\([^)]+\\)|\\[[^\\]]+\\])(?:\\s+(.*?))?(?:\\s+(=={1,2}|@{1,2}))?(?:\\s*;(.*))?$",
           "captures": {
             "1": {
-              "name": "entity.name.function.virtual.hledger"
+              "name": "hledger.payee.virtual.hledger"
             },
             "2": {
               "patterns": [
@@ -531,7 +531,7 @@
           "match": "\\b(Expenses|Расходы|Expense)\\b.*"
         },
         {
-          "name": "entity.name.function",
+          "name": "hledger.account",
           "match": ".*"
         }
       ]
@@ -549,7 +549,7 @@
                   "match": "([a-zA-Z\\u0400-\\u04FF][a-zA-Z\\u0400-\\u04FF0-9_]*)(:)([^\\s,;]+)",
                   "captures": {
                     "1": {
-                      "name": "variable.other"
+                      "name": "hledger.tag"
                     },
                     "2": {
                       "name": "punctuation.separator"
@@ -564,13 +564,13 @@
                   "match": "\\b(date)(:)(\\d{4}[-/.]\\d{1,2}[-/.]\\d{1,2}|\\d{1,2}[-/.]\\d{1,2})",
                   "captures": {
                     "1": {
-                      "name": "variable.other"
+                      "name": "hledger.tag"
                     },
                     "2": {
                       "name": "punctuation.separator"
                     },
                     "3": {
-                      "name": "constant.numeric"
+                      "name": "hledger.amount"
                     }
                   }
                 }

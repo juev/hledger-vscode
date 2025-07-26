@@ -51,6 +51,62 @@
         "path": "./syntaxes/hledger.tmLanguage.json"
       }
     ],
+    "semanticTokenTypes": [
+      {
+        "id": "hledger.date",
+        "superType": "string", 
+        "description": "Date in hledger transactions"
+      },
+      {
+        "id": "hledger.account",
+        "superType": "namespace",
+        "description": "Account names in hledger"
+      },
+      {
+        "id": "hledger.amount", 
+        "superType": "number",
+        "description": "Numeric amounts in hledger"
+      },
+      {
+        "id": "hledger.commodity",
+        "superType": "type",
+        "description": "Currency and commodity symbols"
+      },
+      {
+        "id": "hledger.payee",
+        "superType": "string",
+        "description": "Payee/description in transactions"
+      },
+      {
+        "id": "hledger.comment",
+        "superType": "comment",
+        "description": "Comments in hledger files"
+      },
+      {
+        "id": "hledger.tag",
+        "superType": "keyword",
+        "description": "Tags in hledger comments"
+      },
+      {
+        "id": "hledger.directive",
+        "superType": "keyword",
+        "description": "HLedger directives"
+      }
+    ],
+    "semanticTokenModifiers": [
+      {
+        "id": "defined",
+        "description": "Explicitly defined accounts/commodities"
+      },
+      {
+        "id": "used", 
+        "description": "Used but not explicitly defined"
+      },
+      {
+        "id": "virtual",
+        "description": "Virtual accounts in brackets/parentheses"
+      }
+    ],
     "configuration": {
       "title": "HLedger",
       "properties": {
@@ -58,6 +114,11 @@
           "type": "boolean",
           "default": true,
           "description": "Enable automatic completion without keyboard shortcuts (Ctrl+Space)"
+        },
+        "hledger.semanticHighlighting.autoEnable": {
+          "type": "boolean",
+          "default": true,
+          "description": "Automatically enable semantic highlighting when extension activates for enhanced syntax coloring"
         }
       }
     },
@@ -67,6 +128,61 @@
         "*.hledger": "hledger",
         "*.ledger": "hledger",
         "journal": "hledger"
+      },
+      "editor.semanticHighlighting.enabled": true,
+      "[hledger]": {
+        "editor.semanticHighlighting.enabled": true
+      },
+      "editor.tokenColorCustomizations": {
+        "[*]": {
+          "textMateRules": [
+            {
+              "scope": "hledger.date",
+              "settings": { "foreground": "#4EC9B0" }
+            },
+            {
+              "scope": "hledger.account",
+              "settings": { "foreground": "#DCDCAA" }
+            },
+            {
+              "scope": "hledger.amount",
+              "settings": { "foreground": "#B5CEA8" }
+            },
+            {
+              "scope": "hledger.commodity",
+              "settings": { "foreground": "#569CD6" }
+            },
+            {
+              "scope": "hledger.payee",
+              "settings": { "foreground": "#CE9178" }
+            },
+            {
+              "scope": "hledger.comment",
+              "settings": { "foreground": "#6A9955" }
+            },
+            {
+              "scope": "hledger.tag",
+              "settings": { "foreground": "#C586C0" }
+            }
+          ]
+        }
+      },
+      "editor.semanticTokenColorCustomizations": {
+        "[*]": {
+          "enabled": true,
+          "rules": {
+            "hledger.date": "#4EC9B0",
+            "hledger.account": "#DCDCAA", 
+            "hledger.amount": "#B5CEA8",
+            "hledger.commodity": "#569CD6",
+            "hledger.payee": "#CE9178",
+            "hledger.comment": "#6A9955",
+            "hledger.tag": "#C586C0",
+            "hledger.directive": "#C586C0",
+            "hledger.account.defined": "#9CDCFE",
+            "hledger.account.virtual": "#808080"
+          }
+        }
       }
     }
   },

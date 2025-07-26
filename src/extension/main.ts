@@ -9,6 +9,7 @@ import {
     DEFAULT_ACCOUNT_PREFIXES, 
     DEFAULT_COMMODITIES 
 } from './types';
+import { HLedgerSemanticTokensProvider } from './semanticTokenProvider';
 
 // Fuzzy matching score interface
 interface FuzzyMatch {
@@ -866,9 +867,56 @@ export class TagCompletionProvider implements vscode.CompletionItemProvider {
     }
 }
 
+// Function to automatically enable semantic highlighting
+async function ensureSemanticHighlightingEnabled(): Promise<void> {
+    try {
+        // Check if auto-enable is enabled in hledger settings
+        const hledgerConfig = vscode.workspace.getConfiguration('hledger');
+        const autoEnableEnabled = hledgerConfig.get<boolean>('semanticHighlighting.autoEnable', true);
+        
+        if (!autoEnableEnabled) {
+            console.log('HLedger: Auto-enable semantic highlighting is disabled in settings');
+            return;
+        }
+
+        const config = vscode.workspace.getConfiguration('editor');
+        const currentSetting = config.get<boolean>('semanticHighlighting.enabled');
+        
+        // If semantic highlighting is not explicitly enabled, enable it
+        if (currentSetting !== true) {
+            await config.update('semanticHighlighting.enabled', true, vscode.ConfigurationTarget.Global);
+            console.log('HLedger: Enabled semantic highlighting for better syntax coloring');
+            
+            // Show info message to user
+            vscode.window.showInformationMessage(
+                'HLedger: Enabled semantic highlighting for enhanced syntax coloring. You can disable this in extension settings.',
+                'Learn More', 'Disable Auto-Enable'
+            ).then(selection => {
+                if (selection === 'Learn More') {
+                    vscode.env.openExternal(vscode.Uri.parse('https://code.visualstudio.com/api/language-extensions/semantic-highlight-guide'));
+                } else if (selection === 'Disable Auto-Enable') {
+                    hledgerConfig.update('semanticHighlighting.autoEnable', false, vscode.ConfigurationTarget.Global);
+                }
+            });
+        }
+        
+        // Also ensure it's enabled specifically for hledger files
+        const hledgerLangConfig = vscode.workspace.getConfiguration('[hledger]');
+        const hledgerSetting = hledgerLangConfig.get<boolean>('editor.semanticHighlighting.enabled');
+        if (hledgerSetting !== true) {
+            await hledgerLangConfig.update('editor.semanticHighlighting.enabled', true, vscode.ConfigurationTarget.Global);
+        }
+    } catch (error) {
+        console.warn('HLedger: Could not automatically enable semantic highlighting:', error);
+    }
+}
+
 export function activate(context: vscode.ExtensionContext): void {
     // No cache invalidation - caches are persistent for better performance
     console.log('HLedger extension activated with persistent caching');
+
+    // Automatically enable semantic highlighting for better hledger experience
+    ensureSemanticHighlightingEnabled();
 
     // Get auto completion setting
     const config = vscode.workspace.getConfiguration('hledger');
@@ -915,6 +963,13 @@ export function activate(context: vscode.ExtensionContext): void {
         ...triggerChars
     );
 
+    // Register semantic token provider
+    const semanticTokenProvider = vscode.languages.registerDocumentSemanticTokensProvider(
+        'hledger',
+        new HLedgerSemanticTokensProvider(),
+        HLedgerSemanticTokensProvider.getLegend()
+    );
+
     // Listen for configuration changes and re-register providers
     const configChangeDisposable = vscode.workspace.onDidChangeConfiguration(event => {
         if (event.affectsConfiguration('hledger.autoCompletion.enabled')) {
@@ -930,6 +985,7 @@ export function activate(context: vscode.ExtensionContext): void {
         dateProvider,
         payeeProvider,
         tagProvider,
+        semanticTokenProvider,
         configChangeDisposable
     );
 }
