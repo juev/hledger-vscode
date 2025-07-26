@@ -120,7 +120,7 @@
       "patterns": [
         {
           "name": "meta.transaction.full-date.hledger",
-          "begin": "^(\\d{4}[-/.]\\d{1,2}[-/.]\\d{1,2})((?:=\\d{4}[-/.]\\d{1,2}[-/.]\\d{1,2})?)\\s*(\\*|!)?\\s*(\\([^)]+\\))?\\s*(.*?)(?:\\s{2,}|\\t|$)(;.*)?$",
+          "begin": "^(\\d{4}[-/.]\\d{1,2}[-/.]\\d{1,2})((?:=\\d{4}[-/.]\\d{1,2}[-/.]\\d{1,2})?)\\s*(\\*|!)?\\s*(\\([^)]+\\))?\\s*([^;]*?)(;.*)?$",
           "beginCaptures": {
             "1": {
               "name": "constant.numeric"
@@ -138,7 +138,7 @@
               "patterns": [
                 {
                   "name": "meta.payee-note.hledger",
-                  "match": "([^|\\s](?:[^|]*)?)\\s*\\|\\s*(.*)",
+                  "match": "([^|]+?)\\s*\\|\\s*(.*)",
                   "captures": {
                     "1": {
                       "name": "entity.name.function"
@@ -174,7 +174,7 @@
         },
         {
           "name": "meta.transaction.short-date.hledger",
-          "begin": "^(\\d{1,2}[-/.]\\d{1,2})((?:=\\d{1,2}[-/.]\\d{1,2})?)\\s*(\\*|!)?\\s*(\\([^)]+\\))?\\s*(.*?)(?:\\s{2,}|\\t|$)(;.*)?$",
+          "begin": "^(\\d{1,2}[-/.]\\d{1,2})((?:=\\d{1,2}[-/.]\\d{1,2})?)\\s*(\\*|!)?\\s*(\\([^)]+\\))?\\s*([^;]*?)(;.*)?$",
           "beginCaptures": {
             "1": {
               "name": "constant.numeric"
@@ -192,7 +192,7 @@
               "patterns": [
                 {
                   "name": "meta.payee-note.hledger",
-                  "match": "([^|\\s](?:[^|]*)?)\\s*\\|\\s*(.*)",
+                  "match": "([^|]+?)\\s*\\|\\s*(.*)",
                   "captures": {
                     "1": {
                       "name": "entity.name.function"
@@ -512,23 +512,23 @@
       "patterns": [
         {
           "name": "support.class.asset",
-          "match": "\\b(Assets|Активы|Asset)\\b[^\\s]*"
+          "match": "\\b(Assets|Активы|Asset)\\b.*"
         },
         {
           "name": "support.class.liability", 
-          "match": "\\b(Liabilities|Пассивы|Liability)\\b[^\\s]*"
+          "match": "\\b(Liabilities|Пассивы|Liability)\\b.*"
         },
         {
           "name": "support.class.equity",
-          "match": "\\b(Equity|Собственные|Собственный)\\b[^\\s]*"
+          "match": "\\b(Equity|Собственные|Собственный)\\b.*"
         },
         {
           "name": "support.class.income",
-          "match": "\\b(Income|Revenue|Доходы|Доход)\\b[^\\s]*"
+          "match": "\\b(Income|Revenue|Доходы|Доход)\\b.*"
         },
         {
           "name": "support.class.expense",
-          "match": "\\b(Expenses|Расходы|Expense)\\b[^\\s]*"
+          "match": "\\b(Expenses|Расходы|Expense)\\b.*"
         },
         {
           "name": "entity.name.function",
