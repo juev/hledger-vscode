@@ -152,6 +152,16 @@ export const commands = {
     registerCommand: jest.fn(() => ({ dispose: jest.fn() }))
 };
 
+export class SemanticTokensLegend {
+    tokenTypes: readonly string[];
+    tokenModifiers: readonly string[];
+
+    constructor(tokenTypes: readonly string[], tokenModifiers: readonly string[] = []) {
+        this.tokenTypes = tokenTypes;
+        this.tokenModifiers = tokenModifiers;
+    }
+}
+
 export const Uri = {
     file: (path: string) => ({
         scheme: 'file',
