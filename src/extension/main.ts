@@ -132,18 +132,9 @@ export class HLedgerConfig implements IHLedgerConfig {
                 if (transactionMatch) {
                     const description = transactionMatch[4]?.trim();
                     if (description) {
-                        // Handle payee|note format as per hledger spec
-                        if (description.includes('|')) {
-                            const parts = description.split('|');
-                            const payee = parts[0].trim();
-                            if (payee) {
-                                this.payees.add(payee);
-                            }
-                            // Note part could be added to a notes set if needed
-                        } else {
-                            // Entire description is treated as payee
-                            this.payees.add(description);
-                        }
+                        // Store entire description as payee, including pipe characters
+                        // Do not split on | to support payees like "Store | Branch"
+                        this.payees.add(description);
                     }
                     
                     // Extract tags from comment
@@ -460,10 +451,32 @@ export class KeywordCompletionProvider implements vscode.CompletionItemProvider 
     ): vscode.ProviderResult<vscode.CompletionItem[]> {
         const linePrefix = document.lineAt(position).text.substring(0, position.character);
         
-        if (linePrefix.match(/^\s*$/)) {
-            return HLEDGER_KEYWORDS.map(keyword => {
-                const item = new vscode.CompletionItem(keyword, vscode.CompletionItemKind.Keyword);
+        // Extract what user has typed on the line
+        const typedText = linePrefix.trim();
+        
+        if (linePrefix.match(/^\s*\S*/)) {
+            // Use fuzzy matching for keywords
+            const fuzzyMatches = fuzzyMatch(typedText, [...HLEDGER_KEYWORDS]);
+            
+            if (fuzzyMatches.length === 0) {
+                return undefined;
+            }
+            
+            return fuzzyMatches.map((match, index) => {
+                const item = new vscode.CompletionItem(match.item, vscode.CompletionItemKind.Keyword);
                 item.detail = 'hledger directive';
+                item.sortText = (1000 - match.score).toString().padStart(4, '0') + '_' + index.toString().padStart(3, '0');
+                
+                if (typedText) {
+                    const range = new vscode.Range(
+                        position.line,
+                        position.character - typedText.length,
+                        position.line,
+                        position.character
+                    );
+                    item.range = range;
+                }
+                
                 return item;
             });
         }
@@ -488,21 +501,62 @@ export class AccountCompletionProvider implements vscode.CompletionItemProvider 
             const accountMatch = linePrefix.match(/^\s+(.*)$/);
             const typedText = accountMatch ? accountMatch[1] : '';
             
-            const suggestions: vscode.CompletionItem[] = [];
+            // Combine all accounts for fuzzy matching
+            const allAccounts: Array<{account: string, kind: vscode.CompletionItemKind, detail: string, priority: number}> = [];
             
-            // Helper function to create completion item with proper text replacement
-            const createAccountItem = (
-                fullAccount: string, 
-                kind: vscode.CompletionItemKind, 
-                detail: string, 
-                priority: string
-            ): vscode.CompletionItem | null => {
-                if (fullAccount.toLowerCase().startsWith(typedText.toLowerCase())) {
-                    const item = new vscode.CompletionItem(fullAccount, kind);
-                    item.detail = detail;
-                    item.sortText = priority + '_' + fullAccount;
-                    
-                    // Set the text to replace - only replace what user typed
+            // Add defined accounts
+            definedAccounts.forEach(acc => {
+                allAccounts.push({
+                    account: acc,
+                    kind: vscode.CompletionItemKind.Class,
+                    detail: 'Defined account',
+                    priority: 1
+                });
+            });
+            
+            // Add used accounts
+            usedAccounts.forEach(acc => {
+                if (!definedAccounts.includes(acc)) {
+                    allAccounts.push({
+                        account: acc,
+                        kind: vscode.CompletionItemKind.Reference,
+                        detail: 'Used account',
+                        priority: 2
+                    });
+                }
+            });
+            
+            // Add default prefixes
+            DEFAULT_ACCOUNT_PREFIXES.forEach(prefix => {
+                allAccounts.push({
+                    account: prefix,
+                    kind: vscode.CompletionItemKind.Folder,
+                    detail: 'Default account prefix',
+                    priority: 3
+                });
+            });
+            
+            // Use fuzzy matching for accounts
+            const accountNames = allAccounts.map(a => a.account);
+            const fuzzyMatches = fuzzyMatch(typedText, accountNames);
+            
+            // If no fuzzy matches, return undefined to let other providers handle
+            if (fuzzyMatches.length === 0) {
+                return undefined;
+            }
+            
+            const suggestions = fuzzyMatches.map((match, index) => {
+                const accountInfo = allAccounts.find(a => a.account === match.item)!;
+                const item = new vscode.CompletionItem(match.item, accountInfo.kind);
+                item.detail = accountInfo.detail;
+                
+                // Use fuzzy score and priority for sorting
+                item.sortText = (1000 - match.score).toString().padStart(4, '0') + '_' + 
+                               accountInfo.priority.toString() + '_' + 
+                               index.toString().padStart(3, '0');
+                
+                // Set the text to replace - only replace what user typed
+                if (typedText) {
                     const range = new vscode.Range(
                         position.line, 
                         position.character - typedText.length,
@@ -510,32 +564,9 @@ export class AccountCompletionProvider implements vscode.CompletionItemProvider 
                         position.character
                     );
                     item.range = range;
-                    item.insertText = fullAccount;
-                    
-                    return item;
                 }
-                return null;
-            };
-            
-            // First add defined accounts (from account directives)
-            definedAccounts.forEach(acc => {
-                const item = createAccountItem(acc, vscode.CompletionItemKind.Class, 'Defined account', '1');
-                if (item) suggestions.push(item);
-            });
-            
-            // Then add used accounts (from transactions)
-            usedAccounts.forEach(acc => {
-                // Avoid duplication with defined accounts
-                if (!definedAccounts.includes(acc)) {
-                    const item = createAccountItem(acc, vscode.CompletionItemKind.Reference, 'Used account', '2');
-                    if (item) suggestions.push(item);
-                }
-            });
-            
-            // Finally add standard prefixes
-            DEFAULT_ACCOUNT_PREFIXES.forEach(prefix => {
-                const item = createAccountItem(prefix, vscode.CompletionItemKind.Folder, 'Default account prefix', '3');
-                if (item) suggestions.push(item);
+                
+                return item;
             });
             
             return suggestions;
@@ -552,24 +583,62 @@ export class CommodityCompletionProvider implements vscode.CompletionItemProvide
     ): vscode.ProviderResult<vscode.CompletionItem[]> {
         const linePrefix = document.lineAt(position).text.substring(0, position.character);
         
-        if (linePrefix.match(/\s+[-+]?\d+([.,]\d+)*\s*$/)) {
+        // Match after amount, with optional partial commodity
+        const amountMatch = linePrefix.match(/\s+[-+]?\d+([.,]\d+)*\s*(\S*)$/);
+        if (amountMatch) {
+            const typedText = amountMatch[2] || '';
             const config = getConfig(document);
             const configCommodities = config.getCommodities();
             
-            const suggestions = [
-                ...configCommodities.map(comm => {
-                    const item = new vscode.CompletionItem(comm, vscode.CompletionItemKind.Unit);
-                    item.detail = 'Configured commodity';
-                    return item;
-                }),
-                ...DEFAULT_COMMODITIES.map(comm => {
-                    const item = new vscode.CompletionItem(comm, vscode.CompletionItemKind.Unit);
-                    item.detail = 'Default commodity';
-                    return item;
-                })
-            ];
+            // Combine all commodities for fuzzy matching
+            const allCommodities: Array<{commodity: string, detail: string, priority: number}> = [];
             
-            return suggestions;
+            configCommodities.forEach(comm => {
+                allCommodities.push({
+                    commodity: comm,
+                    detail: 'Configured commodity',
+                    priority: 1
+                });
+            });
+            
+            DEFAULT_COMMODITIES.forEach(comm => {
+                if (!configCommodities.includes(comm)) {
+                    allCommodities.push({
+                        commodity: comm,
+                        detail: 'Default commodity',
+                        priority: 2
+                    });
+                }
+            });
+            
+            // Use fuzzy matching for commodities
+            const commodityNames = allCommodities.map(c => c.commodity);
+            const fuzzyMatches = fuzzyMatch(typedText, commodityNames);
+            
+            if (fuzzyMatches.length === 0) {
+                return undefined;
+            }
+            
+            return fuzzyMatches.map((match, index) => {
+                const commodityInfo = allCommodities.find(c => c.commodity === match.item)!;
+                const item = new vscode.CompletionItem(match.item, vscode.CompletionItemKind.Unit);
+                item.detail = commodityInfo.detail;
+                item.sortText = (1000 - match.score).toString().padStart(4, '0') + '_' + 
+                               commodityInfo.priority.toString() + '_' + 
+                               index.toString().padStart(3, '0');
+                
+                if (typedText) {
+                    const range = new vscode.Range(
+                        position.line,
+                        position.character - typedText.length,
+                        position.line,
+                        position.character
+                    );
+                    item.range = range;
+                }
+                
+                return item;
+            });
         }
         
         return undefined;
@@ -710,6 +779,11 @@ export class PayeeCompletionProvider implements vscode.CompletionItemProvider {
             
             // Use fuzzy matching for payees
             const fuzzyMatches = fuzzyMatch(typedText, payees);
+            
+            // If no fuzzy matches found, return undefined to let other providers handle it
+            if (fuzzyMatches.length === 0) {
+                return undefined;
+            }
             
             const suggestions = fuzzyMatches.map((match, index) => {
                 const item = new vscode.CompletionItem(match.item, vscode.CompletionItemKind.Value);

@@ -50,9 +50,10 @@ describe('hledger 1.43 Compliance', () => {
             config.parseContent(content);
             
             const payees = config.getPayees();
-            expect(payees).toContain('Store Name');
-            // Should not contain the full "Store Name|Purchase details"
-            expect(payees).not.toContain('Store Name|Purchase details');
+            // Now we store the full payee including pipe character
+            expect(payees).toContain('Store Name|Purchase details');
+            // Should not split on pipe anymore
+            expect(payees).not.toContain('Store Name');
         });
     });
     
