@@ -138,31 +138,52 @@
           "textMateRules": [
             {
               "scope": "hledger.date",
-              "settings": { "foreground": "#4EC9B0" }
+              "settings": { 
+                "foreground": "#00D7FF",
+                "fontStyle": "bold"
+              }
             },
             {
               "scope": "hledger.account",
-              "settings": { "foreground": "#DCDCAA" }
+              "settings": { 
+                "foreground": "#FFD700",
+                "fontStyle": ""
+              }
             },
             {
               "scope": "hledger.amount",
-              "settings": { "foreground": "#B5CEA8" }
+              "settings": { 
+                "foreground": "#228B22",
+                "fontStyle": "bold"
+              }
             },
             {
               "scope": "hledger.commodity",
-              "settings": { "foreground": "#569CD6" }
+              "settings": { 
+                "foreground": "#FF6B6B",
+                "fontStyle": "bold"
+              }
             },
             {
               "scope": "hledger.payee",
-              "settings": { "foreground": "#CE9178" }
+              "settings": { 
+                "foreground": "#D2691E",
+                "fontStyle": ""
+              }
             },
             {
               "scope": "hledger.comment",
-              "settings": { "foreground": "#6A9955" }
+              "settings": { 
+                "foreground": "#87CEEB",
+                "fontStyle": ""
+              }
             },
             {
               "scope": "hledger.tag",
-              "settings": { "foreground": "#C586C0" }
+              "settings": { 
+                "foreground": "#DA70D6",
+                "fontStyle": "bold"
+              }
             }
           ]
         }
@@ -171,16 +192,31 @@
         "[*]": {
           "enabled": true,
           "rules": {
-            "hledger.date": "#4EC9B0",
-            "hledger.account": "#DCDCAA", 
-            "hledger.amount": "#B5CEA8",
-            "hledger.commodity": "#569CD6",
-            "hledger.payee": "#CE9178",
-            "hledger.comment": "#6A9955",
-            "hledger.tag": "#C586C0",
-            "hledger.directive": "#C586C0",
+            "hledger.date": {
+              "foreground": "#00D7FF",
+              "bold": true
+            },
+            "hledger.account": "#FFD700", 
+            "hledger.amount": {
+              "foreground": "#228B22",
+              "bold": true
+            },
+            "hledger.commodity": {
+              "foreground": "#FF6B6B",
+              "bold": true
+            },
+            "hledger.payee": "#D2691E",
+            "hledger.comment": "#87CEEB",
+            "hledger.tag": {
+              "foreground": "#DA70D6",
+              "bold": true
+            },
+            "hledger.directive": {
+              "foreground": "#DA70D6",
+              "bold": true
+            },
             "hledger.account.defined": "#9CDCFE",
-            "hledger.account.virtual": "#808080"
+            "hledger.account.virtual": "#A0A0A0"
           }
         }
       }
