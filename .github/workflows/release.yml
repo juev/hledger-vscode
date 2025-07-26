@@ -12,6 +12,8 @@ jobs:
     steps:
     - name: Checkout
       uses: actions/checkout@v4
+      with:
+        fetch-depth: 0  # Fetch all history for all tags and branches
     
     - name: Use Node.js 20
       uses: actions/setup-node@v4
@@ -52,11 +54,27 @@ jobs:
       env:
         VSCE_PAT: ${{ secrets.VSCE_PAT }}
     
+    - name: Generate release notes
+      id: generate_notes
+      run: |
+        # Make script executable
+        chmod +x .github/scripts/generate-release-notes.js
+        # Generate release notes
+        RELEASE_NOTES=$(node .github/scripts/generate-release-notes.js)
+        # Handle multiline output for GitHub Actions
+        echo "release_notes<<EOF" >> $GITHUB_OUTPUT
+        echo "$RELEASE_NOTES" >> $GITHUB_OUTPUT
+        echo "EOF" >> $GITHUB_OUTPUT
+      env:
+        GITHUB_REF_NAME: ${{ github.ref_name }}
+        GITHUB_REPOSITORY: ${{ github.repository }}
+    
     - name: Create GitHub Release
       uses: softprops/action-gh-release@v1
       with:
         tag_name: v${{ steps.extract_version.outputs.version }}
         name: Release ${{ steps.extract_version.outputs.version }}
+        body: ${{ steps.generate_notes.outputs.release_notes }}
         files: "*.vsix"
         draft: false
         prerelease: false

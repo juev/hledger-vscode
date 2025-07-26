@@ -3,3 +3,4 @@ out
 *.vsix
 .vscode-test
 *.log
+show-changelog.js
