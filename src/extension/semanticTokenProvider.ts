@@ -169,49 +169,73 @@ export class HLedgerSemanticTokensProvider implements vscode.DocumentSemanticTok
     }
 
     private parseAmountsInLine(text: string, lineNumber: number, tokensBuilder: vscode.SemanticTokensBuilder): void {
-        // Pattern for amounts with commodities
-        const amountPatterns = [
-            // Number followed by commodity: 100 USD, 100USD
-            /[-+]?\d+([.,]\d+)*\s*([A-Za-z0-9$£€¥₹₽₿₩₪₨₦₡₵₺₴₼₢₸₷₶₹₵₫₪₨₽]+)/g,
-            // Commodity followed by number: USD 100, USD100
-            /([A-Za-z0-9$£€¥₹₽₿₩₪₨₦₡₵₺₴₼₢₸₷₶₹₵₫₪₨₽]+)\s*([-+]?\d+([.,]\d+)*)/g,
-            // Quoted commodity: 100 "My Currency"
-            /([-+]?\d+([.,]\d+)*)\s*("([^"]+)")/g,
-            // Quoted commodity prefix: "My Currency" 100
-            /("([^"]+)")\s*([-+]?\d+([.,]\d+)*)/g
-        ];
-
-        for (const pattern of amountPatterns) {
-            let match;
-            while ((match = pattern.exec(text)) !== null) {
-                if (match[0].includes('$') || match[0].includes('€') || match[0].includes('£')) {
-                    // Handle currency symbols specially
-                    const numberMatch = match[0].match(/([-+]?\d+([.,]\d+)*)/);
-                    const commodityMatch = match[0].match(/([A-Za-z0-9$£€¥₹₽₿₩₪₨₦₡₵₺₴₼₢₸₷₶₹₵₫₪₨₽]+)/);
-                    
-                    if (numberMatch) {
-                        const numberStart = match.index + match[0].indexOf(numberMatch[1]);
-                        tokensBuilder.push(lineNumber, numberStart, numberMatch[1].length, this.getTokenType('hledgerAmount'), 0);
-                    }
-                    
-                    if (commodityMatch) {
-                        const commodityStart = match.index + match[0].indexOf(commodityMatch[1]);
-                        tokensBuilder.push(lineNumber, commodityStart, commodityMatch[1].length, this.getTokenType('hledgerCommodity'), 0);
-                    }
-                } else {
-                    // Regular parsing
-                    for (let i = 1; i < match.length; i++) {
-                        if (match[i] && match[i].match(/[-+]?\d+([.,]\d+)*/)) {
-                            // This is a number
-                            const numberStart = match.index + match[0].indexOf(match[i]);
-                            tokensBuilder.push(lineNumber, numberStart, match[i].length, this.getTokenType('hledgerAmount'), 0);
-                        } else if (match[i] && match[i].match(/[A-Za-z0-9$£€¥₹₽₿₩₪₨₦₡₵₺₴₼₢₸₷₶₹₵₫₪₨₽"]+/)) {
-                            // This is a commodity
-                            const commodityStart = match.index + match[0].indexOf(match[i]);
-                            tokensBuilder.push(lineNumber, commodityStart, match[i].length, this.getTokenType('hledgerCommodity'), 0);
-                        }
-                    }
-                }
+        // Simplified and more reliable amount parsing
+        
+        // Pattern 1: Number followed by commodity (100 USD, 100USD, 730, 999)
+        const numberCommodityPattern = /([-+]?\d+(?:[.,]\d+)*)\s*([A-Za-z0-9$£€¥₹₽₿₩₪₨₦₡₵₺₴₼₢₸₷₶₹₵₫₪₨₽]+)?/g;
+        let match;
+        
+        while ((match = numberCommodityPattern.exec(text)) !== null) {
+            const fullMatch = match[0];
+            const number = match[1];
+            const commodity = match[2];
+            
+            // Skip if this looks like a date or account part
+            if (match.index > 0 && text[match.index - 1].match(/[-/.]/)) {
+                continue;
+            }
+            
+            // Mark the number part
+            if (number) {
+                const numberStart = match.index;
+                tokensBuilder.push(lineNumber, numberStart, number.length, this.getTokenType('hledgerAmount'), 0);
+            }
+            
+            // Mark the commodity part if present
+            if (commodity) {
+                const commodityStart = match.index + fullMatch.indexOf(commodity);
+                tokensBuilder.push(lineNumber, commodityStart, commodity.length, this.getTokenType('hledgerCommodity'), 0);
+            }
+        }
+        
+        // Pattern 2: Commodity followed by number (USD 100, RUB 111)
+        const commodityNumberPattern = /([A-Za-z0-9$£€¥₹₽₿₩₪₨₦₡₵₺₴₼₢₸₷₶₹₵₫₪₨₽]+)\s+([-+]?\d+(?:[.,]\d+)*)/g;
+        
+        while ((match = commodityNumberPattern.exec(text)) !== null) {
+            const commodity = match[1];
+            const number = match[2];
+            
+            // Mark the commodity part
+            const commodityStart = match.index;
+            tokensBuilder.push(lineNumber, commodityStart, commodity.length, this.getTokenType('hledgerCommodity'), 0);
+            
+            // Mark the number part
+            const numberStart = match.index + match[0].indexOf(number);
+            tokensBuilder.push(lineNumber, numberStart, number.length, this.getTokenType('hledgerAmount'), 0);
+        }
+        
+        // Pattern 3: Quoted commodities: 100 "My Currency" or "My Currency" 100
+        const quotedCommodityPattern = /([-+]?\d+(?:[.,]\d+)*\s*)?("([^"]+)")\s*([-+]?\d+(?:[.,]\d+)*)?/g;
+        
+        while ((match = quotedCommodityPattern.exec(text)) !== null) {
+            const beforeNumber = match[1];
+            const quotedCommodity = match[2];
+            const afterNumber = match[4];
+            
+            // Mark quoted commodity
+            const commodityStart = match.index + (beforeNumber ? beforeNumber.length : 0);
+            tokensBuilder.push(lineNumber, commodityStart, quotedCommodity.length, this.getTokenType('hledgerCommodity'), 0);
+            
+            // Mark number before if present
+            if (beforeNumber) {
+                const numberStart = match.index;
+                tokensBuilder.push(lineNumber, numberStart, beforeNumber.trim().length, this.getTokenType('hledgerAmount'), 0);
+            }
+            
+            // Mark number after if present
+            if (afterNumber) {
+                const numberStart = match.index + match[0].indexOf(afterNumber);
+                tokensBuilder.push(lineNumber, numberStart, afterNumber.trim().length, this.getTokenType('hledgerAmount'), 0);
             }
         }
     }
