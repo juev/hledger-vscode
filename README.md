@@ -4,7 +4,7 @@ Full-featured Visual Studio Code extension providing comprehensive syntax highli
 
 ## Features
 
-- **Enhanced Syntax Highlighting**: Advanced syntax highlighting for:
+- **Enhanced Syntax Highlighting & Semantic Tokens**: Advanced syntax highlighting for:
   - **Currencies and commodities** (USD, RUB, EUR, BTC, etc.)
   - **Account types** (Assets, Expenses, Income, Liabilities, Equity)
   - **Tags and categories** in comments (`key:value` pairs)
@@ -25,7 +25,9 @@ Full-featured Visual Studio Code extension providing comprehensive syntax highli
   - Balance assertions (= single commodity, == sole commodity)
   - Posting date tags (`date:YYYY-MM-DD`)
 - **Multi-language Support**: Full support for Cyrillic and other Unicode characters in account names and tags
-- **Smart Indentation**: Automatic indentation for transactions and postings
+- **Smart Indentation**: Configurable automatic indentation for transactions and postings
+- **Semantic Highlighting**: Auto-enabled semantic tokens for enhanced syntax coloring
+- **Color Customization**: Configurable colors for all syntax elements through VS Code settings
 - **Performance Optimized**: Project-based persistent caching system for large codebases
 - **Language Configuration**:
   - Comment support (`;`, `#`)
@@ -46,7 +48,7 @@ Full-featured Visual Studio Code extension providing comprehensive syntax highli
 
 1. Open Visual Studio Code
 2. Go to Extensions (Ctrl+Shift+X)
-3. Search for "evsyukov.hledger"
+3. Search for "hledger" or "evsyukov.hledger"
 4. Click Install
 
 ## Usage
@@ -125,7 +127,7 @@ You can control auto-completion behavior:
 - **Setting**: `hledger.autoCompletion.enabled` (default: `true`)
 - **When enabled**: Auto-completion triggers automatically while typing
 - **When disabled**: Use Ctrl+Space to manually trigger completion
-- **Trigger characters**: `[' ', ':', '/', '-', '.', '#', ';']`
+- **Trigger characters**: `[' ', ':', '/', '-', '.', ';']` plus all letters and numbers for auto-completion
 
 ### Color Customization
 
@@ -150,6 +152,24 @@ You can customize syntax highlighting colors through VS Code settings. The exten
 ```
 
 Colors update immediately when changed in settings.
+
+### Semantic Highlighting
+
+The extension automatically enables semantic highlighting for enhanced syntax coloring:
+
+- **Setting**: `hledger.semanticHighlighting.autoEnable` (default: `true`)
+- **When enabled**: Automatically enables VS Code's semantic highlighting feature when the extension activates
+- **Enhanced coloring**: Provides more precise syntax highlighting beyond basic TextMate rules
+- **User control**: Can be disabled in extension settings if you prefer basic highlighting
+
+### Smart Indentation
+
+Smart indentation helps format transactions correctly:
+
+- **Setting**: `hledger.smartIndent.enabled` (default: `true`)
+- **Auto-indent**: Pressing Enter after a transaction date automatically indents for posting entries
+- **Preserve indent**: Maintains proper indentation when continuing posting entries
+- **Context-aware**: Handles different line types (dates, postings, comments) appropriately
 
 ## Documentation
 
