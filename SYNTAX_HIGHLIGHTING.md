@@ -81,14 +81,17 @@ account Income:Salary       ; income
 
 ## VS Code Integration
 
-The syntax highlighting uses standard TextMate scopes that are supported by most VS Code themes:
+The syntax highlighting uses custom hledger-specific scopes that provide consistent and readable colors across all VS Code themes:
 
-- `entity.name.type.commodity` - currencies and commodities
-- `support.class.*` - account types will use class colors  
-- `entity.name.function` - payees and accounts use function color
-- `variable.other` - tag keys use variable color
-- `constant.numeric` - dates and numbers use numeric color
-- `keyword.operator` - operators use keyword color
-- `string.unquoted` - notes and tag values use string color
+- `hledger.date` - dates in transactions (blue)
+- `hledger.account` - account names (green)
+- `hledger.amount` - numeric amounts (red)
+- `hledger.commodity` - currency and commodity symbols (purple)
+- `hledger.payee` - payee/description (orange)
+- `hledger.comment` - comments (gray)
+- `hledger.tag` - tags in comments (pink)
+- `hledger.directive` - hledger directives (green)
+- `hledger.account.defined` - explicitly defined accounts (cyan)
+- `hledger.account.virtual` - virtual accounts (gray)
 
-The extension uses standard TextMate scopes that work with all VS Code themes. Colors will depend on your selected VS Code theme.
+The extension provides a high-contrast color scheme that ensures excellent readability while maintaining clear visual hierarchy between different syntax elements.

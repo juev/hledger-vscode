@@ -44,7 +44,7 @@
           "match": "^(account|commodity|D|decimal-mark|include|P|payee|tag|year|alias|apply account|end apply account|comment|end comment|Y)\\b",
           "captures": {
             "1": {
-              "name": "keyword.control"
+              "name": "hledger.directive"
             }
           }
         },
@@ -53,7 +53,7 @@
           "match": "^(D)\\s+(.*)$",
           "captures": {
             "1": {
-              "name": "keyword.control"
+              "name": "hledger.directive"
             },
             "2": {
               "name": "hledger.commodity"
@@ -65,7 +65,7 @@
           "match": "^(include)\\s+(.*)$",
           "captures": {
             "1": {
-              "name": "keyword.control"
+              "name": "hledger.directive"
             },
             "2": {
               "name": "string.quoted"
@@ -77,10 +77,10 @@
           "match": "^(account)\\s+([^;]+)(;.*)?$",
           "captures": {
             "1": {
-              "name": "keyword.control"
+              "name": "hledger.directive"
             },
             "2": {
-              "name": "hledger.payee"
+              "name": "hledger.account"
             },
             "3": {
               "name": "comment.line"
@@ -92,13 +92,13 @@
           "match": "^(alias)\\s+([^=]+)\\s*=\\s*(.*)$",
           "captures": {
             "1": {
-              "name": "keyword.control"
+              "name": "hledger.directive"
             },
             "2": {
-              "name": "hledger.payee"
+              "name": "hledger.account"
             },
             "3": {
-              "name": "hledger.payee"
+              "name": "hledger.account"
             }
           }
         },
@@ -107,7 +107,7 @@
           "match": "^(commodity)\\s+(.*)$",
           "captures": {
             "1": {
-              "name": "keyword.control"
+              "name": "hledger.directive"
             },
             "2": {
               "name": "hledger.commodity"
@@ -123,10 +123,10 @@
           "begin": "^(\\d{4}[-/.]\\d{1,2}[-/.]\\d{1,2})((?:=\\d{4}[-/.]\\d{1,2}[-/.]\\d{1,2})?)\\s*(\\*|!)?\\s*(\\([^)]+\\))?\\s*([^;]*?)(;.*)?$",
           "beginCaptures": {
             "1": {
-              "name": "hledger.amount"
+              "name": "hledger.date"
             },
             "2": {
-              "name": "hledger.amount"
+              "name": "hledger.date"
             },
             "3": {
               "name": "keyword.operator"
@@ -177,10 +177,10 @@
           "begin": "^(\\d{1,2}[-/.]\\d{1,2})((?:=\\d{1,2}[-/.]\\d{1,2})?)\\s*(\\*|!)?\\s*(\\([^)]+\\))?\\s*([^;]*?)(;.*)?$",
           "beginCaptures": {
             "1": {
-              "name": "hledger.amount"
+              "name": "hledger.date"
             },
             "2": {
-              "name": "hledger.amount"
+              "name": "hledger.date"
             },
             "3": {
               "name": "keyword.operator"
@@ -364,7 +364,7 @@
           "match": "(?<!\\w)[-+]?\\d+([.,]\\d+)*(?!\\s*[A-Za-z0-9$£€¥₹₽₿₩₪₨₦₡₵₺₴₼₢₸₷₶₹₵₫₪₨₽])(?=\\s|$|;|=)",
           "captures": {
             "0": {
-              "name": "hledger.amount.hledger"
+              "name": "hledger.amount"
             }
           }
         }
@@ -448,7 +448,7 @@
           "match": "^\\s+(\\([^)]+\\)|\\[[^\\]]+\\])(?:\\s+(.*?))?(?:\\s+(=={1,2}|@{1,2}))?(?:\\s*;(.*))?$",
           "captures": {
             "1": {
-              "name": "hledger.payee.virtual.hledger"
+              "name": "hledger.account.virtual"
             },
             "2": {
               "patterns": [
@@ -515,7 +515,7 @@
           "match": "\\b(Assets|Активы|Asset)\\b.*"
         },
         {
-          "name": "support.class.liability", 
+          "name": "support.class.liability",
           "match": "\\b(Liabilities|Пассивы|Liability)\\b.*"
         },
         {
@@ -570,7 +570,7 @@
                       "name": "punctuation.separator"
                     },
                     "3": {
-                      "name": "hledger.amount"
+                      "name": "hledger.date"
                     }
                   }
                 }

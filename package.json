@@ -54,7 +54,7 @@
     "semanticTokenTypes": [
       {
         "id": "hledgerDate",
-        "superType": "string", 
+        "superType": "string",
         "description": "Date in hledger transactions"
       },
       {
@@ -63,7 +63,7 @@
         "description": "Account names in hledger"
       },
       {
-        "id": "hledgerAmount", 
+        "id": "hledgerAmount",
         "superType": "number",
         "description": "Numeric amounts in hledger"
       },
@@ -99,7 +99,7 @@
         "description": "Explicitly defined accounts/commodities"
       },
       {
-        "id": "used", 
+        "id": "used",
         "description": "Used but not explicitly defined"
       },
       {
@@ -122,52 +122,52 @@
         },
         "hledger.colors.date": {
           "type": "string",
-          "default": "#00D7FF",
+          "default": "#2563EB",
           "description": "Color for dates in hledger transactions"
         },
         "hledger.colors.account": {
-          "type": "string", 
-          "default": "#FFD700",
+          "type": "string",
+          "default": "#059669",
           "description": "Color for account names"
         },
         "hledger.colors.amount": {
           "type": "string",
-          "default": "#228B22", 
+          "default": "#DC2626",
           "description": "Color for numeric amounts"
         },
         "hledger.colors.commodity": {
           "type": "string",
-          "default": "#FF6B6B",
+          "default": "#7C3AED",
           "description": "Color for currency and commodity symbols"
         },
         "hledger.colors.payee": {
           "type": "string",
-          "default": "#D2691E",
+          "default": "#EA580C",
           "description": "Color for payee/description in transactions"
         },
         "hledger.colors.comment": {
           "type": "string",
-          "default": "#87CEEB",
+          "default": "#6B7280",
           "description": "Color for comments"
         },
         "hledger.colors.tag": {
           "type": "string",
-          "default": "#DA70D6",
+          "default": "#DB2777",
           "description": "Color for tags in comments"
         },
         "hledger.colors.directive": {
           "type": "string",
-          "default": "#DA70D6",
+          "default": "#059669",
           "description": "Color for hledger directives"
         },
         "hledger.colors.accountDefined": {
           "type": "string",
-          "default": "#9CDCFE",
+          "default": "#0891B2",
           "description": "Color for explicitly defined accounts"
         },
         "hledger.colors.accountVirtual": {
           "type": "string",
-          "default": "#A0A0A0",
+          "default": "#6B7280",
           "description": "Color for virtual accounts in brackets/parentheses"
         },
         "hledger.smartIndent.enabled": {
@@ -217,50 +217,50 @@
           "textMateRules": [
             {
               "scope": "hledger.date",
-              "settings": { 
-                "foreground": "#00D7FF",
+              "settings": {
+                "foreground": "#2563EB",
                 "fontStyle": "bold"
               }
             },
             {
               "scope": "hledger.account",
-              "settings": { 
-                "foreground": "#FFD700",
+              "settings": {
+                "foreground": "#059669",
                 "fontStyle": ""
               }
             },
             {
               "scope": "hledger.amount",
-              "settings": { 
-                "foreground": "#228B22",
+              "settings": {
+                "foreground": "#DC2626",
                 "fontStyle": "bold"
               }
             },
             {
               "scope": "hledger.commodity",
-              "settings": { 
-                "foreground": "#FF6B6B",
+              "settings": {
+                "foreground": "#7C3AED",
                 "fontStyle": "bold"
               }
             },
             {
               "scope": "hledger.payee",
-              "settings": { 
-                "foreground": "#D2691E",
+              "settings": {
+                "foreground": "#EA580C",
                 "fontStyle": ""
               }
             },
             {
               "scope": "hledger.comment",
-              "settings": { 
-                "foreground": "#87CEEB",
+              "settings": {
+                "foreground": "#6B7280",
                 "fontStyle": ""
               }
             },
             {
               "scope": "hledger.tag",
-              "settings": { 
-                "foreground": "#DA70D6",
+              "settings": {
+                "foreground": "#DB2777",
                 "fontStyle": "bold"
               }
             }
@@ -272,30 +272,30 @@
           "enabled": true,
           "rules": {
             "hledgerDate": {
-              "foreground": "#00D7FF",
+              "foreground": "#2563EB",
               "bold": true
             },
-            "hledgerAccount": "#FFD700", 
+            "hledgerAccount": "#059669",
             "hledgerAmount": {
-              "foreground": "#228B22",
+              "foreground": "#DC2626",
               "bold": true
             },
             "hledgerCommodity": {
-              "foreground": "#FF6B6B",
+              "foreground": "#7C3AED",
               "bold": true
             },
-            "hledgerPayee": "#D2691E",
-            "hledgerComment": "#87CEEB",
+            "hledgerPayee": "#EA580C",
+            "hledgerComment": "#6B7280",
             "hledgerTag": {
-              "foreground": "#DA70D6",
+              "foreground": "#DB2777",
               "bold": true
             },
             "hledgerDirective": {
-              "foreground": "#DA70D6",
+              "foreground": "#059669",
               "bold": true
             },
-            "hledgerAccount.defined": "#9CDCFE",
-            "hledgerAccount.virtual": "#A0A0A0"
+            "hledgerAccount.defined": "#0891B2",
+            "hledgerAccount.virtual": "#6B7280"
           }
         }
       }

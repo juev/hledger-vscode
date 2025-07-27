@@ -164,18 +164,18 @@ You can control auto-completion behavior:
 
 ### Color Customization
 
-You can customize syntax highlighting colors through VS Code settings. The extension provides the following color settings:
+You can customize syntax highlighting colors through VS Code settings. The extension provides the following color settings with high contrast and readability:
 
-- `hledger.colors.date` - Color for dates in transactions (default: `#00D7FF`)
-- `hledger.colors.account` - Color for account names (default: `#FFD700`)
-- `hledger.colors.amount` - Color for numeric amounts (default: `#228B22`)
-- `hledger.colors.commodity` - Color for currency/commodity symbols (default: `#FF6B6B`)
-- `hledger.colors.payee` - Color for payee/description (default: `#D2691E`)
-- `hledger.colors.comment` - Color for comments (default: `#87CEEB`)
-- `hledger.colors.tag` - Color for tags in comments (default: `#DA70D6`)
-- `hledger.colors.directive` - Color for hledger directives (default: `#DA70D6`)
-- `hledger.colors.accountDefined` - Color for explicitly defined accounts (default: `#9CDCFE`)
-- `hledger.colors.accountVirtual` - Color for virtual accounts (default: `#A0A0A0`)
+- `hledger.colors.date` - Color for dates in transactions (default: `#2563EB` - Blue)
+- `hledger.colors.account` - Color for account names (default: `#059669` - Green)
+- `hledger.colors.amount` - Color for numeric amounts (default: `#DC2626` - Red)
+- `hledger.colors.commodity` - Color for currency/commodity symbols (default: `#7C3AED` - Purple)
+- `hledger.colors.payee` - Color for payee/description (default: `#EA580C` - Orange)
+- `hledger.colors.comment` - Color for comments (default: `#6B7280` - Gray)
+- `hledger.colors.tag` - Color for tags in comments (default: `#DB2777` - Pink)
+- `hledger.colors.directive` - Color for hledger directives (default: `#059669` - Green)
+- `hledger.colors.accountDefined` - Color for explicitly defined accounts (default: `#0891B2` - Cyan)
+- `hledger.colors.accountVirtual` - Color for virtual accounts (default: `#6B7280` - Gray)
 
 **Example**: To change the date color to red, add this to your VS Code settings:
 ```json
@@ -184,7 +184,7 @@ You can customize syntax highlighting colors through VS Code settings. The exten
 }
 ```
 
-Colors update immediately when changed in settings.
+Colors update immediately when changed in settings. The new color scheme provides excellent contrast and readability while maintaining visual hierarchy.
 
 ### Semantic Highlighting
 

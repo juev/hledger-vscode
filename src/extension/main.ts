@@ -1066,16 +1066,16 @@ async function applyCustomColors(): Promise<void> {
         const editorConfig = vscode.workspace.getConfiguration('editor');
         
         // Get custom colors from settings
-        const dateColor = hledgerConfig.get<string>('date', '#00D7FF');
-        const accountColor = hledgerConfig.get<string>('account', '#FFD700');
-        const amountColor = hledgerConfig.get<string>('amount', '#228B22');
-        const commodityColor = hledgerConfig.get<string>('commodity', '#FF6B6B');
-        const payeeColor = hledgerConfig.get<string>('payee', '#D2691E');
-        const commentColor = hledgerConfig.get<string>('comment', '#87CEEB');
-        const tagColor = hledgerConfig.get<string>('tag', '#DA70D6');
-        const directiveColor = hledgerConfig.get<string>('directive', '#DA70D6');
-        const accountDefinedColor = hledgerConfig.get<string>('accountDefined', '#9CDCFE');
-        const accountVirtualColor = hledgerConfig.get<string>('accountVirtual', '#A0A0A0');
+        const dateColor = hledgerConfig.get<string>('date', '#2563EB');
+        const accountColor = hledgerConfig.get<string>('account', '#059669');
+        const amountColor = hledgerConfig.get<string>('amount', '#DC2626');
+        const commodityColor = hledgerConfig.get<string>('commodity', '#7C3AED');
+        const payeeColor = hledgerConfig.get<string>('payee', '#EA580C');
+        const commentColor = hledgerConfig.get<string>('comment', '#6B7280');
+        const tagColor = hledgerConfig.get<string>('tag', '#DB2777');
+        const directiveColor = hledgerConfig.get<string>('directive', '#059669');
+        const accountDefinedColor = hledgerConfig.get<string>('accountDefined', '#0891B2');
+        const accountVirtualColor = hledgerConfig.get<string>('accountVirtual', '#6B7280');
         
         // Apply semantic token color customizations
         const semanticColors = {
