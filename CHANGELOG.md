@@ -1,5 +1,18 @@
 # Change Log
 
+## [0.1.6] - 2025-07-27
+
+### Added
+- feat: improve indent behaviour
+- feat: exclude chore generate changelog from CHANGELOG.md file
+
+### Fixed
+- fix: update extension search name in README
+
+### Other
+- tests: move test journal files to tests ditrectory
+
+
 ## [0.1.5] - 2025-07-26
 
 ### Added
