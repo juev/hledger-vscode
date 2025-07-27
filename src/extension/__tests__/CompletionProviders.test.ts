@@ -28,7 +28,7 @@ commodity EUR
 `;
 
 const mockDocument = {
-    uri: vscode.Uri.file('/test/test.journal'),
+    uri: vscode.Uri.file('/test/testdata/test.journal'),
     languageId: 'hledger',
     lineAt: jest.fn(),
     getText: jest.fn().mockReturnValue(testJournalContent)
