@@ -85,10 +85,19 @@ All hledger syntax elements are highlighted using standard TextMate scopes:
 
 **Payee/Store Completion**:
 
+- **Advanced fuzzy matching** with substring support for intelligent payee suggestions
 - Auto-complete payees and store names from transaction history
+- **Smart query strategies**:
+  - Short queries (1-2 chars): Fast substring matching with prefix priority
+  - Longer queries (3+ chars): Full fuzzy matching with advanced scoring
+- **Intelligent scoring**: Prioritizes exact prefix matches, then word boundaries, then substrings
+- **Length-based sorting**: Shorter exact matches appear before longer ones
 - Supports both single payee format and `payee|note` format
-- Intelligent parsing from transaction descriptions
-- Unicode support for international store names
+- Unicode support for international store names including Cyrillic characters
+- **Examples**: 
+  - Type "м" → finds "Магазин", "МТС", "Мегафон"
+  - Type "зин" → finds "Магазин" (substring match)
+  - Type "маг" → prioritizes "Магазин" over "Магазин у дома"
 
 **Tag Completion**:
 

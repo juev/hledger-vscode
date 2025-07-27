@@ -45,7 +45,7 @@ npm run publish
    - `KeywordCompletionProvider` - hledger directives (account, commodity, include, etc.)
    - `CommodityCompletionProvider` - Currency and cryptocurrency symbols
    - `DateCompletionProvider` - Smart date suggestions
-   - `PayeeCompletionProvider` - Store/merchant completion from transaction descriptions
+   - `PayeeCompletionProvider` - Store/merchant completion with advanced fuzzy matching and substring support
    - `TagCompletionProvider` - Tag/category completion from comments
 4. **Semantic Token Provider**: `HLedgerSemanticTokensProvider` - Advanced syntax highlighting with semantic tokens
 5. **Smart Indentation**: `HLedgerEnterCommand` and `HLedgerEnterKeyProvider` - Intelligent Enter key handling
@@ -57,9 +57,10 @@ npm run publish
    - Separate caches for different projects/file groups
    - Cache cleared only on extension deactivation
 2. **Enhanced Parsing**: Extracts payees, tags, accounts, and metadata
-   - Payees from transaction descriptions  
+   - Payees from transaction descriptions with intelligent fuzzy matching
    - Tags from comments (tag:value format)
    - Full Unicode support including Cyrillic
+   - Advanced substring matching for payee completion
 3. **Semantic Token System**: Uses camelCase token type IDs (e.g., `hledgerDate`, `hledgerAccount`) to comply with VS Code validation
 4. **Color Customization**: Configurable colors through VS Code settings with automatic application
 5. **Smart Indentation**: Context-aware Enter key handling for proper transaction formatting

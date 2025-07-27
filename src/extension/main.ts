@@ -27,33 +27,73 @@ export function fuzzyMatch(query: string, items: string[]): FuzzyMatch[] {
     
     for (const item of items) {
         const itemLower = item.toLowerCase();
-        let score = 0;
-        let queryIndex = 0;
-        let matchedChars = 0;
+        let bestScore = 0;
+        let bestMatch = false;
         
-        // Calculate fuzzy match score
-        for (let i = 0; i < itemLower.length && queryIndex < queryLower.length; i++) {
-            if (itemLower[i] === queryLower[queryIndex]) {
-                matchedChars++;
-                // Higher score for consecutive matches
-                score += queryIndex === 0 ? 100 : 50; // First character match gets highest score
-                // Bonus for word boundaries
-                if (i === 0 || itemLower[i - 1] === ' ' || itemLower[i - 1] === '-' || itemLower[i - 1] === '_') {
-                    score += 30;
+        // Try matching from each position in the item to support substring matching
+        for (let startPos = 0; startPos <= itemLower.length - queryLower.length; startPos++) {
+            let score = 0;
+            let queryIndex = 0;
+            let matchedChars = 0;
+            let consecutiveBonus = 0;
+            
+            // Calculate fuzzy match score from this starting position
+            for (let i = startPos; i < itemLower.length && queryIndex < queryLower.length; i++) {
+                if (itemLower[i] === queryLower[queryIndex]) {
+                    matchedChars++;
+                    
+                    // Base score for character match
+                    score += 10;
+                    
+                    // Bonus for consecutive matches
+                    if (queryIndex > 0 && i > startPos && itemLower[i-1] === queryLower[queryIndex-1]) {
+                        consecutiveBonus += 5;
+                        score += consecutiveBonus;
+                    } else {
+                        consecutiveBonus = 0;
+                    }
+                    
+                    // Bonus for word boundaries
+                    if (i === 0 || itemLower[i - 1] === ' ' || itemLower[i - 1] === '-' || itemLower[i - 1] === '_') {
+                        score += 30;
+                    }
+                    
+                    // Higher score for matches at the beginning
+                    if (startPos === 0) {
+                        score += queryIndex === 0 ? 100 : 50;
+                    }
+                    
+                    queryIndex++;
                 }
-                queryIndex++;
+            }
+            
+            // Check if this starting position gives a complete match
+            if (matchedChars === queryLower.length) {
+                // Huge bonus for exact substring matches (consecutive characters)
+                const isConsecutiveMatch = itemLower.includes(queryLower);
+                if (isConsecutiveMatch) {
+                    score += 500; // Much higher bonus for exact substring
+                }
+                
+                // Even higher bonus for prefix matches (highest priority)
+                if (startPos === 0 && itemLower.startsWith(queryLower)) {
+                    score += 1500; // Much higher priority for prefix matches
+                }
+                
+                // Small penalty for later starting positions to prefer earlier matches
+                score -= startPos * 2;
+                
+                if (score > bestScore) {
+                    bestScore = score;
+                    bestMatch = true;
+                }
             }
         }
         
-        // Only include items that match all query characters in order
-        if (matchedChars === queryLower.length) {
-            // Bonus for exact prefix matches
-            if (itemLower.startsWith(queryLower)) {
-                score += 200;
-            }
+        if (bestMatch) {
             // Penalty for longer strings (prefer shorter matches)
-            score -= item.length;
-            matches.push({ item, score });
+            bestScore -= item.length;
+            matches.push({ item, score: bestScore });
         }
     }
     
@@ -768,7 +808,7 @@ export class PayeeCompletionProvider implements vscode.CompletionItemProvider {
         
         // Trigger after date pattern in transaction lines (support all hledger date formats)
         // Format: DATE [*|!] [CODE] DESCRIPTION
-        if (linePrefix.match(/^(\d{4}[-/.]\d{1,2}[-/.]\d{1,2}|\d{1,2}[-/.]\d{1,2})\s*(\*|!)?\s*(\([^)]+\))?\s*\S*/)) {
+        if (linePrefix.match(/^(\d{4}[-/.]\d{1,2}[-/.]\d{1,2}|\d{1,2}[-/.]\d{1,2})\s*(\*|!)?\s*(\([^)]+\))?\s*/)) {
             const config = getConfig(document);
             const payees = config.getPayees();
             
@@ -776,23 +816,53 @@ export class PayeeCompletionProvider implements vscode.CompletionItemProvider {
                 return undefined;
             }
             
-            // Extract what user has typed (support all hledger date formats)
+            // Extract what user has typed (support all hledger date formats including MM-DD)
             const transactionMatch = linePrefix.match(/^(\d{4}[-/.]\d{1,2}[-/.]\d{1,2}|\d{1,2}[-/.]\d{1,2})\s*(\*|!)?\s*(\([^)]+\))?\s*(.*)$/);
             const typedText = transactionMatch ? transactionMatch[4] : '';
             
-            // Use fuzzy matching for payees
-            const fuzzyMatches = fuzzyMatch(typedText, payees);
+            // Smart completion strategy based on query length
+            let fuzzyMatches: FuzzyMatch[];
             
-            // If no fuzzy matches found, return undefined to let other providers handle it
+            if (typedText.length <= 2) {
+                // For short queries, use simple substring matching to avoid noise
+                const substringMatches = payees.filter(p => p.toLowerCase().includes(typedText.toLowerCase()));
+                
+                fuzzyMatches = substringMatches.map(item => {
+                    const itemLower = item.toLowerCase();
+                    const queryLower = typedText.toLowerCase();
+                    
+                    // Simple scoring: prefix matches get higher score, then by length
+                    let score = 1000;
+                    if (itemLower.startsWith(queryLower)) {
+                        score += 200; // Prefix bonus
+                    }
+                    score -= item.length; // Shorter items preferred
+                    
+                    return { item, score };
+                });
+                
+                // Sort by score (higher first)
+                fuzzyMatches.sort((a, b) => b.score - a.score);
+            } else {
+                // For longer queries (3+ chars), use full fuzzy matching including substrings
+                fuzzyMatches = fuzzyMatch(typedText, payees);
+            }
+            
+            // If no matches found, return undefined to let other providers handle it
             if (fuzzyMatches.length === 0) {
                 return undefined;
             }
             
-            const suggestions = fuzzyMatches.map((match, index) => {
+            // Limit to top 10 results for better UX and performance  
+            const topMatches = fuzzyMatches.slice(0, 10);
+            
+            const suggestions = topMatches.map((match, index) => {
                 const item = new vscode.CompletionItem(match.item, vscode.CompletionItemKind.Value);
                 item.detail = 'Payee/Store';
-                // Use fuzzy score for sorting, with index as tie-breaker
-                item.sortText = (1000 - match.score).toString().padStart(4, '0') + '_' + index.toString().padStart(3, '0');
+                // Use index for sorting to ensure consistent order
+                item.sortText = index.toString().padStart(3, '0');
+                // Bypass VS Code's built-in filtering by setting filterText to match the query
+                item.filterText = typedText;
                 
                 if (typedText) {
                     const range = new vscode.Range(

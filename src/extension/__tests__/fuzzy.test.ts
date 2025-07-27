@@ -71,4 +71,29 @@ describe('Fuzzy Matching', () => {
         expect(results.length).toBeGreaterThan(0);
         expect(results[0].item).toBe('Amazon');
     });
+
+    test('should support substring matching', () => {
+        const results = fuzzyMatch('zin', ['Grocery Store', 'Magazine', 'Amazing Store']);
+        expect(results.length).toBeGreaterThan(0);
+        const items = results.map(r => r.item);
+        expect(items).toContain('Magazine'); // Should match "ма**ga**zin**e"
+        expect(items).toContain('Amazing Store'); // Should match "ama**zin**g"
+    });
+
+    test('should handle cyrillic substring matching', () => {
+        const cyrillicPayees = ['Магазин', 'Супермагазин', 'Мегамолл'];
+        const results = fuzzyMatch('зин', cyrillicPayees);
+        expect(results.length).toBeGreaterThan(0);
+        const items = results.map(r => r.item);
+        expect(items).toContain('Магазин'); // Should match "мага**зин**"
+        expect(items).toContain('Супермагазин'); // Should match "супермага**зин**"
+    });
+
+    test('should prioritize prefix matches over substring matches', () => {
+        const testItems = ['Amazing', 'Magazine', 'Amazonia'];
+        const results = fuzzyMatch('ama', testItems);
+        expect(results.length).toBeGreaterThan(0);
+        // Prefix matches should score higher than substring matches
+        expect(results[0].item).toBe('Amazing'); // Starts with "ama"
+    });
 });
