@@ -23,8 +23,8 @@ try {
     previousTag = execSync('git rev-list --max-parents=0 HEAD', { encoding: 'utf8' }).trim();
 }
 
-// Get commits between tags
-const commits = execSync(`git log ${previousTag}..${currentTag} --pretty=format:"%s (%h)" --no-merges`, { encoding: 'utf8' })
+// Get commits between tags, excluding CI changelog commits
+const commits = execSync(`git log ${previousTag}..${currentTag} --pretty=format:"%s (%h)" --no-merges --grep="^chore: update CHANGELOG.md" --invert-grep`, { encoding: 'utf8' })
     .split('\n')
     .filter(line => line.trim())
     .map(line => {
