@@ -41,12 +41,12 @@ npm run publish
 1. **Main Extension Entry**: `src/extension/main.ts` - TypeScript source with proper type definitions
 2. **Syntax Highlighting**: `syntaxes/hledger.tmLanguage.json` - TextMate grammar supporting full hledger syntax
 3. **Completion Providers**:
-   - `AccountCompletionProvider` - Hierarchical account suggestions with advanced fuzzy matching and caching
+   - `AccountCompletionProvider` - Hierarchical account suggestions with frequency-based prioritization, advanced fuzzy matching and caching
    - `KeywordCompletionProvider` - hledger directives with fuzzy matching (account, commodity, include, etc.)
-   - `CommodityCompletionProvider` - Currency and cryptocurrency symbols with fuzzy matching
+   - `CommodityCompletionProvider` - Currency and cryptocurrency symbols with frequency-based prioritization and fuzzy matching
    - `DateCompletionProvider` - Smart date suggestions
-   - `PayeeCompletionProvider` - Store/merchant completion with advanced fuzzy matching and substring support
-   - `TagCompletionProvider` - Tag/category completion with fuzzy matching from comments
+   - `PayeeCompletionProvider` - Store/merchant completion with frequency-based prioritization, advanced fuzzy matching and substring support
+   - `TagCompletionProvider` - Tag/category completion with frequency-based prioritization and fuzzy matching from comments
 4. **Semantic Token Provider**: `HLedgerSemanticTokensProvider` - Advanced syntax highlighting with semantic tokens
 5. **Smart Indentation**: `HLedgerEnterCommand` and `HLedgerEnterKeyProvider` - Intelligent Enter key handling
 
@@ -56,13 +56,15 @@ npm run publish
    - No automatic invalidation for optimal performance
    - Separate caches for different projects/file groups
    - Cache cleared only on extension deactivation
-2. **Enhanced Parsing**: Extracts payees, tags, accounts, and metadata
-   - Payees from transaction descriptions with intelligent fuzzy matching
-   - Tags from comments (tag:value format) with fuzzy matching
-   - Accounts with hierarchical fuzzy matching
-   - Commodities with fuzzy matching support
+   - **Frequency tracking**: Maintains usage counters for all completion types
+2. **Enhanced Parsing**: Extracts payees, tags, accounts, and metadata with frequency counting
+   - Payees from transaction descriptions with intelligent fuzzy matching and usage frequency tracking
+   - Tags from comments (tag:value format) with fuzzy matching and frequency counting
+   - Accounts with hierarchical fuzzy matching and usage frequency tracking
+   - Commodities with fuzzy matching support and frequency counting
    - Full Unicode support including Cyrillic
    - Advanced substring matching for all completion providers
+   - **Frequency-based prioritization**: Most used items appear first in completion lists
 3. **Semantic Token System**: Uses camelCase token type IDs (e.g., `hledgerDate`, `hledgerAccount`) to comply with VS Code validation
 4. **Color Customization**: Configurable colors through VS Code settings with automatic application
 5. **Smart Indentation**: Context-aware Enter key handling for proper transaction formatting
@@ -72,14 +74,16 @@ npm run publish
 
 The `HLedgerConfig` class handles parsing of hledger files to extract:
 
-- Account definitions (`account` directives)
-- Used accounts (from transactions)
-- Commodity definitions
+- Account definitions (`account` directives) with usage frequency tracking
+- Used accounts (from transactions) with usage frequency tracking
+- Commodity definitions with usage frequency tracking
 - Include directives for modular files
 - Transaction dates
-- Payees/merchants from transaction descriptions
-- Tags/categories from comments (`tag:value` format)
+- Payees/merchants from transaction descriptions with usage frequency tracking
+- Tags/categories from comments (`tag:value` format) with usage frequency tracking
 - Semantic token highlighting data
+- **Usage counters**: Maintains `Map<string, number>` for accounts, payees, tags, and commodities
+- **Frequency-based methods**: `getAccountsByUsage()`, `getPayeesByUsage()`, `getTagsByUsage()`, `getCommoditiesByUsage()`
 
 ## Testing
 

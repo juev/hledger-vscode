@@ -142,6 +142,12 @@ export class HLedgerConfig implements IHLedgerConfig {
     payees: Set<string> = new Set(); // Stores/payees
     tags: Set<string> = new Set();   // Tags/categories
     
+    // Usage counters for frequency-based prioritization
+    accountUsageCount: Map<string, number> = new Map();
+    payeeUsageCount: Map<string, number> = new Map();
+    tagUsageCount: Map<string, number> = new Map();
+    commodityUsageCount: Map<string, number> = new Map();
+    
     parseFile(filePath: string): void {
         try {
             if (!fs.existsSync(filePath)) {
@@ -177,6 +183,8 @@ export class HLedgerConfig implements IHLedgerConfig {
                         // Store entire description as payee, including pipe characters
                         // Do not split on | to support payees like "Store | Branch"
                         this.payees.add(description);
+                        // Increment usage count for payee
+                        this.payeeUsageCount.set(description, (this.payeeUsageCount.get(description) || 0) + 1);
                     }
                     
                     // Extract tags from comment
@@ -188,7 +196,10 @@ export class HLedgerConfig implements IHLedgerConfig {
                             tagMatches.forEach(match => {
                                 const tagMatch = match.trim().match(/([a-zA-Z\u0400-\u04FF][a-zA-Z\u0400-\u04FF0-9_]*):(.+)/);
                                 if (tagMatch) {
-                                    this.tags.add(tagMatch[1]);
+                                    const tag = tagMatch[1];
+                                    this.tags.add(tag);
+                                    // Increment usage count for tag
+                                    this.tagUsageCount.set(tag, (this.tagUsageCount.get(tag) || 0) + 1);
                                 }
                             });
                         }
@@ -250,6 +261,21 @@ export class HLedgerConfig implements IHLedgerConfig {
                     const account = postingMatch[1].trim();
                     this.accounts.add(account);
                     this.usedAccounts.add(account);
+                    // Increment usage count for account
+                    this.accountUsageCount.set(account, (this.accountUsageCount.get(account) || 0) + 1);
+                    
+                    // Extract and count commodities from amount
+                    const amount = postingMatch[2]?.trim();
+                    if (amount) {
+                        // Match commodity symbols (letters, symbols like $, €, etc.)
+                        const commodityMatch = amount.match(/([A-Z]{3,}|[^\d\s.,+-]+)/);
+                        if (commodityMatch) {
+                            const commodity = commodityMatch[1].trim();
+                            this.commodities.add(commodity);
+                            // Increment usage count for commodity
+                            this.commodityUsageCount.set(commodity, (this.commodityUsageCount.get(commodity) || 0) + 1);
+                        }
+                    }
                     
                     // Parse posting comment for tags including date:
                     const postingComment = postingMatch[3]?.trim();
@@ -267,7 +293,10 @@ export class HLedgerConfig implements IHLedgerConfig {
                             tagMatches.forEach(match => {
                                 const tagMatch = match.trim().match(/([a-zA-Z\u0400-\u04FF][a-zA-Z\u0400-\u04FF0-9_]*):(.+)/);
                                 if (tagMatch) {
-                                    this.tags.add(tagMatch[1]);
+                                    const tag = tagMatch[1];
+                                    this.tags.add(tag);
+                                    // Increment usage count for tag
+                                    this.tagUsageCount.set(tag, (this.tagUsageCount.get(tag) || 0) + 1);
                                 }
                             });
                         }
@@ -311,6 +340,35 @@ export class HLedgerConfig implements IHLedgerConfig {
     
     getTags(): string[] {
         return Array.from(this.tags);
+    }
+    
+    // Methods to get sorted lists by usage frequency
+    getAccountsByUsage(): Array<{account: string, count: number}> {
+        return Array.from(this.accounts).map(account => ({
+            account,
+            count: this.accountUsageCount.get(account) || 0
+        })).sort((a, b) => b.count - a.count);
+    }
+    
+    getPayeesByUsage(): Array<{payee: string, count: number}> {
+        return Array.from(this.payees).map(payee => ({
+            payee,
+            count: this.payeeUsageCount.get(payee) || 0
+        })).sort((a, b) => b.count - a.count);
+    }
+    
+    getTagsByUsage(): Array<{tag: string, count: number}> {
+        return Array.from(this.tags).map(tag => ({
+            tag,
+            count: this.tagUsageCount.get(tag) || 0
+        })).sort((a, b) => b.count - a.count);
+    }
+    
+    getCommoditiesByUsage(): Array<{commodity: string, count: number}> {
+        return Array.from(this.commodities).map(commodity => ({
+            commodity,
+            count: this.commodityUsageCount.get(commodity) || 0
+        })).sort((a, b) => b.count - a.count);
     }
     
     scanWorkspace(workspacePath: string): void {
@@ -480,6 +538,16 @@ export function getConfig(document: vscode.TextDocument): IHLedgerConfig {
     config.defaultCommodity = cachedConfig.defaultCommodity;
     config.lastDate = cachedConfig.lastDate;
     
+    // Copy usage counts from cache
+    cachedConfig.accountUsageCount.forEach((count, account) => 
+        config.accountUsageCount.set(account, count));
+    cachedConfig.payeeUsageCount.forEach((count, payee) => 
+        config.payeeUsageCount.set(payee, count));
+    cachedConfig.tagUsageCount.forEach((count, tag) => 
+        config.tagUsageCount.set(tag, count));
+    cachedConfig.commodityUsageCount.forEach((count, commodity) => 
+        config.commodityUsageCount.set(commodity, count));
+    
     // Parse current document to get latest changes
     config.parseContent(document.getText(), path.dirname(filePath));
     
@@ -572,36 +640,26 @@ export class AccountCompletionProvider implements vscode.CompletionItemProvider 
         // Only provide account completions if there's no amount in the line yet
         if (linePrefix.match(/^\s+\S*/) && !linePrefix.match(/\s+[-+]?\d+([.,]\d+)*\s*\S*$/)) {
             const config = getConfig(document);
+            const accountsByUsage = config.getAccountsByUsage();
             const definedAccounts = config.getDefinedAccounts();
-            const usedAccounts = config.getUsedAccounts();
             
             // Extract what user has already typed after spaces
             const accountMatch = linePrefix.match(/^\s+(.*)$/);
             const typedText = accountMatch ? accountMatch[1] : '';
             
-            // Combine all accounts for fuzzy matching
-            const allAccounts: Array<{account: string, kind: vscode.CompletionItemKind, detail: string, priority: number}> = [];
+            // Combine all accounts for fuzzy matching, sorted by usage frequency
+            const allAccounts: Array<{account: string, kind: vscode.CompletionItemKind, detail: string, priority: number, usageCount: number}> = [];
             
-            // Add defined accounts
-            definedAccounts.forEach(acc => {
+            // Add accounts sorted by usage frequency
+            accountsByUsage.forEach(({account, count}) => {
+                const isDefined = definedAccounts.includes(account);
                 allAccounts.push({
-                    account: acc,
-                    kind: vscode.CompletionItemKind.Class,
-                    detail: 'Defined account',
-                    priority: 1
+                    account,
+                    kind: isDefined ? vscode.CompletionItemKind.Class : vscode.CompletionItemKind.Reference,
+                    detail: isDefined ? `Defined account (used ${count} times)` : `Used account (${count} times)`,
+                    priority: isDefined ? 1 : 2,
+                    usageCount: count
                 });
-            });
-            
-            // Add used accounts
-            usedAccounts.forEach(acc => {
-                if (!definedAccounts.includes(acc)) {
-                    allAccounts.push({
-                        account: acc,
-                        kind: vscode.CompletionItemKind.Reference,
-                        detail: 'Used account',
-                        priority: 2
-                    });
-                }
             });
             
             // Add default prefixes
@@ -610,7 +668,8 @@ export class AccountCompletionProvider implements vscode.CompletionItemProvider 
                     account: prefix,
                     kind: vscode.CompletionItemKind.Folder,
                     detail: 'Default account prefix',
-                    priority: 3
+                    priority: 3,
+                    usageCount: 0
                 });
             });
             
@@ -656,8 +715,10 @@ export class AccountCompletionProvider implements vscode.CompletionItemProvider 
                 const item = new vscode.CompletionItem(match.item, accountInfo.kind);
                 item.detail = accountInfo.detail;
                 
-                // Use index and priority for sorting to ensure consistent order
-                item.sortText = accountInfo.priority.toString() + '_' + index.toString().padStart(3, '0');
+                // Sort by usage frequency first, then by priority, then by index
+                // Higher usage count gets lower sortText value (appears first)
+                const usageScore = (9999 - accountInfo.usageCount).toString().padStart(4, '0');
+                item.sortText = usageScore + '_' + accountInfo.priority.toString() + '_' + index.toString().padStart(3, '0');
                 // Bypass VS Code's built-in filtering by setting filterText to match the query
                 item.filterText = typedText;
                 
@@ -694,25 +755,28 @@ export class CommodityCompletionProvider implements vscode.CompletionItemProvide
         if (amountMatch) {
             const typedText = amountMatch[2] || '';
             const config = getConfig(document);
-            const configCommodities = config.getCommodities();
+            const commoditiesByUsage = config.getCommoditiesByUsage();
             
             // Combine all commodities for fuzzy matching
-            const allCommodities: Array<{commodity: string, detail: string, priority: number}> = [];
+            const allCommodities: Array<{commodity: string, detail: string, priority: number, usageCount: number}> = [];
             
-            configCommodities.forEach(comm => {
+            commoditiesByUsage.forEach(({commodity, count}) => {
                 allCommodities.push({
-                    commodity: comm,
-                    detail: 'Configured commodity',
-                    priority: 1
+                    commodity,
+                    detail: `Configured commodity (used ${count} times)`,
+                    priority: 1,
+                    usageCount: count
                 });
             });
             
             DEFAULT_COMMODITIES.forEach(comm => {
-                if (!configCommodities.includes(comm)) {
+                // Check if commodity is not in the usage list
+                if (!commoditiesByUsage.some(c => c.commodity === comm)) {
                     allCommodities.push({
                         commodity: comm,
                         detail: 'Default commodity',
-                        priority: 2
+                        priority: 2,
+                        usageCount: 0
                     });
                 }
             });
@@ -757,7 +821,9 @@ export class CommodityCompletionProvider implements vscode.CompletionItemProvide
                 const commodityInfo = allCommodities.find(c => c.commodity === match.item)!;
                 const item = new vscode.CompletionItem(match.item, vscode.CompletionItemKind.Unit);
                 item.detail = commodityInfo.detail;
-                item.sortText = commodityInfo.priority.toString() + '_' + index.toString().padStart(3, '0');
+                // Sort by usage frequency first, then by priority, then by index
+                const usageScore = (9999 - commodityInfo.usageCount).toString().padStart(4, '0');
+                item.sortText = usageScore + '_' + commodityInfo.priority.toString() + '_' + index.toString().padStart(3, '0');
                 // Bypass VS Code's built-in filtering by setting filterText to match the query
                 item.filterText = typedText;
                 
@@ -901,9 +967,9 @@ export class PayeeCompletionProvider implements vscode.CompletionItemProvider {
         // Format: DATE [*|!] [CODE] DESCRIPTION
         if (linePrefix.match(/^(\d{4}[-/.]\d{1,2}[-/.]\d{1,2}|\d{1,2}[-/.]\d{1,2})\s*(\*|!)?\s*(\([^)]+\))?\s*/)) {
             const config = getConfig(document);
-            const payees = config.getPayees();
+            const payeesByUsage = config.getPayeesByUsage();
             
-            if (payees.length === 0) {
+            if (payeesByUsage.length === 0) {
                 return undefined;
             }
             
@@ -911,12 +977,15 @@ export class PayeeCompletionProvider implements vscode.CompletionItemProvider {
             const transactionMatch = linePrefix.match(/^(\d{4}[-/.]\d{1,2}[-/.]\d{1,2}|\d{1,2}[-/.]\d{1,2})\s*(\*|!)?\s*(\([^)]+\))?\s*(.*)$/);
             const typedText = transactionMatch ? transactionMatch[4] : '';
             
+            // Get payee names sorted by usage
+            const payeeNames = payeesByUsage.map(p => p.payee);
+            
             // Smart completion strategy based on query length
             let fuzzyMatches: FuzzyMatch[];
             
             if (typedText.length <= 2) {
                 // For short queries, use simple substring matching to avoid noise
-                const substringMatches = payees.filter(p => p.toLowerCase().includes(typedText.toLowerCase()));
+                const substringMatches = payeeNames.filter(p => p.toLowerCase().includes(typedText.toLowerCase()));
                 
                 fuzzyMatches = substringMatches.map(item => {
                     const itemLower = item.toLowerCase();
@@ -936,7 +1005,7 @@ export class PayeeCompletionProvider implements vscode.CompletionItemProvider {
                 fuzzyMatches.sort((a, b) => b.score - a.score);
             } else {
                 // For longer queries (3+ chars), use full fuzzy matching including substrings
-                fuzzyMatches = fuzzyMatch(typedText, payees);
+                fuzzyMatches = fuzzyMatch(typedText, payeeNames);
             }
             
             // If no matches found, return undefined to let other providers handle it
@@ -948,10 +1017,12 @@ export class PayeeCompletionProvider implements vscode.CompletionItemProvider {
             const topMatches = fuzzyMatches.slice(0, 10);
             
             const suggestions = topMatches.map((match, index) => {
+                const payeeInfo = payeesByUsage.find(p => p.payee === match.item)!;
                 const item = new vscode.CompletionItem(match.item, vscode.CompletionItemKind.Value);
-                item.detail = 'Payee/Store';
-                // Use index for sorting to ensure consistent order
-                item.sortText = index.toString().padStart(3, '0');
+                item.detail = `Payee/Store (used ${payeeInfo.count} times)`;
+                // Sort by usage frequency first (higher usage count gets lower sortText value)
+                const usageScore = (9999 - payeeInfo.count).toString().padStart(4, '0');
+                item.sortText = usageScore + '_' + index.toString().padStart(3, '0');
                 // Bypass VS Code's built-in filtering by setting filterText to match the query
                 item.filterText = typedText;
                 
@@ -987,9 +1058,9 @@ export class TagCompletionProvider implements vscode.CompletionItemProvider {
             linePrefix.match(/;\s*.*#([a-zA-Z\u0400-\u04FF][a-zA-Z\u0400-\u04FF0-9_]*)?$/)) {
             
             const config = getConfig(document);
-            const tags = config.getTags();
+            const tagsByUsage = config.getTagsByUsage();
             
-            if (tags.length === 0) {
+            if (tagsByUsage.length === 0) {
                 return undefined;
             }
             
@@ -997,12 +1068,15 @@ export class TagCompletionProvider implements vscode.CompletionItemProvider {
             const tagMatch = linePrefix.match(/([a-zA-Z\u0400-\u04FF][a-zA-Z\u0400-\u04FF0-9_]*)(:?)$/);
             const typedText = tagMatch ? tagMatch[1] : '';
             
+            // Get tag names sorted by usage
+            const tagNames = tagsByUsage.map(t => t.tag);
+            
             // Use smart fuzzy matching for tags
             let fuzzyMatches: FuzzyMatch[];
             
             if (typedText.length <= 2) {
                 // For short queries, use simple substring matching to avoid noise
-                const substringMatches = tags.filter(tag => tag.toLowerCase().includes(typedText.toLowerCase()));
+                const substringMatches = tagNames.filter(tag => tag.toLowerCase().includes(typedText.toLowerCase()));
                 
                 fuzzyMatches = substringMatches.map(item => {
                     const itemLower = item.toLowerCase();
@@ -1022,17 +1096,19 @@ export class TagCompletionProvider implements vscode.CompletionItemProvider {
                 fuzzyMatches.sort((a, b) => b.score - a.score);
             } else {
                 // For longer queries (3+ chars), use full fuzzy matching including substrings
-                fuzzyMatches = fuzzyMatch(typedText, tags);
+                fuzzyMatches = fuzzyMatch(typedText, tagNames);
             }
             
             // Limit to top 10 results for better UX and performance
             const topMatches = fuzzyMatches.slice(0, 10);
             
             const suggestions = topMatches.map((match, index) => {
+                const tagInfo = tagsByUsage.find(t => t.tag === match.item)!;
                 const item = new vscode.CompletionItem(match.item, vscode.CompletionItemKind.Keyword);
-                item.detail = 'Tag/Category';
-                // Use index for sorting to ensure consistent order
-                item.sortText = index.toString().padStart(3, '0');
+                item.detail = `Tag/Category (used ${tagInfo.count} times)`;
+                // Sort by usage frequency first (higher usage count gets lower sortText value)
+                const usageScore = (9999 - tagInfo.count).toString().padStart(4, '0');
+                item.sortText = usageScore + '_' + index.toString().padStart(3, '0');
                 // Bypass VS Code's built-in filtering by setting filterText to match the query
                 item.filterText = typedText;
                 

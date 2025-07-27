@@ -9,6 +9,12 @@ export interface IHLedgerConfig {
     payees: Set<string>; // Stores/payees
     tags: Set<string>;   // Tags/categories
     
+    // Usage counters for frequency-based prioritization
+    accountUsageCount: Map<string, number>;
+    payeeUsageCount: Map<string, number>;
+    tagUsageCount: Map<string, number>;
+    commodityUsageCount: Map<string, number>;
+    
     parseFile(filePath: string): void;
     parseContent(content: string, basePath?: string): void;
     scanWorkspace(workspacePath: string): void;
@@ -21,6 +27,12 @@ export interface IHLedgerConfig {
     getLastDate(): string | null;
     getPayees(): string[];
     getTags(): string[];
+    
+    // Methods to get sorted lists by usage frequency
+    getAccountsByUsage(): Array<{account: string, count: number}>;
+    getPayeesByUsage(): Array<{payee: string, count: number}>;
+    getTagsByUsage(): Array<{tag: string, count: number}>;
+    getCommoditiesByUsage(): Array<{commodity: string, count: number}>;
 }
 
 export interface IProjectCache {

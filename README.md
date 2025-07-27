@@ -12,11 +12,11 @@ Full-featured Visual Studio Code extension providing comprehensive syntax highli
   - **Cost/price notation** (`@` and `@@`) and balance assertions (`=`, `==`)
   - **Multiple date formats** (YYYY-MM-DD, YYYY/MM/DD, YYYY.MM.DD, MM-DD, etc.)
 - **Advanced IntelliSense Auto-completion**:
-  - **Smart Account Completion**: Suggests accounts from `account` directives and used accounts from transactions
+  - **Smart Account Completion**: Suggests accounts from `account` directives and used accounts from transactions with **frequency-based prioritization**
   - **Date Completion**: Smart date suggestions with last used date, today, and yesterday (supports all hledger date formats)
-  - **Commodity Completion**: Common currencies and cryptocurrencies
-  - **Payee Completion**: Auto-completion for payees/stores from transaction history
-  - **Tag Completion**: Smart completion for tags and categories (`key:value` pairs)
+  - **Commodity Completion**: Common currencies and cryptocurrencies **sorted by usage frequency**
+  - **Payee Completion**: Auto-completion for payees/stores from transaction history **prioritized by frequency of use**
+  - **Tag Completion**: Smart completion for tags and categories (`key:value` pairs) **ordered by usage frequency**
   - **Directive Completion**: hledger directives with advanced fuzzy matching (account, commodity, include, etc.)
 - **hledger 1.43 Compliance**: Full support for the latest hledger specification including:
   - All date formats (YYYY-MM-DD, YYYY/MM/DD, YYYY.MM.DD with . / - separators)
@@ -70,13 +70,14 @@ All hledger syntax elements are highlighted using standard TextMate scopes:
 **Account Completion**:
 
 - **Advanced fuzzy matching** with substring support for intelligent account suggestions
+- **Frequency-based prioritization**: Most frequently used accounts appear first
 - Type in posting lines to see intelligent account suggestions
 - **Smart query strategies**:
   - Short queries (1-2 chars): Fast substring matching with prefix priority
   - Longer queries (3+ chars): Full fuzzy matching with advanced scoring
-- **Intelligent scoring**: Prioritizes exact prefix matches, then word boundaries, then substrings
-- **Account hierarchy**: Defined accounts (from `account` directives) appear first, used accounts second, standard prefixes last
-- **Length-based sorting**: Shorter exact matches appear before longer ones
+- **Intelligent scoring**: Prioritizes by usage frequency first, then exact prefix matches, then word boundaries, then substrings
+- **Account hierarchy**: Defined accounts (from `account` directives) and used accounts, both sorted by frequency
+- **Usage indicators**: Shows usage count in suggestions (e.g., "Used account (5 times)")
 - Partial matching - continues completion from where you left off
 
 **Date Completion**:
@@ -90,27 +91,30 @@ All hledger syntax elements are highlighted using standard TextMate scopes:
 **Payee/Store Completion**:
 
 - **Advanced fuzzy matching** with substring support for intelligent payee suggestions
+- **Frequency-based prioritization**: Most frequently used payees appear first
 - Auto-complete payees and store names from transaction history
 - **Smart query strategies**:
   - Short queries (1-2 chars): Fast substring matching with prefix priority
   - Longer queries (3+ chars): Full fuzzy matching with advanced scoring
-- **Intelligent scoring**: Prioritizes exact prefix matches, then word boundaries, then substrings
-- **Length-based sorting**: Shorter exact matches appear before longer ones
+- **Intelligent scoring**: Prioritizes by usage frequency first, then exact prefix matches, then word boundaries, then substrings
+- **Usage indicators**: Shows usage count in suggestions (e.g., "Payee/Store (used 3 times)")
 - Supports both single payee format and `payee|note` format
 - Unicode support for international store names including Cyrillic characters
 - **Examples**: 
-  - Type "м" → finds "Магазин", "МТС", "Мегафон"
+  - Type "м" → finds "Магазин" (3 uses), "МТС" (1 use), "Мегафон" (1 use) - sorted by frequency
   - Type "зин" → finds "Магазин" (substring match)
-  - Type "маг" → prioritizes "Магазин" over "Магазин у дома"
+  - Frequently used stores like "Amazon" appear before less used ones like "Costco"
 
 **Tag Completion**:
 
 - **Advanced fuzzy matching** with substring support for intelligent tag suggestions
+- **Frequency-based prioritization**: Most frequently used tags appear first
 - Smart completion for `tag:value` format
 - **Smart query strategies**:
   - Short queries (1-2 chars): Fast substring matching with prefix priority
   - Longer queries (3+ chars): Full fuzzy matching with advanced scoring
-- **Intelligent scoring**: Prioritizes exact prefix matches, then word boundaries, then substrings
+- **Intelligent scoring**: Prioritizes by usage frequency first, then exact prefix matches, then word boundaries, then substrings
+- **Usage indicators**: Shows usage count in suggestions (e.g., "Tag/Category (used 7 times)")
 - Learns from existing tags in transaction and posting comments
 - Automatically adds `:` for tag:value format
 - Full Unicode support including Cyrillic characters
@@ -118,10 +122,12 @@ All hledger syntax elements are highlighted using standard TextMate scopes:
 **Commodity/Currency Completion**:
 
 - **Advanced fuzzy matching** with substring support for intelligent commodity suggestions
+- **Frequency-based prioritization**: Most frequently used commodities appear first
 - **Smart query strategies**:
   - Short queries (1-2 chars): Fast substring matching with prefix priority
   - Longer queries (3+ chars): Full fuzzy matching with advanced scoring
-- **Intelligent scoring**: Prioritizes exact prefix matches, then word boundaries, then substrings
+- **Intelligent scoring**: Prioritizes by usage frequency first, then exact prefix matches, then word boundaries, then substrings
+- **Usage indicators**: Shows usage count in suggestions (e.g., "Configured commodity (used 15 times)")
 - Triggers after amount values in postings
 - Includes configured commodities from `commodity` directives
 - Default commodities: USD, EUR, GBP, CAD, AUD, JPY, CHF, RUB, BTC, ETH
@@ -149,9 +155,11 @@ The extension features an advanced caching system that:
 
 - **Persistent Caching**: Maintains cache across VS Code sessions for optimal performance
 - **Project-Based**: Separate caches for different projects/workspaces
+- **Frequency Tracking**: Automatically tracks usage frequency of accounts, payees, tags, and commodities
 - **Intelligent Scanning**: Automatically discovers hledger files in your workspace
 - **Multi-File Support**: Handles `include` directives and scans multiple journal files
 - **Performance Optimized**: No automatic cache invalidation - caches persist until extension deactivation
+- **Usage Statistics**: Preserves usage counters across sessions for consistent prioritization
 
 ### Auto-Completion Configuration
 
