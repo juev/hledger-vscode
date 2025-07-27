@@ -46,7 +46,7 @@ Full-featured Visual Studio Code extension providing comprehensive syntax highli
 
 1. Open Visual Studio Code
 2. Go to Extensions (Ctrl+Shift+X)
-3. Search for "hledger-vscode"
+3. Search for "evsyukov.hledger"
 4. Click Install
 
 ## Usage
