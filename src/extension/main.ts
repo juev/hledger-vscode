@@ -891,31 +891,31 @@ async function applyCustomColors(): Promise<void> {
             "[*]": {
                 "enabled": true,
                 "rules": {
-                    "hledger.date": {
+                    "hledgerDate": {
                         "foreground": dateColor,
                         "bold": true
                     },
-                    "hledger.account": accountColor,
-                    "hledger.amount": {
+                    "hledgerAccount": accountColor,
+                    "hledgerAmount": {
                         "foreground": amountColor,
                         "bold": true
                     },
-                    "hledger.commodity": {
+                    "hledgerCommodity": {
                         "foreground": commodityColor,
                         "bold": true
                     },
-                    "hledger.payee": payeeColor,
-                    "hledger.comment": commentColor,
-                    "hledger.tag": {
+                    "hledgerPayee": payeeColor,
+                    "hledgerComment": commentColor,
+                    "hledgerTag": {
                         "foreground": tagColor,
                         "bold": true
                     },
-                    "hledger.directive": {
+                    "hledgerDirective": {
                         "foreground": directiveColor,
                         "bold": true
                     },
-                    "hledger.account.defined": accountDefinedColor,
-                    "hledger.account.virtual": accountVirtualColor
+                    "hledgerAccount.defined": accountDefinedColor,
+                    "hledgerAccount.virtual": accountVirtualColor
                 }
             }
         };
@@ -923,49 +923,49 @@ async function applyCustomColors(): Promise<void> {
         // Apply TextMate rules for themes that don't support semantic tokens
         const textMateRules = [
             {
-                "scope": "hledger.date",
+                "scope": "hledgerDate",
                 "settings": { 
                     "foreground": dateColor,
                     "fontStyle": "bold"
                 }
             },
             {
-                "scope": "hledger.account",
+                "scope": "hledgerAccount",
                 "settings": { 
                     "foreground": accountColor,
                     "fontStyle": ""
                 }
             },
             {
-                "scope": "hledger.amount",
+                "scope": "hledgerAmount",
                 "settings": { 
                     "foreground": amountColor,
                     "fontStyle": "bold"
                 }
             },
             {
-                "scope": "hledger.commodity",
+                "scope": "hledgerCommodity",
                 "settings": { 
                     "foreground": commodityColor,
                     "fontStyle": "bold"
                 }
             },
             {
-                "scope": "hledger.payee",
+                "scope": "hledgerPayee",
                 "settings": { 
                     "foreground": payeeColor,
                     "fontStyle": ""
                 }
             },
             {
-                "scope": "hledger.comment",
+                "scope": "hledgerComment",
                 "settings": { 
                     "foreground": commentColor,
                     "fontStyle": ""
                 }
             },
             {
-                "scope": "hledger.tag",
+                "scope": "hledgerTag",
                 "settings": { 
                     "foreground": tagColor,
                     "fontStyle": "bold"

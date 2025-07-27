@@ -1,14 +1,14 @@
 import * as vscode from 'vscode';
 
 export const TOKEN_TYPES = [
-    'hledger.date',
-    'hledger.account',
-    'hledger.amount',
-    'hledger.commodity',
-    'hledger.payee',
-    'hledger.comment',
-    'hledger.tag',
-    'hledger.directive'
+    'hledgerDate',
+    'hledgerAccount',
+    'hledgerAmount',
+    'hledgerCommodity',
+    'hledgerPayee',
+    'hledgerComment',
+    'hledgerTag',
+    'hledgerDirective'
 ];
 
 export const TOKEN_MODIFIERS = [
@@ -76,7 +76,7 @@ export class HLedgerSemanticTokensProvider implements vscode.DocumentSemanticTok
 
     private parseCommentLine(text: string, lineNumber: number, tokensBuilder: vscode.SemanticTokensBuilder): void {
         // Mark entire line as comment
-        tokensBuilder.push(lineNumber, 0, text.length, this.getTokenType('hledger.comment'), 0);
+        tokensBuilder.push(lineNumber, 0, text.length, this.getTokenType('hledgerComment'), 0);
 
         // Parse tags within comments
         const tagRegex = /([a-zA-Z\u0400-\u04FF][a-zA-Z\u0400-\u04FF0-9_]*):([^\s,;]+)/g;
@@ -84,14 +84,14 @@ export class HLedgerSemanticTokensProvider implements vscode.DocumentSemanticTok
         while ((match = tagRegex.exec(text)) !== null) {
             const tagStart = match.index;
             const tagLength = match[1].length;
-            tokensBuilder.push(lineNumber, tagStart, tagLength, this.getTokenType('hledger.tag'), 0);
+            tokensBuilder.push(lineNumber, tagStart, tagLength, this.getTokenType('hledgerTag'), 0);
         }
     }
 
     private parseDirectiveLine(text: string, lineNumber: number, tokensBuilder: vscode.SemanticTokensBuilder): void {
         const directiveMatch = text.match(/^(account|commodity|D|decimal-mark|include|P|payee|tag|year|alias|apply account|end apply account|comment|end comment|Y)\b/);
         if (directiveMatch) {
-            tokensBuilder.push(lineNumber, 0, directiveMatch[1].length, this.getTokenType('hledger.directive'), 0);
+            tokensBuilder.push(lineNumber, 0, directiveMatch[1].length, this.getTokenType('hledgerDirective'), 0);
         }
 
         // Parse account in account directive
@@ -99,7 +99,7 @@ export class HLedgerSemanticTokensProvider implements vscode.DocumentSemanticTok
         if (accountMatch) {
             const accountStart = text.indexOf(accountMatch[1]);
             tokensBuilder.push(lineNumber, accountStart, accountMatch[1].trim().length, 
-                this.getTokenType('hledger.account'), this.getTokenModifier('defined'));
+                this.getTokenType('hledgerAccount'), this.getTokenModifier('defined'));
         }
 
         // Parse commodity in commodity directive
@@ -107,7 +107,7 @@ export class HLedgerSemanticTokensProvider implements vscode.DocumentSemanticTok
         if (commodityMatch) {
             const commodityStart = text.indexOf(commodityMatch[1]);
             tokensBuilder.push(lineNumber, commodityStart, commodityMatch[1].trim().length, 
-                this.getTokenType('hledger.commodity'), this.getTokenModifier('defined'));
+                this.getTokenType('hledgerCommodity'), this.getTokenModifier('defined'));
         }
     }
 
@@ -115,7 +115,7 @@ export class HLedgerSemanticTokensProvider implements vscode.DocumentSemanticTok
         // Parse date
         const dateMatch = text.match(/^(\d{4}[-/.]\d{1,2}[-/.]\d{1,2}|\d{1,2}[-/.]\d{1,2})/);
         if (dateMatch) {
-            tokensBuilder.push(lineNumber, 0, dateMatch[1].length, this.getTokenType('hledger.date'), 0);
+            tokensBuilder.push(lineNumber, 0, dateMatch[1].length, this.getTokenType('hledgerDate'), 0);
         }
 
         // Parse payee/description
@@ -124,7 +124,7 @@ export class HLedgerSemanticTokensProvider implements vscode.DocumentSemanticTok
             const payeeStart = text.indexOf(transactionMatch[4]);
             const payeeText = transactionMatch[4].trim();
             if (payeeText) {
-                tokensBuilder.push(lineNumber, payeeStart, payeeText.length, this.getTokenType('hledger.payee'), 0);
+                tokensBuilder.push(lineNumber, payeeStart, payeeText.length, this.getTokenType('hledgerPayee'), 0);
             }
         }
 
@@ -132,7 +132,7 @@ export class HLedgerSemanticTokensProvider implements vscode.DocumentSemanticTok
         const commentMatch = text.match(/;\s*(.+)$/);
         if (commentMatch) {
             const commentStart = text.indexOf(';');
-            tokensBuilder.push(lineNumber, commentStart, text.length - commentStart, this.getTokenType('hledger.comment'), 0);
+            tokensBuilder.push(lineNumber, commentStart, text.length - commentStart, this.getTokenType('hledgerComment'), 0);
             
             // Parse tags in comment
             this.parseTagsInText(commentMatch[1], lineNumber, commentStart + 1, tokensBuilder);
@@ -151,7 +151,7 @@ export class HLedgerSemanticTokensProvider implements vscode.DocumentSemanticTok
             const modifier = isVirtual ? this.getTokenModifier('virtual') : this.getTokenModifier('used');
             
             tokensBuilder.push(lineNumber, accountStart, accountText.length, 
-                this.getTokenType('hledger.account'), modifier);
+                this.getTokenType('hledgerAccount'), modifier);
         }
 
         // Parse amounts and commodities
@@ -161,7 +161,7 @@ export class HLedgerSemanticTokensProvider implements vscode.DocumentSemanticTok
         const commentMatch = text.match(/;\s*(.+)$/);
         if (commentMatch) {
             const commentStart = text.indexOf(';');
-            tokensBuilder.push(lineNumber, commentStart, text.length - commentStart, this.getTokenType('hledger.comment'), 0);
+            tokensBuilder.push(lineNumber, commentStart, text.length - commentStart, this.getTokenType('hledgerComment'), 0);
             
             // Parse tags in comment
             this.parseTagsInText(commentMatch[1], lineNumber, commentStart + 1, tokensBuilder);
@@ -191,12 +191,12 @@ export class HLedgerSemanticTokensProvider implements vscode.DocumentSemanticTok
                     
                     if (numberMatch) {
                         const numberStart = match.index + match[0].indexOf(numberMatch[1]);
-                        tokensBuilder.push(lineNumber, numberStart, numberMatch[1].length, this.getTokenType('hledger.amount'), 0);
+                        tokensBuilder.push(lineNumber, numberStart, numberMatch[1].length, this.getTokenType('hledgerAmount'), 0);
                     }
                     
                     if (commodityMatch) {
                         const commodityStart = match.index + match[0].indexOf(commodityMatch[1]);
-                        tokensBuilder.push(lineNumber, commodityStart, commodityMatch[1].length, this.getTokenType('hledger.commodity'), 0);
+                        tokensBuilder.push(lineNumber, commodityStart, commodityMatch[1].length, this.getTokenType('hledgerCommodity'), 0);
                     }
                 } else {
                     // Regular parsing
@@ -204,11 +204,11 @@ export class HLedgerSemanticTokensProvider implements vscode.DocumentSemanticTok
                         if (match[i] && match[i].match(/[-+]?\d+([.,]\d+)*/)) {
                             // This is a number
                             const numberStart = match.index + match[0].indexOf(match[i]);
-                            tokensBuilder.push(lineNumber, numberStart, match[i].length, this.getTokenType('hledger.amount'), 0);
+                            tokensBuilder.push(lineNumber, numberStart, match[i].length, this.getTokenType('hledgerAmount'), 0);
                         } else if (match[i] && match[i].match(/[A-Za-z0-9$£€¥₹₽₿₩₪₨₦₡₵₺₴₼₢₸₷₶₹₵₫₪₨₽"]+/)) {
                             // This is a commodity
                             const commodityStart = match.index + match[0].indexOf(match[i]);
-                            tokensBuilder.push(lineNumber, commodityStart, match[i].length, this.getTokenType('hledger.commodity'), 0);
+                            tokensBuilder.push(lineNumber, commodityStart, match[i].length, this.getTokenType('hledgerCommodity'), 0);
                         }
                     }
                 }
@@ -222,7 +222,7 @@ export class HLedgerSemanticTokensProvider implements vscode.DocumentSemanticTok
         while ((match = tagRegex.exec(text)) !== null) {
             const tagStart = offset + match.index;
             const tagLength = match[1].length;
-            tokensBuilder.push(lineNumber, tagStart, tagLength, this.getTokenType('hledger.tag'), 0);
+            tokensBuilder.push(lineNumber, tagStart, tagLength, this.getTokenType('hledgerTag'), 0);
         }
     }
 

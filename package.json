@@ -53,42 +53,42 @@
     ],
     "semanticTokenTypes": [
       {
-        "id": "hledger.date",
+        "id": "hledgerDate",
         "superType": "string", 
         "description": "Date in hledger transactions"
       },
       {
-        "id": "hledger.account",
+        "id": "hledgerAccount",
         "superType": "namespace",
         "description": "Account names in hledger"
       },
       {
-        "id": "hledger.amount", 
+        "id": "hledgerAmount", 
         "superType": "number",
         "description": "Numeric amounts in hledger"
       },
       {
-        "id": "hledger.commodity",
+        "id": "hledgerCommodity",
         "superType": "type",
         "description": "Currency and commodity symbols"
       },
       {
-        "id": "hledger.payee",
+        "id": "hledgerPayee",
         "superType": "string",
         "description": "Payee/description in transactions"
       },
       {
-        "id": "hledger.comment",
+        "id": "hledgerComment",
         "superType": "comment",
         "description": "Comments in hledger files"
       },
       {
-        "id": "hledger.tag",
+        "id": "hledgerTag",
         "superType": "keyword",
         "description": "Tags in hledger comments"
       },
       {
-        "id": "hledger.directive",
+        "id": "hledgerDirective",
         "superType": "keyword",
         "description": "HLedger directives"
       }
@@ -266,31 +266,31 @@
         "[*]": {
           "enabled": true,
           "rules": {
-            "hledger.date": {
+            "hledgerDate": {
               "foreground": "#00D7FF",
               "bold": true
             },
-            "hledger.account": "#FFD700", 
-            "hledger.amount": {
+            "hledgerAccount": "#FFD700", 
+            "hledgerAmount": {
               "foreground": "#228B22",
               "bold": true
             },
-            "hledger.commodity": {
+            "hledgerCommodity": {
               "foreground": "#FF6B6B",
               "bold": true
             },
-            "hledger.payee": "#D2691E",
-            "hledger.comment": "#87CEEB",
-            "hledger.tag": {
+            "hledgerPayee": "#D2691E",
+            "hledgerComment": "#87CEEB",
+            "hledgerTag": {
               "foreground": "#DA70D6",
               "bold": true
             },
-            "hledger.directive": {
+            "hledgerDirective": {
               "foreground": "#DA70D6",
               "bold": true
             },
-            "hledger.account.defined": "#9CDCFE",
-            "hledger.account.virtual": "#A0A0A0"
+            "hledgerAccount.defined": "#9CDCFE",
+            "hledgerAccount.virtual": "#A0A0A0"
           }
         }
       }
