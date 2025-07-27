@@ -497,17 +497,52 @@ export class KeywordCompletionProvider implements vscode.CompletionItemProvider 
         const typedText = linePrefix.trim();
         
         if (linePrefix.match(/^\s*\S*/)) {
-            // Use fuzzy matching for keywords
-            const fuzzyMatches = fuzzyMatch(typedText, [...HLEDGER_KEYWORDS]);
+            const keywords = [...HLEDGER_KEYWORDS];
+            let completions: Array<{item: string, score: number}> = [];
             
-            if (fuzzyMatches.length === 0) {
+            if (typedText.length <= 2) {
+                // For short queries, use simple substring matching to avoid noise
+                const substringMatches = keywords.filter(keyword => keyword.toLowerCase().includes(typedText.toLowerCase()));
+                
+                // Score matches: exact prefix gets highest score, then by length
+                completions = substringMatches.map(keyword => {
+                    const keywordLower = keyword.toLowerCase();
+                    const queryLower = typedText.toLowerCase();
+                    
+                    let score = 50; // Base score for substring match
+                    
+                    if (keywordLower.startsWith(queryLower)) {
+                        score += 30; // Bonus for prefix match
+                    }
+                    
+                    // Shorter keywords get higher scores
+                    score += Math.max(0, 20 - keyword.length);
+                    
+                    return { item: keyword, score };
+                });
+            } else {
+                // For longer queries (3+ chars), use full fuzzy matching including substrings
+                completions = fuzzyMatch(typedText, keywords);
+            }
+            
+            if (completions.length === 0) {
                 return undefined;
             }
             
-            return fuzzyMatches.map((match, index) => {
+            // Sort by score descending, then by length ascending for ties
+            completions.sort((a, b) => {
+                if (b.score !== a.score) return b.score - a.score;
+                return a.item.length - b.item.length;
+            });
+            
+            // Limit results to prevent overwhelming UI
+            const limitedResults = completions.slice(0, 10);
+            
+            return limitedResults.map((match, index) => {
                 const item = new vscode.CompletionItem(match.item, vscode.CompletionItemKind.Keyword);
                 item.detail = 'hledger directive';
                 item.sortText = (1000 - match.score).toString().padStart(4, '0') + '_' + index.toString().padStart(3, '0');
+                item.filterText = typedText; // Bypass VS Code filtering
                 
                 if (typedText) {
                     const range = new vscode.Range(
@@ -579,24 +614,52 @@ export class AccountCompletionProvider implements vscode.CompletionItemProvider 
                 });
             });
             
-            // Use fuzzy matching for accounts
+            // Use smart fuzzy matching for accounts
             const accountNames = allAccounts.map(a => a.account);
-            const fuzzyMatches = fuzzyMatch(typedText, accountNames);
+            let fuzzyMatches: FuzzyMatch[];
+            
+            if (typedText.length <= 2) {
+                // For short queries, use simple substring matching to avoid noise
+                const substringMatches = accountNames.filter(acc => acc.toLowerCase().includes(typedText.toLowerCase()));
+                
+                fuzzyMatches = substringMatches.map(item => {
+                    const itemLower = item.toLowerCase();
+                    const queryLower = typedText.toLowerCase();
+                    
+                    // Simple scoring: prefix matches get higher score, then by length
+                    let score = 1000;
+                    if (itemLower.startsWith(queryLower)) {
+                        score += 200; // Prefix bonus
+                    }
+                    score -= item.length; // Shorter items preferred
+                    
+                    return { item, score };
+                });
+                
+                // Sort by score (higher first)
+                fuzzyMatches.sort((a, b) => b.score - a.score);
+            } else {
+                // For longer queries (3+ chars), use full fuzzy matching including substrings
+                fuzzyMatches = fuzzyMatch(typedText, accountNames);
+            }
             
             // If no fuzzy matches, return undefined to let other providers handle
             if (fuzzyMatches.length === 0) {
                 return undefined;
             }
             
-            const suggestions = fuzzyMatches.map((match, index) => {
+            // Limit to top 15 results for accounts (more than payees since accounts are hierarchical)
+            const topMatches = fuzzyMatches.slice(0, 15);
+            
+            const suggestions = topMatches.map((match, index) => {
                 const accountInfo = allAccounts.find(a => a.account === match.item)!;
                 const item = new vscode.CompletionItem(match.item, accountInfo.kind);
                 item.detail = accountInfo.detail;
                 
-                // Use fuzzy score and priority for sorting
-                item.sortText = (1000 - match.score).toString().padStart(4, '0') + '_' + 
-                               accountInfo.priority.toString() + '_' + 
-                               index.toString().padStart(3, '0');
+                // Use index and priority for sorting to ensure consistent order
+                item.sortText = accountInfo.priority.toString() + '_' + index.toString().padStart(3, '0');
+                // Bypass VS Code's built-in filtering by setting filterText to match the query
+                item.filterText = typedText;
                 
                 // Set the text to replace - only replace what user typed
                 if (typedText) {
@@ -654,21 +717,49 @@ export class CommodityCompletionProvider implements vscode.CompletionItemProvide
                 }
             });
             
-            // Use fuzzy matching for commodities
+            // Use smart fuzzy matching for commodities
             const commodityNames = allCommodities.map(c => c.commodity);
-            const fuzzyMatches = fuzzyMatch(typedText, commodityNames);
+            let fuzzyMatches: FuzzyMatch[];
+            
+            if (typedText.length <= 2) {
+                // For short queries, use simple substring matching to avoid noise
+                const substringMatches = commodityNames.filter(comm => comm.toLowerCase().includes(typedText.toLowerCase()));
+                
+                fuzzyMatches = substringMatches.map(item => {
+                    const itemLower = item.toLowerCase();
+                    const queryLower = typedText.toLowerCase();
+                    
+                    // Simple scoring: prefix matches get higher score, then by length
+                    let score = 1000;
+                    if (itemLower.startsWith(queryLower)) {
+                        score += 200; // Prefix bonus
+                    }
+                    score -= item.length; // Shorter items preferred
+                    
+                    return { item, score };
+                });
+                
+                // Sort by score (higher first)
+                fuzzyMatches.sort((a, b) => b.score - a.score);
+            } else {
+                // For longer queries (3+ chars), use full fuzzy matching including substrings
+                fuzzyMatches = fuzzyMatch(typedText, commodityNames);
+            }
             
             if (fuzzyMatches.length === 0) {
                 return undefined;
             }
             
-            return fuzzyMatches.map((match, index) => {
+            // Limit to top 10 results for better UX and performance
+            const topMatches = fuzzyMatches.slice(0, 10);
+            
+            return topMatches.map((match, index) => {
                 const commodityInfo = allCommodities.find(c => c.commodity === match.item)!;
                 const item = new vscode.CompletionItem(match.item, vscode.CompletionItemKind.Unit);
                 item.detail = commodityInfo.detail;
-                item.sortText = (1000 - match.score).toString().padStart(4, '0') + '_' + 
-                               commodityInfo.priority.toString() + '_' + 
-                               index.toString().padStart(3, '0');
+                item.sortText = commodityInfo.priority.toString() + '_' + index.toString().padStart(3, '0');
+                // Bypass VS Code's built-in filtering by setting filterText to match the query
+                item.filterText = typedText;
                 
                 if (typedText) {
                     const range = new vscode.Range(
@@ -906,14 +997,44 @@ export class TagCompletionProvider implements vscode.CompletionItemProvider {
             const tagMatch = linePrefix.match(/([a-zA-Z\u0400-\u04FF][a-zA-Z\u0400-\u04FF0-9_]*)(:?)$/);
             const typedText = tagMatch ? tagMatch[1] : '';
             
-            // Use fuzzy matching for tags
-            const fuzzyMatches = fuzzyMatch(typedText, tags);
+            // Use smart fuzzy matching for tags
+            let fuzzyMatches: FuzzyMatch[];
             
-            const suggestions = fuzzyMatches.map((match, index) => {
+            if (typedText.length <= 2) {
+                // For short queries, use simple substring matching to avoid noise
+                const substringMatches = tags.filter(tag => tag.toLowerCase().includes(typedText.toLowerCase()));
+                
+                fuzzyMatches = substringMatches.map(item => {
+                    const itemLower = item.toLowerCase();
+                    const queryLower = typedText.toLowerCase();
+                    
+                    // Simple scoring: prefix matches get higher score, then by length
+                    let score = 1000;
+                    if (itemLower.startsWith(queryLower)) {
+                        score += 200; // Prefix bonus
+                    }
+                    score -= item.length; // Shorter items preferred
+                    
+                    return { item, score };
+                });
+                
+                // Sort by score (higher first)
+                fuzzyMatches.sort((a, b) => b.score - a.score);
+            } else {
+                // For longer queries (3+ chars), use full fuzzy matching including substrings
+                fuzzyMatches = fuzzyMatch(typedText, tags);
+            }
+            
+            // Limit to top 10 results for better UX and performance
+            const topMatches = fuzzyMatches.slice(0, 10);
+            
+            const suggestions = topMatches.map((match, index) => {
                 const item = new vscode.CompletionItem(match.item, vscode.CompletionItemKind.Keyword);
                 item.detail = 'Tag/Category';
-                // Use fuzzy score for sorting, with index as tie-breaker
-                item.sortText = (1000 - match.score).toString().padStart(4, '0') + '_' + index.toString().padStart(3, '0');
+                // Use index for sorting to ensure consistent order
+                item.sortText = index.toString().padStart(3, '0');
+                // Bypass VS Code's built-in filtering by setting filterText to match the query
+                item.filterText = typedText;
                 
                 // Set insert text for tag:value format
                 item.insertText = match.item + ':';

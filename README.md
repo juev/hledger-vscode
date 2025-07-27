@@ -17,7 +17,7 @@ Full-featured Visual Studio Code extension providing comprehensive syntax highli
   - **Commodity Completion**: Common currencies and cryptocurrencies
   - **Payee Completion**: Auto-completion for payees/stores from transaction history
   - **Tag Completion**: Smart completion for tags and categories (`key:value` pairs)
-  - **Directive Completion**: hledger directives (account, commodity, include, etc.)
+  - **Directive Completion**: hledger directives with advanced fuzzy matching (account, commodity, include, etc.)
 - **hledger 1.43 Compliance**: Full support for the latest hledger specification including:
   - All date formats (YYYY-MM-DD, YYYY/MM/DD, YYYY.MM.DD with . / - separators)
   - Payee|note format in transactions
@@ -69,10 +69,14 @@ All hledger syntax elements are highlighted using standard TextMate scopes:
 
 **Account Completion**:
 
+- **Advanced fuzzy matching** with substring support for intelligent account suggestions
 - Type in posting lines to see intelligent account suggestions
-- **Defined accounts** (from `account` directives) appear first
-- **Used accounts** (from existing transactions) appear second
-- **Standard prefixes** (Assets, Liabilities, etc.) appear last
+- **Smart query strategies**:
+  - Short queries (1-2 chars): Fast substring matching with prefix priority
+  - Longer queries (3+ chars): Full fuzzy matching with advanced scoring
+- **Intelligent scoring**: Prioritizes exact prefix matches, then word boundaries, then substrings
+- **Account hierarchy**: Defined accounts (from `account` directives) appear first, used accounts second, standard prefixes last
+- **Length-based sorting**: Shorter exact matches appear before longer ones
 - Partial matching - continues completion from where you left off
 
 **Date Completion**:
@@ -101,17 +105,37 @@ All hledger syntax elements are highlighted using standard TextMate scopes:
 
 **Tag Completion**:
 
+- **Advanced fuzzy matching** with substring support for intelligent tag suggestions
 - Smart completion for `tag:value` format
+- **Smart query strategies**:
+  - Short queries (1-2 chars): Fast substring matching with prefix priority
+  - Longer queries (3+ chars): Full fuzzy matching with advanced scoring
+- **Intelligent scoring**: Prioritizes exact prefix matches, then word boundaries, then substrings
 - Learns from existing tags in transaction and posting comments
 - Automatically adds `:` for tag:value format
 - Full Unicode support including Cyrillic characters
 
 **Commodity/Currency Completion**:
 
+- **Advanced fuzzy matching** with substring support for intelligent commodity suggestions
+- **Smart query strategies**:
+  - Short queries (1-2 chars): Fast substring matching with prefix priority
+  - Longer queries (3+ chars): Full fuzzy matching with advanced scoring
+- **Intelligent scoring**: Prioritizes exact prefix matches, then word boundaries, then substrings
 - Triggers after amount values in postings
 - Includes configured commodities from `commodity` directives
 - Default commodities: USD, EUR, GBP, CAD, AUD, JPY, CHF, RUB, BTC, ETH
 - Supports both prefix ($ 100) and suffix (100 USD) formats
+
+**Directive/Keyword Completion**:
+
+- **Advanced fuzzy matching** with substring support for hledger directive suggestions
+- **Smart query strategies**:
+  - Short queries (1-2 chars): Fast substring matching with prefix priority
+  - Longer queries (3+ chars): Full fuzzy matching with advanced scoring
+- **Intelligent scoring**: Prioritizes exact prefix matches, then word boundaries, then substrings
+- Complete list of hledger directives: account, commodity, include, alias, apply, end, year, etc.
+- Triggers at the beginning of lines for directive completion
 
 **Smart Indentation**:
 

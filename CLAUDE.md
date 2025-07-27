@@ -41,12 +41,12 @@ npm run publish
 1. **Main Extension Entry**: `src/extension/main.ts` - TypeScript source with proper type definitions
 2. **Syntax Highlighting**: `syntaxes/hledger.tmLanguage.json` - TextMate grammar supporting full hledger syntax
 3. **Completion Providers**:
-   - `AccountCompletionProvider` - Hierarchical account suggestions with caching
-   - `KeywordCompletionProvider` - hledger directives (account, commodity, include, etc.)
-   - `CommodityCompletionProvider` - Currency and cryptocurrency symbols
+   - `AccountCompletionProvider` - Hierarchical account suggestions with advanced fuzzy matching and caching
+   - `KeywordCompletionProvider` - hledger directives with fuzzy matching (account, commodity, include, etc.)
+   - `CommodityCompletionProvider` - Currency and cryptocurrency symbols with fuzzy matching
    - `DateCompletionProvider` - Smart date suggestions
    - `PayeeCompletionProvider` - Store/merchant completion with advanced fuzzy matching and substring support
-   - `TagCompletionProvider` - Tag/category completion from comments
+   - `TagCompletionProvider` - Tag/category completion with fuzzy matching from comments
 4. **Semantic Token Provider**: `HLedgerSemanticTokensProvider` - Advanced syntax highlighting with semantic tokens
 5. **Smart Indentation**: `HLedgerEnterCommand` and `HLedgerEnterKeyProvider` - Intelligent Enter key handling
 
@@ -58,9 +58,11 @@ npm run publish
    - Cache cleared only on extension deactivation
 2. **Enhanced Parsing**: Extracts payees, tags, accounts, and metadata
    - Payees from transaction descriptions with intelligent fuzzy matching
-   - Tags from comments (tag:value format)
+   - Tags from comments (tag:value format) with fuzzy matching
+   - Accounts with hierarchical fuzzy matching
+   - Commodities with fuzzy matching support
    - Full Unicode support including Cyrillic
-   - Advanced substring matching for payee completion
+   - Advanced substring matching for all completion providers
 3. **Semantic Token System**: Uses camelCase token type IDs (e.g., `hledgerDate`, `hledgerAccount`) to comply with VS Code validation
 4. **Color Customization**: Configurable colors through VS Code settings with automatic application
 5. **Smart Indentation**: Context-aware Enter key handling for proper transaction formatting
