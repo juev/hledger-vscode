@@ -1,5 +1,21 @@
 # Change Log
 
+## [0.1.7] - 2025-07-27
+
+### Added
+- feat: implement frequency-based prioritization for completion providers and enhance parsing logic
+- feat: update color scheme and improve readability for hledger syntax highlighting
+- feat: add semantic highlighting option for hledger files in package.json
+- feat: enhance completion providers with advanced fuzzy matching and substring support
+- feat: enhance payee completion with advanced fuzzy matching and substring support
+- feat: enhance README with semantic highlighting and smart indentation details
+- feat: add CLAUDE.md for project guidance and development commands
+
+### Changed
+- refactor: simplify and enhance amount parsing logic in HLedgerSemanticTokensProvider
+- refactor: rename hledger semantic token IDs for consistency
+
+
 ## [0.1.6] - 2025-07-27
 
 ### Added
