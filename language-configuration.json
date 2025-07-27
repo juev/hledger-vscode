@@ -33,7 +33,19 @@
       }
     },
     {
+      "beforeText": "^\\s+$",
+      "action": {
+        "indent": "outdent"
+      }
+    },
+    {
       "beforeText": "^(\\d{4}[-/.]\\d{1,2}[-/.]\\d{1,2}|\\d{1,2}[-/.]\\d{1,2})\\s*(\\*|!)?\\s*(\\([^)]+\\))?\\s*\\S.*$",
+      "action": {
+        "indent": "indent"
+      }
+    },
+    {
+      "beforeText": "^\\s+\\S.*$",
       "action": {
         "indent": "indent"
       }

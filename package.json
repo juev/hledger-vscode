@@ -169,9 +169,33 @@
           "type": "string",
           "default": "#A0A0A0",
           "description": "Color for virtual accounts in brackets/parentheses"
+        },
+        "hledger.smartIndent.enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable smart indentation on Enter key for hledger files"
         }
       }
     },
+    "commands": [
+      {
+        "command": "hledger.onEnter",
+        "title": "HLedger: Smart Enter",
+        "when": "editorTextFocus && editorLangId == hledger"
+      }
+    ],
+    "keybindings": [
+      {
+        "command": "acceptSelectedSuggestion",
+        "key": "enter",
+        "when": "editorTextFocus && editorLangId == hledger && suggestWidgetVisible"
+      },
+      {
+        "command": "hledger.onEnter",
+        "key": "enter",
+        "when": "editorTextFocus && editorLangId == hledger && !suggestWidgetVisible && !inSnippetMode && !parameterHintsVisible && config.hledger.smartIndent.enabled"
+      }
+    ],
     "configurationDefaults": {
       "files.associations": {
         "*.journal": "hledger",

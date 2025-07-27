@@ -10,6 +10,7 @@ import {
     DEFAULT_COMMODITIES 
 } from './types';
 import { HLedgerSemanticTokensProvider } from './semanticTokenProvider';
+import { HLedgerEnterCommand } from './indentProvider';
 
 // Fuzzy matching score interface
 interface FuzzyMatch {
@@ -1098,6 +1099,9 @@ export function activate(context: vscode.ExtensionContext): void {
         HLedgerSemanticTokensProvider.getLegend()
     );
 
+    // Register Enter key handler for smart indentation
+    const enterKeyHandler = new HLedgerEnterCommand();
+
     // Listen for configuration changes and re-register providers
     const configChangeDisposable = vscode.workspace.onDidChangeConfiguration(event => {
         if (event.affectsConfiguration('hledger.autoCompletion.enabled')) {
@@ -1119,6 +1123,7 @@ export function activate(context: vscode.ExtensionContext): void {
         payeeProvider,
         tagProvider,
         semanticTokenProvider,
+        enterKeyHandler,
         configChangeDisposable
     );
 }
