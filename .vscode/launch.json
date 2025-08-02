@@ -2,11 +2,16 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "Run Extension",
+            "name": "Run Extension (Clean - No Other Extensions)",
             "type": "extensionHost",
             "request": "launch",
             "args": [
-                "--extensionDevelopmentPath=${workspaceFolder}"
+                "--extensionDevelopmentPath=${workspaceFolder}",
+                "--disable-extensions",
+                "--disable-workspace-trust",
+                "--disable-telemetry",
+                "--no-sync",
+                "--new-window"
             ],
             "outFiles": [
                 "${workspaceFolder}/out/**/*.js"
@@ -17,14 +22,11 @@
             }
         },
         {
-            "name": "Run Extension (Clean - No Other Extensions)",
+            "name": "Run Extension (With Other Extensions)",
             "type": "extensionHost",
             "request": "launch",
             "args": [
-                "--extensionDevelopmentPath=${workspaceFolder}",
-                "--disable-extensions",
-                "--disable-workspace-trust",
-                "--new-window"
+                "--extensionDevelopmentPath=${workspaceFolder}"
             ],
             "outFiles": [
                 "${workspaceFolder}/out/**/*.js"

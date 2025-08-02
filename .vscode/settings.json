@@ -1,0 +1,7 @@
+{
+  // Extension development settings
+  "extensions.ignoreRecommendations": true,
+  "workbench.settings.enableNaturalLanguageSearch": false,
+  // Development environment preferences
+  "workbench.startupEditor": "none",
+}
