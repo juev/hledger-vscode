@@ -200,41 +200,16 @@
             }
           ]
         }
-      },
-      "editor.semanticTokenColorCustomizations": {
-        "[*]": {
-          "enabled": true,
-          "rules": {
-            "hledgerDate": {
-              "foreground": "#2563EB",
-              "bold": true
-            },
-            "hledgerAccount": "#059669",
-            "hledgerAmount": {
-              "foreground": "#DC2626",
-              "bold": true
-            },
-            "hledgerCommodity": {
-              "foreground": "#7C3AED",
-              "bold": true
-            },
-            "hledgerPayee": "#EA580C",
-            "hledgerComment": "#6B7280",
-            "hledgerTag": {
-              "foreground": "#DB2777",
-              "bold": true
-            },
-            "hledgerDirective": {
-              "foreground": "#059669",
-              "bold": true
-            },
-            "hledgerAccount.defined": "#0891B2",
-            "hledgerAccount.virtual": "#6B7280"
-          }
-        }
       }
     }
   },
+  "commands": [
+    {
+      "command": "hledger.applyColors",
+      "title": "Apply Custom Colors",
+      "category": "HLedger"
+    }
+  ],
   "scripts": {
     "vscode:prepublish": "npm run compile",
     "compile": "tsc -p ./",

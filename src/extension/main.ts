@@ -1134,7 +1134,7 @@ export class TagCompletionProvider implements vscode.CompletionItemProvider {
     }
 }
 
-// Function to apply custom color settings
+// Function to apply custom color settings without writing to global settings
 async function applyCustomColors(): Promise<void> {
     try {
         const hledgerConfig = vscode.workspace.getConfiguration('hledger.colors');
@@ -1291,19 +1291,26 @@ async function applyCustomColors(): Promise<void> {
             }
         ];
         
-        
-        // Update TextMate rules
+        // Update TextMate rules in workspace settings only (not global)
         const currentTextMateCustomizations = editorConfig.get('tokenColorCustomizations') || {};
+        
         const updatedTextMateCustomizations = {
             ...currentTextMateCustomizations,
             "[*]": {
                 ...((currentTextMateCustomizations as any)["[*]"] || {}),
-                "textMateRules": textMateRules
+                "textMateRules": [
+                    // Keep existing non-hledger rules
+                    ...((currentTextMateCustomizations as any)["[*]"]?.textMateRules || []).filter((rule: any) => 
+                        !rule.scope?.includes('.hledger')
+                    ),
+                    // Add our hledger rules
+                    ...textMateRules
+                ]
             }
         };
-        await editorConfig.update('tokenColorCustomizations', updatedTextMateCustomizations, vscode.ConfigurationTarget.Global);
         
-        console.log('HLedger: Applied custom color settings');
+        // Apply to workspace settings only (not global)
+        await editorConfig.update('tokenColorCustomizations', updatedTextMateCustomizations, vscode.ConfigurationTarget.Workspace);
     } catch (error) {
         console.warn('HLedger: Could not apply custom colors:', error);
     }
@@ -1317,6 +1324,21 @@ export function activate(context: vscode.ExtensionContext): void {
     
     // Apply custom color settings
     applyCustomColors();
+    
+    // Register command to apply colors
+    const applyColorsCommand = vscode.commands.registerCommand('hledger.applyColors', () => {
+        applyCustomColors();
+        vscode.window.showInformationMessage('HLedger: Applied custom colors');
+    });
+    context.subscriptions.push(applyColorsCommand);
+    
+    // Watch for configuration changes and reapply colors
+    const configChangeListener = vscode.workspace.onDidChangeConfiguration(event => {
+        if (event.affectsConfiguration('hledger.colors')) {
+            applyCustomColors();
+        }
+    });
+    context.subscriptions.push(configChangeListener);
 
     // Get auto completion setting
     const config = vscode.workspace.getConfiguration('hledger');

@@ -65,6 +65,10 @@ npm run publish
    - Advanced substring matching for all completion providers
    - **Frequency-based prioritization**: Most used items appear first in completion lists
 3. **Color Customization**: Configurable colors through VS Code settings with automatic application via TextMate scopes
+   - Uses `applyCustomColors()` function to apply user-defined colors from `hledger.colors.*` settings
+   - Writes to workspace settings only (not global) via `tokenColorCustomizations`
+   - Automatically triggered on configuration changes
+   - Production-ready code without debug logging
 5. **Smart Indentation**: Context-aware Enter key handling for proper transaction formatting
 6. **Performance**: Optimized for large codebases with smart caching and selective file scanning
 
@@ -103,7 +107,7 @@ npm run test:coverage
 - **Test Configuration**: `jest.config.js` with ts-jest preset
 - **Mock VSCode API**: `src/__mocks__/vscode.ts` for testing without VSCode
 - **Test Coverage**: Includes core classes, completion providers, caching, and fuzzy matching
-- **Test Files**: 8 test suites covering 72+ test cases
+- **Test Files**: 8 test suites covering 76 test cases
 
 ### Manual Testing
 
