@@ -1,5 +1,11 @@
 # Change Log
 
+## [0.1.9] - 2025-08-02
+
+### Added
+- feat: implement custom color application command and update settings handling
+
+
 ## [0.1.8] - 2025-08-02
 
 ### Added
