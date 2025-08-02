@@ -266,8 +266,8 @@
     "posting": {
       "patterns": [
         {
-          "name": "meta.posting.hledger",
-          "match": "^\\s+(\\S.*?)(?:\\s{2,}|\\t)(.*?)(?:\\s*;(.*))?$",
+          "name": "meta.posting.with-amount.hledger",
+          "match": "^\\s+(\\S.*?)\\s{2,}([^;]+?)\\s*(;.*)?$",
           "captures": {
             "1": {
               "patterns": [
@@ -277,6 +277,7 @@
               ]
             },
             "2": {
+              "name": "meta.amount-section.hledger",
               "patterns": [
                 {
                   "include": "#amount"
@@ -290,17 +291,18 @@
               ]
             },
             "3": {
+              "name": "comment.line.semicolon.hledger",
               "patterns": [
                 {
-                  "include": "#comment-tags"
+                  "include": "#comment-content"
                 }
               ]
             }
           }
         },
         {
-          "name": "meta.posting.account-only.hledger",
-          "match": "^\\s+(\\S[^;]+?)\\s*(?:;(.*))?$",
+          "name": "meta.posting.with-tab-amount.hledger",
+          "match": "^\\s+(\\S.*?)\\t+([^;]+?)\\s*(;.*)?$",
           "captures": {
             "1": {
               "patterns": [
@@ -310,9 +312,45 @@
               ]
             },
             "2": {
+              "name": "meta.amount-section.hledger",
               "patterns": [
                 {
-                  "include": "#comment-tags"
+                  "include": "#amount"
+                },
+                {
+                  "include": "#cost-notation"
+                },
+                {
+                  "include": "#assertion"
+                }
+              ]
+            },
+            "3": {
+              "name": "comment.line.semicolon.hledger",
+              "patterns": [
+                {
+                  "include": "#comment-content"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "meta.posting.account-only.hledger",
+          "match": "^\\s+(\\S[^;]+?)\\s*(;.*)?$",
+          "captures": {
+            "1": {
+              "patterns": [
+                {
+                  "include": "#account-types"
+                }
+              ]
+            },
+            "2": {
+              "name": "comment.line.semicolon.hledger",
+              "patterns": [
+                {
+                  "include": "#comment-content"
                 }
               ]
             }
@@ -348,7 +386,7 @@
         },
         {
           "name": "meta.amount.commodity-suffix.hledger",
-          "match": "([-+]?\\d+(?:[.,]\\d+)*)\\s*([A-Za-z0-9$£€¥₹₽₿₩₪₨₦₡₵₺₴₼₢₸₷₶₹₵₫₪₨₽]+)",
+          "match": "([-+]?\\d+(?:[.,]\\d+)*)\\s+([A-Za-z0-9$£€¥₹₽₿₩₪₨₦₡₵₺₴₼₢₸₷₶₹₵₫₪₨₽]+)(?=\\s|$|;|@|=)",
           "captures": {
             "1": {
               "name": "constant.numeric.amount.hledger"
@@ -360,7 +398,7 @@
         },
         {
           "name": "meta.amount.commodity-prefix.hledger",
-          "match": "([A-Za-z0-9$£€¥₹₽₿₩₪₨₦₡₵₺₴₼₢₸₷₶₹₵₫₪₨₽]+)\\s*([-+]?\\d+(?:[.,]\\d+)*)",
+          "match": "([A-Za-z0-9$£€¥₹₽₿₩₪₨₦₡₵₺₴₼₢₸₷₶₹₵₫₪₨₽]+)\\s+([-+]?\\d+(?:[.,]\\d+)*)(?=\\s|$|;|@|=)",
           "captures": {
             "1": {
               "name": "entity.name.type.commodity.hledger"
@@ -372,7 +410,7 @@
         },
         {
           "name": "constant.numeric.amount.hledger",
-          "match": "(?<!\\w)[-+]?\\d+(?:[.,]\\d+)*(?!\\s*[A-Za-z0-9$£€¥₹₽₿₩₪₨₦₡₵₺₴₼₢₸₷₶₹₵₫₪₨₽])(?=\\s|$|;|=)"
+          "match": "(?<!\\w)[-+]?\\d+(?:[.,]\\d+)*(?=\\s*(?:;|$|@|=))"
         }
       ]
     },
@@ -534,38 +572,49 @@
             "1": {
               "patterns": [
                 {
-                  "name": "meta.tag.hledger",
-                  "match": "([a-zA-Z\\u0400-\\u04FF][a-zA-Z\\u0400-\\u04FF0-9_]*)(:)([^\\s,;]+)",
-                  "captures": {
-                    "1": {
-                      "name": "entity.name.tag.hledger"
-                    },
-                    "2": {
-                      "name": "punctuation.separator.key-value.hledger"
-                    },
-                    "3": {
-                      "name": "string.unquoted.tag-value.hledger"
-                    }
-                  }
-                },
-                {
-                  "name": "meta.tag.date.hledger",
-                  "match": "\\b(date)(:)(\\d{4}[-/.]\\d{1,2}[-/.]\\d{1,2}|\\d{1,2}[-/.]\\d{1,2})",
-                  "captures": {
-                    "1": {
-                      "name": "entity.name.tag.hledger"
-                    },
-                    "2": {
-                      "name": "punctuation.separator.key-value.hledger"
-                    },
-                    "3": {
-                      "name": "constant.numeric.date.hledger"
-                    }
-                  }
+                  "include": "#comment-content"
                 }
               ]
             }
           }
+        }
+      ]
+    },
+    "comment-content": {
+      "patterns": [
+        {
+          "name": "meta.tag.hledger",
+          "match": "([a-zA-Z\\u0400-\\u04FF][a-zA-Z\\u0400-\\u04FF0-9_]*)(:)([^\\s,;]+)",
+          "captures": {
+            "1": {
+              "name": "entity.name.tag.hledger"
+            },
+            "2": {
+              "name": "punctuation.separator.key-value.hledger"
+            },
+            "3": {
+              "name": "string.unquoted.tag-value.hledger"
+            }
+          }
+        },
+        {
+          "name": "meta.tag.date.hledger",
+          "match": "\\b(date)(:)(\\d{4}[-/.]\\d{1,2}[-/.]\\d{1,2}|\\d{1,2}[-/.]\\d{1,2})",
+          "captures": {
+            "1": {
+              "name": "entity.name.tag.hledger"
+            },
+            "2": {
+              "name": "punctuation.separator.key-value.hledger"
+            },
+            "3": {
+              "name": "constant.numeric.date.hledger"
+            }
+          }
+        },
+        {
+          "name": "comment.block.content.hledger",
+          "match": ".*"
         }
       ]
     }
