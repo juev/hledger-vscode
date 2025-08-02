@@ -28,11 +28,20 @@
     "comment": {
       "patterns": [
         {
-          "name": "comment.line",
-          "match": "^\\s*;.*$"
+          "name": "comment.line.semicolon.hledger",
+          "match": "^\\s*;.*$",
+          "captures": {
+            "0": {
+              "patterns": [
+                {
+                  "include": "#comment-tags"
+                }
+              ]
+            }
+          }
         },
         {
-          "name": "comment.line",
+          "name": "comment.line.number-sign.hledger", 
           "match": "^\\s*#.*$"
         }
       ]
@@ -40,11 +49,11 @@
     "directive": {
       "patterns": [
         {
-          "name": "keyword.directive.hledger",
+          "name": "meta.directive.hledger",
           "match": "^(account|commodity|D|decimal-mark|include|P|payee|tag|year|alias|apply account|end apply account|comment|end comment|Y)\\b",
           "captures": {
             "1": {
-              "name": "hledger.directive"
+              "name": "keyword.directive.hledger"
             }
           }
         },
@@ -53,10 +62,10 @@
           "match": "^(D)\\s+(.*)$",
           "captures": {
             "1": {
-              "name": "hledger.directive"
+              "name": "keyword.directive.hledger"
             },
             "2": {
-              "name": "hledger.commodity"
+              "name": "entity.name.type.commodity.hledger"
             }
           }
         },
@@ -65,10 +74,10 @@
           "match": "^(include)\\s+(.*)$",
           "captures": {
             "1": {
-              "name": "hledger.directive"
+              "name": "keyword.directive.hledger"
             },
             "2": {
-              "name": "string.quoted"
+              "name": "string.quoted.hledger"
             }
           }
         },
@@ -77,13 +86,17 @@
           "match": "^(account)\\s+([^;]+)(;.*)?$",
           "captures": {
             "1": {
-              "name": "hledger.directive"
+              "name": "keyword.directive.hledger"
             },
             "2": {
-              "name": "hledger.account"
+              "name": "entity.name.function.account.defined.hledger"
             },
             "3": {
-              "name": "comment.line"
+              "patterns": [
+                {
+                  "include": "#comment-tags"
+                }
+              ]
             }
           }
         },
@@ -92,13 +105,13 @@
           "match": "^(alias)\\s+([^=]+)\\s*=\\s*(.*)$",
           "captures": {
             "1": {
-              "name": "hledger.directive"
+              "name": "keyword.directive.hledger"
             },
             "2": {
-              "name": "hledger.account"
+              "name": "entity.name.function.account.hledger"
             },
             "3": {
-              "name": "hledger.account"
+              "name": "entity.name.function.account.hledger"
             }
           }
         },
@@ -107,10 +120,32 @@
           "match": "^(commodity)\\s+(.*)$",
           "captures": {
             "1": {
-              "name": "hledger.directive"
+              "name": "keyword.directive.hledger"
             },
             "2": {
-              "name": "hledger.commodity"
+              "name": "entity.name.type.commodity.defined.hledger"
+            }
+          }
+        },
+        {
+          "name": "meta.directive.price.hledger",
+          "match": "^(P)\\s+(\\d{4}[-/.]\\d{1,2}[-/.]\\d{1,2}|\\d{1,2}[-/.]\\d{1,2})\\s+([^\\s]+)\\s+(.*)$",
+          "captures": {
+            "1": {
+              "name": "keyword.directive.hledger"
+            },
+            "2": {
+              "name": "constant.numeric.date.hledger"
+            },
+            "3": {
+              "name": "entity.name.type.commodity.hledger"
+            },
+            "4": {
+              "patterns": [
+                {
+                  "include": "#amount"
+                }
+              ]
             }
           }
         }
@@ -123,16 +158,16 @@
           "begin": "^(\\d{4}[-/.]\\d{1,2}[-/.]\\d{1,2})((?:=\\d{4}[-/.]\\d{1,2}[-/.]\\d{1,2})?)\\s*(\\*|!)?\\s*(\\([^)]+\\))?\\s*([^;]*?)(;.*)?$",
           "beginCaptures": {
             "1": {
-              "name": "hledger.date"
+              "name": "constant.numeric.date.hledger"
             },
             "2": {
-              "name": "hledger.date"
+              "name": "constant.numeric.date.secondary.hledger"
             },
             "3": {
-              "name": "keyword.operator"
+              "name": "keyword.operator.status.hledger"
             },
             "4": {
-              "name": "entity.name.tag"
+              "name": "entity.name.tag.code.hledger"
             },
             "5": {
               "patterns": [
@@ -141,15 +176,15 @@
                   "match": "([^|]+?)\\s*\\|\\s*(.*)",
                   "captures": {
                     "1": {
-                      "name": "hledger.payee"
+                      "name": "entity.name.tag.payee.hledger"
                     },
                     "2": {
-                      "name": "string.unquoted"
+                      "name": "string.unquoted.note.hledger"
                     }
                   }
                 },
                 {
-                  "name": "hledger.payee",
+                  "name": "entity.name.tag.payee.hledger",
                   "match": ".*"
                 }
               ]
@@ -177,16 +212,16 @@
           "begin": "^(\\d{1,2}[-/.]\\d{1,2})((?:=\\d{1,2}[-/.]\\d{1,2})?)\\s*(\\*|!)?\\s*(\\([^)]+\\))?\\s*([^;]*?)(;.*)?$",
           "beginCaptures": {
             "1": {
-              "name": "hledger.date"
+              "name": "constant.numeric.date.hledger"
             },
             "2": {
-              "name": "hledger.date"
+              "name": "constant.numeric.date.secondary.hledger"
             },
             "3": {
-              "name": "keyword.operator"
+              "name": "keyword.operator.status.hledger"
             },
             "4": {
-              "name": "entity.name.tag"
+              "name": "entity.name.tag.code.hledger"
             },
             "5": {
               "patterns": [
@@ -195,15 +230,15 @@
                   "match": "([^|]+?)\\s*\\|\\s*(.*)",
                   "captures": {
                     "1": {
-                      "name": "hledger.payee"
+                      "name": "entity.name.tag.payee.hledger"
                     },
                     "2": {
-                      "name": "string.unquoted"
+                      "name": "string.unquoted.note.hledger"
                     }
                   }
                 },
                 {
-                  "name": "hledger.payee",
+                  "name": "entity.name.tag.payee.hledger",
                   "match": ".*"
                 }
               ]
@@ -288,120 +323,72 @@
     "amount": {
       "patterns": [
         {
-          "name": "hledger.amount.amount.quoted-commodity.hledger",
-          "match": "[-+]?\\d+([.,]\\d+)*\\s*\"[^\"]+\"",
+          "name": "meta.amount.quoted-commodity.hledger",
+          "match": "([-+]?\\d+(?:[.,]\\d+)*)\\s*(\"[^\"]+\")",
           "captures": {
-            "0": {
-              "patterns": [
-                {
-                  "name": "hledger.amount",
-                  "match": "[-+]?\\d+([.,]\\d+)*"
-                },
-                {
-                  "name": "string.quoted.double.commodity.hledger",
-                  "match": "\"[^\"]+\""
-                }
-              ]
+            "1": {
+              "name": "constant.numeric.amount.hledger"
+            },
+            "2": {
+              "name": "entity.name.type.commodity.quoted.hledger"
             }
           }
         },
         {
-          "name": "hledger.amount.amount.quoted-commodity-prefix.hledger",
-          "match": "\"[^\"]+\"\\s*[-+]?\\d+([.,]\\d+)*",
+          "name": "meta.amount.quoted-commodity-prefix.hledger",
+          "match": "(\"[^\"]+\")\\s*([-+]?\\d+(?:[.,]\\d+)*)",
           "captures": {
-            "0": {
-              "patterns": [
-                {
-                  "name": "string.quoted.double.commodity.hledger",
-                  "match": "\"[^\"]+\""
-                },
-                {
-                  "name": "hledger.amount",
-                  "match": "[-+]?\\d+([.,]\\d+)*"
-                }
-              ]
+            "1": {
+              "name": "entity.name.type.commodity.quoted.hledger"
+            },
+            "2": {
+              "name": "constant.numeric.amount.hledger"
             }
           }
         },
         {
-          "name": "hledger.amount.amount.hledger",
-          "match": "[-+]?\\d+([.,]\\d+)*\\s*[A-Za-z0-9$£€¥₹₽₿₩₪₨₦₡₵₺₴₼₢₸₷₶₹₵₫₪₨₽]+",
+          "name": "meta.amount.commodity-suffix.hledger",
+          "match": "([-+]?\\d+(?:[.,]\\d+)*)\\s*([A-Za-z0-9$£€¥₹₽₿₩₪₨₦₡₵₺₴₼₢₸₷₶₹₵₫₪₨₽]+)",
           "captures": {
-            "0": {
-              "patterns": [
-                {
-                  "name": "hledger.amount",
-                  "match": "[-+]?\\d+([.,]\\d+)*"
-                },
-                {
-                  "name": "hledger.commodity",
-                  "match": "[A-Za-z0-9$£€¥₹₽₿₩₪₨₦₡₵₺₴₼₢₸₷₶₹₵₫₪₨₽]+"
-                }
-              ]
+            "1": {
+              "name": "constant.numeric.amount.hledger"
+            },
+            "2": {
+              "name": "entity.name.type.commodity.hledger"
             }
           }
         },
         {
-          "name": "hledger.amount.amount.hledger",
-          "match": "[A-Za-z0-9$£€¥₹₽₿₩₪₨₦₡₵₺₴₼₢₸₷₶₹₵₫₪₨₽]+\\s*[-+]?\\d+([.,]\\d+)*",
+          "name": "meta.amount.commodity-prefix.hledger",
+          "match": "([A-Za-z0-9$£€¥₹₽₿₩₪₨₦₡₵₺₴₼₢₸₷₶₹₵₫₪₨₽]+)\\s*([-+]?\\d+(?:[.,]\\d+)*)",
           "captures": {
-            "0": {
-              "patterns": [
-                {
-                  "name": "hledger.commodity",
-                  "match": "[A-Za-z0-9$£€¥₹₽₿₩₪₨₦₡₵₺₴₼₢₸₷₶₹₵₫₪₨₽]+"
-                },
-                {
-                  "name": "hledger.amount",
-                  "match": "[-+]?\\d+([.,]\\d+)*"
-                }
-              ]
+            "1": {
+              "name": "entity.name.type.commodity.hledger"
+            },
+            "2": {
+              "name": "constant.numeric.amount.hledger"
             }
           }
         },
         {
-          "name": "hledger.amount.amount-no-commodity.hledger",
-          "match": "(?<!\\w)[-+]?\\d+([.,]\\d+)*(?!\\s*[A-Za-z0-9$£€¥₹₽₿₩₪₨₦₡₵₺₴₼₢₸₷₶₹₵₫₪₨₽])(?=\\s|$|;|=)",
-          "captures": {
-            "0": {
-              "name": "hledger.amount"
-            }
-          }
+          "name": "constant.numeric.amount.hledger",
+          "match": "(?<!\\w)[-+]?\\d+(?:[.,]\\d+)*(?!\\s*[A-Za-z0-9$£€¥₹₽₿₩₪₨₦₡₵₺₴₼₢₸₷₶₹₵₫₪₨₽])(?=\\s|$|;|=)"
         }
       ]
     },
     "assertion": {
       "patterns": [
         {
-          "name": "keyword.operator.assertion.hledger",
-          "match": "=={0,1}\\s*[-+]?\\d+([.,]\\d+)*\\s*[A-Za-z0-9$£€¥₹₽₿₩₪₨₦₡₵₺₴₼₢₸₷₶₹₵₫₪₨₽]+",
+          "name": "meta.assertion.hledger",
+          "match": "(=={0,1})\\s*(.+)",
           "captures": {
-            "0": {
+            "1": {
+              "name": "keyword.operator.assertion.hledger"
+            },
+            "2": {
               "patterns": [
-                {
-                  "name": "keyword.operator",
-                  "match": "=={0,1}"
-                },
                 {
                   "include": "#amount"
-                }
-              ]
-            }
-          }
-        },
-        {
-          "name": "keyword.operator.assertion-no-commodity.hledger",
-          "match": "=={0,1}\\s*([-+]?\\d+([.,]\\d+)*)(?!\\s*[A-Za-z0-9$£€¥₹₽₿₩₪₨₦₡₵₺₴₼₢₸₷₶₹₵₫₪₨₽])(?=\\s|$|;)",
-          "captures": {
-            "0": {
-              "patterns": [
-                {
-                  "name": "keyword.operator",
-                  "match": "=={0,1}"
-                },
-                {
-                  "name": "hledger.amount",
-                  "match": "[-+]?\\d+([.,]\\d+)*"
                 }
               ]
             }
@@ -419,7 +406,7 @@
               "name": "keyword.operator.periodic.hledger"
             },
             "2": {
-              "name": "string.quoted.double.period-expression.hledger"
+              "name": "string.unquoted.period-expression.hledger"
             }
           }
         }
@@ -435,7 +422,7 @@
               "name": "keyword.operator.auto.hledger"
             },
             "2": {
-              "name": "string.quoted.double.query-expression.hledger"
+              "name": "string.unquoted.query-expression.hledger"
             }
           }
         }
@@ -445,26 +432,30 @@
       "patterns": [
         {
           "name": "meta.posting.virtual.hledger",
-          "match": "^\\s+(\\([^)]+\\)|\\[[^\\]]+\\])(?:\\s+(.*?))?(?:\\s+(=={1,2}|@{1,2}))?(?:\\s*;(.*))?$",
+          "match": "^\\s+((\\([^)]+\\))|(\\[[^\\]]+\\]))(?:\\s+(.*?))?(?:\\s*;(.*))?$",
           "captures": {
             "1": {
-              "name": "hledger.account.virtual"
+              "name": "entity.name.function.account.virtual.hledger"
             },
-            "2": {
+            "4": {
               "patterns": [
                 {
                   "include": "#amount"
                 },
                 {
                   "include": "#cost-notation"
+                },
+                {
+                  "include": "#assertion"
                 }
               ]
             },
-            "3": {
-              "name": "keyword.operator.assertion.hledger"
-            },
-            "4": {
-              "name": "comment.line.semicolon.hledger"
+            "5": {
+              "patterns": [
+                {
+                  "include": "#comment-tags"
+                }
+              ]
             }
           }
         }
@@ -474,14 +465,13 @@
       "patterns": [
         {
           "name": "meta.cost.unit.hledger",
-          "match": "@\\s*[-+]?\\d+([.,]\\d+)*\\s*[A-Za-z0-9$£€¥₹₽₿₩₪₨₦₡₵₺₴₼₢₸₷₶₹₵₫₪₨₽]*",
+          "match": "(@)\\s*(.+?)(?=\\s*(?:;|$|=))",
           "captures": {
-            "0": {
+            "1": {
+              "name": "keyword.operator.cost.hledger"
+            },
+            "2": {
               "patterns": [
-                {
-                  "name": "keyword.operator.cost.hledger",
-                  "match": "@"
-                },
                 {
                   "include": "#amount"
                 }
@@ -491,14 +481,13 @@
         },
         {
           "name": "meta.cost.total.hledger",
-          "match": "@@\\s*[-+]?\\d+([.,]\\d+)*\\s*[A-Za-z0-9$£€¥₹₽₿₩₪₨₦₡₵₺₴₼₢₸₷₶₹₵₫₪₨₽]*",
+          "match": "(@@)\\s*(.+?)(?=\\s*(?:;|$|=))",
           "captures": {
-            "0": {
+            "1": {
+              "name": "keyword.operator.cost.total.hledger"
+            },
+            "2": {
               "patterns": [
-                {
-                  "name": "keyword.operator.cost.total.hledger",
-                  "match": "@@"
-                },
                 {
                   "include": "#amount"
                 }
@@ -511,27 +500,27 @@
     "account-types": {
       "patterns": [
         {
-          "name": "support.class.asset",
-          "match": "\\b(Assets|Активы|Asset)\\b.*"
+          "name": "entity.name.function.account.asset.hledger",
+          "match": "\\b(Assets?|Активы?)\\b.*"
         },
         {
-          "name": "support.class.liability",
-          "match": "\\b(Liabilities|Пассивы|Liability)\\b.*"
+          "name": "entity.name.function.account.liability.hledger",
+          "match": "\\b(Liabilit(y|ies)|Пассивы?)\\b.*"
         },
         {
-          "name": "support.class.equity",
-          "match": "\\b(Equity|Собственные|Собственный)\\b.*"
+          "name": "entity.name.function.account.equity.hledger",
+          "match": "\\b(Equity|Собственны[ей]|Капитал)\\b.*"
         },
         {
-          "name": "support.class.income",
-          "match": "\\b(Income|Revenue|Доходы|Доход)\\b.*"
+          "name": "entity.name.function.account.income.hledger",
+          "match": "\\b(Income|Revenue|Доходы?)\\b.*"
         },
         {
-          "name": "support.class.expense",
-          "match": "\\b(Expenses|Расходы|Expense)\\b.*"
+          "name": "entity.name.function.account.expense.hledger",
+          "match": "\\b(Expenses?|Расходы?)\\b.*"
         },
         {
-          "name": "hledger.account",
+          "name": "entity.name.function.account.hledger",
           "match": ".*"
         }
       ]
@@ -540,37 +529,37 @@
       "patterns": [
         {
           "name": "comment.line.semicolon.hledger",
-          "match": ".*",
+          "match": ";\\s*(.*)$",
           "captures": {
-            "0": {
+            "1": {
               "patterns": [
                 {
-                  "name": "meta.tag",
+                  "name": "meta.tag.hledger",
                   "match": "([a-zA-Z\\u0400-\\u04FF][a-zA-Z\\u0400-\\u04FF0-9_]*)(:)([^\\s,;]+)",
                   "captures": {
                     "1": {
-                      "name": "hledger.tag"
+                      "name": "entity.name.tag.hledger"
                     },
                     "2": {
-                      "name": "punctuation.separator"
+                      "name": "punctuation.separator.key-value.hledger"
                     },
                     "3": {
-                      "name": "string.unquoted"
+                      "name": "string.unquoted.tag-value.hledger"
                     }
                   }
                 },
                 {
-                  "name": "meta.tag.date",
+                  "name": "meta.tag.date.hledger",
                   "match": "\\b(date)(:)(\\d{4}[-/.]\\d{1,2}[-/.]\\d{1,2}|\\d{1,2}[-/.]\\d{1,2})",
                   "captures": {
                     "1": {
-                      "name": "hledger.tag"
+                      "name": "entity.name.tag.hledger"
                     },
                     "2": {
-                      "name": "punctuation.separator"
+                      "name": "punctuation.separator.key-value.hledger"
                     },
                     "3": {
-                      "name": "hledger.date"
+                      "name": "constant.numeric.date.hledger"
                     }
                   }
                 }

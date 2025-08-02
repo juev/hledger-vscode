@@ -39,7 +39,7 @@ npm run publish
 ### Key Components
 
 1. **Main Extension Entry**: `src/extension/main.ts` - TypeScript source with proper type definitions
-2. **Syntax Highlighting**: `syntaxes/hledger.tmLanguage.json` - TextMate grammar supporting full hledger syntax
+2. **Syntax Highlighting**: `syntaxes/hledger.tmLanguage.json` - Comprehensive TextMate grammar supporting full hledger syntax with customizable colors
 3. **Completion Providers**:
    - `AccountCompletionProvider` - Hierarchical account suggestions with frequency-based prioritization, advanced fuzzy matching and caching
    - `KeywordCompletionProvider` - hledger directives with fuzzy matching (account, commodity, include, etc.)
@@ -47,8 +47,7 @@ npm run publish
    - `DateCompletionProvider` - Smart date suggestions
    - `PayeeCompletionProvider` - Store/merchant completion with frequency-based prioritization, advanced fuzzy matching and substring support
    - `TagCompletionProvider` - Tag/category completion with frequency-based prioritization and fuzzy matching from comments
-4. **Semantic Token Provider**: `HLedgerSemanticTokensProvider` - Advanced syntax highlighting with semantic tokens
-5. **Smart Indentation**: `HLedgerEnterCommand` and `HLedgerEnterKeyProvider` - Intelligent Enter key handling
+4. **Smart Indentation**: `HLedgerEnterCommand` and `HLedgerEnterKeyProvider` - Intelligent Enter key handling
 
 ### Important Design Patterns
 
@@ -65,8 +64,7 @@ npm run publish
    - Full Unicode support including Cyrillic
    - Advanced substring matching for all completion providers
    - **Frequency-based prioritization**: Most used items appear first in completion lists
-3. **Semantic Token System**: Uses camelCase token type IDs (e.g., `hledgerDate`, `hledgerAccount`) to comply with VS Code validation
-4. **Color Customization**: Configurable colors through VS Code settings with automatic application
+3. **Color Customization**: Configurable colors through VS Code settings with automatic application via TextMate scopes
 5. **Smart Indentation**: Context-aware Enter key handling for proper transaction formatting
 6. **Performance**: Optimized for large codebases with smart caching and selective file scanning
 
@@ -81,7 +79,6 @@ The `HLedgerConfig` class handles parsing of hledger files to extract:
 - Transaction dates
 - Payees/merchants from transaction descriptions with usage frequency tracking
 - Tags/categories from comments (`tag:value` format) with usage frequency tracking
-- Semantic token highlighting data
 - **Usage counters**: Maintains `Map<string, number>` for accounts, payees, tags, and commodities
 - **Frequency-based methods**: `getAccountsByUsage()`, `getPayeesByUsage()`, `getTagsByUsage()`, `getCommoditiesByUsage()`
 
@@ -127,7 +124,7 @@ Uses `testdata/test.journal` file which demonstrates:
 2. Activation event: `onLanguage:hledger`
 3. File associations: `.journal`, `.hledger`, `.ledger`
 4. Dependencies: No external dependencies for file scanning (uses built-in Node.js `fs`)
-5. Semantic token types: Uses camelCase IDs to comply with VS Code pattern requirements
-6. Configuration: Supports color customization and auto-completion settings
+5. Syntax highlighting: Uses TextMate grammar with comprehensive scopes for all hledger elements
+6. Configuration: Supports extensive color customization through `hledger.colors.*` settings and auto-completion settings
 7. Smart indentation: Configurable through `hledger.smartIndent.enabled` setting
 8. Follows hledger 1.43 specification

@@ -4,13 +4,14 @@ Full-featured Visual Studio Code extension providing comprehensive syntax highli
 
 ## Features
 
-- **Enhanced Syntax Highlighting & Semantic Tokens**: Advanced syntax highlighting for:
+- **Enhanced Syntax Highlighting**: Advanced TextMate-based syntax highlighting for:
   - **Currencies and commodities** (USD, RUB, EUR, BTC, etc.)
   - **Account types** (Assets, Expenses, Income, Liabilities, Equity)
   - **Tags and categories** in comments (`key:value` pairs)
   - **Payee|note format** with separate highlighting for payees and notes
   - **Cost/price notation** (`@` and `@@`) and balance assertions (`=`, `==`)
   - **Multiple date formats** (YYYY-MM-DD, YYYY/MM/DD, YYYY.MM.DD, MM-DD, etc.)
+  - **Customizable colors** through VS Code settings
 - **Advanced IntelliSense Auto-completion**:
   - **Smart Account Completion**: Suggests accounts from `account` directives and used accounts from transactions with **frequency-based prioritization**
   - **Date Completion**: Smart date suggestions with last used date, today, and yesterday (supports all hledger date formats)
@@ -26,8 +27,7 @@ Full-featured Visual Studio Code extension providing comprehensive syntax highli
   - Posting date tags (`date:YYYY-MM-DD`)
 - **Multi-language Support**: Full support for Cyrillic and other Unicode characters in account names and tags
 - **Smart Indentation**: Configurable automatic indentation for transactions and postings
-- **Semantic Highlighting**: Auto-enabled semantic tokens for enhanced syntax coloring
-- **Color Customization**: Configurable colors for all syntax elements through VS Code settings
+- **Color Customization**: Extensive customization options for all syntax elements through VS Code settings
 - **Performance Optimized**: Project-based persistent caching system for large codebases
 - **Language Configuration**:
   - Comment support (`;`, `#`)
@@ -193,15 +193,6 @@ You can customize syntax highlighting colors through VS Code settings. The exten
 ```
 
 Colors update immediately when changed in settings. The new color scheme provides excellent contrast and readability while maintaining visual hierarchy.
-
-### Semantic Highlighting
-
-The extension automatically enables semantic highlighting for enhanced syntax coloring:
-
-- **Setting**: `hledger.semanticHighlighting.autoEnable` (default: `true`)
-- **When enabled**: Automatically enables VS Code's semantic highlighting feature when the extension activates
-- **Enhanced coloring**: Provides more precise syntax highlighting beyond basic TextMate rules
-- **User control**: Can be disabled in extension settings if you prefer basic highlighting
 
 ### Smart Indentation
 

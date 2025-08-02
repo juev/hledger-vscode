@@ -9,7 +9,6 @@ import {
     DEFAULT_ACCOUNT_PREFIXES, 
     DEFAULT_COMMODITIES 
 } from './types';
-import { HLedgerSemanticTokensProvider } from './semanticTokenProvider';
 import { HLedgerEnterCommand } from './indentProvider';
 
 // Fuzzy matching score interface
@@ -1153,95 +1152,145 @@ async function applyCustomColors(): Promise<void> {
         const accountDefinedColor = hledgerConfig.get<string>('accountDefined', '#0891B2');
         const accountVirtualColor = hledgerConfig.get<string>('accountVirtual', '#6B7280');
         
-        // Apply semantic token color customizations
-        const semanticColors = {
-            "[*]": {
-                "enabled": true,
-                "rules": {
-                    "hledgerDate": {
-                        "foreground": dateColor,
-                        "bold": true
-                    },
-                    "hledgerAccount": accountColor,
-                    "hledgerAmount": {
-                        "foreground": amountColor,
-                        "bold": true
-                    },
-                    "hledgerCommodity": {
-                        "foreground": commodityColor,
-                        "bold": true
-                    },
-                    "hledgerPayee": payeeColor,
-                    "hledgerComment": commentColor,
-                    "hledgerTag": {
-                        "foreground": tagColor,
-                        "bold": true
-                    },
-                    "hledgerDirective": {
-                        "foreground": directiveColor,
-                        "bold": true
-                    },
-                    "hledgerAccount.defined": accountDefinedColor,
-                    "hledgerAccount.virtual": accountVirtualColor
-                }
-            }
-        };
-        
-        // Apply TextMate rules for themes that don't support semantic tokens
+        // Apply TextMate rules for all syntax highlighting
         const textMateRules = [
+            // Date styles
             {
-                "scope": "hledgerDate",
+                "scope": "constant.numeric.date.hledger",
                 "settings": { 
                     "foreground": dateColor,
                     "fontStyle": "bold"
                 }
             },
+            // Account styles
             {
-                "scope": "hledgerAccount",
+                "scope": "entity.name.function.account.hledger",
                 "settings": { 
-                    "foreground": accountColor,
-                    "fontStyle": ""
+                    "foreground": accountColor
                 }
             },
             {
-                "scope": "hledgerAmount",
+                "scope": "entity.name.function.account.defined.hledger",
+                "settings": { 
+                    "foreground": accountDefinedColor,
+                    "fontStyle": "bold"
+                }
+            },
+            {
+                "scope": "entity.name.function.account.virtual.hledger",
+                "settings": { 
+                    "foreground": accountVirtualColor,
+                    "fontStyle": "italic"
+                }
+            },
+            // Special account types
+            {
+                "scope": "entity.name.function.account.asset.hledger",
+                "settings": { 
+                    "foreground": accountColor
+                }
+            },
+            {
+                "scope": "entity.name.function.account.liability.hledger",
+                "settings": { 
+                    "foreground": accountColor
+                }
+            },
+            {
+                "scope": "entity.name.function.account.equity.hledger",
+                "settings": { 
+                    "foreground": accountColor
+                }
+            },
+            {
+                "scope": "entity.name.function.account.income.hledger",
+                "settings": { 
+                    "foreground": accountColor
+                }
+            },
+            {
+                "scope": "entity.name.function.account.expense.hledger",
+                "settings": { 
+                    "foreground": accountColor
+                }
+            },
+            // Amount styles
+            {
+                "scope": "constant.numeric.amount.hledger",
                 "settings": { 
                     "foreground": amountColor,
                     "fontStyle": "bold"
                 }
             },
+            // Commodity styles
             {
-                "scope": "hledgerCommodity",
+                "scope": "entity.name.type.commodity.hledger",
                 "settings": { 
                     "foreground": commodityColor,
                     "fontStyle": "bold"
                 }
             },
             {
-                "scope": "hledgerPayee",
+                "scope": "entity.name.type.commodity.defined.hledger",
                 "settings": { 
-                    "foreground": payeeColor,
-                    "fontStyle": ""
+                    "foreground": commodityColor,
+                    "fontStyle": "bold"
                 }
             },
             {
-                "scope": "hledgerComment",
+                "scope": "entity.name.type.commodity.quoted.hledger",
+                "settings": { 
+                    "foreground": commodityColor,
+                    "fontStyle": "bold"
+                }
+            },
+            // Payee styles
+            {
+                "scope": "entity.name.tag.payee.hledger",
+                "settings": { 
+                    "foreground": payeeColor
+                }
+            },
+            // Comment styles
+            {
+                "scope": "comment.line.semicolon.hledger",
                 "settings": { 
                     "foreground": commentColor,
-                    "fontStyle": ""
+                    "fontStyle": "italic"
                 }
             },
             {
-                "scope": "hledgerTag",
+                "scope": "comment.line.number-sign.hledger",
+                "settings": { 
+                    "foreground": commentColor,
+                    "fontStyle": "italic"
+                }
+            },
+            // Tag styles
+            {
+                "scope": "entity.name.tag.hledger",
                 "settings": { 
                     "foreground": tagColor,
                     "fontStyle": "bold"
                 }
+            },
+            // Directive styles
+            {
+                "scope": "keyword.directive.hledger",
+                "settings": { 
+                    "foreground": directiveColor,
+                    "fontStyle": "bold"
+                }
+            },
+            // Operator styles
+            {
+                "scope": "keyword.operator",
+                "settings": { 
+                    "foreground": directiveColor
+                }
             }
         ];
         
-        // Update semantic token colors
-        await editorConfig.update('semanticTokenColorCustomizations', semanticColors, vscode.ConfigurationTarget.Global);
         
         // Update TextMate rules
         const currentTextMateCustomizations = editorConfig.get('tokenColorCustomizations') || {};
@@ -1260,56 +1309,11 @@ async function applyCustomColors(): Promise<void> {
     }
 }
 
-// Function to automatically enable semantic highlighting
-async function ensureSemanticHighlightingEnabled(): Promise<void> {
-    try {
-        // Check if auto-enable is enabled in hledger settings
-        const hledgerConfig = vscode.workspace.getConfiguration('hledger');
-        const autoEnableEnabled = hledgerConfig.get<boolean>('semanticHighlighting.autoEnable', true);
-        
-        if (!autoEnableEnabled) {
-            console.log('HLedger: Auto-enable semantic highlighting is disabled in settings');
-            return;
-        }
-
-        const config = vscode.workspace.getConfiguration('editor');
-        const currentSetting = config.get<boolean>('semanticHighlighting.enabled');
-        
-        // If semantic highlighting is not explicitly enabled, enable it
-        if (currentSetting !== true) {
-            await config.update('semanticHighlighting.enabled', true, vscode.ConfigurationTarget.Global);
-            console.log('HLedger: Enabled semantic highlighting for better syntax coloring');
-            
-            // Show info message to user
-            vscode.window.showInformationMessage(
-                'HLedger: Enabled semantic highlighting for enhanced syntax coloring. You can disable this in extension settings.',
-                'Learn More', 'Disable Auto-Enable'
-            ).then(selection => {
-                if (selection === 'Learn More') {
-                    vscode.env.openExternal(vscode.Uri.parse('https://code.visualstudio.com/api/language-extensions/semantic-highlight-guide'));
-                } else if (selection === 'Disable Auto-Enable') {
-                    hledgerConfig.update('semanticHighlighting.autoEnable', false, vscode.ConfigurationTarget.Global);
-                }
-            });
-        }
-        
-        // Also ensure it's enabled specifically for hledger files
-        const hledgerLangConfig = vscode.workspace.getConfiguration('[hledger]');
-        const hledgerSetting = hledgerLangConfig.get<boolean>('editor.semanticHighlighting.enabled');
-        if (hledgerSetting !== true) {
-            await hledgerLangConfig.update('editor.semanticHighlighting.enabled', true, vscode.ConfigurationTarget.Global);
-        }
-    } catch (error) {
-        console.warn('HLedger: Could not automatically enable semantic highlighting:', error);
-    }
-}
 
 export function activate(context: vscode.ExtensionContext): void {
     // No cache invalidation - caches are persistent for better performance
     console.log('HLedger extension activated with persistent caching');
 
-    // Automatically enable semantic highlighting for better hledger experience
-    ensureSemanticHighlightingEnabled();
     
     // Apply custom color settings
     applyCustomColors();
@@ -1359,12 +1363,6 @@ export function activate(context: vscode.ExtensionContext): void {
         ...triggerChars
     );
 
-    // Register semantic token provider
-    const semanticTokenProvider = vscode.languages.registerDocumentSemanticTokensProvider(
-        'hledger',
-        new HLedgerSemanticTokensProvider(),
-        HLedgerSemanticTokensProvider.getLegend()
-    );
 
     // Register Enter key handler for smart indentation
     const enterKeyHandler = new HLedgerEnterCommand();
@@ -1389,7 +1387,6 @@ export function activate(context: vscode.ExtensionContext): void {
         dateProvider,
         payeeProvider,
         tagProvider,
-        semanticTokenProvider,
         enterKeyHandler,
         configChangeDisposable
     );

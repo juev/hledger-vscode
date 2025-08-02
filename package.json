@@ -51,62 +51,6 @@
         "path": "./syntaxes/hledger.tmLanguage.json"
       }
     ],
-    "semanticTokenTypes": [
-      {
-        "id": "hledgerDate",
-        "superType": "string",
-        "description": "Date in hledger transactions"
-      },
-      {
-        "id": "hledgerAccount",
-        "superType": "namespace",
-        "description": "Account names in hledger"
-      },
-      {
-        "id": "hledgerAmount",
-        "superType": "number",
-        "description": "Numeric amounts in hledger"
-      },
-      {
-        "id": "hledgerCommodity",
-        "superType": "type",
-        "description": "Currency and commodity symbols"
-      },
-      {
-        "id": "hledgerPayee",
-        "superType": "string",
-        "description": "Payee/description in transactions"
-      },
-      {
-        "id": "hledgerComment",
-        "superType": "comment",
-        "description": "Comments in hledger files"
-      },
-      {
-        "id": "hledgerTag",
-        "superType": "keyword",
-        "description": "Tags in hledger comments"
-      },
-      {
-        "id": "hledgerDirective",
-        "superType": "keyword",
-        "description": "HLedger directives"
-      }
-    ],
-    "semanticTokenModifiers": [
-      {
-        "id": "defined",
-        "description": "Explicitly defined accounts/commodities"
-      },
-      {
-        "id": "used",
-        "description": "Used but not explicitly defined"
-      },
-      {
-        "id": "virtual",
-        "description": "Virtual accounts in brackets/parentheses"
-      }
-    ],
     "configuration": {
       "title": "HLedger",
       "properties": {
@@ -114,11 +58,6 @@
           "type": "boolean",
           "default": true,
           "description": "Enable automatic completion without keyboard shortcuts (Ctrl+Space)"
-        },
-        "hledger.semanticHighlighting.autoEnable": {
-          "type": "boolean",
-          "default": true,
-          "description": "Automatically enable semantic highlighting when extension activates for enhanced syntax coloring"
         },
         "hledger.colors.date": {
           "type": "string",
@@ -174,11 +113,6 @@
           "type": "boolean",
           "default": true,
           "description": "Enable smart indentation on Enter key for hledger files"
-        },
-        "[hledger].editor.semanticHighlighting.enabled": {
-          "type": "boolean",
-          "default": true,
-          "description": "Enable semantic highlighting for hledger files"
         }
       }
     },
