@@ -48,6 +48,7 @@ npm run publish
    - `PayeeCompletionProvider` - Store/merchant completion with frequency-based prioritization, advanced fuzzy matching and substring support
    - `TagCompletionProvider` - Tag/category completion with frequency-based prioritization and fuzzy matching from comments
 4. **Smart Indentation**: `HLedgerEnterCommand` and `HLedgerEnterKeyProvider` - Intelligent Enter key handling
+5. **Completion Limits**: Configurable maximum number of completion items via `hledger.autoCompletion.maxResults` (default 25) and `hledger.autoCompletion.maxAccountResults` (default 30)
 
 ### Important Design Patterns
 
@@ -64,6 +65,7 @@ npm run publish
    - Full Unicode support including Cyrillic
    - Advanced substring matching for all completion providers
    - **Frequency-based prioritization**: Most used items appear first in completion lists
+   - **Unified behavior**: Both automatic (typing) and manual (Ctrl+Space) completion use identical filtering and sorting logic
 3. **Color Customization**: Configurable colors through VS Code settings with automatic application via TextMate scopes
    - Uses `applyCustomColors()` function to apply user-defined colors from `hledger.colors.*` settings
    - Writes to workspace settings only (not global) via `tokenColorCustomizations`
@@ -131,4 +133,6 @@ Uses `testdata/test.journal` file which demonstrates:
 5. Syntax highlighting: Uses TextMate grammar with comprehensive scopes for all hledger elements
 6. Configuration: Supports extensive color customization through `hledger.colors.*` settings and auto-completion settings
 7. Smart indentation: Configurable through `hledger.smartIndent.enabled` setting
-8. Follows hledger 1.43 specification
+8. Completion limits: Configurable via `hledger.autoCompletion.maxResults` (default: 25) and `hledger.autoCompletion.maxAccountResults` (default: 30)
+9. Unified completion behavior: Both automatic (typing) and manual (Ctrl+Space) completions work identically
+10. Follows hledger 1.43 specification

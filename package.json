@@ -110,6 +110,20 @@
           "type": "boolean",
           "default": true,
           "description": "Enable smart indentation on Enter key for hledger files"
+        },
+        "hledger.autoCompletion.maxResults": {
+          "type": "number",
+          "default": 25,
+          "minimum": 5,
+          "maximum": 50,
+          "description": "Maximum number of completion items to show"
+        },
+        "hledger.autoCompletion.maxAccountResults": {
+          "type": "number",
+          "default": 30,
+          "minimum": 5,
+          "maximum": 50,
+          "description": "Maximum number of account completion items to show (accounts are hierarchical, so more items are useful)"
         }
       }
     },

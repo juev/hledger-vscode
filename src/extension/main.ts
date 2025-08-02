@@ -498,6 +498,15 @@ export class ProjectCache implements IProjectCache {
 const workspaceCache = new WorkspaceCache(); // Available for future workspace-level caching features
 const projectCache = new ProjectCache();
 
+// Get completion limits from configuration
+function getCompletionLimits(): { maxResults: number, maxAccountResults: number } {
+    const config = vscode.workspace.getConfiguration('hledger.autoCompletion');
+    return {
+        maxResults: config.get<number>('maxResults', 25),
+        maxAccountResults: config.get<number>('maxAccountResults', 30)
+    };
+}
+
 export function getConfig(document: vscode.TextDocument): IHLedgerConfig {
     const filePath = document.uri.fsPath;
     
@@ -563,12 +572,32 @@ export class KeywordCompletionProvider implements vscode.CompletionItemProvider 
         // Extract what user has typed on the line
         const typedText = linePrefix.trim();
         
-        if (linePrefix.match(/^\s*\S*/)) {
+        // Provide keyword completions for directive lines (at start of line with minimal whitespace)
+        // Avoid conflicts with AccountCompletionProvider which handles posting lines (significant indentation)
+        if (linePrefix.match(/^\s{0,1}\S*$/)) {
             const keywords = [...HLEDGER_KEYWORDS];
             let completions: Array<{item: string, score: number}> = [];
             
-            if (typedText.length <= 2) {
-                // For short queries, use simple substring matching to avoid noise
+            if (typedText.length === 0) {
+                // For empty queries (Ctrl+Space), show all keywords sorted by usage/priority
+                // Since keywords don't have usage tracking, sort by length/frequency
+                completions = keywords.map(keyword => {
+                    // Simple scoring based on keyword importance and length
+                    let score = 100; // Base score for all keywords
+                    
+                    // Prioritize more commonly used directives
+                    const commonKeywords = ['account', 'commodity', 'include', 'alias', 'payee'];
+                    if (commonKeywords.includes(keyword)) {
+                        score += 20;
+                    }
+                    
+                    // Shorter keywords get slight priority
+                    score += Math.max(0, 10 - keyword.length);
+                    
+                    return { item: keyword, score };
+                });
+            } else if (typedText.length <= 1) {
+                // For very short queries (1 char), use simple substring matching to avoid noise
                 const substringMatches = keywords.filter(keyword => keyword.toLowerCase().includes(typedText.toLowerCase()));
                 
                 // Score matches: exact prefix gets highest score, then by length
@@ -588,7 +617,7 @@ export class KeywordCompletionProvider implements vscode.CompletionItemProvider 
                     return { item: keyword, score };
                 });
             } else {
-                // For longer queries (3+ chars), use full fuzzy matching including substrings
+                // For longer queries (2+ chars), use full fuzzy matching including substrings
                 completions = fuzzyMatch(typedText, keywords);
             }
             
@@ -602,14 +631,18 @@ export class KeywordCompletionProvider implements vscode.CompletionItemProvider 
                 return a.item.length - b.item.length;
             });
             
-            // Limit results to prevent overwhelming UI
-            const limitedResults = completions.slice(0, 10);
+            // Limit results based on configuration
+            const limits = getCompletionLimits();
+            const limitedResults = completions.slice(0, limits.maxResults);
             
             return limitedResults.map((match, index) => {
                 const item = new vscode.CompletionItem(match.item, vscode.CompletionItemKind.Keyword);
                 item.detail = 'hledger directive';
-                item.sortText = (1000 - match.score).toString().padStart(4, '0') + '_' + index.toString().padStart(3, '0');
-                item.filterText = typedText; // Bypass VS Code filtering
+                // Use zero-width characters to force sorting by frequency
+                const sortPrefix = String.fromCharCode(0x200B).repeat(index); // Zero-width space
+                item.sortText = sortPrefix + match.item;
+                // Let VS Code handle filtering naturally
+                item.filterText = match.item;
                 
                 if (typedText) {
                     const range = new vscode.Range(
@@ -636,8 +669,9 @@ export class AccountCompletionProvider implements vscode.CompletionItemProvider 
     ): vscode.ProviderResult<vscode.CompletionItem[]> {
         const linePrefix = document.lineAt(position).text.substring(0, position.character);
         
-        // Only provide account completions if there's no amount in the line yet
-        if (linePrefix.match(/^\s+\S*/) && !linePrefix.match(/\s+[-+]?\d+([.,]\d+)*\s*\S*$/)) {
+        // Only provide account completions if this is clearly a posting line (starts with 2+ spaces)
+        // Allow empty queries (just whitespace) for Ctrl+Space completion
+        if (linePrefix.match(/^\s{2,}/) && !linePrefix.match(/\s+[-+]?\d+([.,]\d+)*\s*\S*$/) && !linePrefix.match(/^\s*\d{1,4}[-/.]\d{0,2}/)) {
             const config = getConfig(document);
             const accountsByUsage = config.getAccountsByUsage();
             const definedAccounts = config.getDefinedAccounts();
@@ -676,8 +710,18 @@ export class AccountCompletionProvider implements vscode.CompletionItemProvider 
             const accountNames = allAccounts.map(a => a.account);
             let fuzzyMatches: FuzzyMatch[];
             
-            if (typedText.length <= 2) {
-                // For short queries, use simple substring matching to avoid noise
+            if (typedText.length === 0) {
+                // For empty queries (Ctrl+Space), show all accounts sorted by usage frequency
+                fuzzyMatches = accountNames.map(item => {
+                    const accountInfo = allAccounts.find(a => a.account === item)!;
+                    // Use usage count directly as score for empty queries
+                    return { item, score: accountInfo.usageCount };
+                });
+                
+                // Sort by usage frequency (higher first)
+                fuzzyMatches.sort((a, b) => b.score - a.score);
+            } else if (typedText.length <= 1) {
+                // For very short queries (1 char), use simple substring matching to avoid noise
                 const substringMatches = accountNames.filter(acc => acc.toLowerCase().includes(typedText.toLowerCase()));
                 
                 fuzzyMatches = substringMatches.map(item => {
@@ -697,7 +741,7 @@ export class AccountCompletionProvider implements vscode.CompletionItemProvider 
                 // Sort by score (higher first)
                 fuzzyMatches.sort((a, b) => b.score - a.score);
             } else {
-                // For longer queries (3+ chars), use full fuzzy matching including substrings
+                // For longer queries (2+ chars), use full fuzzy matching including substrings
                 fuzzyMatches = fuzzyMatch(typedText, accountNames);
             }
             
@@ -706,20 +750,20 @@ export class AccountCompletionProvider implements vscode.CompletionItemProvider 
                 return undefined;
             }
             
-            // Limit to top 15 results for accounts (more than payees since accounts are hierarchical)
-            const topMatches = fuzzyMatches.slice(0, 15);
+            // Limit to top results for accounts based on configuration
+            const limits = getCompletionLimits();
+            const topMatches = fuzzyMatches.slice(0, limits.maxAccountResults);
             
             const suggestions = topMatches.map((match, index) => {
                 const accountInfo = allAccounts.find(a => a.account === match.item)!;
                 const item = new vscode.CompletionItem(match.item, accountInfo.kind);
                 item.detail = accountInfo.detail;
                 
-                // Sort by usage frequency first, then by priority, then by index
-                // Higher usage count gets lower sortText value (appears first)
-                const usageScore = (9999 - accountInfo.usageCount).toString().padStart(4, '0');
-                item.sortText = usageScore + '_' + accountInfo.priority.toString() + '_' + index.toString().padStart(3, '0');
-                // Bypass VS Code's built-in filtering by setting filterText to match the query
-                item.filterText = typedText;
+                // Use numerical prefix to force sorting by usage frequency
+                const sortOrder = index.toString().padStart(3, '0');
+                item.sortText = sortOrder + '_' + match.item;
+                // Let VS Code handle filtering naturally
+                item.filterText = match.item;
                 
                 // Set the text to replace - only replace what user typed
                 if (typedText) {
@@ -784,8 +828,18 @@ export class CommodityCompletionProvider implements vscode.CompletionItemProvide
             const commodityNames = allCommodities.map(c => c.commodity);
             let fuzzyMatches: FuzzyMatch[];
             
-            if (typedText.length <= 2) {
-                // For short queries, use simple substring matching to avoid noise
+            if (typedText.length === 0) {
+                // For empty queries (Ctrl+Space), show all commodities sorted by usage frequency
+                fuzzyMatches = commodityNames.map(item => {
+                    const commodityInfo = allCommodities.find(c => c.commodity === item)!;
+                    // Use usage count directly as score for empty queries
+                    return { item, score: commodityInfo.usageCount };
+                });
+                
+                // Sort by usage frequency (higher first)
+                fuzzyMatches.sort((a, b) => b.score - a.score);
+            } else if (typedText.length <= 1) {
+                // For very short queries (1 char), use simple substring matching to avoid noise
                 const substringMatches = commodityNames.filter(comm => comm.toLowerCase().includes(typedText.toLowerCase()));
                 
                 fuzzyMatches = substringMatches.map(item => {
@@ -805,7 +859,7 @@ export class CommodityCompletionProvider implements vscode.CompletionItemProvide
                 // Sort by score (higher first)
                 fuzzyMatches.sort((a, b) => b.score - a.score);
             } else {
-                // For longer queries (3+ chars), use full fuzzy matching including substrings
+                // For longer queries (2+ chars), use full fuzzy matching including substrings
                 fuzzyMatches = fuzzyMatch(typedText, commodityNames);
             }
             
@@ -813,18 +867,19 @@ export class CommodityCompletionProvider implements vscode.CompletionItemProvide
                 return undefined;
             }
             
-            // Limit to top 10 results for better UX and performance
-            const topMatches = fuzzyMatches.slice(0, 10);
+            // Limit to top results based on configuration
+            const limits = getCompletionLimits();
+            const topMatches = fuzzyMatches.slice(0, limits.maxResults);
             
             return topMatches.map((match, index) => {
                 const commodityInfo = allCommodities.find(c => c.commodity === match.item)!;
                 const item = new vscode.CompletionItem(match.item, vscode.CompletionItemKind.Unit);
                 item.detail = commodityInfo.detail;
-                // Sort by usage frequency first, then by priority, then by index
-                const usageScore = (9999 - commodityInfo.usageCount).toString().padStart(4, '0');
-                item.sortText = usageScore + '_' + commodityInfo.priority.toString() + '_' + index.toString().padStart(3, '0');
-                // Bypass VS Code's built-in filtering by setting filterText to match the query
-                item.filterText = typedText;
+                // Use numerical prefix to force sorting by usage frequency
+                const sortOrder = index.toString().padStart(3, '0');
+                item.sortText = sortOrder + '_' + match.item;
+                // Let VS Code handle filtering naturally
+                item.filterText = match.item;
                 
                 if (typedText) {
                     const range = new vscode.Range(
@@ -964,7 +1019,8 @@ export class PayeeCompletionProvider implements vscode.CompletionItemProvider {
         
         // Trigger after date pattern in transaction lines (support all hledger date formats)
         // Format: DATE [*|!] [CODE] DESCRIPTION
-        if (linePrefix.match(/^(\d{4}[-/.]\d{1,2}[-/.]\d{1,2}|\d{1,2}[-/.]\d{1,2})\s*(\*|!)?\s*(\([^)]+\))?\s*/)) {
+        // Support both empty queries (Ctrl+Space) and typed text
+        if (linePrefix.match(/^(\d{4}[-/.]\d{1,2}[-/.]\d{1,2}|\d{1,2}[-/.]\d{1,2})\s*(\*|!)?\s*(\([^)]+\))?\s+/)) {
             const config = getConfig(document);
             const payeesByUsage = config.getPayeesByUsage();
             
@@ -982,8 +1038,18 @@ export class PayeeCompletionProvider implements vscode.CompletionItemProvider {
             // Smart completion strategy based on query length
             let fuzzyMatches: FuzzyMatch[];
             
-            if (typedText.length <= 2) {
-                // For short queries, use simple substring matching to avoid noise
+            if (typedText.length === 0) {
+                // For empty queries (Ctrl+Space), show all payees sorted by usage frequency
+                fuzzyMatches = payeeNames.map(item => {
+                    const payeeInfo = payeesByUsage.find(p => p.payee === item)!;
+                    // Use usage count directly as score for empty queries
+                    return { item, score: payeeInfo.count };
+                });
+                
+                // Sort by usage frequency (higher first)
+                fuzzyMatches.sort((a, b) => b.score - a.score);
+            } else if (typedText.length <= 1) {
+                // For very short queries (1 char), use simple substring matching to avoid noise
                 const substringMatches = payeeNames.filter(p => p.toLowerCase().includes(typedText.toLowerCase()));
                 
                 fuzzyMatches = substringMatches.map(item => {
@@ -1003,7 +1069,7 @@ export class PayeeCompletionProvider implements vscode.CompletionItemProvider {
                 // Sort by score (higher first)
                 fuzzyMatches.sort((a, b) => b.score - a.score);
             } else {
-                // For longer queries (3+ chars), use full fuzzy matching including substrings
+                // For longer queries (2+ chars), use full fuzzy matching including substrings
                 fuzzyMatches = fuzzyMatch(typedText, payeeNames);
             }
             
@@ -1012,18 +1078,19 @@ export class PayeeCompletionProvider implements vscode.CompletionItemProvider {
                 return undefined;
             }
             
-            // Limit to top 10 results for better UX and performance  
-            const topMatches = fuzzyMatches.slice(0, 10);
+            // Limit to top results based on configuration
+            const limits = getCompletionLimits();
+            const topMatches = fuzzyMatches.slice(0, limits.maxResults);
             
             const suggestions = topMatches.map((match, index) => {
                 const payeeInfo = payeesByUsage.find(p => p.payee === match.item)!;
                 const item = new vscode.CompletionItem(match.item, vscode.CompletionItemKind.Value);
                 item.detail = `Payee/Store (used ${payeeInfo.count} times)`;
-                // Sort by usage frequency first (higher usage count gets lower sortText value)
-                const usageScore = (9999 - payeeInfo.count).toString().padStart(4, '0');
-                item.sortText = usageScore + '_' + index.toString().padStart(3, '0');
-                // Bypass VS Code's built-in filtering by setting filterText to match the query
-                item.filterText = typedText;
+                // Use numerical prefix to force sorting by usage frequency
+                const sortOrder = index.toString().padStart(3, '0');
+                item.sortText = sortOrder + '_' + match.item;
+                // Let VS Code handle filtering naturally
+                item.filterText = match.item;
                 
                 if (typedText) {
                     const range = new vscode.Range(
@@ -1073,8 +1140,18 @@ export class TagCompletionProvider implements vscode.CompletionItemProvider {
             // Use smart fuzzy matching for tags
             let fuzzyMatches: FuzzyMatch[];
             
-            if (typedText.length <= 2) {
-                // For short queries, use simple substring matching to avoid noise
+            if (typedText.length === 0) {
+                // For empty queries (Ctrl+Space), show all tags sorted by usage frequency
+                fuzzyMatches = tagNames.map(item => {
+                    const tagInfo = tagsByUsage.find(t => t.tag === item)!;
+                    // Use usage count directly as score for empty queries
+                    return { item, score: tagInfo.count };
+                });
+                
+                // Sort by usage frequency (higher first)
+                fuzzyMatches.sort((a, b) => b.score - a.score);
+            } else if (typedText.length <= 1) {
+                // For very short queries (1 char), use simple substring matching to avoid noise
                 const substringMatches = tagNames.filter(tag => tag.toLowerCase().includes(typedText.toLowerCase()));
                 
                 fuzzyMatches = substringMatches.map(item => {
@@ -1094,22 +1171,23 @@ export class TagCompletionProvider implements vscode.CompletionItemProvider {
                 // Sort by score (higher first)
                 fuzzyMatches.sort((a, b) => b.score - a.score);
             } else {
-                // For longer queries (3+ chars), use full fuzzy matching including substrings
+                // For longer queries (2+ chars), use full fuzzy matching including substrings
                 fuzzyMatches = fuzzyMatch(typedText, tagNames);
             }
             
-            // Limit to top 10 results for better UX and performance
-            const topMatches = fuzzyMatches.slice(0, 10);
+            // Limit to top results based on configuration
+            const limits = getCompletionLimits();
+            const topMatches = fuzzyMatches.slice(0, limits.maxResults);
             
             const suggestions = topMatches.map((match, index) => {
                 const tagInfo = tagsByUsage.find(t => t.tag === match.item)!;
                 const item = new vscode.CompletionItem(match.item, vscode.CompletionItemKind.Keyword);
                 item.detail = `Tag/Category (used ${tagInfo.count} times)`;
-                // Sort by usage frequency first (higher usage count gets lower sortText value)
-                const usageScore = (9999 - tagInfo.count).toString().padStart(4, '0');
-                item.sortText = usageScore + '_' + index.toString().padStart(3, '0');
-                // Bypass VS Code's built-in filtering by setting filterText to match the query
-                item.filterText = typedText;
+                // Use numerical prefix to force sorting by usage frequency
+                const sortOrder = index.toString().padStart(3, '0');
+                item.sortText = sortOrder + '_' + match.item;
+                // Let VS Code handle filtering naturally
+                item.filterText = match.item;
                 
                 // Set insert text for tag:value format
                 item.insertText = match.item + ':';
