@@ -1,5 +1,14 @@
 # Change Log
 
+## [0.1.8] - 2025-08-02
+
+### Added
+- feat: update amount parsing regex to support a wider range of currency formats
+- feat: enhance amount parsing to support specific currency codes in hledger grammar
+- feat: add initial syntax test journal and enhance hledger grammar for posting and amount parsing
+- feat: refactor syntax highlighting and remove semantic token support
+
+
 ## [0.1.7] - 2025-07-27
 
 ### Added
