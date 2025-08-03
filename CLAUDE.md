@@ -45,13 +45,13 @@ npm run publish
      - `FuzzyMatcher` (`src/extension/completion/base/FuzzyMatcher.ts`) - Centralized fuzzy matching algorithm with Unicode support
      - `CompletionItemFactory` (`src/extension/completion/base/CompletionItemFactory.ts`) - Standardized completion item creation
      - `BaseCompletionProvider` (`src/extension/completion/base/BaseCompletionProvider.ts`) - Abstract base class for all providers
-   - **Completion Providers**:
-     - `KeywordCompletionProvider` (`src/extension/completion/providers/KeywordCompletionProvider.ts`) - hledger directives with fuzzy matching ✅ REFACTORED
-     - `AccountCompletionProvider` (in `main.ts`) - Hierarchical account suggestions with frequency-based prioritization
-     - `CommodityCompletionProvider` (in `main.ts`) - Currency and cryptocurrency symbols with frequency-based prioritization
-     - `DateCompletionProvider` (in `main.ts`) - Smart date suggestions with improved Enter key handling
-     - `PayeeCompletionProvider` (in `main.ts`) - Store/merchant completion with frequency-based prioritization
-     - `TagCompletionProvider` (in `main.ts`) - Tag/category completion with frequency-based prioritization
+   - **Completion Providers** (all refactored to use base classes):
+     - `KeywordCompletionProvider` (`src/extension/completion/providers/KeywordCompletionProvider.ts`) - hledger directives with fuzzy matching
+     - `AccountCompletionProvider` (`src/extension/completion/providers/AccountCompletionProvider.ts`) - Hierarchical account suggestions with frequency-based prioritization
+     - `CommodityCompletionProvider` (`src/extension/completion/providers/CommodityCompletionProvider.ts`) - Currency and cryptocurrency symbols with frequency-based prioritization
+     - `DateCompletionProvider` (`src/extension/completion/providers/DateCompletionProvider.ts`) - Smart date suggestions with last transaction date priority
+     - `PayeeCompletionProvider` (`src/extension/completion/providers/PayeeCompletionProvider.ts`) - Store/merchant completion with frequency-based prioritization
+     - `TagCompletionProvider` (`src/extension/completion/providers/TagCompletionProvider.ts`) - Tag/category completion with frequency-based prioritization
 4. **Smart Indentation**: `HLedgerEnterCommand` and `HLedgerEnterKeyProvider` - Intelligent Enter key handling
 5. **Completion Limits**: Configurable maximum number of completion items via `hledger.autoCompletion.maxResults` (default 25) and `hledger.autoCompletion.maxAccountResults` (default 30)
 
@@ -78,11 +78,12 @@ npm run publish
    - Production-ready code without debug logging
 5. **Smart Indentation**: Context-aware Enter key handling for proper transaction formatting
 6. **Performance**: Optimized for large codebases with smart caching and selective file scanning
-7. **Modular Architecture** (NEW): Beginning transition to modular design with separation of concerns
-   - Fuzzy matching logic extracted to reusable class
-   - Standardized completion item creation
-   - Base provider class for consistent behavior
+7. **Modular Architecture**: Complete modular design with separation of concerns
+   - Fuzzy matching logic in reusable FuzzyMatcher class
+   - Standardized completion item creation via CompletionItemFactory
+   - BaseCompletionProvider abstract class ensures consistent behavior
    - Improved testability with isolated components
+   - Each provider has its own test file with comprehensive coverage
 
 ### File Parsing
 
@@ -119,7 +120,10 @@ npm run test:coverage
 - **Test Configuration**: `jest.config.js` with ts-jest preset
 - **Mock VSCode API**: `src/__mocks__/vscode.ts` for testing without VSCode
 - **Test Coverage**: Includes core classes, completion providers, caching, and fuzzy matching
-- **Test Files**: 10 test suites covering 102 test cases
+- **Test Files**: 13 test suites covering 150+ test cases
+  - Individual test files for each completion provider
+  - Tests for base classes (FuzzyMatcher, CompletionItemFactory)
+  - Integration tests for caching and configuration
 
 ### Manual Testing
 
