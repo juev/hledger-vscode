@@ -40,13 +40,18 @@ npm run publish
 
 1. **Main Extension Entry**: `src/extension/main.ts` - TypeScript source with proper type definitions
 2. **Syntax Highlighting**: `syntaxes/hledger.tmLanguage.json` - Comprehensive TextMate grammar supporting full hledger syntax with customizable colors
-3. **Completion Providers**:
-   - `AccountCompletionProvider` - Hierarchical account suggestions with frequency-based prioritization, advanced fuzzy matching and caching
-   - `KeywordCompletionProvider` - hledger directives with fuzzy matching (account, commodity, include, etc.)
-   - `CommodityCompletionProvider` - Currency and cryptocurrency symbols with frequency-based prioritization and fuzzy matching
-   - `DateCompletionProvider` - Smart date suggestions
-   - `PayeeCompletionProvider` - Store/merchant completion with frequency-based prioritization, advanced fuzzy matching and substring support
-   - `TagCompletionProvider` - Tag/category completion with frequency-based prioritization and fuzzy matching from comments
+3. **Completion System Architecture** (Modular design):
+   - **Base Classes**:
+     - `FuzzyMatcher` (`src/extension/completion/base/FuzzyMatcher.ts`) - Centralized fuzzy matching algorithm with Unicode support
+     - `CompletionItemFactory` (`src/extension/completion/base/CompletionItemFactory.ts`) - Standardized completion item creation
+     - `BaseCompletionProvider` (`src/extension/completion/base/BaseCompletionProvider.ts`) - Abstract base class for all providers
+   - **Completion Providers**:
+     - `KeywordCompletionProvider` (`src/extension/completion/providers/KeywordCompletionProvider.ts`) - hledger directives with fuzzy matching ✅ REFACTORED
+     - `AccountCompletionProvider` (in `main.ts`) - Hierarchical account suggestions with frequency-based prioritization
+     - `CommodityCompletionProvider` (in `main.ts`) - Currency and cryptocurrency symbols with frequency-based prioritization
+     - `DateCompletionProvider` (in `main.ts`) - Smart date suggestions with improved Enter key handling
+     - `PayeeCompletionProvider` (in `main.ts`) - Store/merchant completion with frequency-based prioritization
+     - `TagCompletionProvider` (in `main.ts`) - Tag/category completion with frequency-based prioritization
 4. **Smart Indentation**: `HLedgerEnterCommand` and `HLedgerEnterKeyProvider` - Intelligent Enter key handling
 5. **Completion Limits**: Configurable maximum number of completion items via `hledger.autoCompletion.maxResults` (default 25) and `hledger.autoCompletion.maxAccountResults` (default 30)
 
@@ -73,6 +78,11 @@ npm run publish
    - Production-ready code without debug logging
 5. **Smart Indentation**: Context-aware Enter key handling for proper transaction formatting
 6. **Performance**: Optimized for large codebases with smart caching and selective file scanning
+7. **Modular Architecture** (NEW): Beginning transition to modular design with separation of concerns
+   - Fuzzy matching logic extracted to reusable class
+   - Standardized completion item creation
+   - Base provider class for consistent behavior
+   - Improved testability with isolated components
 
 ### File Parsing
 
@@ -109,7 +119,7 @@ npm run test:coverage
 - **Test Configuration**: `jest.config.js` with ts-jest preset
 - **Mock VSCode API**: `src/__mocks__/vscode.ts` for testing without VSCode
 - **Test Coverage**: Includes core classes, completion providers, caching, and fuzzy matching
-- **Test Files**: 8 test suites covering 76 test cases
+- **Test Files**: 10 test suites covering 102 test cases
 
 ### Manual Testing
 

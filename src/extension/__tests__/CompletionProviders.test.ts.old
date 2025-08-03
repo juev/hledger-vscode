@@ -1,11 +1,19 @@
 import * as vscode from 'vscode';
+
+// Mock the main module for getConfig BEFORE importing it
+jest.mock('../main', () => ({
+    ...jest.requireActual('../main'),
+    getConfig: jest.fn()
+}));
+
 import { 
-    AccountCompletionProvider, 
     CommodityCompletionProvider, 
-    DateCompletionProvider, 
-    KeywordCompletionProvider,
-    HLedgerConfig 
+    DateCompletionProvider,
+    HLedgerConfig,
+    getConfig
 } from '../main';
+import { KeywordCompletionProvider } from '../completion/providers/KeywordCompletionProvider';
+import { AccountCompletionProvider } from '../completion/providers/AccountCompletionProvider';
 
 // Mock vscode.workspace.getConfiguration for completion limits
 const mockGetConfiguration = jest.fn();
@@ -15,8 +23,6 @@ Object.defineProperty(vscode.workspace, 'getConfiguration', {
     value: mockGetConfiguration,
     writable: true
 });
-
-// No module mocking - use actual implementation
 
 // Create test content with accounts, commodities, and dates
 const testJournalContent = `
@@ -48,6 +54,16 @@ const mockPosition = (line: number, character: number): vscode.Position => ({
     character
 } as vscode.Position);
 
+const mockToken: vscode.CancellationToken = {
+    isCancellationRequested: false,
+    onCancellationRequested: jest.fn()
+} as any;
+
+const mockContext: vscode.CompletionContext = {
+    triggerKind: vscode.CompletionTriggerKind.Invoke,
+    triggerCharacter: undefined
+} as any;
+
 describe('KeywordCompletionProvider', () => {
     let provider: KeywordCompletionProvider;
     
@@ -72,7 +88,9 @@ describe('KeywordCompletionProvider', () => {
         
         const items = provider.provideCompletionItems(
             mockDocument,
-            mockPosition(0, 0)
+            mockPosition(0, 0),
+            mockToken,
+            mockContext
         ) as vscode.CompletionItem[];
         
         expect(items).toBeDefined();
@@ -89,7 +107,9 @@ describe('KeywordCompletionProvider', () => {
         
         const items = provider.provideCompletionItems(
             mockDocument,
-            mockPosition(0, 14)
+            mockPosition(0, 14),
+            mockToken,
+            mockContext
         );
         
         expect(items).toBeUndefined();
@@ -98,10 +118,27 @@ describe('KeywordCompletionProvider', () => {
 
 describe('AccountCompletionProvider', () => {
     let provider: AccountCompletionProvider;
+    let mockConfig: any;
     
     beforeEach(() => {
         provider = new AccountCompletionProvider();
         jest.clearAllMocks();
+        
+        // Mock the config returned by getConfig
+        mockConfig = {
+            getAccountsByUsage: jest.fn().mockReturnValue([
+                { account: 'Assets:Bank', count: 10 },
+                { account: 'Expenses:Food', count: 8 },
+                { account: 'Assets:Cash', count: 5 },
+                { account: 'Активы:Наличные', count: 3 }
+            ]),
+            getDefinedAccounts: jest.fn().mockReturnValue([
+                'Assets:Bank',
+                'Expenses:Food'
+            ])
+        };
+        
+        (getConfig as jest.Mock).mockReturnValue(mockConfig);
     });
     
     it('should provide account completions on posting lines', () => {
@@ -109,7 +146,9 @@ describe('AccountCompletionProvider', () => {
         
         const items = provider.provideCompletionItems(
             mockDocument,
-            mockPosition(0, 6)
+            mockPosition(0, 6),
+            mockToken,
+            mockContext
         ) as vscode.CompletionItem[];
         
         expect(items).toBeDefined();
@@ -127,7 +166,9 @@ describe('AccountCompletionProvider', () => {
         
         const items = provider.provideCompletionItems(
             mockDocument,
-            mockPosition(0, 7)
+            mockPosition(0, 7),
+            mockToken,
+            mockContext
         ) as vscode.CompletionItem[];
         
         expect(items).toBeDefined();
@@ -140,7 +181,9 @@ describe('AccountCompletionProvider', () => {
         
         const items = provider.provideCompletionItems(
             mockDocument,
-            mockPosition(0, 4)
+            mockPosition(0, 4),
+            mockToken,
+            mockContext
         ) as vscode.CompletionItem[];
         
         const definedAccount = items.find(item => item.label === 'Assets:Bank');
@@ -154,7 +197,9 @@ describe('AccountCompletionProvider', () => {
         
         const items = provider.provideCompletionItems(
             mockDocument,
-            mockPosition(0, 15)
+            mockPosition(0, 15),
+            mockToken,
+            mockContext
         );
         
         expect(items).toBeUndefined();
@@ -283,6 +328,8 @@ describe('DateCompletionProvider', () => {
         
         const todayItem = items.find(item => item.detail === 'Today\'s date');
         expect(todayItem?.insertText).toBe('2025-01-15 ');
+        expect(todayItem?.filterText).toBe('2025-01-15');
+        expect(todayItem?.preselect).toBe(true);
     });
 });
 
@@ -312,7 +359,9 @@ describe('Completion Limits Configuration', () => {
         
         const items = keywordProvider.provideCompletionItems(
             mockDocument,
-            mockPosition(0, 0)
+            mockPosition(0, 0),
+            mockToken,
+            mockContext
         ) as vscode.CompletionItem[];
         
         expect(items).toBeDefined();
@@ -335,7 +384,9 @@ describe('Completion Limits Configuration', () => {
         
         const items = accountProvider.provideCompletionItems(
             mockDocument,
-            mockPosition(0, 4)
+            mockPosition(0, 4),
+            mockToken,
+            mockContext
         ) as vscode.CompletionItem[];
         
         expect(items).toBeDefined();
@@ -352,7 +403,9 @@ describe('Completion Limits Configuration', () => {
         
         const items = accountProvider.provideCompletionItems(
             mockDocument,
-            mockPosition(0, 4)
+            mockPosition(0, 4),
+            mockToken,
+            mockContext
         ) as vscode.CompletionItem[];
         
         expect(items).toBeDefined();
@@ -387,7 +440,9 @@ describe('Empty Query Completion (Ctrl+Space)', () => {
         
         const items = keywordProvider.provideCompletionItems(
             mockDocument,
-            mockPosition(0, 0)
+            mockPosition(0, 0),
+            mockToken,
+            mockContext
         ) as vscode.CompletionItem[];
         
         expect(items).toBeDefined();
@@ -404,7 +459,9 @@ describe('Empty Query Completion (Ctrl+Space)', () => {
         
         const items = accountProvider.provideCompletionItems(
             mockDocument,
-            mockPosition(0, 4)
+            mockPosition(0, 4),
+            mockToken,
+            mockContext
         ) as vscode.CompletionItem[];
         
         expect(items).toBeDefined();
@@ -418,7 +475,9 @@ describe('Empty Query Completion (Ctrl+Space)', () => {
         
         const items = accountProvider.provideCompletionItems(
             mockDocument,
-            mockPosition(0, 4)
+            mockPosition(0, 4),
+            mockToken,
+            mockContext
         ) as vscode.CompletionItem[];
         
         if (items && items.length > 1) {

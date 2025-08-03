@@ -28,6 +28,12 @@ export enum CompletionItemKind {
     Issue = 26,
 }
 
+export enum CompletionTriggerKind {
+    Invoke = 0,
+    TriggerCharacter = 1,
+    TriggerForIncompleteCompletions = 2
+}
+
 export class CompletionItem {
     label: string;
     kind?: CompletionItemKind;
@@ -135,7 +141,8 @@ export const workspace = {
     fs: {
         readFile: jest.fn(),
         writeFile: jest.fn(),
-    }
+    },
+    getConfiguration: jest.fn()
 };
 
 export const languages = {

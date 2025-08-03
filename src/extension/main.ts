@@ -10,94 +10,16 @@ import {
     DEFAULT_COMMODITIES 
 } from './types';
 import { HLedgerEnterCommand } from './indentProvider';
+import { FuzzyMatcher, FuzzyMatch } from './completion/base/FuzzyMatcher';
+import { KeywordCompletionProvider as NewKeywordCompletionProvider } from './completion/providers/KeywordCompletionProvider';
+import { AccountCompletionProvider as NewAccountCompletionProvider } from './completion/providers/AccountCompletionProvider';
 
-// Fuzzy matching score interface
-interface FuzzyMatch {
-    item: string;
-    score: number;
-}
+// Create a global instance of FuzzyMatcher for backward compatibility
+const globalFuzzyMatcher = new FuzzyMatcher();
 
-// Fuzzy finding algorithm for payees and tags
+// Backward-compatible fuzzy match function that uses the new FuzzyMatcher class
 export function fuzzyMatch(query: string, items: string[]): FuzzyMatch[] {
-    if (!query) return items.map(item => ({ item, score: 1 }));
-    
-    const queryLower = query.toLowerCase();
-    const matches: FuzzyMatch[] = [];
-    
-    for (const item of items) {
-        const itemLower = item.toLowerCase();
-        let bestScore = 0;
-        let bestMatch = false;
-        
-        // Try matching from each position in the item to support substring matching
-        for (let startPos = 0; startPos <= itemLower.length - queryLower.length; startPos++) {
-            let score = 0;
-            let queryIndex = 0;
-            let matchedChars = 0;
-            let consecutiveBonus = 0;
-            
-            // Calculate fuzzy match score from this starting position
-            for (let i = startPos; i < itemLower.length && queryIndex < queryLower.length; i++) {
-                if (itemLower[i] === queryLower[queryIndex]) {
-                    matchedChars++;
-                    
-                    // Base score for character match
-                    score += 10;
-                    
-                    // Bonus for consecutive matches
-                    if (queryIndex > 0 && i > startPos && itemLower[i-1] === queryLower[queryIndex-1]) {
-                        consecutiveBonus += 5;
-                        score += consecutiveBonus;
-                    } else {
-                        consecutiveBonus = 0;
-                    }
-                    
-                    // Bonus for word boundaries
-                    if (i === 0 || itemLower[i - 1] === ' ' || itemLower[i - 1] === '-' || itemLower[i - 1] === '_') {
-                        score += 30;
-                    }
-                    
-                    // Higher score for matches at the beginning
-                    if (startPos === 0) {
-                        score += queryIndex === 0 ? 100 : 50;
-                    }
-                    
-                    queryIndex++;
-                }
-            }
-            
-            // Check if this starting position gives a complete match
-            if (matchedChars === queryLower.length) {
-                // Huge bonus for exact substring matches (consecutive characters)
-                const isConsecutiveMatch = itemLower.includes(queryLower);
-                if (isConsecutiveMatch) {
-                    score += 500; // Much higher bonus for exact substring
-                }
-                
-                // Even higher bonus for prefix matches (highest priority)
-                if (startPos === 0 && itemLower.startsWith(queryLower)) {
-                    score += 1500; // Much higher priority for prefix matches
-                }
-                
-                // Small penalty for later starting positions to prefer earlier matches
-                score -= startPos * 2;
-                
-                if (score > bestScore) {
-                    bestScore = score;
-                    bestMatch = true;
-                }
-            }
-        }
-        
-        if (bestMatch) {
-            // Penalty for longer strings (prefer shorter matches)
-            bestScore -= item.length;
-            matches.push({ item, score: bestScore });
-        }
-    }
-    
-    // Sort by score (higher score first)
-    return matches.sort((a, b) => b.score - a.score);
+    return globalFuzzyMatcher.match(query, items);
 }
 
 // Safe file search without shell execution
@@ -562,229 +484,7 @@ export function getConfig(document: vscode.TextDocument): IHLedgerConfig {
     return config;
 }
 
-export class KeywordCompletionProvider implements vscode.CompletionItemProvider {
-    provideCompletionItems(
-        document: vscode.TextDocument, 
-        position: vscode.Position
-    ): vscode.ProviderResult<vscode.CompletionItem[]> {
-        const linePrefix = document.lineAt(position).text.substring(0, position.character);
-        
-        // Extract what user has typed on the line
-        const typedText = linePrefix.trim();
-        
-        // Provide keyword completions for directive lines (at start of line with minimal whitespace)
-        // Avoid conflicts with AccountCompletionProvider which handles posting lines (significant indentation)
-        if (linePrefix.match(/^\s{0,1}\S*$/)) {
-            const keywords = [...HLEDGER_KEYWORDS];
-            let completions: Array<{item: string, score: number}> = [];
-            
-            if (typedText.length === 0) {
-                // For empty queries (Ctrl+Space), show all keywords sorted by usage/priority
-                // Since keywords don't have usage tracking, sort by length/frequency
-                completions = keywords.map(keyword => {
-                    // Simple scoring based on keyword importance and length
-                    let score = 100; // Base score for all keywords
-                    
-                    // Prioritize more commonly used directives
-                    const commonKeywords = ['account', 'commodity', 'include', 'alias', 'payee'];
-                    if (commonKeywords.includes(keyword)) {
-                        score += 20;
-                    }
-                    
-                    // Shorter keywords get slight priority
-                    score += Math.max(0, 10 - keyword.length);
-                    
-                    return { item: keyword, score };
-                });
-            } else if (typedText.length <= 1) {
-                // For very short queries (1 char), use simple substring matching to avoid noise
-                const substringMatches = keywords.filter(keyword => keyword.toLowerCase().includes(typedText.toLowerCase()));
-                
-                // Score matches: exact prefix gets highest score, then by length
-                completions = substringMatches.map(keyword => {
-                    const keywordLower = keyword.toLowerCase();
-                    const queryLower = typedText.toLowerCase();
-                    
-                    let score = 50; // Base score for substring match
-                    
-                    if (keywordLower.startsWith(queryLower)) {
-                        score += 30; // Bonus for prefix match
-                    }
-                    
-                    // Shorter keywords get higher scores
-                    score += Math.max(0, 20 - keyword.length);
-                    
-                    return { item: keyword, score };
-                });
-            } else {
-                // For longer queries (2+ chars), use full fuzzy matching including substrings
-                completions = fuzzyMatch(typedText, keywords);
-            }
-            
-            if (completions.length === 0) {
-                return undefined;
-            }
-            
-            // Sort by score descending, then by length ascending for ties
-            completions.sort((a, b) => {
-                if (b.score !== a.score) return b.score - a.score;
-                return a.item.length - b.item.length;
-            });
-            
-            // Limit results based on configuration
-            const limits = getCompletionLimits();
-            const limitedResults = completions.slice(0, limits.maxResults);
-            
-            return limitedResults.map((match, index) => {
-                const item = new vscode.CompletionItem(match.item, vscode.CompletionItemKind.Keyword);
-                item.detail = 'hledger directive';
-                // Use zero-width characters to force sorting by frequency
-                const sortPrefix = String.fromCharCode(0x200B).repeat(index); // Zero-width space
-                item.sortText = sortPrefix + match.item;
-                // Let VS Code handle filtering naturally
-                item.filterText = match.item;
-                
-                if (typedText) {
-                    const range = new vscode.Range(
-                        position.line,
-                        position.character - typedText.length,
-                        position.line,
-                        position.character
-                    );
-                    item.range = range;
-                }
-                
-                return item;
-            });
-        }
-        
-        return undefined;
-    }
-}
 
-export class AccountCompletionProvider implements vscode.CompletionItemProvider {
-    provideCompletionItems(
-        document: vscode.TextDocument, 
-        position: vscode.Position
-    ): vscode.ProviderResult<vscode.CompletionItem[]> {
-        const linePrefix = document.lineAt(position).text.substring(0, position.character);
-        
-        // Only provide account completions if this is clearly a posting line (starts with 2+ spaces)
-        // Allow empty queries (just whitespace) for Ctrl+Space completion
-        if (linePrefix.match(/^\s{2,}/) && !linePrefix.match(/\s+[-+]?\d+([.,]\d+)*\s*\S*$/) && !linePrefix.match(/^\s*\d{1,4}[-/.]\d{0,2}/)) {
-            const config = getConfig(document);
-            const accountsByUsage = config.getAccountsByUsage();
-            const definedAccounts = config.getDefinedAccounts();
-            
-            // Extract what user has already typed after spaces
-            const accountMatch = linePrefix.match(/^\s+(.*)$/);
-            const typedText = accountMatch ? accountMatch[1] : '';
-            
-            // Combine all accounts for fuzzy matching, sorted by usage frequency
-            const allAccounts: Array<{account: string, kind: vscode.CompletionItemKind, detail: string, priority: number, usageCount: number}> = [];
-            
-            // Add accounts sorted by usage frequency
-            accountsByUsage.forEach(({account, count}) => {
-                const isDefined = definedAccounts.includes(account);
-                allAccounts.push({
-                    account,
-                    kind: isDefined ? vscode.CompletionItemKind.Class : vscode.CompletionItemKind.Reference,
-                    detail: isDefined ? `Defined account (used ${count} times)` : `Used account (${count} times)`,
-                    priority: isDefined ? 1 : 2,
-                    usageCount: count
-                });
-            });
-            
-            // Add default prefixes
-            DEFAULT_ACCOUNT_PREFIXES.forEach(prefix => {
-                allAccounts.push({
-                    account: prefix,
-                    kind: vscode.CompletionItemKind.Folder,
-                    detail: 'Default account prefix',
-                    priority: 3,
-                    usageCount: 0
-                });
-            });
-            
-            // Use smart fuzzy matching for accounts
-            const accountNames = allAccounts.map(a => a.account);
-            let fuzzyMatches: FuzzyMatch[];
-            
-            if (typedText.length === 0) {
-                // For empty queries (Ctrl+Space), show all accounts sorted by usage frequency
-                fuzzyMatches = accountNames.map(item => {
-                    const accountInfo = allAccounts.find(a => a.account === item)!;
-                    // Use usage count directly as score for empty queries
-                    return { item, score: accountInfo.usageCount };
-                });
-                
-                // Sort by usage frequency (higher first)
-                fuzzyMatches.sort((a, b) => b.score - a.score);
-            } else if (typedText.length <= 1) {
-                // For very short queries (1 char), use simple substring matching to avoid noise
-                const substringMatches = accountNames.filter(acc => acc.toLowerCase().includes(typedText.toLowerCase()));
-                
-                fuzzyMatches = substringMatches.map(item => {
-                    const itemLower = item.toLowerCase();
-                    const queryLower = typedText.toLowerCase();
-                    
-                    // Simple scoring: prefix matches get higher score, then by length
-                    let score = 1000;
-                    if (itemLower.startsWith(queryLower)) {
-                        score += 200; // Prefix bonus
-                    }
-                    score -= item.length; // Shorter items preferred
-                    
-                    return { item, score };
-                });
-                
-                // Sort by score (higher first)
-                fuzzyMatches.sort((a, b) => b.score - a.score);
-            } else {
-                // For longer queries (2+ chars), use full fuzzy matching including substrings
-                fuzzyMatches = fuzzyMatch(typedText, accountNames);
-            }
-            
-            // If no fuzzy matches, return undefined to let other providers handle
-            if (fuzzyMatches.length === 0) {
-                return undefined;
-            }
-            
-            // Limit to top results for accounts based on configuration
-            const limits = getCompletionLimits();
-            const topMatches = fuzzyMatches.slice(0, limits.maxAccountResults);
-            
-            const suggestions = topMatches.map((match, index) => {
-                const accountInfo = allAccounts.find(a => a.account === match.item)!;
-                const item = new vscode.CompletionItem(match.item, accountInfo.kind);
-                item.detail = accountInfo.detail;
-                
-                // Use numerical prefix to force sorting by usage frequency
-                const sortOrder = index.toString().padStart(3, '0');
-                item.sortText = sortOrder + '_' + match.item;
-                // Let VS Code handle filtering naturally
-                item.filterText = match.item;
-                
-                // Set the text to replace - only replace what user typed
-                if (typedText) {
-                    const range = new vscode.Range(
-                        position.line, 
-                        position.character - typedText.length,
-                        position.line,
-                        position.character
-                    );
-                    item.range = range;
-                }
-                
-                return item;
-            });
-            
-            return suggestions;
-        }
-        
-        return undefined;
-    }
-}
 
 export class CommodityCompletionProvider implements vscode.CompletionItemProvider {
     provideCompletionItems(
@@ -918,8 +618,15 @@ export class DateCompletionProvider implements vscode.CompletionItemProvider {
                 if (dateStr.startsWith(typedText) || typedText === '') {
                     const item = new vscode.CompletionItem(dateStr, vscode.CompletionItemKind.Value);
                     item.detail = detail;
+                    // Use command to ensure proper insertion with space
                     item.insertText = dateStr + ' ';
                     item.sortText = priority + '_' + dateStr;
+                    // Explicitly set filterText to help VS Code matching
+                    item.filterText = dateStr;
+                    // Mark as preselect for better UX
+                    if (priority === '0' || priority === '1') {
+                        item.preselect = true;
+                    }
                     
                     // Replace what user typed
                     if (typedText) {
@@ -1020,17 +727,24 @@ export class PayeeCompletionProvider implements vscode.CompletionItemProvider {
         // Trigger after date pattern in transaction lines (support all hledger date formats)
         // Format: DATE [*|!] [CODE] DESCRIPTION
         // Support both empty queries (Ctrl+Space) and typed text
-        if (linePrefix.match(/^(\d{4}[-/.]\d{1,2}[-/.]\d{1,2}|\d{1,2}[-/.]\d{1,2})\s*(\*|!)?\s*(\([^)]+\))?\s+/)) {
-            const config = getConfig(document);
-            const payeesByUsage = config.getPayeesByUsage();
+        // Check if we're in a valid position for payee completion
+        const dateLineMatch = linePrefix.match(/^(\d{4}[-/.]\d{1,2}[-/.]\d{1,2}|\d{1,2}[-/.]\d{1,2})\s*(\*|!)?\s*(\([^)]+\))?\s*(.*)$/);
+        if (dateLineMatch) {
+            const afterDateText = dateLineMatch[4];
             
-            if (payeesByUsage.length === 0) {
-                return undefined;
-            }
-            
-            // Extract what user has typed (support all hledger date formats including MM-DD)
-            const transactionMatch = linePrefix.match(/^(\d{4}[-/.]\d{1,2}[-/.]\d{1,2}|\d{1,2}[-/.]\d{1,2})\s*(\*|!)?\s*(\([^)]+\))?\s*(.*)$/);
-            const typedText = transactionMatch ? transactionMatch[4] : '';
+            // Only provide completions if:
+            // 1. There's at least one space after date/status/code AND
+            // 2. We're not just adding spaces (avoid triggering on multiple spaces)
+            if (afterDateText.length > 0 || !linePrefix.endsWith(' ')) {
+                const config = getConfig(document);
+                const payeesByUsage = config.getPayeesByUsage();
+                
+                if (payeesByUsage.length === 0) {
+                    return undefined;
+                }
+                
+                // Use the already extracted text
+                const typedText = afterDateText;
             
             // Get payee names sorted by usage
             const payeeNames = payeesByUsage.map(p => p.payee);
@@ -1106,6 +820,7 @@ export class PayeeCompletionProvider implements vscode.CompletionItemProvider {
             });
             
             return suggestions;
+            }
         }
         
         return undefined;
@@ -1423,44 +1138,48 @@ export function activate(context: vscode.ExtensionContext): void {
     const autoCompletionEnabled = config.get<boolean>('autoCompletion.enabled', true);
     
     // Define trigger characters based on setting - include letters and numbers for auto-trigger
-    const baseTriggerChars = [' ', ':', '/', '-', '.', ';'];
+    // Note: Space removed from base triggers to prevent unwanted completions after dates
+    const baseTriggerChars = [':', '/', '-', '.', ';'];
     const autoTriggerChars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789абвгдеёжзийклмнопрстуфхцчшщъыьэюяАБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ'.split('');
     const triggerChars = autoCompletionEnabled ? [...baseTriggerChars, ...autoTriggerChars] : [];
+    
+    // Special trigger chars for providers that need space
+    const triggerCharsWithSpace = autoCompletionEnabled ? [' ', ...baseTriggerChars, ...autoTriggerChars] : [' '];
 
     const keywordProvider = vscode.languages.registerCompletionItemProvider(
         'hledger',
-        new KeywordCompletionProvider(),
+        new NewKeywordCompletionProvider(),
         ...triggerChars
     );
 
     const accountProvider = vscode.languages.registerCompletionItemProvider(
         'hledger',
-        new AccountCompletionProvider(),
-        ...triggerChars
+        new NewAccountCompletionProvider(),
+        ...triggerCharsWithSpace // Space is needed for account lines
     );
 
     const commodityProvider = vscode.languages.registerCompletionItemProvider(
         'hledger',
         new CommodityCompletionProvider(),
-        ...triggerChars
+        ...triggerCharsWithSpace // Space is needed after amounts
     );
 
     const dateProvider = vscode.languages.registerCompletionItemProvider(
         'hledger',
         new DateCompletionProvider(),
-        ...triggerChars
+        ...triggerChars // No space trigger for dates
     );
 
     const payeeProvider = vscode.languages.registerCompletionItemProvider(
         'hledger',
         new PayeeCompletionProvider(),
-        ...triggerChars
+        ...triggerCharsWithSpace // Space is needed after date
     );
 
     const tagProvider = vscode.languages.registerCompletionItemProvider(
         'hledger',
         new TagCompletionProvider(),
-        ...triggerChars
+        ...triggerChars // No space trigger for tags
     );
 
 
