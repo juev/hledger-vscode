@@ -29,10 +29,10 @@ export class FuzzyMatcher {
         const queryLower = query.toLowerCase();
         
         if (query.length <= 1) {
-            return this.handleShortQuery(queryLower, items);
+            return this.handleShortQuery(queryLower, items, options.usageCounts);
         }
         
-        return this.handleFullQuery(queryLower, items);
+        return this.handleFullQuery(queryLower, items, options.usageCounts);
     }
     
     /**
@@ -48,7 +48,7 @@ export class FuzzyMatcher {
     /**
      * Handles short queries (1 character) with simple substring matching
      */
-    private handleShortQuery(queryLower: string, items: string[]): FuzzyMatch[] {
+    private handleShortQuery(queryLower: string, items: string[], usageCounts?: Map<string, number>): FuzzyMatch[] {
         const matches: FuzzyMatch[] = [];
         
         for (const item of items) {
@@ -61,7 +61,11 @@ export class FuzzyMatcher {
                     score += 200;
                 }
                 
-                // Prefer shorter items
+                // Add usage frequency bonus (higher usage = higher score)
+                const usageCount = usageCounts?.get(item) || 0;
+                score += usageCount * 10; // Multiply by 10 to give usage significant weight
+                
+                // Prefer shorter items (small penalty)
                 score -= item.length;
                 
                 matches.push({ item, score });
@@ -74,7 +78,7 @@ export class FuzzyMatcher {
     /**
      * Handles full fuzzy matching for longer queries
      */
-    private handleFullQuery(queryLower: string, items: string[]): FuzzyMatch[] {
+    private handleFullQuery(queryLower: string, items: string[], usageCounts?: Map<string, number>): FuzzyMatch[] {
         const matches: FuzzyMatch[] = [];
         
         for (const item of items) {
@@ -143,6 +147,10 @@ export class FuzzyMatcher {
             }
             
             if (bestMatch) {
+                // Add usage frequency bonus (higher usage = higher score)
+                const usageCount = usageCounts?.get(item) || 0;
+                bestScore += usageCount * 5; // Multiply by 5 to give usage weight in fuzzy search
+                
                 // Penalty for longer strings (prefer shorter matches)
                 bestScore -= item.length;
                 matches.push({ item, score: bestScore });
