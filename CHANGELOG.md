@@ -1,5 +1,11 @@
 # Change Log
 
+## [0.1.11] - 2025-08-03
+
+### Added
+- feat: enhance fuzzy matching with usage frequency scoring
+
+
 ## [0.1.10] - 2025-08-03
 
 ### Added
