@@ -1,5 +1,19 @@
 # Change Log
 
+## [0.1.10] - 2025-08-03
+
+### Added
+- Add completion providers for commodities, dates, payees, and tags
+- Implement keyword and account completion providers with fuzzy matching
+- feat: add configurable completion limits for keywords and accounts
+- feat: update vscode engine version to ^1.75.0
+- feat: update launch configurations for extension running and testing
+- feat: add launch configuration for running and testing the extension
+
+### Changed
+- Enhance FuzzyMatcher and CompletionItemFactory for improved sorting and usage-based scoring
+
+
 ## [0.1.9] - 2025-08-02
 
 ### Added
