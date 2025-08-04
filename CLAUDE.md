@@ -6,6 +6,14 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 This is a Visual Studio Code extension for hledger journal files (plain text accounting). It provides syntax highlighting, IntelliSense features (account/date/commodity completion), and language support for `.journal`, `.hledger`, and `.ledger` files.
 
+## Improvement Plan
+
+See `IMPROVEMENT_PLAN.md` for a detailed phased improvement plan for the extension. The plan includes 4 phases:
+1. **Phase 1 (critical)**: Security vulnerability fixes and memory leak elimination
+2. **Phase 2**: UX simplification and performance optimization  
+3. **Phase 3**: Accessibility improvements and visual feedback
+4. **Phase 4**: Advanced UX features and documentation
+
 ## Development Commands
 
 ```bash
