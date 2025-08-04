@@ -199,10 +199,10 @@ export class CascadeInvalidationStrategy extends BaseInvalidationStrategy {
     canHandle(context: InvalidationContext): boolean {
         const impactScore = this.calculateImpactScore(context);
         
-        // Use cascade for medium impact changes with dependencies
-        return impactScore >= 10 && 
-               impactScore < 20 && 
-               context.dependencyGraph.size > 0;
+        // Use cascade for changes with dependencies, regardless of impact score
+        // This is more appropriate for cascade strategy - if there are dependencies, we should cascade
+        return context.dependencyGraph.size > 0 && 
+               (impactScore >= 3 || context.event.type === InvalidationEventType.FILE_MODIFIED);
     }
     
     async execute(context: InvalidationContext): Promise<InvalidationResult> {

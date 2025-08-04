@@ -143,6 +143,9 @@ export class CacheInvalidationManager implements ICacheInvalidationManager {
             // Schedule batch processing with debouncing
             this.scheduleBatchProcessing();
             
+            // Update statistics for queued events to ensure stats are tracked
+            this.updateStats(InvalidationStrategy.PARTIAL, 0, true);
+            
             // Return preliminary result for non-critical events
             return {
                 strategy: InvalidationStrategy.PARTIAL,
