@@ -119,4 +119,11 @@ export abstract class BaseCompletionProvider implements vscode.CompletionItemPro
         const match = linePrefix.match(pattern);
         return match ? match[1] || '' : '';
     }
+    
+    /**
+     * Invalidates provider-specific caches (override in subclasses)
+     */
+    public invalidateCache(): void {
+        // Base implementation - override in subclasses for specific cache cleanup
+    }
 }

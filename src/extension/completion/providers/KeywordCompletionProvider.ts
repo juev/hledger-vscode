@@ -7,8 +7,6 @@ import { HLEDGER_KEYWORDS } from '../../types';
  * Provides completion for hledger keywords/directives
  */
 export class KeywordCompletionProvider extends BaseCompletionProvider {
-    // Common keywords that should be prioritized
-    private static readonly COMMON_KEYWORDS = ['account', 'commodity', 'include', 'alias', 'payee'];
     
     protected shouldProvideCompletions(
         document: vscode.TextDocument,
@@ -28,27 +26,12 @@ export class KeywordCompletionProvider extends BaseCompletionProvider {
         const linePrefix = document.lineAt(position).text.substring(0, position.character);
         const typedText = linePrefix.trim();
         
-        // Create usage counts based on keyword importance
-        const usageCounts = new Map<string, number>();
-        
-        HLEDGER_KEYWORDS.forEach(keyword => {
-            let score = 100; // Base score for all keywords
-            
-            // Prioritize commonly used directives
-            if (KeywordCompletionProvider.COMMON_KEYWORDS.includes(keyword)) {
-                score += 20;
-            }
-            
-            // Shorter keywords get slight priority
-            score += Math.max(0, 10 - keyword.length);
-            
-            usageCounts.set(keyword, score);
-        });
-        
+        // Return keywords without artificial usage counts
+        // Let FuzzyMatcher sort by relevance based on query match quality
         return {
             items: [...HLEDGER_KEYWORDS],
-            query: typedText,
-            usageCounts
+            query: typedText
+            // No usageCounts - rely on FuzzyMatcher's relevance scoring
         };
     }
     

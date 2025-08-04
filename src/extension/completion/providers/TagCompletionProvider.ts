@@ -3,10 +3,18 @@ import { BaseCompletionProvider, CompletionData } from '../base/BaseCompletionPr
 import { CompletionItemOptions } from '../base/CompletionItemFactory';
 import { getConfig } from '../../main';
 
+interface TagInfo {
+    tag: string;
+    detail: string;
+    usageCount: number;
+}
+
 /**
  * Provides completion for tags in comment lines (after semicolon)
  */
 export class TagCompletionProvider extends BaseCompletionProvider {
+    // Temporary storage for tag info during completion
+    private tagInfoMap?: Map<string, TagInfo>;
     protected shouldProvideCompletions(
         document: vscode.TextDocument,
         position: vscode.Position
@@ -34,17 +42,27 @@ export class TagCompletionProvider extends BaseCompletionProvider {
         const tagMatch = linePrefix.match(/([a-zA-Z\u0400-\u04FF][a-zA-Z\u0400-\u04FF0-9_]*)(:?)$/);
         const typedText = tagMatch ? tagMatch[1] : '';
         
-        // Convert to string array for fuzzy matcher
-        const items = tagsByUsage.map(t => t.tag);
+        // Build tag info list with metadata
+        const tagInfoList: TagInfo[] = tagsByUsage.map(({tag, count}) => ({
+            tag,
+            detail: count > 0 ? `Tag/Category (used ${count} times)` : 'Tag/Category',
+            usageCount: count
+        }));
         
-        // Create usage counts map
+        // Create usage counts map for fuzzy matcher
         const usageCounts = new Map<string, number>();
-        tagsByUsage.forEach(t => {
-            usageCounts.set(t.tag, t.count);
+        tagInfoList.forEach(info => {
+            usageCounts.set(info.tag, info.usageCount);
+        });
+        
+        // Store tag info in a map for later lookup
+        this.tagInfoMap = new Map<string, TagInfo>();
+        tagInfoList.forEach(info => {
+            this.tagInfoMap!.set(info.tag, info);
         });
         
         return {
-            items,
+            items: tagInfoList.map(info => info.tag),
             query: typedText,
             usageCounts
         };
@@ -73,14 +91,11 @@ export class TagCompletionProvider extends BaseCompletionProvider {
             return items;
         }
         
-        // Customize each item
+        // Customize each item with tag-specific metadata
         return items.map(item => {
-            const config = getConfig(document);
-            const tagsByUsage = config.getTagsByUsage();
-            const tagInfo = tagsByUsage.find(t => t.tag === item.label);
-            
-            if (tagInfo && tagInfo.count > 0) {
-                item.detail = `Tag/Category (used ${tagInfo.count} times)`;
+            const tagInfo = this.tagInfoMap?.get(item.label.toString());
+            if (tagInfo) {
+                item.detail = tagInfo.detail;
             }
             
             // Set insert text for tag:value format
@@ -88,5 +103,12 @@ export class TagCompletionProvider extends BaseCompletionProvider {
             
             return item;
         });
+    }
+    
+    /**
+     * Invalidates cached tag information
+     */
+    public invalidateCache(): void {
+        this.tagInfoMap = undefined;
     }
 }

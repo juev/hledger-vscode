@@ -3,10 +3,18 @@ import { BaseCompletionProvider, CompletionData } from '../base/BaseCompletionPr
 import { CompletionItemOptions } from '../base/CompletionItemFactory';
 import { getConfig } from '../../main';
 
+interface PayeeInfo {
+    payee: string;
+    detail: string;
+    usageCount: number;
+}
+
 /**
  * Provides completion for payees in transaction description lines
  */
 export class PayeeCompletionProvider extends BaseCompletionProvider {
+    // Temporary storage for payee info during completion
+    private payeeInfoMap?: Map<string, PayeeInfo>;
     protected shouldProvideCompletions(
         document: vscode.TextDocument,
         position: vscode.Position
@@ -55,17 +63,27 @@ export class PayeeCompletionProvider extends BaseCompletionProvider {
             return null;
         }
         
-        // Convert to string array for fuzzy matcher
-        const items = payeesByUsage.map(p => p.payee);
+        // Build payee info list with metadata
+        const payeeInfoList: PayeeInfo[] = payeesByUsage.map(({payee, count}) => ({
+            payee,
+            detail: count > 0 ? `Payee/Store (used ${count} times)` : 'Payee/Store',
+            usageCount: count
+        }));
         
-        // Create usage counts map
+        // Create usage counts map for fuzzy matcher
         const usageCounts = new Map<string, number>();
-        payeesByUsage.forEach(p => {
-            usageCounts.set(p.payee, p.count);
+        payeeInfoList.forEach(info => {
+            usageCounts.set(info.payee, info.usageCount);
+        });
+        
+        // Store payee info in a map for later lookup
+        this.payeeInfoMap = new Map<string, PayeeInfo>();
+        payeeInfoList.forEach(info => {
+            this.payeeInfoMap!.set(info.payee, info);
         });
         
         return {
-            items,
+            items: payeeInfoList.map(info => info.payee),
             query: typedText,
             usageCounts
         };
@@ -93,17 +111,20 @@ export class PayeeCompletionProvider extends BaseCompletionProvider {
             return items;
         }
         
-        // Customize details to show usage count
+        // Customize each item with payee-specific metadata
         return items.map(item => {
-            const config = getConfig(document);
-            const payeesByUsage = config.getPayeesByUsage();
-            const payeeInfo = payeesByUsage.find(p => p.payee === item.label);
-            
-            if (payeeInfo && payeeInfo.count > 0) {
-                item.detail = `Payee/Store (used ${payeeInfo.count} times)`;
+            const payeeInfo = this.payeeInfoMap?.get(item.label.toString());
+            if (payeeInfo) {
+                item.detail = payeeInfo.detail;
             }
-            
             return item;
         });
+    }
+    
+    /**
+     * Invalidates cached payee information
+     */
+    public invalidateCache(): void {
+        this.payeeInfoMap = undefined;
     }
 }

@@ -70,8 +70,10 @@ export class CommodityCompletionProvider extends BaseCompletionProvider {
         // Create usage counts map for fuzzy matcher
         const usageCounts = new Map<string, number>();
         commodityInfoList.forEach(info => {
-            // Combine usage count with priority for better scoring
-            const score = info.usageCount + (2 - info.priority) * 1000;
+            // Prioritize usage frequency with small priority bonus
+            // Priority 1 (configured): +5 bonus, Priority 2 (default): +0 bonus
+            const priorityBonus = info.priority === 1 ? 5 : 0;
+            const score = info.usageCount + priorityBonus;
             usageCounts.set(info.commodity, score);
         });
         

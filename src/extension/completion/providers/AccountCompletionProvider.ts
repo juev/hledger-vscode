@@ -73,8 +73,10 @@ export class AccountCompletionProvider extends BaseCompletionProvider {
         // Create usage counts map for fuzzy matcher
         const usageCounts = new Map<string, number>();
         accountInfoList.forEach(info => {
-            // Combine usage count with priority for better scoring
-            const score = info.usageCount + (3 - info.priority) * 1000;
+            // Prioritize usage frequency with small priority bonus
+            // Priority 1 (defined): +10 bonus, Priority 2 (used): +5 bonus, Priority 3 (default): +0 bonus
+            const priorityBonus = info.priority === 1 ? 10 : info.priority === 2 ? 5 : 0;
+            const score = info.usageCount + priorityBonus;
             usageCounts.set(info.account, score);
         });
         
