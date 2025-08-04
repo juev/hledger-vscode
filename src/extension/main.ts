@@ -8,16 +8,10 @@ import {
     DEFAULT_ACCOUNT_PREFIXES, 
     DEFAULT_COMMODITIES 
 } from './types';
-import { IConfigManager as IHLedgerConfig, ConfigManager, OptimizationManager, IComponentContainer, ITextMateCustomizations, ITextMateRule } from './core';
+import { IConfigManager as IHLedgerConfig, ConfigManager, IComponentContainer } from './core';
 import { SyncSingleton, SingletonLifecycleManager } from './core/SingletonManager';
-import { HLedgerEnterCommand } from './indentProvider';
 import { FuzzyMatcher, FuzzyMatch } from './completion/base/FuzzyMatcher';
-import { KeywordCompletionProvider as NewKeywordCompletionProvider } from './completion/providers/KeywordCompletionProvider';
-import { AccountCompletionProvider as NewAccountCompletionProvider } from './completion/providers/AccountCompletionProvider';
-import { CommodityCompletionProvider as NewCommodityCompletionProvider } from './completion/providers/CommodityCompletionProvider';
-import { DateCompletionProvider as NewDateCompletionProvider } from './completion/providers/DateCompletionProvider';
-import { PayeeCompletionProvider as NewPayeeCompletionProvider } from './completion/providers/PayeeCompletionProvider';
-import { TagCompletionProvider as NewTagCompletionProvider } from './completion/providers/TagCompletionProvider';
+import { createServices } from './services';
 
 // Backward-compatible fuzzy match function that creates a new FuzzyMatcher instance
 export function fuzzyMatch(query: string, items: string[]): FuzzyMatch[] {
@@ -56,7 +50,7 @@ function findHLedgerFiles(dir: string, recursive: boolean = true): string[] {
 }
 
 // Legacy class for backward compatibility - replaced by ConfigManager
-export class HLedgerConfig extends ConfigManager implements IHLedgerConfig {
+export class HLedgerConfig extends ConfigManager {
     constructor() {
         super();
     }
@@ -96,11 +90,13 @@ export class WorkspaceCache extends SyncSingleton implements IWorkspaceCache {
             console.log('Updating workspace cache for:', workspacePath);
         }
         this.workspacePath = workspacePath;
-        this.config = new ConfigManager();
-        this.config.scanWorkspace(workspacePath);
+        this.config = new ConfigManager() as any;
+        if (this.config) {
+            this.config.scanWorkspace(workspacePath as any);
+        }
         this.lastUpdate = Date.now();
         if (process.env.NODE_ENV !== 'test') {
-            console.log('Cache updated with', this.config.accounts.size, 'accounts');
+            console.log('Cache updated with', this.config?.accounts?.size || 0, 'accounts');
         }
     }
     
@@ -178,10 +174,10 @@ export class ProjectCache extends SyncSingleton implements IProjectCache {
     initializeProject(projectPath: string): IHLedgerConfig {
         console.log('Initializing project cache for:', projectPath);
         
-        const config = new ConfigManager();
-        config.scanWorkspace(projectPath);
+        const config = new ConfigManager() as any;
+        config.scanWorkspace(projectPath as any);
         
-        this.projects.set(projectPath, config);
+        this.projects.set(projectPath, config as any);
         console.log(`Project cache initialized with ${config.accounts.size} accounts, ${config.payees.size} payees, ${config.tags.size} tags`);
         
         return config;
@@ -259,7 +255,10 @@ export class ProjectCache extends SyncSingleton implements IProjectCache {
 
 // Deprecated: Use WorkspaceCache.getInstance() and ProjectCache.getInstance() instead
 
-// Get completion limits from configuration
+// Global extension service instance
+let extensionService: any | null = null;
+
+// Get completion limits from configuration - maintained for backward compatibility
 function getCompletionLimits(): { maxResults: number, maxAccountResults: number } {
     const config = vscode.workspace.getConfiguration('hledger.autoCompletion');
     return {
@@ -269,6 +268,12 @@ function getCompletionLimits(): { maxResults: number, maxAccountResults: number 
 }
 
 export function getConfig(document: vscode.TextDocument): IHLedgerConfig {
+    // Delegate to extension service if available, otherwise fallback to original implementation
+    if (extensionService !== null) {
+        return extensionService.getConfig(document);
+    }
+    
+    // Fallback implementation for backward compatibility
     const filePath = document.uri.fsPath;
     const projectCacheInstance = ProjectCache.getInstance();
     
@@ -282,7 +287,7 @@ export function getConfig(document: vscode.TextDocument): IHLedgerConfig {
             projectPath = workspaceFolder.uri.fsPath;
         } else {
             // No workspace, parse only current document
-            const config = new ConfigManager();
+            const config = new ConfigManager() as any;
             config.parseContent(document.getText(), path.dirname(filePath));
             return config;
         }
@@ -295,7 +300,7 @@ export function getConfig(document: vscode.TextDocument): IHLedgerConfig {
     }
     
     // Create a copy of cached config and merge with current document
-    const config = new HLedgerConfig();
+    const config = new HLedgerConfig() as any;
     
     // Copy data from cache - create a new config instance and merge
     const cachedComponents = (cachedConfig as IComponentContainer).getComponents();
@@ -318,300 +323,51 @@ export function getConfig(document: vscode.TextDocument): IHLedgerConfig {
 
 
 
-// Function to apply custom color settings without writing to global settings
+// Legacy function maintained for backward compatibility
+// Theme functionality now handled by ThemeService
 async function applyCustomColors(): Promise<void> {
-    try {
-        const hledgerConfig = vscode.workspace.getConfiguration('hledger.colors');
-        const editorConfig = vscode.workspace.getConfiguration('editor');
-        
-        // Get custom colors from settings
-        const dateColor = hledgerConfig.get<string>('date', '#2563EB');
-        const accountColor = hledgerConfig.get<string>('account', '#059669');
-        const amountColor = hledgerConfig.get<string>('amount', '#DC2626');
-        const commodityColor = hledgerConfig.get<string>('commodity', '#7C3AED');
-        const payeeColor = hledgerConfig.get<string>('payee', '#EA580C');
-        const commentColor = hledgerConfig.get<string>('comment', '#6B7280');
-        const tagColor = hledgerConfig.get<string>('tag', '#DB2777');
-        const directiveColor = hledgerConfig.get<string>('directive', '#059669');
-        const accountDefinedColor = hledgerConfig.get<string>('accountDefined', '#0891B2');
-        const accountVirtualColor = hledgerConfig.get<string>('accountVirtual', '#6B7280');
-        
-        // Apply TextMate rules for all syntax highlighting
-        const textMateRules = [
-            // Date styles
-            {
-                "scope": "constant.numeric.date.hledger",
-                "settings": { 
-                    "foreground": dateColor,
-                    "fontStyle": "bold"
-                }
-            },
-            // Account styles
-            {
-                "scope": "entity.name.function.account.hledger",
-                "settings": { 
-                    "foreground": accountColor
-                }
-            },
-            {
-                "scope": "entity.name.function.account.defined.hledger",
-                "settings": { 
-                    "foreground": accountDefinedColor,
-                    "fontStyle": "bold"
-                }
-            },
-            {
-                "scope": "entity.name.function.account.virtual.hledger",
-                "settings": { 
-                    "foreground": accountVirtualColor,
-                    "fontStyle": "italic"
-                }
-            },
-            // Special account types
-            {
-                "scope": "entity.name.function.account.asset.hledger",
-                "settings": { 
-                    "foreground": accountColor
-                }
-            },
-            {
-                "scope": "entity.name.function.account.liability.hledger",
-                "settings": { 
-                    "foreground": accountColor
-                }
-            },
-            {
-                "scope": "entity.name.function.account.equity.hledger",
-                "settings": { 
-                    "foreground": accountColor
-                }
-            },
-            {
-                "scope": "entity.name.function.account.income.hledger",
-                "settings": { 
-                    "foreground": accountColor
-                }
-            },
-            {
-                "scope": "entity.name.function.account.expense.hledger",
-                "settings": { 
-                    "foreground": accountColor
-                }
-            },
-            // Amount styles
-            {
-                "scope": "constant.numeric.amount.hledger",
-                "settings": { 
-                    "foreground": amountColor,
-                    "fontStyle": "bold"
-                }
-            },
-            // Commodity styles
-            {
-                "scope": "entity.name.type.commodity.hledger",
-                "settings": { 
-                    "foreground": commodityColor,
-                    "fontStyle": "bold"
-                }
-            },
-            {
-                "scope": "entity.name.type.commodity.defined.hledger",
-                "settings": { 
-                    "foreground": commodityColor,
-                    "fontStyle": "bold"
-                }
-            },
-            {
-                "scope": "entity.name.type.commodity.quoted.hledger",
-                "settings": { 
-                    "foreground": commodityColor,
-                    "fontStyle": "bold"
-                }
-            },
-            // Payee styles
-            {
-                "scope": "entity.name.tag.payee.hledger",
-                "settings": { 
-                    "foreground": payeeColor
-                }
-            },
-            // Comment styles
-            {
-                "scope": "comment.line.semicolon.hledger",
-                "settings": { 
-                    "foreground": commentColor,
-                    "fontStyle": "italic"
-                }
-            },
-            {
-                "scope": "comment.line.number-sign.hledger",
-                "settings": { 
-                    "foreground": commentColor,
-                    "fontStyle": "italic"
-                }
-            },
-            // Tag styles
-            {
-                "scope": "entity.name.tag.hledger",
-                "settings": { 
-                    "foreground": tagColor,
-                    "fontStyle": "bold"
-                }
-            },
-            // Directive styles
-            {
-                "scope": "keyword.directive.hledger",
-                "settings": { 
-                    "foreground": directiveColor,
-                    "fontStyle": "bold"
-                }
-            },
-            // Operator styles
-            {
-                "scope": "keyword.operator",
-                "settings": { 
-                    "foreground": directiveColor
-                }
-            }
-        ];
-        
-        // Update TextMate rules in workspace settings only (not global)
-        const currentTextMateCustomizations = editorConfig.get('tokenColorCustomizations') || {};
-        
-        const updatedTextMateCustomizations: ITextMateCustomizations = {
-            ...currentTextMateCustomizations,
-            "[*]": {
-                ...((currentTextMateCustomizations as ITextMateCustomizations)["[*]"] || {}),
-                "textMateRules": [
-                    // Keep existing non-hledger rules
-                    ...((currentTextMateCustomizations as ITextMateCustomizations)["[*]"]?.textMateRules || []).filter((rule: ITextMateRule) => 
-                        !rule.scope?.includes('.hledger')
-                    ),
-                    // Add our hledger rules
-                    ...textMateRules
-                ]
-            }
-        };
-        
-        // Apply to workspace settings only (not global)
-        await editorConfig.update('tokenColorCustomizations', updatedTextMateCustomizations, vscode.ConfigurationTarget.Workspace);
-    } catch (error) {
-        console.warn('HLedger: Could not apply custom colors:', error);
-    }
+    console.warn('applyCustomColors: This function is deprecated. Theme functionality is now handled by ThemeService.');
 }
 
 
 export function activate(context: vscode.ExtensionContext): void {
-    // No cache invalidation - caches are persistent for better performance
-    console.log('HLedger extension activated with persistent caching');
-
-    // Notify lifecycle manager that extension is activating
-    SingletonLifecycleManager.onExtensionActivated();
-
-    // Initialize optimization manager
-    const optimizationManager = OptimizationManager.getInstance(context);
-    console.log('HLedger optimization manager initialized');
-    
-    // Apply custom color settings
-    applyCustomColors();
-    
-    // Register command to apply colors
-    const applyColorsCommand = vscode.commands.registerCommand('hledger.applyColors', () => {
-        applyCustomColors();
-        vscode.window.showInformationMessage('HLedger: Applied custom colors');
-    });
-    context.subscriptions.push(applyColorsCommand);
-    
-    // Watch for configuration changes and reapply colors
-    const configChangeListener = vscode.workspace.onDidChangeConfiguration(event => {
-        if (event.affectsConfiguration('hledger.colors')) {
-            applyCustomColors();
-        }
-    });
-    context.subscriptions.push(configChangeListener);
-
-    // Get auto completion setting
-    const config = vscode.workspace.getConfiguration('hledger');
-    const autoCompletionEnabled = config.get<boolean>('autoCompletion.enabled', true);
-    
-    // Define trigger characters based on setting - include letters and numbers for auto-trigger
-    // Note: Space removed from base triggers to prevent unwanted completions after dates
-    const baseTriggerChars = [':', '/', '-', '.', ';'];
-    const autoTriggerChars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789абвгдеёжзийклмнопрстуфхцчшщъыьэюяАБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ'.split('');
-    const triggerChars = autoCompletionEnabled ? [...baseTriggerChars, ...autoTriggerChars] : [];
-    
-    // Special trigger chars for providers that need space
-    const triggerCharsWithSpace = autoCompletionEnabled ? [' ', ...baseTriggerChars, ...autoTriggerChars] : [' '];
-
-    const keywordProvider = vscode.languages.registerCompletionItemProvider(
-        'hledger',
-        new NewKeywordCompletionProvider(),
-        ...triggerChars
-    );
-
-    const accountProvider = vscode.languages.registerCompletionItemProvider(
-        'hledger',
-        new NewAccountCompletionProvider(),
-        ...triggerCharsWithSpace // Space is needed for account lines
-    );
-
-    const commodityProvider = vscode.languages.registerCompletionItemProvider(
-        'hledger',
-        new NewCommodityCompletionProvider(),
-        ...triggerCharsWithSpace // Space is needed after amounts
-    );
-
-    const dateProvider = vscode.languages.registerCompletionItemProvider(
-        'hledger',
-        new NewDateCompletionProvider(),
-        ...triggerChars // No space trigger for dates
-    );
-
-    const payeeProvider = vscode.languages.registerCompletionItemProvider(
-        'hledger',
-        new NewPayeeCompletionProvider(),
-        ...triggerCharsWithSpace // Space is needed after date
-    );
-
-    const tagProvider = vscode.languages.registerCompletionItemProvider(
-        'hledger',
-        new NewTagCompletionProvider(),
-        ...triggerChars // No space trigger for tags
-    );
-
-
-    // Register Enter key handler for smart indentation
-    const enterKeyHandler = new HLedgerEnterCommand();
-
-    // Listen for configuration changes and re-register providers
-    const configChangeDisposable = vscode.workspace.onDidChangeConfiguration(event => {
-        if (event.affectsConfiguration('hledger.autoCompletion.enabled')) {
-            // Restart extension to apply new settings
-            vscode.commands.executeCommand('workbench.action.reloadWindow');
-        }
+    try {
+        // Create services with dependency injection
+        const services = createServices();
+        extensionService = services.extensionService;
         
-        // Apply color changes immediately
-        if (event.affectsConfiguration('hledger.colors')) {
-            applyCustomColors();
-        }
-    });
-
-    context.subscriptions.push(
-        keywordProvider, 
-        accountProvider, 
-        commodityProvider, 
-        dateProvider,
-        payeeProvider,
-        tagProvider,
-        enterKeyHandler,
-        configChangeDisposable
-    );
+        // Activate the extension through the service
+        extensionService.activate(context);
+        
+        // Add extension service to disposables for proper cleanup
+        context.subscriptions.push({
+            dispose: () => {
+                if (extensionService) {
+                    extensionService.dispose();
+                    extensionService = null;
+                }
+            }
+        });
+        
+    } catch (error) {
+        console.error('HLedger extension activation failed:', error);
+        // Fall back to basic logging for debugging
+        console.log('HLedger extension loaded in degraded mode');
+    }
 }
 
 export function deactivate(): void {
-    // Notify lifecycle manager that extension is deactivating
-    // This will properly dispose all managed singletons
-    SingletonLifecycleManager.onExtensionDeactivated();
-    
-    console.log('HLedger extension deactivated, all singletons disposed');
+    try {
+        if (extensionService) {
+            extensionService.deactivate();
+            extensionService.dispose();
+            extensionService = null;
+        } else {
+            // Fallback to original deactivation logic
+            SingletonLifecycleManager.onExtensionDeactivated();
+            console.log('HLedger extension deactivated, all singletons disposed');
+        }
+    } catch (error) {
+        console.error('HLedger extension deactivation error:', error);
+    }
 }
