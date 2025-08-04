@@ -131,6 +131,8 @@ export class HLedgerParser implements IHLedgerParser {
                 const target = createAccountName(aliasMatch[2].trim());
                 data.aliases.set(alias, target);
                 data.definedAccounts.add(target);
+                // Also add the alias name itself as an account for completion
+                data.definedAccounts.add(createAccountName(aliasMatch[1].trim()));
             } catch (error) {
                 // Skip invalid aliases
             }
@@ -275,7 +277,9 @@ export class HLedgerParser implements IHLedgerParser {
             const tagMatch = match.trim().match(/([a-zA-Z\u0400-\u04FF][a-zA-Z\u0400-\u04FF0-9_]*):(.+)/);
             if (tagMatch) {
                 try {
-                    const tagEntry = createTagEntry(match.trim());
+                    // Store only the tag name, not the full tag:value
+                    const tagName = tagMatch[1];
+                    const tagEntry = createTagEntry(tagName);
                     data.tags.add(tagEntry);
                     // Increment usage count for tag
                     this.incrementUsage(data.tagUsage, tagEntry);
