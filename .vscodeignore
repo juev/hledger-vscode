@@ -1,7 +1,51 @@
+# VS Code and development files
 .vscode/**
 .vscode-test/**
+.claude/**
+.github/**
+
+# Source code (only compiled JS should be included)
 src/**
+*.ts
+*.js.map
+*.map
+
+# Test files and mocks
+out/__mocks__/**
+out/**/__tests__/**
+**/__tests__/**
+**/*.test.js
+**/*.test.ts
+testdata/**
+syntax-test.journal
+
+# Build and development configuration
 .gitignore
-tsconfig.json
-node_modules/**/*.ts
+tsconfig*.json
+jest.config.js
 *.log
+
+# Documentation (keep only README.md and LICENSE)
+CHANGELOG.md
+CLAUDE.md
+MIGRATION.md
+OPTIMIZATION-INTEGRATION.md
+PERFORMANCE_REPORT.md
+SYNTAX_HIGHLIGHTING.md
+
+# Performance and benchmark data
+benchmark-results/**
+benchmark-runner.js
+performance-comparison.js
+
+# Development dependencies and build artifacts
+node_modules/**
+package-lock.json
+*.vsix
+
+# OS and editor files
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~

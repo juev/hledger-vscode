@@ -385,17 +385,18 @@
     }
   ],
   "scripts": {
-    "vscode:prepublish": "npm run compile",
-    "compile": "tsc -p ./",
-    "watch": "tsc -watch -p ./",
+    "vscode:prepublish": "npm run compile:prod",
+    "compile": "tsc -p ./tsconfig.dev.json",
+    "compile:prod": "tsc -p ./",
+    "watch": "tsc -watch -p ./tsconfig.dev.json",
     "test": "jest",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
     "clean": "rimraf out *.vsix",
     "prebuild": "npm run clean",
-    "build": "npm run compile",
+    "build": "npm run compile:prod",
     "prepackage": "npm run clean",
-    "package": "npm run compile && vsce package",
+    "package": "npm run compile:prod && vsce package",
     "publish": "vsce publish"
   },
   "devDependencies": {
