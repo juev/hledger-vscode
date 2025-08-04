@@ -44,15 +44,14 @@ export abstract class BaseSingleton implements DisposableSingleton {
     /**
      * Get or create singleton instance with thread-safe initialization
      */
-    protected static async getInstance<T extends BaseSingleton>(
-        this: { new (context?: vscode.ExtensionContext): T } & typeof BaseSingleton,
+    public static async getInstance<T extends BaseSingleton>(
+        this: new (context?: vscode.ExtensionContext) => T,
         context?: vscode.ExtensionContext
     ): Promise<T> {
-        // Create a temporary instance to get the key
-        const TempClass = this as any;
-        const tempInstance = Object.create(TempClass.prototype);
-        tempInstance.constructor = TempClass;
-        const key = tempInstance.getSingletonKey();
+        // Get singleton key from the constructor name as fallback
+        const key = (this as any).prototype.getSingletonKey ? 
+            (this as any).prototype.getSingletonKey.call({}) :
+            (this as any).name || 'UnknownSingleton';
         
         // Check if instance already exists
         const existing = BaseSingleton._instances.get(key);
@@ -71,7 +70,7 @@ export abstract class BaseSingleton implements DisposableSingleton {
         }
         
         // Create actual instance
-        const instance = new this(context) as T;
+        const instance = new (this as any)(context) as T;
         
         // Create new initialization promise
         const initPromise = instance._initializeInternal(context);
@@ -89,14 +88,13 @@ export abstract class BaseSingleton implements DisposableSingleton {
     /**
      * Get singleton instance synchronously (throws if not initialized)
      */
-    protected static getInstanceSync<T extends BaseSingleton>(
-        this: { new (context?: vscode.ExtensionContext): T } & typeof BaseSingleton
+    public static getInstanceSync<T extends BaseSingleton>(
+        this: new (context?: vscode.ExtensionContext) => T
     ): T {
-        // Create a temporary instance to get the key
-        const TempClass = this as any;
-        const tempInstance = Object.create(TempClass.prototype);
-        tempInstance.constructor = TempClass;
-        const key = tempInstance.getSingletonKey();
+        // Get singleton key from the constructor name as fallback
+        const key = (this as any).prototype.getSingletonKey ? 
+            (this as any).prototype.getSingletonKey.call({}) :
+            (this as any).name || 'UnknownSingleton';
         const existing = BaseSingleton._instances.get(key);
         
         if (!existing || existing._isDisposed) {
@@ -257,15 +255,14 @@ export abstract class SyncSingleton implements DisposableSingleton {
     /**
      * Get or create singleton instance
      */
-    protected static getInstance<T extends SyncSingleton>(
-        this: { new (context?: vscode.ExtensionContext): T } & typeof SyncSingleton,
+    public static getInstance<T extends SyncSingleton>(
+        this: new (context?: vscode.ExtensionContext) => T,
         context?: vscode.ExtensionContext
     ): T {
-        // Create a temporary instance to get the key
-        const TempClass = this as any;
-        const tempInstance = Object.create(TempClass.prototype);
-        tempInstance.constructor = TempClass;
-        const key = tempInstance.getSingletonKey();
+        // Get singleton key from the constructor name as fallback
+        const key = (this as any).prototype.getSingletonKey ? 
+            (this as any).prototype.getSingletonKey.call({}) :
+            (this as any).name || 'UnknownSingleton';
         
         // Check if instance already exists
         const existing = SyncSingleton._instances.get(key);
@@ -274,7 +271,7 @@ export abstract class SyncSingleton implements DisposableSingleton {
         }
         
         // Create actual instance
-        const instance = new this(context) as T;
+        const instance = new (this as any)(context) as T;
         
         // Initialize new instance
         try {

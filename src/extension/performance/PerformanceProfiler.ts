@@ -3,6 +3,7 @@
  * Provides comprehensive performance measurement and analysis tools
  */
 
+import * as vscode from 'vscode';
 import { SyncSingleton, SingletonLifecycleManager } from '../core/SingletonManager';
 
 /** Branded type for performance metric names to ensure type safety */
@@ -362,23 +363,16 @@ export class PerformanceProfiler extends SyncSingleton {
     /**
      * Get singleton instance of PerformanceProfiler
      */
-    public static getInstance(): PerformanceProfiler {
-        const instances = SyncSingleton.getActiveInstances();
-        const existing = instances.get('PerformanceProfiler') as PerformanceProfiler;
-        if (existing && existing.isInitialized()) {
-            return existing;
-        }
-        
-        const instance = new PerformanceProfiler();
-        instance.initialize();
-        return instance;
+    public static getInstance(context?: vscode.ExtensionContext): PerformanceProfiler {
+        return super.getInstance.call(this, context);
     }
 
     /**
      * Reset singleton for testing
      */
     public static resetInstance(): void {
-        const instance = PerformanceProfiler.getActiveInstances().get('PerformanceProfiler');
+        const instances = SyncSingleton.getActiveInstances();
+        const instance = instances.get('PerformanceProfiler');
         if (instance) {
             instance.reset();
         }

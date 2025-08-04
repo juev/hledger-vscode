@@ -7,6 +7,7 @@ import { AsyncParseOptions } from './AsyncHLedgerParser';
 import { FuzzyMatch, FuzzyMatchOptions } from '../completion/base/FuzzyMatcher';
 import { OptimizedFuzzyMatchOptions } from '../completion/base/OptimizedFuzzyMatcher';
 import { PerformanceMonitor } from './PerformanceMonitor';
+import { FilePath, createFilePath } from './BrandedTypes';
 
 /**
  * Handles fallback logic for optimization components with error recovery
@@ -24,7 +25,7 @@ export class FallbackHandler {
      * Execute parser with fallback logic
      */
     async executeParseFile(
-        filePath: string,
+        filePath: FilePath,
         asyncParser: IAsyncHLedgerParser | null,
         standardParser: IHLedgerParser,
         options: {
@@ -84,7 +85,7 @@ export class FallbackHandler {
      */
     async executeParseContent(
         content: string,
-        basePath: string | undefined,
+        basePath: FilePath | undefined,
         asyncParser: IAsyncHLedgerParser | null,
         standardParser: IHLedgerParser,
         options: {

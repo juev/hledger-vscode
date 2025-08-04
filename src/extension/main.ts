@@ -8,6 +8,7 @@ import {
     DEFAULT_ACCOUNT_PREFIXES, 
     DEFAULT_COMMODITIES 
 } from './types';
+import { FilePath, WorkspacePath, createFilePath, createWorkspacePath } from './core/BrandedTypes';
 import { IConfigManager as IHLedgerConfig, ConfigManager, IComponentContainer } from './core';
 import { SyncSingleton, SingletonLifecycleManager } from './core/SingletonManager';
 import { FuzzyMatcher, FuzzyMatch } from './completion/base/FuzzyMatcher';
@@ -112,30 +113,6 @@ export class WorkspaceCache extends SyncSingleton implements IWorkspaceCache {
         this.lastUpdate = 0;
     }
 
-    /**
-     * Get singleton instance of WorkspaceCache
-     */
-    public static getInstance(): WorkspaceCache {
-        const instances = SyncSingleton.getActiveInstances();
-        const existing = instances.get('WorkspaceCache') as WorkspaceCache;
-        if (existing && existing.isInitialized()) {
-            return existing;
-        }
-        
-        const instance = new WorkspaceCache();
-        instance.initialize();
-        return instance;
-    }
-
-    /**
-     * Reset singleton for testing
-     */
-    public static resetInstance(): void {
-        const instance = WorkspaceCache.getActiveInstances().get('WorkspaceCache');
-        if (instance) {
-            instance.reset();
-        }
-    }
 
     /**
      * Override dispose to cleanup resources properly
@@ -145,6 +122,24 @@ export class WorkspaceCache extends SyncSingleton implements IWorkspaceCache {
         this.workspacePath = null;
         this.lastUpdate = 0;
         super.dispose();
+    }
+
+    /**
+     * Get singleton instance
+     */
+    public static getInstance(context?: vscode.ExtensionContext): WorkspaceCache {
+        return super.getInstance.call(this, context) as WorkspaceCache;
+    }
+
+    /**
+     * Reset singleton for testing
+     */
+    public static resetInstance(): void {
+        const instances = SyncSingleton.getActiveInstances();
+        const instance = instances.get('WorkspaceCache');
+        if (instance) {
+            instance.reset();
+        }
     }
 }
 
@@ -187,14 +182,14 @@ export class ProjectCache extends SyncSingleton implements IProjectCache {
         return this.projects.has(projectPath);
     }
     
-    findProjectForFile(filePath: string): string | null {
+    findProjectForFile(filePath: FilePath): WorkspacePath | null {
         // Find the closest project that contains this file
         const fileDir = path.dirname(filePath);
         
         // First check exact matches
         for (const [projectPath] of this.projects) {
             if (filePath.startsWith(projectPath + path.sep) || filePath === projectPath) {
-                return projectPath;
+                return createWorkspacePath(projectPath);
             }
         }
         
@@ -204,7 +199,7 @@ export class ProjectCache extends SyncSingleton implements IProjectCache {
             // Look for hledger files in this directory (non-recursive)
             const hledgerFiles = findHLedgerFiles(currentDir, false);
             if (hledgerFiles.length > 0) {
-                return currentDir;
+                return createWorkspacePath(currentDir);
             }
             currentDir = path.dirname(currentDir);
         }
@@ -222,26 +217,26 @@ export class ProjectCache extends SyncSingleton implements IProjectCache {
     /**
      * Get singleton instance of ProjectCache
      */
-    public static getInstance(): ProjectCache {
-        const instances = SyncSingleton.getActiveInstances();
-        const existing = instances.get('ProjectCache') as ProjectCache;
-        if (existing && existing.isInitialized()) {
-            return existing;
-        }
-        
-        const instance = new ProjectCache();
-        instance.initialize();
-        return instance;
+    public static getInstance(context?: vscode.ExtensionContext): ProjectCache {
+        return super.getInstance.call(this, context) as ProjectCache;
     }
 
     /**
      * Reset singleton for testing
      */
     public static resetInstance(): void {
-        const instance = ProjectCache.getActiveInstances().get('ProjectCache');
+        const instances = SyncSingleton.getActiveInstances();
+        const instance = instances.get('ProjectCache');
         if (instance) {
             instance.reset();
         }
+    }
+
+    /**
+     * Alternative static method for backward compatibility
+     */
+    public static get(): ProjectCache {
+        return ProjectCache.getInstance();
     }
 
     /**

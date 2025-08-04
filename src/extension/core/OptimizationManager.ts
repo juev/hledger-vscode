@@ -8,6 +8,7 @@ import { profiler, PerformanceProfiler } from '../performance/PerformanceProfile
 import { IHLedgerParser, IAsyncHLedgerParser, ParsedHLedgerData } from './interfaces';
 import { FuzzyMatch, FuzzyMatchOptions } from '../completion/base/FuzzyMatcher';
 import { SyncSingleton, SingletonLifecycleManager } from './SingletonManager';
+import { FilePath } from './BrandedTypes';
 import { PerformanceMonitor, OptimizationMetrics } from './PerformanceMonitor';
 import { FallbackHandler } from './FallbackHandler';
 import { ConfigWatcher, OptimizationConfig } from './ConfigWatcher';
@@ -65,6 +66,24 @@ export class OptimizationManager extends SyncSingleton {
     }
 
     /**
+     * Get singleton instance
+     */
+    public static getInstance(context?: vscode.ExtensionContext): OptimizationManager {
+        return super.getInstance.call(this, context);
+    }
+
+    /**
+     * Reset singleton for testing
+     */
+    public static resetInstance(): void {
+        const instances = SyncSingleton.getActiveInstances();
+        const instance = instances.get('OptimizationManager');
+        if (instance) {
+            instance.reset();
+        }
+    }
+
+    /**
      * Get parser instance with fallback safety
      */
     getParser(): IHLedgerParser | IAsyncHLedgerParser {
@@ -75,7 +94,7 @@ export class OptimizationManager extends SyncSingleton {
     /**
      * Parse file with automatic optimization selection and fallback
      */
-    async parseFile(filePath: string): Promise<ParsedHLedgerData> {
+    async parseFile(filePath: FilePath): Promise<ParsedHLedgerData> {
         const config = this.configWatcher.getConfig();
         return this.fallbackHandler.executeParseFile(
             filePath,
@@ -94,7 +113,7 @@ export class OptimizationManager extends SyncSingleton {
     /**
      * Parse content with automatic optimization selection and fallback
      */
-    async parseContent(content: string, basePath?: string): Promise<ParsedHLedgerData> {
+    async parseContent(content: string, basePath?: FilePath): Promise<ParsedHLedgerData> {
         const config = this.configWatcher.getConfig();
         return this.fallbackHandler.executeParseContent(
             content,

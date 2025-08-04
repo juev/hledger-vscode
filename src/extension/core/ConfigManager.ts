@@ -3,6 +3,7 @@ import { HLedgerParser } from './HLedgerParser';
 import { DataStore } from './DataStore';
 import { UsageTracker } from './UsageTracker';
 import { FileScanner } from './FileScanner';
+import { createAccountName, createPayeeName, createTagEntry, createCommodityName, createAccountAlias } from './BrandedTypes';
 
 /**
  * Main configuration manager that coordinates all HLedger components
@@ -257,16 +258,16 @@ export class ConfigManager implements IConfigManager {
      */
     private updateFromParsedData(parsedData: any): void {
         // Update data store
-        parsedData.accounts.forEach((account: string) => this.dataStore.addAccount(account));
-        parsedData.definedAccounts.forEach((account: string) => this.dataStore.addDefinedAccount(account));
-        parsedData.usedAccounts.forEach((account: string) => this.dataStore.addUsedAccount(account));
-        parsedData.payees.forEach((payee: string) => this.dataStore.addPayee(payee));
-        parsedData.tags.forEach((tag: string) => this.dataStore.addTag(tag));
-        parsedData.commodities.forEach((commodity: string) => this.dataStore.addCommodity(commodity));
+        parsedData.accounts.forEach((account: string) => this.dataStore.addAccount(createAccountName(account)));
+        parsedData.definedAccounts.forEach((account: string) => this.dataStore.addDefinedAccount(createAccountName(account)));
+        parsedData.usedAccounts.forEach((account: string) => this.dataStore.addUsedAccount(createAccountName(account)));
+        parsedData.payees.forEach((payee: string) => this.dataStore.addPayee(createPayeeName(payee)));
+        parsedData.tags.forEach((tag: string) => this.dataStore.addTag(createTagEntry(tag)));
+        parsedData.commodities.forEach((commodity: string) => this.dataStore.addCommodity(createCommodityName(commodity)));
         
         // Update aliases
         parsedData.aliases.forEach((target: string, alias: string) => {
-            this.dataStore.setAlias(alias, target);
+            this.dataStore.setAlias(createAccountAlias(alias), createAccountName(target));
         });
         
         // Update scalar values
@@ -280,22 +281,22 @@ export class ConfigManager implements IConfigManager {
         // Update usage tracking
         parsedData.accountUsage.forEach((count: number, account: string) => {
             for (let i = 0; i < count; i++) {
-                this.usageTracker.incrementAccountUsage(account);
+                this.usageTracker.incrementAccountUsage(createAccountName(account));
             }
         });
         parsedData.payeeUsage.forEach((count: number, payee: string) => {
             for (let i = 0; i < count; i++) {
-                this.usageTracker.incrementPayeeUsage(payee);
+                this.usageTracker.incrementPayeeUsage(createPayeeName(payee));
             }
         });
         parsedData.tagUsage.forEach((count: number, tag: string) => {
             for (let i = 0; i < count; i++) {
-                this.usageTracker.incrementTagUsage(tag);
+                this.usageTracker.incrementTagUsage(createTagEntry(tag));
             }
         });
         parsedData.commodityUsage.forEach((count: number, commodity: string) => {
             for (let i = 0; i < count; i++) {
-                this.usageTracker.incrementCommodityUsage(commodity);
+                this.usageTracker.incrementCommodityUsage(createCommodityName(commodity));
             }
         });
     }

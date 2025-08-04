@@ -1,6 +1,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import { IFileScanner } from './interfaces';
+import { FilePath, WorkspacePath, createFilePath, createWorkspacePath } from './BrandedTypes';
 
 /**
  * File system scanner for finding HLedger files
@@ -15,8 +16,8 @@ export class FileScanner implements IFileScanner {
      * @param recursive - Whether to search recursively (default: true)
      * @returns Array of file paths
      */
-    findHLedgerFiles(dir: string, recursive: boolean = true): string[] {
-        const results: string[] = [];
+    findHLedgerFiles(dir: FilePath, recursive: boolean = true): FilePath[] {
+        const results: FilePath[] = [];
         
         try {
             const entries = fs.readdirSync(dir, { withFileTypes: true });
@@ -26,10 +27,10 @@ export class FileScanner implements IFileScanner {
                 
                 if (entry.isFile()) {
                     if (this.isHLedgerFile(entry.name)) {
-                        results.push(fullPath);
+                        results.push(createFilePath(fullPath));
                     }
                 } else if (entry.isDirectory() && recursive && this.shouldScanDirectory(entry.name)) {
-                    results.push(...this.findHLedgerFiles(fullPath, true));
+                    results.push(...this.findHLedgerFiles(createFilePath(fullPath), true));
                 }
             }
         } catch (error) {
@@ -47,13 +48,13 @@ export class FileScanner implements IFileScanner {
      * @param workspacePath - Workspace root path
      * @returns Array of file paths
      */
-    scanWorkspace(workspacePath: string): string[] {
+    scanWorkspace(workspacePath: WorkspacePath): FilePath[] {
         try {
             if (process.env.NODE_ENV !== 'test') {
                 console.log('Scanning workspace:', workspacePath);
             }
             
-            const files = this.findHLedgerFiles(workspacePath, true);
+            const files = this.findHLedgerFiles(createFilePath(workspacePath), true);
             
             if (process.env.NODE_ENV !== 'test') {
                 console.log('Found hledger files:', files);

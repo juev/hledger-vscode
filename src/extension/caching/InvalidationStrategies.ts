@@ -9,6 +9,7 @@
  */
 
 import * as path from 'path';
+import * as vscode from 'vscode';
 import { SyncSingleton, SingletonLifecycleManager } from '../core/SingletonManager';
 import {
     ICacheInvalidationStrategy,
@@ -494,23 +495,16 @@ export class InvalidationStrategyRegistry extends SyncSingleton {
     /**
      * Get singleton instance of InvalidationStrategyRegistry
      */
-    public static getInstance(): InvalidationStrategyRegistry {
-        const instances = SyncSingleton.getActiveInstances();
-        const existing = instances.get('InvalidationStrategyRegistry') as InvalidationStrategyRegistry;
-        if (existing && existing.isInitialized()) {
-            return existing;
-        }
-        
-        const instance = new InvalidationStrategyRegistry();
-        instance.initialize();
-        return instance;
+    public static getInstance(context?: vscode.ExtensionContext): InvalidationStrategyRegistry {
+        return super.getInstance.call(this, context) as InvalidationStrategyRegistry;
     }
 
     /**
      * Reset singleton for testing
      */
     public static resetInstance(): void {
-        const instance = InvalidationStrategyRegistry.getActiveInstances().get('InvalidationStrategyRegistry');
+        const instances = SyncSingleton.getActiveInstances();
+        const instance = instances.get('InvalidationStrategyRegistry');
         if (instance) {
             instance.reset();
         }
