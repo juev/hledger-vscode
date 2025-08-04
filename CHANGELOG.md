@@ -1,5 +1,21 @@
 # Change Log
 
+## [0.2.0] - 2025-08-04
+
+### Added
+- feat(completion): refine keyword and completion provider logic for improved relevance and cache management
+- feat: update .vscodeignore, package.json, and tsconfig files for improved build and development configuration
+- feat: update package and lock files for version 0.2.0, add build scripts, and include rimraf for cleanup
+- feat(caching): enhance cache invalidation strategies and update statistics tracking
+- feat: Update docs for v0.2.0 release with performance improvements and new features
+- feat(caching): implement central caching system with feature flags and configuration management
+- feat: Introduce asynchronous parsing capabilities and performance profiling
+- feat: Introduce UsageTracker for tracking usage frequency of accounts, payees, tags, and commodities
+
+### Removed
+- test: remove outdated completion provider tests
+
+
 ## [0.1.11] - 2025-08-03
 
 ### Added
