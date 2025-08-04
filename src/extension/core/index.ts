@@ -23,11 +23,16 @@ export {
 
 export { 
     OptimizationManager, 
-    OptimizationConfig, 
-    OptimizationMetrics,
     getOptimizationManager,
     disposeOptimizationManager
 } from './OptimizationManager';
+
+// Export new extracted components
+export { PerformanceMonitor, OptimizationMetrics } from './PerformanceMonitor';
+export { FallbackHandler } from './FallbackHandler';
+export { ConfigWatcher, OptimizationConfig } from './ConfigWatcher';
+export { MetricsCollector } from './MetricsCollector';
+export { ComponentFactory } from './ComponentFactory';
 
 // Performance infrastructure
 export * from '../performance/PerformanceProfiler';
