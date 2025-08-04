@@ -1,0 +1,5582 @@
+{
+  "timestamp": "2025-08-04T06:10:51.290Z",
+  "nodeVersion": "v24.4.1",
+  "platform": "darwin",
+  "arch": "arm64",
+  "results": [
+    {
+      "name": "Parser - 100 transactions",
+      "report": {
+        "totalDuration": 16.1169979999994,
+        "averageDuration": 0.322339959999988,
+        "minDuration": 0.2832499999999527,
+        "maxDuration": 0.47920799999997143,
+        "iterations": 50,
+        "metrics": [
+          {
+            "name": "parser_100_transactions_iteration_0",
+            "duration": 0.47920799999997143,
+            "memoryUsed": 4817224,
+            "memoryDelta": -547600,
+            "timestamp": 1754287848384,
+            "metadata": {
+              "iteration": 0
+            }
+          },
+          {
+            "name": "parser_100_transactions_iteration_1",
+            "duration": 0.33733299999994415,
+            "memoryUsed": 5225968,
+            "memoryDelta": 404624,
+            "timestamp": 1754287848384,
+            "metadata": {
+              "iteration": 1
+            }
+          },
+          {
+            "name": "parser_100_transactions_iteration_2",
+            "duration": 0.44524999999998727,
+            "memoryUsed": 4651360,
+            "memoryDelta": -575248,
+            "timestamp": 1754287848384,
+            "metadata": {
+              "iteration": 2
+            }
+          },
+          {
+            "name": "parser_100_transactions_iteration_3",
+            "duration": 0.3414589999999862,
+            "memoryUsed": 5070536,
+            "memoryDelta": 418536,
+            "timestamp": 1754287848385,
+            "metadata": {
+              "iteration": 3
+            }
+          },
+          {
+            "name": "parser_100_transactions_iteration_4",
+            "duration": 0.3450840000000426,
+            "memoryUsed": 5476432,
+            "memoryDelta": 405096,
+            "timestamp": 1754287848385,
+            "metadata": {
+              "iteration": 4
+            }
+          },
+          {
+            "name": "parser_100_transactions_iteration_5",
+            "duration": 0.4317079999999578,
+            "memoryUsed": 4878120,
+            "memoryDelta": -598872,
+            "timestamp": 1754287848386,
+            "metadata": {
+              "iteration": 5
+            }
+          },
+          {
+            "name": "parser_100_transactions_iteration_6",
+            "duration": 0.29587500000002365,
+            "memoryUsed": 5285032,
+            "memoryDelta": 404664,
+            "timestamp": 1754287848386,
+            "metadata": {
+              "iteration": 6
+            }
+          },
+          {
+            "name": "parser_100_transactions_iteration_7",
+            "duration": 0.296291999999994,
+            "memoryUsed": 5690608,
+            "memoryDelta": 404920,
+            "timestamp": 1754287848386,
+            "metadata": {
+              "iteration": 7
+            }
+          },
+          {
+            "name": "parser_100_transactions_iteration_8",
+            "duration": 0.3204999999999245,
+            "memoryUsed": 6096264,
+            "memoryDelta": 405000,
+            "timestamp": 1754287848387,
+            "metadata": {
+              "iteration": 8
+            }
+          },
+          {
+            "name": "parser_100_transactions_iteration_9",
+            "duration": 0.31466599999998834,
+            "memoryUsed": 6502400,
+            "memoryDelta": 404888,
+            "timestamp": 1754287848387,
+            "metadata": {
+              "iteration": 9
+            }
+          },
+          {
+            "name": "parser_100_transactions_iteration_10",
+            "duration": 0.3607920000000604,
+            "memoryUsed": 4837512,
+            "memoryDelta": -1665576,
+            "timestamp": 1754287848387,
+            "metadata": {
+              "iteration": 10
+            }
+          },
+          {
+            "name": "parser_100_transactions_iteration_11",
+            "duration": 0.2891670000000204,
+            "memoryUsed": 5246736,
+            "memoryDelta": 404664,
+            "timestamp": 1754287848388,
+            "metadata": {
+              "iteration": 11
+            }
+          },
+          {
+            "name": "parser_100_transactions_iteration_12",
+            "duration": 0.2894169999999576,
+            "memoryUsed": 5654336,
+            "memoryDelta": 404664,
+            "timestamp": 1754287848388,
+            "metadata": {
+              "iteration": 12
+            }
+          },
+          {
+            "name": "parser_100_transactions_iteration_13",
+            "duration": 0.31150000000002365,
+            "memoryUsed": 6061528,
+            "memoryDelta": 404744,
+            "timestamp": 1754287848388,
+            "metadata": {
+              "iteration": 13
+            }
+          },
+          {
+            "name": "parser_100_transactions_iteration_14",
+            "duration": 0.32816700000000765,
+            "memoryUsed": 6468800,
+            "memoryDelta": 404792,
+            "timestamp": 1754287848389,
+            "metadata": {
+              "iteration": 14
+            }
+          },
+          {
+            "name": "parser_100_transactions_iteration_15",
+            "duration": 0.4008330000000342,
+            "memoryUsed": 4805336,
+            "memoryDelta": -1665880,
+            "timestamp": 1754287848389,
+            "metadata": {
+              "iteration": 15
+            }
+          },
+          {
+            "name": "parser_100_transactions_iteration_16",
+            "duration": 0.2987500000000409,
+            "memoryUsed": 5212480,
+            "memoryDelta": 404728,
+            "timestamp": 1754287848389,
+            "metadata": {
+              "iteration": 16
+            }
+          },
+          {
+            "name": "parser_100_transactions_iteration_17",
+            "duration": 0.2955419999999549,
+            "memoryUsed": 5619608,
+            "memoryDelta": 404712,
+            "timestamp": 1754287848390,
+            "metadata": {
+              "iteration": 17
+            }
+          },
+          {
+            "name": "parser_100_transactions_iteration_18",
+            "duration": 0.29179199999998673,
+            "memoryUsed": 6027440,
+            "memoryDelta": 404696,
+            "timestamp": 1754287848390,
+            "metadata": {
+              "iteration": 18
+            }
+          },
+          {
+            "name": "parser_100_transactions_iteration_19",
+            "duration": 0.3066670000000613,
+            "memoryUsed": 6442528,
+            "memoryDelta": 412392,
+            "timestamp": 1754287848390,
+            "metadata": {
+              "iteration": 19
+            }
+          },
+          {
+            "name": "parser_100_transactions_iteration_20",
+            "duration": 0.3547919999999749,
+            "memoryUsed": 4779104,
+            "memoryDelta": -1665936,
+            "timestamp": 1754287848390,
+            "metadata": {
+              "iteration": 20
+            }
+          },
+          {
+            "name": "parser_100_transactions_iteration_21",
+            "duration": 0.2872500000000855,
+            "memoryUsed": 5186240,
+            "memoryDelta": 404720,
+            "timestamp": 1754287848391,
+            "metadata": {
+              "iteration": 21
+            }
+          },
+          {
+            "name": "parser_100_transactions_iteration_22",
+            "duration": 0.28379199999994853,
+            "memoryUsed": 5593352,
+            "memoryDelta": 404696,
+            "timestamp": 1754287848391,
+            "metadata": {
+              "iteration": 22
+            }
+          },
+          {
+            "name": "parser_100_transactions_iteration_23",
+            "duration": 0.2949159999999438,
+            "memoryUsed": 6000544,
+            "memoryDelta": 404776,
+            "timestamp": 1754287848391,
+            "metadata": {
+              "iteration": 23
+            }
+          },
+          {
+            "name": "parser_100_transactions_iteration_24",
+            "duration": 0.2904159999999365,
+            "memoryUsed": 6407672,
+            "memoryDelta": 404712,
+            "timestamp": 1754287848392,
+            "metadata": {
+              "iteration": 24
+            }
+          },
+          {
+            "name": "parser_100_transactions_iteration_25",
+            "duration": 0.34862499999997,
+            "memoryUsed": 4743776,
+            "memoryDelta": -1666312,
+            "timestamp": 1754287848392,
+            "metadata": {
+              "iteration": 25
+            }
+          },
+          {
+            "name": "parser_100_transactions_iteration_26",
+            "duration": 0.2867919999999913,
+            "memoryUsed": 5150848,
+            "memoryDelta": 404656,
+            "timestamp": 1754287848392,
+            "metadata": {
+              "iteration": 26
+            }
+          },
+          {
+            "name": "parser_100_transactions_iteration_27",
+            "duration": 0.2832499999999527,
+            "memoryUsed": 5557912,
+            "memoryDelta": 404648,
+            "timestamp": 1754287848393,
+            "metadata": {
+              "iteration": 27
+            }
+          },
+          {
+            "name": "parser_100_transactions_iteration_28",
+            "duration": 0.2879169999999931,
+            "memoryUsed": 5965024,
+            "memoryDelta": 404696,
+            "timestamp": 1754287848393,
+            "metadata": {
+              "iteration": 28
+            }
+          },
+          {
+            "name": "parser_100_transactions_iteration_29",
+            "duration": 0.3274579999999787,
+            "memoryUsed": 6372096,
+            "memoryDelta": 404656,
+            "timestamp": 1754287848393,
+            "metadata": {
+              "iteration": 29
+            }
+          },
+          {
+            "name": "parser_100_transactions_iteration_30",
+            "duration": 0.45795799999996234,
+            "memoryUsed": 4707576,
+            "memoryDelta": -1666936,
+            "timestamp": 1754287848394,
+            "metadata": {
+              "iteration": 30
+            }
+          },
+          {
+            "name": "parser_100_transactions_iteration_31",
+            "duration": 0.28445800000008603,
+            "memoryUsed": 5114696,
+            "memoryDelta": 404704,
+            "timestamp": 1754287848394,
+            "metadata": {
+              "iteration": 31
+            }
+          },
+          {
+            "name": "parser_100_transactions_iteration_32",
+            "duration": 0.28379199999994853,
+            "memoryUsed": 5521808,
+            "memoryDelta": 404696,
+            "timestamp": 1754287848394,
+            "metadata": {
+              "iteration": 32
+            }
+          },
+          {
+            "name": "parser_100_transactions_iteration_33",
+            "duration": 0.29779099999996106,
+            "memoryUsed": 5928896,
+            "memoryDelta": 404672,
+            "timestamp": 1754287848395,
+            "metadata": {
+              "iteration": 33
+            }
+          },
+          {
+            "name": "parser_100_transactions_iteration_34",
+            "duration": 0.28587499999991905,
+            "memoryUsed": 6335984,
+            "memoryDelta": 404672,
+            "timestamp": 1754287848395,
+            "metadata": {
+              "iteration": 34
+            }
+          },
+          {
+            "name": "parser_100_transactions_iteration_35",
+            "duration": 0.343166999999994,
+            "memoryUsed": 4671904,
+            "memoryDelta": -1666496,
+            "timestamp": 1754287848395,
+            "metadata": {
+              "iteration": 35
+            }
+          },
+          {
+            "name": "parser_100_transactions_iteration_36",
+            "duration": 0.30174999999997,
+            "memoryUsed": 5079000,
+            "memoryDelta": 404680,
+            "timestamp": 1754287848395,
+            "metadata": {
+              "iteration": 36
+            }
+          },
+          {
+            "name": "parser_100_transactions_iteration_37",
+            "duration": 0.3067909999999756,
+            "memoryUsed": 5488952,
+            "memoryDelta": 407536,
+            "timestamp": 1754287848396,
+            "metadata": {
+              "iteration": 37
+            }
+          },
+          {
+            "name": "parser_100_transactions_iteration_38",
+            "duration": 0.33483300000000327,
+            "memoryUsed": 5903320,
+            "memoryDelta": 411952,
+            "timestamp": 1754287848396,
+            "metadata": {
+              "iteration": 38
+            }
+          },
+          {
+            "name": "parser_100_transactions_iteration_39",
+            "duration": 0.3025000000000091,
+            "memoryUsed": 6310456,
+            "memoryDelta": 404720,
+            "timestamp": 1754287848396,
+            "metadata": {
+              "iteration": 39
+            }
+          },
+          {
+            "name": "parser_100_transactions_iteration_40",
+            "duration": 0.3718330000000378,
+            "memoryUsed": 4647360,
+            "memoryDelta": -1665512,
+            "timestamp": 1754287848397,
+            "metadata": {
+              "iteration": 40
+            }
+          },
+          {
+            "name": "parser_100_transactions_iteration_41",
+            "duration": 0.29970800000000963,
+            "memoryUsed": 5054432,
+            "memoryDelta": 404656,
+            "timestamp": 1754287848397,
+            "metadata": {
+              "iteration": 41
+            }
+          },
+          {
+            "name": "parser_100_transactions_iteration_42",
+            "duration": 0.29404199999999037,
+            "memoryUsed": 5461536,
+            "memoryDelta": 404688,
+            "timestamp": 1754287848397,
+            "metadata": {
+              "iteration": 42
+            }
+          },
+          {
+            "name": "parser_100_transactions_iteration_43",
+            "duration": 0.2947079999999005,
+            "memoryUsed": 5868648,
+            "memoryDelta": 404696,
+            "timestamp": 1754287848398,
+            "metadata": {
+              "iteration": 43
+            }
+          },
+          {
+            "name": "parser_100_transactions_iteration_44",
+            "duration": 0.29549999999994725,
+            "memoryUsed": 6277216,
+            "memoryDelta": 404808,
+            "timestamp": 1754287848398,
+            "metadata": {
+              "iteration": 44
+            }
+          },
+          {
+            "name": "parser_100_transactions_iteration_45",
+            "duration": 0.2945000000000846,
+            "memoryUsed": 6684344,
+            "memoryDelta": 404712,
+            "timestamp": 1754287848398,
+            "metadata": {
+              "iteration": 45
+            }
+          },
+          {
+            "name": "parser_100_transactions_iteration_46",
+            "duration": 0.3557909999999538,
+            "memoryUsed": 5020776,
+            "memoryDelta": -1665984,
+            "timestamp": 1754287848399,
+            "metadata": {
+              "iteration": 46
+            }
+          },
+          {
+            "name": "parser_100_transactions_iteration_47",
+            "duration": 0.29758300000003146,
+            "memoryUsed": 5427888,
+            "memoryDelta": 404696,
+            "timestamp": 1754287848399,
+            "metadata": {
+              "iteration": 47
+            }
+          },
+          {
+            "name": "parser_100_transactions_iteration_48",
+            "duration": 0.29262499999992997,
+            "memoryUsed": 5834960,
+            "memoryDelta": 404656,
+            "timestamp": 1754287848399,
+            "metadata": {
+              "iteration": 48
+            }
+          },
+          {
+            "name": "parser_100_transactions_iteration_49",
+            "duration": 0.2965829999999414,
+            "memoryUsed": 6242080,
+            "memoryDelta": 404704,
+            "timestamp": 1754287848400,
+            "metadata": {
+              "iteration": 49
+            }
+          }
+        ],
+        "percentiles": {
+          "p50": 0.2987500000000409,
+          "p90": 0.3718330000000378,
+          "p95": 0.44524999999998727,
+          "p99": 0.47920799999997143
+        },
+        "memoryPeakUsage": 6684344,
+        "memoryAverageUsage": 5548172.96
+      },
+      "category": "parsing",
+      "dataSize": 100,
+      "metadata": {
+        "contentSize": 15155,
+        "transactionCount": 100
+      }
+    },
+    {
+      "name": "Parser - 500 transactions",
+      "report": {
+        "totalDuration": 16.616708000000017,
+        "averageDuration": 1.5106098181818197,
+        "minDuration": 1.4757080000000542,
+        "maxDuration": 1.6228750000000218,
+        "iterations": 11,
+        "metrics": [
+          {
+            "name": "parser_500_transactions_iteration_0",
+            "duration": 1.502958000000035,
+            "memoryUsed": 5488480,
+            "memoryDelta": -11184,
+            "timestamp": 1754287848407,
+            "metadata": {
+              "iteration": 0
+            }
+          },
+          {
+            "name": "parser_500_transactions_iteration_1",
+            "duration": 1.4928749999999127,
+            "memoryUsed": 5478640,
+            "memoryDelta": -10744,
+            "timestamp": 1754287848409,
+            "metadata": {
+              "iteration": 1
+            }
+          },
+          {
+            "name": "parser_500_transactions_iteration_2",
+            "duration": 1.5280830000000378,
+            "memoryUsed": 5468680,
+            "memoryDelta": -10632,
+            "timestamp": 1754287848410,
+            "metadata": {
+              "iteration": 2
+            }
+          },
+          {
+            "name": "parser_500_transactions_iteration_3",
+            "duration": 1.502083999999968,
+            "memoryUsed": 5458408,
+            "memoryDelta": -10944,
+            "timestamp": 1754287848412,
+            "metadata": {
+              "iteration": 3
+            }
+          },
+          {
+            "name": "parser_500_transactions_iteration_4",
+            "duration": 1.4862080000000333,
+            "memoryUsed": 5448256,
+            "memoryDelta": -10824,
+            "timestamp": 1754287848413,
+            "metadata": {
+              "iteration": 4
+            }
+          },
+          {
+            "name": "parser_500_transactions_iteration_5",
+            "duration": 1.476083000000017,
+            "memoryUsed": 5438040,
+            "memoryDelta": -10888,
+            "timestamp": 1754287848415,
+            "metadata": {
+              "iteration": 5
+            }
+          },
+          {
+            "name": "parser_500_transactions_iteration_6",
+            "duration": 1.4773340000000417,
+            "memoryUsed": 5427824,
+            "memoryDelta": -10888,
+            "timestamp": 1754287848416,
+            "metadata": {
+              "iteration": 6
+            }
+          },
+          {
+            "name": "parser_500_transactions_iteration_7",
+            "duration": 1.4757080000000542,
+            "memoryUsed": 5417672,
+            "memoryDelta": -10824,
+            "timestamp": 1754287848418,
+            "metadata": {
+              "iteration": 7
+            }
+          },
+          {
+            "name": "parser_500_transactions_iteration_8",
+            "duration": 1.5403749999999263,
+            "memoryUsed": 5407432,
+            "memoryDelta": -10912,
+            "timestamp": 1754287848419,
+            "metadata": {
+              "iteration": 8
+            }
+          },
+          {
+            "name": "parser_500_transactions_iteration_9",
+            "duration": 1.6228750000000218,
+            "memoryUsed": 5397680,
+            "memoryDelta": -10424,
+            "timestamp": 1754287848421,
+            "metadata": {
+              "iteration": 9
+            }
+          },
+          {
+            "name": "parser_500_transactions_iteration_10",
+            "duration": 1.512124999999969,
+            "memoryUsed": 5398048,
+            "memoryDelta": -304,
+            "timestamp": 1754287848422,
+            "metadata": {
+              "iteration": 10
+            }
+          }
+        ],
+        "percentiles": {
+          "p50": 1.502083999999968,
+          "p90": 1.5403749999999263,
+          "p95": 1.6228750000000218,
+          "p99": 1.6228750000000218
+        },
+        "memoryPeakUsage": 5488480,
+        "memoryAverageUsage": 5439014.545454546
+      },
+      "category": "parsing",
+      "dataSize": 500,
+      "metadata": {
+        "contentSize": 75073,
+        "transactionCount": 500
+      }
+    },
+    {
+      "name": "Parser - 1000 transactions",
+      "report": {
+        "totalDuration": 32.07116399999984,
+        "averageDuration": 2.915560363636349,
+        "minDuration": 2.8870829999999614,
+        "maxDuration": 2.979665999999952,
+        "iterations": 11,
+        "metrics": [
+          {
+            "name": "parser_1000_transactions_iteration_0",
+            "duration": 2.92937500000005,
+            "memoryUsed": 8237024,
+            "memoryDelta": -214584,
+            "timestamp": 1754287848436,
+            "metadata": {
+              "iteration": 0
+            }
+          },
+          {
+            "name": "parser_1000_transactions_iteration_1",
+            "duration": 2.915791000000013,
+            "memoryUsed": 8054752,
+            "memoryDelta": -183096,
+            "timestamp": 1754287848439,
+            "metadata": {
+              "iteration": 1
+            }
+          },
+          {
+            "name": "parser_1000_transactions_iteration_2",
+            "duration": 2.894416999999976,
+            "memoryUsed": 7872848,
+            "memoryDelta": -182576,
+            "timestamp": 1754287848442,
+            "metadata": {
+              "iteration": 2
+            }
+          },
+          {
+            "name": "parser_1000_transactions_iteration_3",
+            "duration": 2.9118330000000014,
+            "memoryUsed": 7690016,
+            "memoryDelta": -183504,
+            "timestamp": 1754287848445,
+            "metadata": {
+              "iteration": 3
+            }
+          },
+          {
+            "name": "parser_1000_transactions_iteration_4",
+            "duration": 2.8870829999999614,
+            "memoryUsed": 7476480,
+            "memoryDelta": -214208,
+            "timestamp": 1754287848447,
+            "metadata": {
+              "iteration": 4
+            }
+          },
+          {
+            "name": "parser_1000_transactions_iteration_5",
+            "duration": 2.9193749999999454,
+            "memoryUsed": 7293648,
+            "memoryDelta": -183504,
+            "timestamp": 1754287848450,
+            "metadata": {
+              "iteration": 5
+            }
+          },
+          {
+            "name": "parser_1000_transactions_iteration_6",
+            "duration": 2.920665999999983,
+            "memoryUsed": 7080208,
+            "memoryDelta": -214112,
+            "timestamp": 1754287848453,
+            "metadata": {
+              "iteration": 6
+            }
+          },
+          {
+            "name": "parser_1000_transactions_iteration_7",
+            "duration": 2.979665999999952,
+            "memoryUsed": 6900560,
+            "memoryDelta": -180320,
+            "timestamp": 1754287848456,
+            "metadata": {
+              "iteration": 7
+            }
+          },
+          {
+            "name": "parser_1000_transactions_iteration_8",
+            "duration": 2.893707999999947,
+            "memoryUsed": 6717568,
+            "memoryDelta": -183664,
+            "timestamp": 1754287848459,
+            "metadata": {
+              "iteration": 8
+            }
+          },
+          {
+            "name": "parser_1000_transactions_iteration_9",
+            "duration": 2.9082500000000664,
+            "memoryUsed": 6504096,
+            "memoryDelta": -214144,
+            "timestamp": 1754287848462,
+            "metadata": {
+              "iteration": 9
+            }
+          },
+          {
+            "name": "parser_1000_transactions_iteration_10",
+            "duration": 2.9109999999999445,
+            "memoryUsed": 6321184,
+            "memoryDelta": -183584,
+            "timestamp": 1754287848465,
+            "metadata": {
+              "iteration": 10
+            }
+          }
+        ],
+        "percentiles": {
+          "p50": 2.9118330000000014,
+          "p90": 2.92937500000005,
+          "p95": 2.979665999999952,
+          "p99": 2.979665999999952
+        },
+        "memoryPeakUsage": 8237024,
+        "memoryAverageUsage": 7286216.7272727275
+      },
+      "category": "parsing",
+      "dataSize": 1000,
+      "metadata": {
+        "contentSize": 151131,
+        "transactionCount": 1000
+      }
+    },
+    {
+      "name": "Parser - 5000 transactions",
+      "report": {
+        "totalDuration": 267.3043339999996,
+        "averageDuration": 15.723784352941152,
+        "minDuration": 14.252749999999878,
+        "maxDuration": 29.586082999999917,
+        "iterations": 17,
+        "metrics": [
+          {
+            "name": "parser_5000_transactions_iteration_0",
+            "duration": 14.966833000000065,
+            "memoryUsed": 16879544,
+            "memoryDelta": 3378280,
+            "timestamp": 1754287848532,
+            "metadata": {
+              "iteration": 0
+            }
+          },
+          {
+            "name": "parser_5000_transactions_iteration_1",
+            "duration": 14.956750000000056,
+            "memoryUsed": 11871992,
+            "memoryDelta": -5008376,
+            "timestamp": 1754287848547,
+            "metadata": {
+              "iteration": 1
+            }
+          },
+          {
+            "name": "parser_5000_transactions_iteration_2",
+            "duration": 15.049624999999878,
+            "memoryUsed": 22961584,
+            "memoryDelta": 11088920,
+            "timestamp": 1754287848562,
+            "metadata": {
+              "iteration": 2
+            }
+          },
+          {
+            "name": "parser_5000_transactions_iteration_3",
+            "duration": 15.40625,
+            "memoryUsed": 26335592,
+            "memoryDelta": 3373336,
+            "timestamp": 1754287848577,
+            "metadata": {
+              "iteration": 3
+            }
+          },
+          {
+            "name": "parser_5000_transactions_iteration_4",
+            "duration": 14.93362500000012,
+            "memoryUsed": 13644376,
+            "memoryDelta": -12691888,
+            "timestamp": 1754287848592,
+            "metadata": {
+              "iteration": 4
+            }
+          },
+          {
+            "name": "parser_5000_transactions_iteration_5",
+            "duration": 14.475374999999985,
+            "memoryUsed": 16345272,
+            "memoryDelta": 2700224,
+            "timestamp": 1754287848607,
+            "metadata": {
+              "iteration": 5
+            }
+          },
+          {
+            "name": "parser_5000_transactions_iteration_6",
+            "duration": 29.586082999999917,
+            "memoryUsed": 9334264,
+            "memoryDelta": -7011680,
+            "timestamp": 1754287848636,
+            "metadata": {
+              "iteration": 6
+            }
+          },
+          {
+            "name": "parser_5000_transactions_iteration_7",
+            "duration": 15.853875000000016,
+            "memoryUsed": 12034144,
+            "memoryDelta": 2699208,
+            "timestamp": 1754287848652,
+            "metadata": {
+              "iteration": 7
+            }
+          },
+          {
+            "name": "parser_5000_transactions_iteration_8",
+            "duration": 14.539667000000009,
+            "memoryUsed": 15408088,
+            "memoryDelta": 3373272,
+            "timestamp": 1754287848667,
+            "metadata": {
+              "iteration": 8
+            }
+          },
+          {
+            "name": "parser_5000_transactions_iteration_9",
+            "duration": 14.55070899999987,
+            "memoryUsed": 18782056,
+            "memoryDelta": 3373296,
+            "timestamp": 1754287848681,
+            "metadata": {
+              "iteration": 9
+            }
+          },
+          {
+            "name": "parser_5000_transactions_iteration_10",
+            "duration": 14.473333000000139,
+            "memoryUsed": 22155688,
+            "memoryDelta": 3372936,
+            "timestamp": 1754287848696,
+            "metadata": {
+              "iteration": 10
+            }
+          },
+          {
+            "name": "parser_5000_transactions_iteration_11",
+            "duration": 14.252749999999878,
+            "memoryUsed": 25532104,
+            "memoryDelta": 3372840,
+            "timestamp": 1754287848710,
+            "metadata": {
+              "iteration": 11
+            }
+          },
+          {
+            "name": "parser_5000_transactions_iteration_12",
+            "duration": 14.59066699999994,
+            "memoryUsed": 12811512,
+            "memoryDelta": -12723032,
+            "timestamp": 1754287848725,
+            "metadata": {
+              "iteration": 12
+            }
+          },
+          {
+            "name": "parser_5000_transactions_iteration_13",
+            "duration": 14.76645799999983,
+            "memoryUsed": 15514272,
+            "memoryDelta": 2700320,
+            "timestamp": 1754287848740,
+            "metadata": {
+              "iteration": 13
+            }
+          },
+          {
+            "name": "parser_5000_transactions_iteration_14",
+            "duration": 15.00649999999996,
+            "memoryUsed": 18889304,
+            "memoryDelta": 3372592,
+            "timestamp": 1754287848755,
+            "metadata": {
+              "iteration": 14
+            }
+          },
+          {
+            "name": "parser_5000_transactions_iteration_15",
+            "duration": 14.511459000000059,
+            "memoryUsed": 37722616,
+            "memoryDelta": 18830872,
+            "timestamp": 1754287848769,
+            "metadata": {
+              "iteration": 15
+            }
+          },
+          {
+            "name": "parser_5000_transactions_iteration_16",
+            "duration": 15.384374999999864,
+            "memoryUsed": 24121424,
+            "memoryDelta": -13603632,
+            "timestamp": 1754287848784,
+            "metadata": {
+              "iteration": 16
+            }
+          }
+        ],
+        "percentiles": {
+          "p50": 14.93362500000012,
+          "p90": 15.853875000000016,
+          "p95": 29.586082999999917,
+          "p99": 29.586082999999917
+        },
+        "memoryPeakUsage": 37722616,
+        "memoryAverageUsage": 18843754.82352941
+      },
+      "category": "parsing",
+      "dataSize": 5000,
+      "metadata": {
+        "contentSize": 752550,
+        "transactionCount": 5000
+      }
+    },
+    {
+      "name": "Parser - 10000 transactions",
+      "report": {
+        "totalDuration": 324.267832,
+        "averageDuration": 29.478893818181817,
+        "minDuration": 28.669583000000102,
+        "maxDuration": 30.69179199999985,
+        "iterations": 11,
+        "metrics": [
+          {
+            "name": "parser_10000_transactions_iteration_0",
+            "duration": 28.955375000000004,
+            "memoryUsed": 32550720,
+            "memoryDelta": 6808624,
+            "timestamp": 1754287848914,
+            "metadata": {
+              "iteration": 0
+            }
+          },
+          {
+            "name": "parser_10000_transactions_iteration_1",
+            "duration": 30.69179199999985,
+            "memoryUsed": 39359768,
+            "memoryDelta": 6808224,
+            "timestamp": 1754287848944,
+            "metadata": {
+              "iteration": 1
+            }
+          },
+          {
+            "name": "parser_10000_transactions_iteration_2",
+            "duration": 28.687832999999955,
+            "memoryUsed": 46169952,
+            "memoryDelta": 6809512,
+            "timestamp": 1754287848973,
+            "metadata": {
+              "iteration": 2
+            }
+          },
+          {
+            "name": "parser_10000_transactions_iteration_3",
+            "duration": 29.15037499999994,
+            "memoryUsed": 52979720,
+            "memoryDelta": 6809096,
+            "timestamp": 1754287849002,
+            "metadata": {
+              "iteration": 3
+            }
+          },
+          {
+            "name": "parser_10000_transactions_iteration_4",
+            "duration": 29.015916999999945,
+            "memoryUsed": 59788928,
+            "memoryDelta": 6808536,
+            "timestamp": 1754287849031,
+            "metadata": {
+              "iteration": 4
+            }
+          },
+          {
+            "name": "parser_10000_transactions_iteration_5",
+            "duration": 29.698458000000073,
+            "memoryUsed": 34335296,
+            "memoryDelta": -25454304,
+            "timestamp": 1754287849061,
+            "metadata": {
+              "iteration": 5
+            }
+          },
+          {
+            "name": "parser_10000_transactions_iteration_6",
+            "duration": 28.669583000000102,
+            "memoryUsed": 39829112,
+            "memoryDelta": 5493144,
+            "timestamp": 1754287849090,
+            "metadata": {
+              "iteration": 6
+            }
+          },
+          {
+            "name": "parser_10000_transactions_iteration_7",
+            "duration": 29.946290999999974,
+            "memoryUsed": 46638976,
+            "memoryDelta": 6809192,
+            "timestamp": 1754287849120,
+            "metadata": {
+              "iteration": 7
+            }
+          },
+          {
+            "name": "parser_10000_transactions_iteration_8",
+            "duration": 29.4525000000001,
+            "memoryUsed": 84396696,
+            "memoryDelta": 37757048,
+            "timestamp": 1754287849149,
+            "metadata": {
+              "iteration": 8
+            }
+          },
+          {
+            "name": "parser_10000_transactions_iteration_9",
+            "duration": 30.17904199999998,
+            "memoryUsed": 57253024,
+            "memoryDelta": -27144344,
+            "timestamp": 1754287849179,
+            "metadata": {
+              "iteration": 9
+            }
+          },
+          {
+            "name": "parser_10000_transactions_iteration_10",
+            "duration": 29.820666000000074,
+            "memoryUsed": 95009984,
+            "memoryDelta": 37756288,
+            "timestamp": 1754287849209,
+            "metadata": {
+              "iteration": 10
+            }
+          }
+        ],
+        "percentiles": {
+          "p50": 29.4525000000001,
+          "p90": 30.17904199999998,
+          "p95": 30.69179199999985,
+          "p99": 30.69179199999985
+        },
+        "memoryPeakUsage": 95009984,
+        "memoryAverageUsage": 53482925.09090909
+      },
+      "category": "parsing",
+      "dataSize": 10000,
+      "metadata": {
+        "contentSize": 1509848,
+        "transactionCount": 10000
+      }
+    },
+    {
+      "name": "Fuzzy Match - 100 items, Short query (2 chars)",
+      "report": {
+        "totalDuration": 1.4090009999999893,
+        "averageDuration": 0.11741674999999911,
+        "minDuration": 0.10854099999983191,
+        "maxDuration": 0.1353750000000673,
+        "iterations": 12,
+        "metrics": [
+          {
+            "name": "fuzzy_100_short_iteration_0",
+            "duration": 0.1353750000000673,
+            "memoryUsed": 95155504,
+            "memoryDelta": 10536,
+            "timestamp": 1754287849211,
+            "metadata": {
+              "iteration": 0
+            }
+          },
+          {
+            "name": "fuzzy_100_short_iteration_1",
+            "duration": 0.13104199999997945,
+            "memoryUsed": 95166864,
+            "memoryDelta": 10536,
+            "timestamp": 1754287849211,
+            "metadata": {
+              "iteration": 1
+            }
+          },
+          {
+            "name": "fuzzy_100_short_iteration_2",
+            "duration": 0.11333300000001145,
+            "memoryUsed": 95178072,
+            "memoryDelta": 10536,
+            "timestamp": 1754287849211,
+            "metadata": {
+              "iteration": 2
+            }
+          },
+          {
+            "name": "fuzzy_100_short_iteration_3",
+            "duration": 0.11295799999993505,
+            "memoryUsed": 95189280,
+            "memoryDelta": 10536,
+            "timestamp": 1754287849212,
+            "metadata": {
+              "iteration": 3
+            }
+          },
+          {
+            "name": "fuzzy_100_short_iteration_4",
+            "duration": 0.12125000000014552,
+            "memoryUsed": 95200488,
+            "memoryDelta": 10536,
+            "timestamp": 1754287849212,
+            "metadata": {
+              "iteration": 4
+            }
+          },
+          {
+            "name": "fuzzy_100_short_iteration_5",
+            "duration": 0.12445900000011534,
+            "memoryUsed": 95213112,
+            "memoryDelta": 11952,
+            "timestamp": 1754287849212,
+            "metadata": {
+              "iteration": 5
+            }
+          },
+          {
+            "name": "fuzzy_100_short_iteration_6",
+            "duration": 0.11516699999992852,
+            "memoryUsed": 95224496,
+            "memoryDelta": 10712,
+            "timestamp": 1754287849212,
+            "metadata": {
+              "iteration": 6
+            }
+          },
+          {
+            "name": "fuzzy_100_short_iteration_7",
+            "duration": 0.1117500000000291,
+            "memoryUsed": 95235800,
+            "memoryDelta": 10632,
+            "timestamp": 1754287849212,
+            "metadata": {
+              "iteration": 7
+            }
+          },
+          {
+            "name": "fuzzy_100_short_iteration_8",
+            "duration": 0.10866699999996854,
+            "memoryUsed": 95247024,
+            "memoryDelta": 10552,
+            "timestamp": 1754287849212,
+            "metadata": {
+              "iteration": 8
+            }
+          },
+          {
+            "name": "fuzzy_100_short_iteration_9",
+            "duration": 0.10854099999983191,
+            "memoryUsed": 95258272,
+            "memoryDelta": 10576,
+            "timestamp": 1754287849212,
+            "metadata": {
+              "iteration": 9
+            }
+          },
+          {
+            "name": "fuzzy_100_short_iteration_10",
+            "duration": 0.11466700000005403,
+            "memoryUsed": 95269496,
+            "memoryDelta": 10552,
+            "timestamp": 1754287849212,
+            "metadata": {
+              "iteration": 10
+            }
+          },
+          {
+            "name": "fuzzy_100_short_iteration_11",
+            "duration": 0.11179199999992306,
+            "memoryUsed": 95282464,
+            "memoryDelta": 10552,
+            "timestamp": 1754287849212,
+            "metadata": {
+              "iteration": 11
+            }
+          }
+        ],
+        "percentiles": {
+          "p50": 0.11333300000001145,
+          "p90": 0.13104199999997945,
+          "p95": 0.1353750000000673,
+          "p99": 0.1353750000000673
+        },
+        "memoryPeakUsage": 95282464,
+        "memoryAverageUsage": 95218406
+      },
+      "category": "fuzzy_matching",
+      "dataSize": 100,
+      "metadata": {
+        "itemCount": 100,
+        "queryLength": 2,
+        "queryType": "short"
+      }
+    },
+    {
+      "name": "Fuzzy Match - 100 items, Medium query (7 chars)",
+      "report": {
+        "totalDuration": 1.0872099999999136,
+        "averageDuration": 0.09883727272726488,
+        "minDuration": 0.09737499999982901,
+        "maxDuration": 0.10033399999997528,
+        "iterations": 11,
+        "metrics": [
+          {
+            "name": "fuzzy_100_medium_iteration_0",
+            "duration": 0.10033399999997528,
+            "memoryUsed": 95336784,
+            "memoryDelta": 10552,
+            "timestamp": 1754287849213,
+            "metadata": {
+              "iteration": 0
+            }
+          },
+          {
+            "name": "fuzzy_100_medium_iteration_1",
+            "duration": 0.09791700000005221,
+            "memoryUsed": 95348160,
+            "memoryDelta": 10552,
+            "timestamp": 1754287849213,
+            "metadata": {
+              "iteration": 1
+            }
+          },
+          {
+            "name": "fuzzy_100_medium_iteration_2",
+            "duration": 0.0989999999999327,
+            "memoryUsed": 95359384,
+            "memoryDelta": 10552,
+            "timestamp": 1754287849213,
+            "metadata": {
+              "iteration": 2
+            }
+          },
+          {
+            "name": "fuzzy_100_medium_iteration_3",
+            "duration": 0.0993750000000091,
+            "memoryUsed": 95370608,
+            "memoryDelta": 10552,
+            "timestamp": 1754287849213,
+            "metadata": {
+              "iteration": 3
+            }
+          },
+          {
+            "name": "fuzzy_100_medium_iteration_4",
+            "duration": 0.0980419999998503,
+            "memoryUsed": 95381832,
+            "memoryDelta": 10552,
+            "timestamp": 1754287849213,
+            "metadata": {
+              "iteration": 4
+            }
+          },
+          {
+            "name": "fuzzy_100_medium_iteration_5",
+            "duration": 0.09912499999995816,
+            "memoryUsed": 95393056,
+            "memoryDelta": 10552,
+            "timestamp": 1754287849213,
+            "metadata": {
+              "iteration": 5
+            }
+          },
+          {
+            "name": "fuzzy_100_medium_iteration_6",
+            "duration": 0.09958300000016607,
+            "memoryUsed": 95404280,
+            "memoryDelta": 10552,
+            "timestamp": 1754287849214,
+            "metadata": {
+              "iteration": 6
+            }
+          },
+          {
+            "name": "fuzzy_100_medium_iteration_7",
+            "duration": 0.09795899999994617,
+            "memoryUsed": 95415504,
+            "memoryDelta": 10552,
+            "timestamp": 1754287849214,
+            "metadata": {
+              "iteration": 7
+            }
+          },
+          {
+            "name": "fuzzy_100_medium_iteration_8",
+            "duration": 0.0993750000000091,
+            "memoryUsed": 95426728,
+            "memoryDelta": 10552,
+            "timestamp": 1754287849214,
+            "metadata": {
+              "iteration": 8
+            }
+          },
+          {
+            "name": "fuzzy_100_medium_iteration_9",
+            "duration": 0.09912500000018554,
+            "memoryUsed": 95437952,
+            "memoryDelta": 10552,
+            "timestamp": 1754287849214,
+            "metadata": {
+              "iteration": 9
+            }
+          },
+          {
+            "name": "fuzzy_100_medium_iteration_10",
+            "duration": 0.09737499999982901,
+            "memoryUsed": 95449176,
+            "memoryDelta": 10552,
+            "timestamp": 1754287849214,
+            "metadata": {
+              "iteration": 10
+            }
+          }
+        ],
+        "percentiles": {
+          "p50": 0.09912499999995816,
+          "p90": 0.09958300000016607,
+          "p95": 0.10033399999997528,
+          "p99": 0.10033399999997528
+        },
+        "memoryPeakUsage": 95449176,
+        "memoryAverageUsage": 95393042.18181819
+      },
+      "category": "fuzzy_matching",
+      "dataSize": 100,
+      "metadata": {
+        "itemCount": 100,
+        "queryLength": 7,
+        "queryType": "medium"
+      }
+    },
+    {
+      "name": "Fuzzy Match - 100 items, Long query (23 chars)",
+      "report": {
+        "totalDuration": 0.2533739999996669,
+        "averageDuration": 0.02303399999996972,
+        "minDuration": 0.022207999999864114,
+        "maxDuration": 0.023957999999993262,
+        "iterations": 11,
+        "metrics": [
+          {
+            "name": "fuzzy_100_long_iteration_0",
+            "duration": 0.023667000000159533,
+            "memoryUsed": 95490880,
+            "memoryDelta": 8288,
+            "timestamp": 1754287849214,
+            "metadata": {
+              "iteration": 0
+            }
+          },
+          {
+            "name": "fuzzy_100_long_iteration_1",
+            "duration": 0.023957999999993262,
+            "memoryUsed": 95499992,
+            "memoryDelta": 8288,
+            "timestamp": 1754287849214,
+            "metadata": {
+              "iteration": 1
+            }
+          },
+          {
+            "name": "fuzzy_100_long_iteration_2",
+            "duration": 0.022334000000000742,
+            "memoryUsed": 95508952,
+            "memoryDelta": 8288,
+            "timestamp": 1754287849214,
+            "metadata": {
+              "iteration": 2
+            }
+          },
+          {
+            "name": "fuzzy_100_long_iteration_3",
+            "duration": 0.022874999999885404,
+            "memoryUsed": 95517944,
+            "memoryDelta": 8320,
+            "timestamp": 1754287849214,
+            "metadata": {
+              "iteration": 3
+            }
+          },
+          {
+            "name": "fuzzy_100_long_iteration_4",
+            "duration": 0.022292000000106782,
+            "memoryUsed": 95526904,
+            "memoryDelta": 8288,
+            "timestamp": 1754287849214,
+            "metadata": {
+              "iteration": 4
+            }
+          },
+          {
+            "name": "fuzzy_100_long_iteration_5",
+            "duration": 0.0234579999998914,
+            "memoryUsed": 95535864,
+            "memoryDelta": 8288,
+            "timestamp": 1754287849214,
+            "metadata": {
+              "iteration": 5
+            }
+          },
+          {
+            "name": "fuzzy_100_long_iteration_6",
+            "duration": 0.022207999999864114,
+            "memoryUsed": 95544824,
+            "memoryDelta": 8288,
+            "timestamp": 1754287849214,
+            "metadata": {
+              "iteration": 6
+            }
+          },
+          {
+            "name": "fuzzy_100_long_iteration_7",
+            "duration": 0.023582999999916865,
+            "memoryUsed": 95553784,
+            "memoryDelta": 8288,
+            "timestamp": 1754287849214,
+            "metadata": {
+              "iteration": 7
+            }
+          },
+          {
+            "name": "fuzzy_100_long_iteration_8",
+            "duration": 0.022249999999985448,
+            "memoryUsed": 95562744,
+            "memoryDelta": 8288,
+            "timestamp": 1754287849214,
+            "metadata": {
+              "iteration": 8
+            }
+          },
+          {
+            "name": "fuzzy_100_long_iteration_9",
+            "duration": 0.02341599999999744,
+            "memoryUsed": 95571704,
+            "memoryDelta": 8288,
+            "timestamp": 1754287849214,
+            "metadata": {
+              "iteration": 9
+            }
+          },
+          {
+            "name": "fuzzy_100_long_iteration_10",
+            "duration": 0.023332999999865933,
+            "memoryUsed": 95580664,
+            "memoryDelta": 8288,
+            "timestamp": 1754287849214,
+            "metadata": {
+              "iteration": 10
+            }
+          }
+        ],
+        "percentiles": {
+          "p50": 0.023332999999865933,
+          "p90": 0.023667000000159533,
+          "p95": 0.023957999999993262,
+          "p99": 0.023957999999993262
+        },
+        "memoryPeakUsage": 95580664,
+        "memoryAverageUsage": 95535841.45454545
+      },
+      "category": "fuzzy_matching",
+      "dataSize": 100,
+      "metadata": {
+        "itemCount": 100,
+        "queryLength": 25,
+        "queryType": "long"
+      }
+    },
+    {
+      "name": "Fuzzy Match - 100 items, Partial hierarchical match",
+      "report": {
+        "totalDuration": 0.9615850000000137,
+        "averageDuration": 0.08741681818181943,
+        "minDuration": 0.08620900000005349,
+        "maxDuration": 0.09045800000012605,
+        "iterations": 11,
+        "metrics": [
+          {
+            "name": "fuzzy_100_partial_iteration_0",
+            "duration": 0.08720799999991868,
+            "memoryUsed": 95623168,
+            "memoryDelta": 8272,
+            "timestamp": 1754287849215,
+            "metadata": {
+              "iteration": 0
+            }
+          },
+          {
+            "name": "fuzzy_100_partial_iteration_1",
+            "duration": 0.08804200000008677,
+            "memoryUsed": 95632264,
+            "memoryDelta": 8272,
+            "timestamp": 1754287849215,
+            "metadata": {
+              "iteration": 1
+            }
+          },
+          {
+            "name": "fuzzy_100_partial_iteration_2",
+            "duration": 0.08654200000000856,
+            "memoryUsed": 95641208,
+            "memoryDelta": 8272,
+            "timestamp": 1754287849215,
+            "metadata": {
+              "iteration": 2
+            }
+          },
+          {
+            "name": "fuzzy_100_partial_iteration_3",
+            "duration": 0.0874589999998534,
+            "memoryUsed": 95650152,
+            "memoryDelta": 8272,
+            "timestamp": 1754287849215,
+            "metadata": {
+              "iteration": 3
+            }
+          },
+          {
+            "name": "fuzzy_100_partial_iteration_4",
+            "duration": 0.08645899999987705,
+            "memoryUsed": 95659096,
+            "memoryDelta": 8272,
+            "timestamp": 1754287849215,
+            "metadata": {
+              "iteration": 4
+            }
+          },
+          {
+            "name": "fuzzy_100_partial_iteration_5",
+            "duration": 0.08745799999996962,
+            "memoryUsed": 95668040,
+            "memoryDelta": 8272,
+            "timestamp": 1754287849215,
+            "metadata": {
+              "iteration": 5
+            }
+          },
+          {
+            "name": "fuzzy_100_partial_iteration_6",
+            "duration": 0.08637500000008913,
+            "memoryUsed": 95676984,
+            "memoryDelta": 8272,
+            "timestamp": 1754287849215,
+            "metadata": {
+              "iteration": 6
+            }
+          },
+          {
+            "name": "fuzzy_100_partial_iteration_7",
+            "duration": 0.08733300000017152,
+            "memoryUsed": 95687760,
+            "memoryDelta": 8272,
+            "timestamp": 1754287849215,
+            "metadata": {
+              "iteration": 7
+            }
+          },
+          {
+            "name": "fuzzy_100_partial_iteration_8",
+            "duration": 0.09045800000012605,
+            "memoryUsed": 95696704,
+            "memoryDelta": 8272,
+            "timestamp": 1754287849215,
+            "metadata": {
+              "iteration": 8
+            }
+          },
+          {
+            "name": "fuzzy_100_partial_iteration_9",
+            "duration": 0.08620900000005349,
+            "memoryUsed": 95705648,
+            "memoryDelta": 8272,
+            "timestamp": 1754287849215,
+            "metadata": {
+              "iteration": 9
+            }
+          },
+          {
+            "name": "fuzzy_100_partial_iteration_10",
+            "duration": 0.0880419999998594,
+            "memoryUsed": 95714592,
+            "memoryDelta": 8272,
+            "timestamp": 1754287849216,
+            "metadata": {
+              "iteration": 10
+            }
+          }
+        ],
+        "percentiles": {
+          "p50": 0.08733300000017152,
+          "p90": 0.08804200000008677,
+          "p95": 0.09045800000012605,
+          "p99": 0.09045800000012605
+        },
+        "memoryPeakUsage": 95714592,
+        "memoryAverageUsage": 95668692.36363636
+      },
+      "category": "fuzzy_matching",
+      "dataSize": 100,
+      "metadata": {
+        "itemCount": 100,
+        "queryLength": 10,
+        "queryType": "partial"
+      }
+    },
+    {
+      "name": "Fuzzy Match - 500 items, Short query (2 chars)",
+      "report": {
+        "totalDuration": 5.475999999999658,
+        "averageDuration": 0.3911428571428327,
+        "minDuration": 0.3259169999998903,
+        "maxDuration": 0.5582079999999223,
+        "iterations": 14,
+        "metrics": [
+          {
+            "name": "fuzzy_500_short_iteration_0",
+            "duration": 0.5548750000000382,
+            "memoryUsed": 96090408,
+            "memoryDelta": 46992,
+            "timestamp": 1754287849218,
+            "metadata": {
+              "iteration": 0
+            }
+          },
+          {
+            "name": "fuzzy_500_short_iteration_1",
+            "duration": 0.5336250000000291,
+            "memoryUsed": 96138192,
+            "memoryDelta": 46960,
+            "timestamp": 1754287849218,
+            "metadata": {
+              "iteration": 1
+            }
+          },
+          {
+            "name": "fuzzy_500_short_iteration_2",
+            "duration": 0.5582079999999223,
+            "memoryUsed": 96203808,
+            "memoryDelta": 64944,
+            "timestamp": 1754287849219,
+            "metadata": {
+              "iteration": 2
+            }
+          },
+          {
+            "name": "fuzzy_500_short_iteration_3",
+            "duration": 0.4070840000001681,
+            "memoryUsed": 96268672,
+            "memoryDelta": 64192,
+            "timestamp": 1754287849219,
+            "metadata": {
+              "iteration": 3
+            }
+          },
+          {
+            "name": "fuzzy_500_short_iteration_4",
+            "duration": 0.36095799999998235,
+            "memoryUsed": 96296200,
+            "memoryDelta": 26856,
+            "timestamp": 1754287849220,
+            "metadata": {
+              "iteration": 4
+            }
+          },
+          {
+            "name": "fuzzy_500_short_iteration_5",
+            "duration": 0.3336669999998776,
+            "memoryUsed": 96323728,
+            "memoryDelta": 26856,
+            "timestamp": 1754287849220,
+            "metadata": {
+              "iteration": 5
+            }
+          },
+          {
+            "name": "fuzzy_500_short_iteration_6",
+            "duration": 0.3409999999998945,
+            "memoryUsed": 96352096,
+            "memoryDelta": 27696,
+            "timestamp": 1754287849220,
+            "metadata": {
+              "iteration": 6
+            }
+          },
+          {
+            "name": "fuzzy_500_short_iteration_7",
+            "duration": 0.37429199999996854,
+            "memoryUsed": 96379624,
+            "memoryDelta": 26856,
+            "timestamp": 1754287849221,
+            "metadata": {
+              "iteration": 7
+            }
+          },
+          {
+            "name": "fuzzy_500_short_iteration_8",
+            "duration": 0.3501249999999345,
+            "memoryUsed": 96407152,
+            "memoryDelta": 26856,
+            "timestamp": 1754287849221,
+            "metadata": {
+              "iteration": 8
+            }
+          },
+          {
+            "name": "fuzzy_500_short_iteration_9",
+            "duration": 0.33083299999998417,
+            "memoryUsed": 96434680,
+            "memoryDelta": 26856,
+            "timestamp": 1754287849221,
+            "metadata": {
+              "iteration": 9
+            }
+          },
+          {
+            "name": "fuzzy_500_short_iteration_10",
+            "duration": 0.3266670000000431,
+            "memoryUsed": 96462208,
+            "memoryDelta": 26856,
+            "timestamp": 1754287849222,
+            "metadata": {
+              "iteration": 10
+            }
+          },
+          {
+            "name": "fuzzy_500_short_iteration_11",
+            "duration": 0.3259169999998903,
+            "memoryUsed": 96491160,
+            "memoryDelta": 26856,
+            "timestamp": 1754287849222,
+            "metadata": {
+              "iteration": 11
+            }
+          },
+          {
+            "name": "fuzzy_500_short_iteration_12",
+            "duration": 0.3289580000000569,
+            "memoryUsed": 96520112,
+            "memoryDelta": 26856,
+            "timestamp": 1754287849222,
+            "metadata": {
+              "iteration": 12
+            }
+          },
+          {
+            "name": "fuzzy_500_short_iteration_13",
+            "duration": 0.3497909999998683,
+            "memoryUsed": 96549064,
+            "memoryDelta": 26856,
+            "timestamp": 1754287849223,
+            "metadata": {
+              "iteration": 13
+            }
+          }
+        ],
+        "percentiles": {
+          "p50": 0.3497909999998683,
+          "p90": 0.5548750000000382,
+          "p95": 0.5582079999999223,
+          "p99": 0.5582079999999223
+        },
+        "memoryPeakUsage": 96549064,
+        "memoryAverageUsage": 96351221.71428572
+      },
+      "category": "fuzzy_matching",
+      "dataSize": 500,
+      "metadata": {
+        "itemCount": 500,
+        "queryLength": 2,
+        "queryType": "short"
+      }
+    },
+    {
+      "name": "Fuzzy Match - 500 items, Medium query (7 chars)",
+      "report": {
+        "totalDuration": 5.8873310000003585,
+        "averageDuration": 0.3098595263158083,
+        "minDuration": 0.2951660000001084,
+        "maxDuration": 0.3530420000001868,
+        "iterations": 19,
+        "metrics": [
+          {
+            "name": "fuzzy_500_medium_iteration_0",
+            "duration": 0.32304199999998673,
+            "memoryUsed": 96667288,
+            "memoryDelta": 28040,
+            "timestamp": 1754287849224,
+            "metadata": {
+              "iteration": 0
+            }
+          },
+          {
+            "name": "fuzzy_500_medium_iteration_1",
+            "duration": 0.2980000000000018,
+            "memoryUsed": 96694968,
+            "memoryDelta": 26856,
+            "timestamp": 1754287849224,
+            "metadata": {
+              "iteration": 1
+            }
+          },
+          {
+            "name": "fuzzy_500_medium_iteration_2",
+            "duration": 0.29579100000000835,
+            "memoryUsed": 96722496,
+            "memoryDelta": 26856,
+            "timestamp": 1754287849225,
+            "metadata": {
+              "iteration": 2
+            }
+          },
+          {
+            "name": "fuzzy_500_medium_iteration_3",
+            "duration": 0.29616699999996854,
+            "memoryUsed": 96750024,
+            "memoryDelta": 26856,
+            "timestamp": 1754287849225,
+            "metadata": {
+              "iteration": 3
+            }
+          },
+          {
+            "name": "fuzzy_500_medium_iteration_4",
+            "duration": 0.33387500000003456,
+            "memoryUsed": 96777552,
+            "memoryDelta": 26856,
+            "timestamp": 1754287849225,
+            "metadata": {
+              "iteration": 4
+            }
+          },
+          {
+            "name": "fuzzy_500_medium_iteration_5",
+            "duration": 0.2951660000001084,
+            "memoryUsed": 96805080,
+            "memoryDelta": 26856,
+            "timestamp": 1754287849226,
+            "metadata": {
+              "iteration": 5
+            }
+          },
+          {
+            "name": "fuzzy_500_medium_iteration_6",
+            "duration": 0.30300000000011096,
+            "memoryUsed": 96832608,
+            "memoryDelta": 26856,
+            "timestamp": 1754287849226,
+            "metadata": {
+              "iteration": 6
+            }
+          },
+          {
+            "name": "fuzzy_500_medium_iteration_7",
+            "duration": 0.31024999999999636,
+            "memoryUsed": 96860136,
+            "memoryDelta": 26856,
+            "timestamp": 1754287849226,
+            "metadata": {
+              "iteration": 7
+            }
+          },
+          {
+            "name": "fuzzy_500_medium_iteration_8",
+            "duration": 0.3530420000001868,
+            "memoryUsed": 96887672,
+            "memoryDelta": 26864,
+            "timestamp": 1754287849227,
+            "metadata": {
+              "iteration": 8
+            }
+          },
+          {
+            "name": "fuzzy_500_medium_iteration_9",
+            "duration": 0.3350829999999405,
+            "memoryUsed": 96915200,
+            "memoryDelta": 26856,
+            "timestamp": 1754287849227,
+            "metadata": {
+              "iteration": 9
+            }
+          },
+          {
+            "name": "fuzzy_500_medium_iteration_10",
+            "duration": 0.30029100000001563,
+            "memoryUsed": 96942728,
+            "memoryDelta": 26856,
+            "timestamp": 1754287849227,
+            "metadata": {
+              "iteration": 10
+            }
+          },
+          {
+            "name": "fuzzy_500_medium_iteration_11",
+            "duration": 0.29750000000012733,
+            "memoryUsed": 96971680,
+            "memoryDelta": 26856,
+            "timestamp": 1754287849228,
+            "metadata": {
+              "iteration": 11
+            }
+          },
+          {
+            "name": "fuzzy_500_medium_iteration_12",
+            "duration": 0.3013750000000073,
+            "memoryUsed": 97000632,
+            "memoryDelta": 26856,
+            "timestamp": 1754287849228,
+            "metadata": {
+              "iteration": 12
+            }
+          },
+          {
+            "name": "fuzzy_500_medium_iteration_13",
+            "duration": 0.29616600000008475,
+            "memoryUsed": 97029584,
+            "memoryDelta": 26856,
+            "timestamp": 1754287849228,
+            "metadata": {
+              "iteration": 13
+            }
+          },
+          {
+            "name": "fuzzy_500_medium_iteration_14",
+            "duration": 0.3043330000000424,
+            "memoryUsed": 97058536,
+            "memoryDelta": 26856,
+            "timestamp": 1754287849229,
+            "metadata": {
+              "iteration": 14
+            }
+          },
+          {
+            "name": "fuzzy_500_medium_iteration_15",
+            "duration": 0.30083300000001145,
+            "memoryUsed": 97087488,
+            "memoryDelta": 26856,
+            "timestamp": 1754287849229,
+            "metadata": {
+              "iteration": 15
+            }
+          },
+          {
+            "name": "fuzzy_500_medium_iteration_16",
+            "duration": 0.3109999999999218,
+            "memoryUsed": 97116440,
+            "memoryDelta": 26856,
+            "timestamp": 1754287849229,
+            "metadata": {
+              "iteration": 16
+            }
+          },
+          {
+            "name": "fuzzy_500_medium_iteration_17",
+            "duration": 0.3224999999999909,
+            "memoryUsed": 97145400,
+            "memoryDelta": 26864,
+            "timestamp": 1754287849230,
+            "metadata": {
+              "iteration": 17
+            }
+          },
+          {
+            "name": "fuzzy_500_medium_iteration_18",
+            "duration": 0.3099169999998139,
+            "memoryUsed": 97174712,
+            "memoryDelta": 26856,
+            "timestamp": 1754287849230,
+            "metadata": {
+              "iteration": 18
+            }
+          }
+        ],
+        "percentiles": {
+          "p50": 0.30300000000011096,
+          "p90": 0.3350829999999405,
+          "p95": 0.3530420000001868,
+          "p99": 0.3530420000001868
+        },
+        "memoryPeakUsage": 97174712,
+        "memoryAverageUsage": 96917906.5263158
+      },
+      "category": "fuzzy_matching",
+      "dataSize": 500,
+      "metadata": {
+        "itemCount": 500,
+        "queryLength": 7,
+        "queryType": "medium"
+      }
+    },
+    {
+      "name": "Fuzzy Match - 500 items, Long query (23 chars)",
+      "report": {
+        "totalDuration": 1.5373299999998835,
+        "averageDuration": 0.05693814814814383,
+        "minDuration": 0.053167000000030384,
+        "maxDuration": 0.06654099999991558,
+        "iterations": 27,
+        "metrics": [
+          {
+            "name": "fuzzy_500_long_iteration_0",
+            "duration": 0.056707999999844105,
+            "memoryUsed": 97261568,
+            "memoryDelta": 18848,
+            "timestamp": 1754287849230,
+            "metadata": {
+              "iteration": 0
+            }
+          },
+          {
+            "name": "fuzzy_500_long_iteration_1",
+            "duration": 0.054374999999936335,
+            "memoryUsed": 97281240,
+            "memoryDelta": 18848,
+            "timestamp": 1754287849230,
+            "metadata": {
+              "iteration": 1
+            }
+          },
+          {
+            "name": "fuzzy_500_long_iteration_2",
+            "duration": 0.05429099999992104,
+            "memoryUsed": 97300760,
+            "memoryDelta": 18848,
+            "timestamp": 1754287849230,
+            "metadata": {
+              "iteration": 2
+            }
+          },
+          {
+            "name": "fuzzy_500_long_iteration_3",
+            "duration": 0.05466699999988123,
+            "memoryUsed": 97320280,
+            "memoryDelta": 18848,
+            "timestamp": 1754287849230,
+            "metadata": {
+              "iteration": 3
+            }
+          },
+          {
+            "name": "fuzzy_500_long_iteration_4",
+            "duration": 0.05375000000003638,
+            "memoryUsed": 97339800,
+            "memoryDelta": 18848,
+            "timestamp": 1754287849230,
+            "metadata": {
+              "iteration": 4
+            }
+          },
+          {
+            "name": "fuzzy_500_long_iteration_5",
+            "duration": 0.05704199999991033,
+            "memoryUsed": 97359320,
+            "memoryDelta": 18848,
+            "timestamp": 1754287849230,
+            "metadata": {
+              "iteration": 5
+            }
+          },
+          {
+            "name": "fuzzy_500_long_iteration_6",
+            "duration": 0.061666000000059285,
+            "memoryUsed": 97378840,
+            "memoryDelta": 18848,
+            "timestamp": 1754287849230,
+            "metadata": {
+              "iteration": 6
+            }
+          },
+          {
+            "name": "fuzzy_500_long_iteration_7",
+            "duration": 0.062167000000044936,
+            "memoryUsed": 97398368,
+            "memoryDelta": 18856,
+            "timestamp": 1754287849231,
+            "metadata": {
+              "iteration": 7
+            }
+          },
+          {
+            "name": "fuzzy_500_long_iteration_8",
+            "duration": 0.05533400000012989,
+            "memoryUsed": 97417888,
+            "memoryDelta": 18848,
+            "timestamp": 1754287849231,
+            "metadata": {
+              "iteration": 8
+            }
+          },
+          {
+            "name": "fuzzy_500_long_iteration_9",
+            "duration": 0.06654099999991558,
+            "memoryUsed": 97437408,
+            "memoryDelta": 18848,
+            "timestamp": 1754287849231,
+            "metadata": {
+              "iteration": 9
+            }
+          },
+          {
+            "name": "fuzzy_500_long_iteration_10",
+            "duration": 0.05383299999994051,
+            "memoryUsed": 97456928,
+            "memoryDelta": 18848,
+            "timestamp": 1754287849231,
+            "metadata": {
+              "iteration": 10
+            }
+          },
+          {
+            "name": "fuzzy_500_long_iteration_11",
+            "duration": 0.06149999999979627,
+            "memoryUsed": 97477872,
+            "memoryDelta": 18848,
+            "timestamp": 1754287849231,
+            "metadata": {
+              "iteration": 11
+            }
+          },
+          {
+            "name": "fuzzy_500_long_iteration_12",
+            "duration": 0.057583000000022366,
+            "memoryUsed": 97498816,
+            "memoryDelta": 18848,
+            "timestamp": 1754287849231,
+            "metadata": {
+              "iteration": 12
+            }
+          },
+          {
+            "name": "fuzzy_500_long_iteration_13",
+            "duration": 0.053625000000010914,
+            "memoryUsed": 97519760,
+            "memoryDelta": 18848,
+            "timestamp": 1754287849231,
+            "metadata": {
+              "iteration": 13
+            }
+          },
+          {
+            "name": "fuzzy_500_long_iteration_14",
+            "duration": 0.05337499999995998,
+            "memoryUsed": 97540704,
+            "memoryDelta": 18848,
+            "timestamp": 1754287849231,
+            "metadata": {
+              "iteration": 14
+            }
+          },
+          {
+            "name": "fuzzy_500_long_iteration_15",
+            "duration": 0.06208300000002964,
+            "memoryUsed": 97561648,
+            "memoryDelta": 18848,
+            "timestamp": 1754287849231,
+            "metadata": {
+              "iteration": 15
+            }
+          },
+          {
+            "name": "fuzzy_500_long_iteration_16",
+            "duration": 0.061417000000119515,
+            "memoryUsed": 97582592,
+            "memoryDelta": 18848,
+            "timestamp": 1754287849231,
+            "metadata": {
+              "iteration": 16
+            }
+          },
+          {
+            "name": "fuzzy_500_long_iteration_17",
+            "duration": 0.06179100000008475,
+            "memoryUsed": 97603536,
+            "memoryDelta": 18848,
+            "timestamp": 1754287849231,
+            "metadata": {
+              "iteration": 17
+            }
+          },
+          {
+            "name": "fuzzy_500_long_iteration_18",
+            "duration": 0.05812500000001819,
+            "memoryUsed": 97624840,
+            "memoryDelta": 18848,
+            "timestamp": 1754287849231,
+            "metadata": {
+              "iteration": 18
+            }
+          },
+          {
+            "name": "fuzzy_500_long_iteration_19",
+            "duration": 0.05883299999982228,
+            "memoryUsed": 97645784,
+            "memoryDelta": 18848,
+            "timestamp": 1754287849231,
+            "metadata": {
+              "iteration": 19
+            }
+          },
+          {
+            "name": "fuzzy_500_long_iteration_20",
+            "duration": 0.053167000000030384,
+            "memoryUsed": 97666728,
+            "memoryDelta": 18848,
+            "timestamp": 1754287849231,
+            "metadata": {
+              "iteration": 20
+            }
+          },
+          {
+            "name": "fuzzy_500_long_iteration_21",
+            "duration": 0.0546670000001086,
+            "memoryUsed": 97687672,
+            "memoryDelta": 18848,
+            "timestamp": 1754287849231,
+            "metadata": {
+              "iteration": 21
+            }
+          },
+          {
+            "name": "fuzzy_500_long_iteration_22",
+            "duration": 0.05479199999990669,
+            "memoryUsed": 97708616,
+            "memoryDelta": 18848,
+            "timestamp": 1754287849231,
+            "metadata": {
+              "iteration": 22
+            }
+          },
+          {
+            "name": "fuzzy_500_long_iteration_23",
+            "duration": 0.053833000000167885,
+            "memoryUsed": 97729560,
+            "memoryDelta": 18848,
+            "timestamp": 1754287849231,
+            "metadata": {
+              "iteration": 23
+            }
+          },
+          {
+            "name": "fuzzy_500_long_iteration_24",
+            "duration": 0.05354099999999562,
+            "memoryUsed": 97750504,
+            "memoryDelta": 18848,
+            "timestamp": 1754287849232,
+            "metadata": {
+              "iteration": 24
+            }
+          },
+          {
+            "name": "fuzzy_500_long_iteration_25",
+            "duration": 0.05370800000014242,
+            "memoryUsed": 97771448,
+            "memoryDelta": 18848,
+            "timestamp": 1754287849232,
+            "metadata": {
+              "iteration": 25
+            }
+          },
+          {
+            "name": "fuzzy_500_long_iteration_26",
+            "duration": 0.05491600000004837,
+            "memoryUsed": 97792392,
+            "memoryDelta": 18848,
+            "timestamp": 1754287849232,
+            "metadata": {
+              "iteration": 26
+            }
+          }
+        ],
+        "percentiles": {
+          "p50": 0.05491600000004837,
+          "p90": 0.06208300000002964,
+          "p95": 0.062167000000044936,
+          "p99": 0.06654099999991558
+        },
+        "memoryPeakUsage": 97792392,
+        "memoryAverageUsage": 97522773.03703703
+      },
+      "category": "fuzzy_matching",
+      "dataSize": 500,
+      "metadata": {
+        "itemCount": 500,
+        "queryLength": 25,
+        "queryType": "long"
+      }
+    },
+    {
+      "name": "Fuzzy Match - 500 items, Partial hierarchical match",
+      "report": {
+        "totalDuration": 2.8961690000003273,
+        "averageDuration": 0.26328809090912064,
+        "minDuration": 0.25320800000008603,
+        "maxDuration": 0.28566700000010314,
+        "iterations": 11,
+        "metrics": [
+          {
+            "name": "fuzzy_500_partial_iteration_0",
+            "duration": 0.2750419999999849,
+            "memoryUsed": 97885112,
+            "memoryDelta": 21680,
+            "timestamp": 1754287849233,
+            "metadata": {
+              "iteration": 0
+            }
+          },
+          {
+            "name": "fuzzy_500_partial_iteration_1",
+            "duration": 0.28566700000010314,
+            "memoryUsed": 97904768,
+            "memoryDelta": 18832,
+            "timestamp": 1754287849233,
+            "metadata": {
+              "iteration": 1
+            }
+          },
+          {
+            "name": "fuzzy_500_partial_iteration_2",
+            "duration": 0.26308400000016263,
+            "memoryUsed": 97924272,
+            "memoryDelta": 18832,
+            "timestamp": 1754287849233,
+            "metadata": {
+              "iteration": 2
+            }
+          },
+          {
+            "name": "fuzzy_500_partial_iteration_3",
+            "duration": 0.2555419999998776,
+            "memoryUsed": 97943848,
+            "memoryDelta": 18832,
+            "timestamp": 1754287849234,
+            "metadata": {
+              "iteration": 3
+            }
+          },
+          {
+            "name": "fuzzy_500_partial_iteration_4",
+            "duration": 0.25337500000000546,
+            "memoryUsed": 97963352,
+            "memoryDelta": 18832,
+            "timestamp": 1754287849234,
+            "metadata": {
+              "iteration": 4
+            }
+          },
+          {
+            "name": "fuzzy_500_partial_iteration_5",
+            "duration": 0.25958399999990434,
+            "memoryUsed": 97982856,
+            "memoryDelta": 18832,
+            "timestamp": 1754287849234,
+            "metadata": {
+              "iteration": 5
+            }
+          },
+          {
+            "name": "fuzzy_500_partial_iteration_6",
+            "duration": 0.25320800000008603,
+            "memoryUsed": 98002360,
+            "memoryDelta": 18832,
+            "timestamp": 1754287849234,
+            "metadata": {
+              "iteration": 6
+            }
+          },
+          {
+            "name": "fuzzy_500_partial_iteration_7",
+            "duration": 0.25329099999999016,
+            "memoryUsed": 98021864,
+            "memoryDelta": 18832,
+            "timestamp": 1754287849235,
+            "metadata": {
+              "iteration": 7
+            }
+          },
+          {
+            "name": "fuzzy_500_partial_iteration_8",
+            "duration": 0.25858400000015536,
+            "memoryUsed": 98041368,
+            "memoryDelta": 18832,
+            "timestamp": 1754287849235,
+            "metadata": {
+              "iteration": 8
+            }
+          },
+          {
+            "name": "fuzzy_500_partial_iteration_9",
+            "duration": 0.28441700000007586,
+            "memoryUsed": 98060872,
+            "memoryDelta": 18832,
+            "timestamp": 1754287849235,
+            "metadata": {
+              "iteration": 9
+            }
+          },
+          {
+            "name": "fuzzy_500_partial_iteration_10",
+            "duration": 0.2543749999999818,
+            "memoryUsed": 98080376,
+            "memoryDelta": 18832,
+            "timestamp": 1754287849235,
+            "metadata": {
+              "iteration": 10
+            }
+          }
+        ],
+        "percentiles": {
+          "p50": 0.25858400000015536,
+          "p90": 0.28441700000007586,
+          "p95": 0.28566700000010314,
+          "p99": 0.28566700000010314
+        },
+        "memoryPeakUsage": 98080376,
+        "memoryAverageUsage": 97982822.54545455
+      },
+      "category": "fuzzy_matching",
+      "dataSize": 500,
+      "metadata": {
+        "itemCount": 500,
+        "queryLength": 10,
+        "queryType": "partial"
+      }
+    },
+    {
+      "name": "Fuzzy Match - 1000 items, Short query (2 chars)",
+      "report": {
+        "totalDuration": 13.080123999999842,
+        "averageDuration": 0.6884275789473601,
+        "minDuration": 0.6671249999999418,
+        "maxDuration": 0.8012919999998758,
+        "iterations": 19,
+        "metrics": [
+          {
+            "name": "fuzzy_1000_short_iteration_0",
+            "duration": 0.7052909999999883,
+            "memoryUsed": 98614184,
+            "memoryDelta": 53080,
+            "timestamp": 1754287849239,
+            "metadata": {
+              "iteration": 0
+            }
+          },
+          {
+            "name": "fuzzy_1000_short_iteration_1",
+            "duration": 0.6730840000000171,
+            "memoryUsed": 98668088,
+            "memoryDelta": 53080,
+            "timestamp": 1754287849239,
+            "metadata": {
+              "iteration": 1
+            }
+          },
+          {
+            "name": "fuzzy_1000_short_iteration_2",
+            "duration": 0.6683750000001965,
+            "memoryUsed": 98721840,
+            "memoryDelta": 53080,
+            "timestamp": 1754287849240,
+            "metadata": {
+              "iteration": 2
+            }
+          },
+          {
+            "name": "fuzzy_1000_short_iteration_3",
+            "duration": 0.6759999999999309,
+            "memoryUsed": 98775600,
+            "memoryDelta": 53080,
+            "timestamp": 1754287849241,
+            "metadata": {
+              "iteration": 3
+            }
+          },
+          {
+            "name": "fuzzy_1000_short_iteration_4",
+            "duration": 0.6671249999999418,
+            "memoryUsed": 98829352,
+            "memoryDelta": 53080,
+            "timestamp": 1754287849241,
+            "metadata": {
+              "iteration": 4
+            }
+          },
+          {
+            "name": "fuzzy_1000_short_iteration_5",
+            "duration": 0.6972920000000613,
+            "memoryUsed": 98883104,
+            "memoryDelta": 53080,
+            "timestamp": 1754287849242,
+            "metadata": {
+              "iteration": 5
+            }
+          },
+          {
+            "name": "fuzzy_1000_short_iteration_6",
+            "duration": 0.7085829999998623,
+            "memoryUsed": 98936856,
+            "memoryDelta": 53080,
+            "timestamp": 1754287849243,
+            "metadata": {
+              "iteration": 6
+            }
+          },
+          {
+            "name": "fuzzy_1000_short_iteration_7",
+            "duration": 0.6874579999998787,
+            "memoryUsed": 98990648,
+            "memoryDelta": 53120,
+            "timestamp": 1754287849243,
+            "metadata": {
+              "iteration": 7
+            }
+          },
+          {
+            "name": "fuzzy_1000_short_iteration_8",
+            "duration": 0.8012919999998758,
+            "memoryUsed": 99044400,
+            "memoryDelta": 53080,
+            "timestamp": 1754287849244,
+            "metadata": {
+              "iteration": 8
+            }
+          },
+          {
+            "name": "fuzzy_1000_short_iteration_9",
+            "duration": 0.6846660000001066,
+            "memoryUsed": 99098152,
+            "memoryDelta": 53080,
+            "timestamp": 1754287849245,
+            "metadata": {
+              "iteration": 9
+            }
+          },
+          {
+            "name": "fuzzy_1000_short_iteration_10",
+            "duration": 0.683667000000014,
+            "memoryUsed": 99151904,
+            "memoryDelta": 53080,
+            "timestamp": 1754287849246,
+            "metadata": {
+              "iteration": 10
+            }
+          },
+          {
+            "name": "fuzzy_1000_short_iteration_11",
+            "duration": 0.6706669999998667,
+            "memoryUsed": 99207080,
+            "memoryDelta": 53080,
+            "timestamp": 1754287849246,
+            "metadata": {
+              "iteration": 11
+            }
+          },
+          {
+            "name": "fuzzy_1000_short_iteration_12",
+            "duration": 0.6857080000002043,
+            "memoryUsed": 99265136,
+            "memoryDelta": 53080,
+            "timestamp": 1754287849247,
+            "metadata": {
+              "iteration": 12
+            }
+          },
+          {
+            "name": "fuzzy_1000_short_iteration_13",
+            "duration": 0.6675830000001497,
+            "memoryUsed": 99320312,
+            "memoryDelta": 53080,
+            "timestamp": 1754287849248,
+            "metadata": {
+              "iteration": 13
+            }
+          },
+          {
+            "name": "fuzzy_1000_short_iteration_14",
+            "duration": 0.6909160000000156,
+            "memoryUsed": 99375488,
+            "memoryDelta": 53080,
+            "timestamp": 1754287849248,
+            "metadata": {
+              "iteration": 14
+            }
+          },
+          {
+            "name": "fuzzy_1000_short_iteration_15",
+            "duration": 0.6774159999999938,
+            "memoryUsed": 99430664,
+            "memoryDelta": 53080,
+            "timestamp": 1754287849249,
+            "metadata": {
+              "iteration": 15
+            }
+          },
+          {
+            "name": "fuzzy_1000_short_iteration_16",
+            "duration": 0.6705829999998514,
+            "memoryUsed": 99485840,
+            "memoryDelta": 53080,
+            "timestamp": 1754287849250,
+            "metadata": {
+              "iteration": 16
+            }
+          },
+          {
+            "name": "fuzzy_1000_short_iteration_17",
+            "duration": 0.6897089999999935,
+            "memoryUsed": 99541056,
+            "memoryDelta": 53120,
+            "timestamp": 1754287849250,
+            "metadata": {
+              "iteration": 17
+            }
+          },
+          {
+            "name": "fuzzy_1000_short_iteration_18",
+            "duration": 0.6747089999998934,
+            "memoryUsed": 99596592,
+            "memoryDelta": 53080,
+            "timestamp": 1754287849251,
+            "metadata": {
+              "iteration": 18
+            }
+          }
+        ],
+        "percentiles": {
+          "p50": 0.683667000000014,
+          "p90": 0.7085829999998623,
+          "p95": 0.8012919999998758,
+          "p99": 0.8012919999998758
+        },
+        "memoryPeakUsage": 99596592,
+        "memoryAverageUsage": 99101910.31578948
+      },
+      "category": "fuzzy_matching",
+      "dataSize": 1000,
+      "metadata": {
+        "itemCount": 1000,
+        "queryLength": 2,
+        "queryType": "short"
+      }
+    },
+    {
+      "name": "Fuzzy Match - 1000 items, Medium query (7 chars)",
+      "report": {
+        "totalDuration": 6.885834000000159,
+        "averageDuration": 0.6259849090909235,
+        "minDuration": 0.6071249999999964,
+        "maxDuration": 0.6560420000000704,
+        "iterations": 11,
+        "metrics": [
+          {
+            "name": "fuzzy_1000_medium_iteration_0",
+            "duration": 0.622291000000132,
+            "memoryUsed": 99819760,
+            "memoryDelta": 53112,
+            "timestamp": 1754287849254,
+            "metadata": {
+              "iteration": 0
+            }
+          },
+          {
+            "name": "fuzzy_1000_medium_iteration_1",
+            "duration": 0.6560420000000704,
+            "memoryUsed": 99873664,
+            "memoryDelta": 53080,
+            "timestamp": 1754287849254,
+            "metadata": {
+              "iteration": 1
+            }
+          },
+          {
+            "name": "fuzzy_1000_medium_iteration_2",
+            "duration": 0.6269170000000486,
+            "memoryUsed": 99927416,
+            "memoryDelta": 53080,
+            "timestamp": 1754287849255,
+            "metadata": {
+              "iteration": 2
+            }
+          },
+          {
+            "name": "fuzzy_1000_medium_iteration_3",
+            "duration": 0.630333999999948,
+            "memoryUsed": 99981168,
+            "memoryDelta": 53080,
+            "timestamp": 1754287849255,
+            "metadata": {
+              "iteration": 3
+            }
+          },
+          {
+            "name": "fuzzy_1000_medium_iteration_4",
+            "duration": 0.6257089999999152,
+            "memoryUsed": 100036040,
+            "memoryDelta": 54200,
+            "timestamp": 1754287849256,
+            "metadata": {
+              "iteration": 4
+            }
+          },
+          {
+            "name": "fuzzy_1000_medium_iteration_5",
+            "duration": 0.624416999999994,
+            "memoryUsed": 100089792,
+            "memoryDelta": 53080,
+            "timestamp": 1754287849257,
+            "metadata": {
+              "iteration": 5
+            }
+          },
+          {
+            "name": "fuzzy_1000_medium_iteration_6",
+            "duration": 0.6162500000000364,
+            "memoryUsed": 100143544,
+            "memoryDelta": 53080,
+            "timestamp": 1754287849257,
+            "metadata": {
+              "iteration": 6
+            }
+          },
+          {
+            "name": "fuzzy_1000_medium_iteration_7",
+            "duration": 0.6071249999999964,
+            "memoryUsed": 100197296,
+            "memoryDelta": 53080,
+            "timestamp": 1754287849258,
+            "metadata": {
+              "iteration": 7
+            }
+          },
+          {
+            "name": "fuzzy_1000_medium_iteration_8",
+            "duration": 0.6187079999999696,
+            "memoryUsed": 100251048,
+            "memoryDelta": 53080,
+            "timestamp": 1754287849259,
+            "metadata": {
+              "iteration": 8
+            }
+          },
+          {
+            "name": "fuzzy_1000_medium_iteration_9",
+            "duration": 0.6308329999999387,
+            "memoryUsed": 100304824,
+            "memoryDelta": 53104,
+            "timestamp": 1754287849259,
+            "metadata": {
+              "iteration": 9
+            }
+          },
+          {
+            "name": "fuzzy_1000_medium_iteration_10",
+            "duration": 0.6272080000001097,
+            "memoryUsed": 100358576,
+            "memoryDelta": 53080,
+            "timestamp": 1754287849260,
+            "metadata": {
+              "iteration": 10
+            }
+          }
+        ],
+        "percentiles": {
+          "p50": 0.6257089999999152,
+          "p90": 0.6308329999999387,
+          "p95": 0.6560420000000704,
+          "p99": 0.6560420000000704
+        },
+        "memoryPeakUsage": 100358576,
+        "memoryAverageUsage": 100089375.27272727
+      },
+      "category": "fuzzy_matching",
+      "dataSize": 1000,
+      "metadata": {
+        "itemCount": 1000,
+        "queryLength": 7,
+        "queryType": "medium"
+      }
+    },
+    {
+      "name": "Fuzzy Match - 1000 items, Long query (23 chars)",
+      "report": {
+        "totalDuration": 2.144042999999783,
+        "averageDuration": 0.10720214999998916,
+        "minDuration": 0.10391600000002654,
+        "maxDuration": 0.13095899999984795,
+        "iterations": 20,
+        "metrics": [
+          {
+            "name": "fuzzy_1000_long_iteration_0",
+            "duration": 0.10766699999999219,
+            "memoryUsed": 100519912,
+            "memoryDelta": 38272,
+            "timestamp": 1754287849260,
+            "metadata": {
+              "iteration": 0
+            }
+          },
+          {
+            "name": "fuzzy_1000_long_iteration_1",
+            "duration": 0.1063329999999496,
+            "memoryUsed": 100559008,
+            "memoryDelta": 38272,
+            "timestamp": 1754287849260,
+            "metadata": {
+              "iteration": 1
+            }
+          },
+          {
+            "name": "fuzzy_1000_long_iteration_2",
+            "duration": 0.10533299999997325,
+            "memoryUsed": 100597952,
+            "memoryDelta": 38272,
+            "timestamp": 1754287849261,
+            "metadata": {
+              "iteration": 2
+            }
+          },
+          {
+            "name": "fuzzy_1000_long_iteration_3",
+            "duration": 0.10449999999991633,
+            "memoryUsed": 100636896,
+            "memoryDelta": 38272,
+            "timestamp": 1754287849261,
+            "metadata": {
+              "iteration": 3
+            }
+          },
+          {
+            "name": "fuzzy_1000_long_iteration_4",
+            "duration": 0.10516600000005383,
+            "memoryUsed": 100675840,
+            "memoryDelta": 38272,
+            "timestamp": 1754287849261,
+            "metadata": {
+              "iteration": 4
+            }
+          },
+          {
+            "name": "fuzzy_1000_long_iteration_5",
+            "duration": 0.104584000000159,
+            "memoryUsed": 100714784,
+            "memoryDelta": 38272,
+            "timestamp": 1754287849261,
+            "metadata": {
+              "iteration": 5
+            }
+          },
+          {
+            "name": "fuzzy_1000_long_iteration_6",
+            "duration": 0.10408400000005713,
+            "memoryUsed": 100753728,
+            "memoryDelta": 38272,
+            "timestamp": 1754287849261,
+            "metadata": {
+              "iteration": 6
+            }
+          },
+          {
+            "name": "fuzzy_1000_long_iteration_7",
+            "duration": 0.10487499999999272,
+            "memoryUsed": 100792672,
+            "memoryDelta": 38272,
+            "timestamp": 1754287849261,
+            "metadata": {
+              "iteration": 7
+            }
+          },
+          {
+            "name": "fuzzy_1000_long_iteration_8",
+            "duration": 0.10391699999991033,
+            "memoryUsed": 100831656,
+            "memoryDelta": 38312,
+            "timestamp": 1754287849261,
+            "metadata": {
+              "iteration": 8
+            }
+          },
+          {
+            "name": "fuzzy_1000_long_iteration_9",
+            "duration": 0.13095899999984795,
+            "memoryUsed": 100873400,
+            "memoryDelta": 41072,
+            "timestamp": 1754287849261,
+            "metadata": {
+              "iteration": 9
+            }
+          },
+          {
+            "name": "fuzzy_1000_long_iteration_10",
+            "duration": 0.11262499999997999,
+            "memoryUsed": 100912152,
+            "memoryDelta": 38176,
+            "timestamp": 1754287849261,
+            "metadata": {
+              "iteration": 10
+            }
+          },
+          {
+            "name": "fuzzy_1000_long_iteration_11",
+            "duration": 0.10391600000002654,
+            "memoryUsed": 100952328,
+            "memoryDelta": 38176,
+            "timestamp": 1754287849262,
+            "metadata": {
+              "iteration": 11
+            }
+          },
+          {
+            "name": "fuzzy_1000_long_iteration_12",
+            "duration": 0.11095799999998235,
+            "memoryUsed": 100992504,
+            "memoryDelta": 38176,
+            "timestamp": 1754287849262,
+            "metadata": {
+              "iteration": 12
+            }
+          },
+          {
+            "name": "fuzzy_1000_long_iteration_13",
+            "duration": 0.10512500000004366,
+            "memoryUsed": 101032680,
+            "memoryDelta": 38176,
+            "timestamp": 1754287849262,
+            "metadata": {
+              "iteration": 13
+            }
+          },
+          {
+            "name": "fuzzy_1000_long_iteration_14",
+            "duration": 0.1042499999998654,
+            "memoryUsed": 101072856,
+            "memoryDelta": 38176,
+            "timestamp": 1754287849262,
+            "metadata": {
+              "iteration": 14
+            }
+          },
+          {
+            "name": "fuzzy_1000_long_iteration_15",
+            "duration": 0.10812499999997272,
+            "memoryUsed": 101113064,
+            "memoryDelta": 38208,
+            "timestamp": 1754287849262,
+            "metadata": {
+              "iteration": 15
+            }
+          },
+          {
+            "name": "fuzzy_1000_long_iteration_16",
+            "duration": 0.10470899999995709,
+            "memoryUsed": 101153240,
+            "memoryDelta": 38176,
+            "timestamp": 1754287849262,
+            "metadata": {
+              "iteration": 16
+            }
+          },
+          {
+            "name": "fuzzy_1000_long_iteration_17",
+            "duration": 0.10416699999996126,
+            "memoryUsed": 101193416,
+            "memoryDelta": 38176,
+            "timestamp": 1754287849262,
+            "metadata": {
+              "iteration": 17
+            }
+          },
+          {
+            "name": "fuzzy_1000_long_iteration_18",
+            "duration": 0.10824999999999818,
+            "memoryUsed": 101233952,
+            "memoryDelta": 38176,
+            "timestamp": 1754287849262,
+            "metadata": {
+              "iteration": 18
+            }
+          },
+          {
+            "name": "fuzzy_1000_long_iteration_19",
+            "duration": 0.1045000000001437,
+            "memoryUsed": 101274128,
+            "memoryDelta": 38176,
+            "timestamp": 1754287849262,
+            "metadata": {
+              "iteration": 19
+            }
+          }
+        ],
+        "percentiles": {
+          "p50": 0.10487499999999272,
+          "p90": 0.11095799999998235,
+          "p95": 0.11262499999997999,
+          "p99": 0.13095899999984795
+        },
+        "memoryPeakUsage": 101274128,
+        "memoryAverageUsage": 100894308.4
+      },
+      "category": "fuzzy_matching",
+      "dataSize": 1000,
+      "metadata": {
+        "itemCount": 1000,
+        "queryLength": 25,
+        "queryType": "long"
+      }
+    },
+    {
+      "name": "Fuzzy Match - 1000 items, Partial hierarchical match",
+      "report": {
+        "totalDuration": 5.964168999999856,
+        "averageDuration": 0.5421971818181688,
+        "minDuration": 0.5177919999998721,
+        "maxDuration": 0.5805000000000291,
+        "iterations": 11,
+        "metrics": [
+          {
+            "name": "fuzzy_1000_partial_iteration_0",
+            "duration": 0.5318750000001273,
+            "memoryUsed": 101438272,
+            "memoryDelta": 38208,
+            "timestamp": 1754287849264,
+            "metadata": {
+              "iteration": 0
+            }
+          },
+          {
+            "name": "fuzzy_1000_partial_iteration_1",
+            "duration": 0.5780420000000959,
+            "memoryUsed": 101477208,
+            "memoryDelta": 38208,
+            "timestamp": 1754287849265,
+            "metadata": {
+              "iteration": 1
+            }
+          },
+          {
+            "name": "fuzzy_1000_partial_iteration_2",
+            "duration": 0.5249999999998636,
+            "memoryUsed": 101515992,
+            "memoryDelta": 38208,
+            "timestamp": 1754287849266,
+            "metadata": {
+              "iteration": 2
+            }
+          },
+          {
+            "name": "fuzzy_1000_partial_iteration_3",
+            "duration": 0.5805000000000291,
+            "memoryUsed": 101558752,
+            "memoryDelta": 42184,
+            "timestamp": 1754287849266,
+            "metadata": {
+              "iteration": 3
+            }
+          },
+          {
+            "name": "fuzzy_1000_partial_iteration_4",
+            "duration": 0.5509580000000369,
+            "memoryUsed": 101597504,
+            "memoryDelta": 38192,
+            "timestamp": 1754287849267,
+            "metadata": {
+              "iteration": 4
+            }
+          },
+          {
+            "name": "fuzzy_1000_partial_iteration_5",
+            "duration": 0.5269590000000335,
+            "memoryUsed": 101636264,
+            "memoryDelta": 38200,
+            "timestamp": 1754287849267,
+            "metadata": {
+              "iteration": 5
+            }
+          },
+          {
+            "name": "fuzzy_1000_partial_iteration_6",
+            "duration": 0.5237499999998363,
+            "memoryUsed": 101675016,
+            "memoryDelta": 38192,
+            "timestamp": 1754287849268,
+            "metadata": {
+              "iteration": 6
+            }
+          },
+          {
+            "name": "fuzzy_1000_partial_iteration_7",
+            "duration": 0.5695840000000771,
+            "memoryUsed": 101713768,
+            "memoryDelta": 38192,
+            "timestamp": 1754287849268,
+            "metadata": {
+              "iteration": 7
+            }
+          },
+          {
+            "name": "fuzzy_1000_partial_iteration_8",
+            "duration": 0.5351670000000013,
+            "memoryUsed": 101752520,
+            "memoryDelta": 38192,
+            "timestamp": 1754287849269,
+            "metadata": {
+              "iteration": 8
+            }
+          },
+          {
+            "name": "fuzzy_1000_partial_iteration_9",
+            "duration": 0.5177919999998721,
+            "memoryUsed": 101791272,
+            "memoryDelta": 38192,
+            "timestamp": 1754287849269,
+            "metadata": {
+              "iteration": 9
+            }
+          },
+          {
+            "name": "fuzzy_1000_partial_iteration_10",
+            "duration": 0.524541999999883,
+            "memoryUsed": 101830024,
+            "memoryDelta": 38192,
+            "timestamp": 1754287849270,
+            "metadata": {
+              "iteration": 10
+            }
+          }
+        ],
+        "percentiles": {
+          "p50": 0.5318750000001273,
+          "p90": 0.5780420000000959,
+          "p95": 0.5805000000000291,
+          "p99": 0.5805000000000291
+        },
+        "memoryPeakUsage": 101830024,
+        "memoryAverageUsage": 101635144.72727273
+      },
+      "category": "fuzzy_matching",
+      "dataSize": 1000,
+      "metadata": {
+        "itemCount": 1000,
+        "queryLength": 10,
+        "queryType": "partial"
+      }
+    },
+    {
+      "name": "Fuzzy Match - 5000 items, Short query (2 chars)",
+      "report": {
+        "totalDuration": 36.47254100000032,
+        "averageDuration": 3.3156855454545746,
+        "minDuration": 3.275709000000006,
+        "maxDuration": 3.3950419999998758,
+        "iterations": 11,
+        "metrics": [
+          {
+            "name": "fuzzy_5000_short_iteration_0",
+            "duration": 3.339583000000175,
+            "memoryUsed": 38371584,
+            "memoryDelta": 271040,
+            "timestamp": 1754287849285,
+            "metadata": {
+              "iteration": 0
+            }
+          },
+          {
+            "name": "fuzzy_5000_short_iteration_1",
+            "duration": 3.2844159999999647,
+            "memoryUsed": 38643304,
+            "memoryDelta": 271008,
+            "timestamp": 1754287849288,
+            "metadata": {
+              "iteration": 1
+            }
+          },
+          {
+            "name": "fuzzy_5000_short_iteration_2",
+            "duration": 3.277958000000126,
+            "memoryUsed": 38914880,
+            "memoryDelta": 271016,
+            "timestamp": 1754287849292,
+            "metadata": {
+              "iteration": 2
+            }
+          },
+          {
+            "name": "fuzzy_5000_short_iteration_3",
+            "duration": 3.3209999999999127,
+            "memoryUsed": 39186472,
+            "memoryDelta": 271032,
+            "timestamp": 1754287849295,
+            "metadata": {
+              "iteration": 3
+            }
+          },
+          {
+            "name": "fuzzy_5000_short_iteration_4",
+            "duration": 3.3270410000000084,
+            "memoryUsed": 39458040,
+            "memoryDelta": 271008,
+            "timestamp": 1754287849298,
+            "metadata": {
+              "iteration": 4
+            }
+          },
+          {
+            "name": "fuzzy_5000_short_iteration_5",
+            "duration": 3.337582999999995,
+            "memoryUsed": 39732320,
+            "memoryDelta": 273720,
+            "timestamp": 1754287849302,
+            "metadata": {
+              "iteration": 5
+            }
+          },
+          {
+            "name": "fuzzy_5000_short_iteration_6",
+            "duration": 3.2834580000001097,
+            "memoryUsed": 40003896,
+            "memoryDelta": 271016,
+            "timestamp": 1754287849305,
+            "metadata": {
+              "iteration": 6
+            }
+          },
+          {
+            "name": "fuzzy_5000_short_iteration_7",
+            "duration": 3.3950419999998758,
+            "memoryUsed": 40275496,
+            "memoryDelta": 271040,
+            "timestamp": 1754287849308,
+            "metadata": {
+              "iteration": 7
+            }
+          },
+          {
+            "name": "fuzzy_5000_short_iteration_8",
+            "duration": 3.3047090000000026,
+            "memoryUsed": 40547080,
+            "memoryDelta": 271024,
+            "timestamp": 1754287849312,
+            "metadata": {
+              "iteration": 8
+            }
+          },
+          {
+            "name": "fuzzy_5000_short_iteration_9",
+            "duration": 3.275709000000006,
+            "memoryUsed": 40818656,
+            "memoryDelta": 271016,
+            "timestamp": 1754287849315,
+            "metadata": {
+              "iteration": 9
+            }
+          },
+          {
+            "name": "fuzzy_5000_short_iteration_10",
+            "duration": 3.326042000000143,
+            "memoryUsed": 41091368,
+            "memoryDelta": 272152,
+            "timestamp": 1754287849318,
+            "metadata": {
+              "iteration": 10
+            }
+          }
+        ],
+        "percentiles": {
+          "p50": 3.3209999999999127,
+          "p90": 3.339583000000175,
+          "p95": 3.3950419999998758,
+          "p99": 3.3950419999998758
+        },
+        "memoryPeakUsage": 41091368,
+        "memoryAverageUsage": 39731190.54545455
+      },
+      "category": "fuzzy_matching",
+      "dataSize": 5000,
+      "metadata": {
+        "itemCount": 5000,
+        "queryLength": 2,
+        "queryType": "short"
+      }
+    },
+    {
+      "name": "Fuzzy Match - 5000 items, Medium query (7 chars)",
+      "report": {
+        "totalDuration": 33.6249579999992,
+        "averageDuration": 3.0568143636362906,
+        "minDuration": 2.9919589999999516,
+        "maxDuration": 3.1416659999999865,
+        "iterations": 11,
+        "metrics": [
+          {
+            "name": "fuzzy_5000_medium_iteration_0",
+            "duration": 3.023249999999962,
+            "memoryUsed": 42190928,
+            "memoryDelta": 271024,
+            "timestamp": 1754287849330,
+            "metadata": {
+              "iteration": 0
+            }
+          },
+          {
+            "name": "fuzzy_5000_medium_iteration_1",
+            "duration": 3.076667000000043,
+            "memoryUsed": 42462648,
+            "memoryDelta": 271008,
+            "timestamp": 1754287849333,
+            "metadata": {
+              "iteration": 1
+            }
+          },
+          {
+            "name": "fuzzy_5000_medium_iteration_2",
+            "duration": 2.994457999999895,
+            "memoryUsed": 42734232,
+            "memoryDelta": 271024,
+            "timestamp": 1754287849336,
+            "metadata": {
+              "iteration": 2
+            }
+          },
+          {
+            "name": "fuzzy_5000_medium_iteration_3",
+            "duration": 3.1416659999999865,
+            "memoryUsed": 43005816,
+            "memoryDelta": 271024,
+            "timestamp": 1754287849340,
+            "metadata": {
+              "iteration": 3
+            }
+          },
+          {
+            "name": "fuzzy_5000_medium_iteration_4",
+            "duration": 3.0629579999999805,
+            "memoryUsed": 43278056,
+            "memoryDelta": 271680,
+            "timestamp": 1754287849343,
+            "metadata": {
+              "iteration": 4
+            }
+          },
+          {
+            "name": "fuzzy_5000_medium_iteration_5",
+            "duration": 3.068083999999999,
+            "memoryUsed": 43553512,
+            "memoryDelta": 274896,
+            "timestamp": 1754287849346,
+            "metadata": {
+              "iteration": 5
+            }
+          },
+          {
+            "name": "fuzzy_5000_medium_iteration_6",
+            "duration": 3.1170419999998558,
+            "memoryUsed": 43825088,
+            "memoryDelta": 271016,
+            "timestamp": 1754287849349,
+            "metadata": {
+              "iteration": 6
+            }
+          },
+          {
+            "name": "fuzzy_5000_medium_iteration_7",
+            "duration": 3.040207999999893,
+            "memoryUsed": 44096688,
+            "memoryDelta": 271040,
+            "timestamp": 1754287849352,
+            "metadata": {
+              "iteration": 7
+            }
+          },
+          {
+            "name": "fuzzy_5000_medium_iteration_8",
+            "duration": 2.9919589999999516,
+            "memoryUsed": 44368264,
+            "memoryDelta": 271016,
+            "timestamp": 1754287849355,
+            "metadata": {
+              "iteration": 8
+            }
+          },
+          {
+            "name": "fuzzy_5000_medium_iteration_9",
+            "duration": 2.993624999999838,
+            "memoryUsed": 44639832,
+            "memoryDelta": 271008,
+            "timestamp": 1754287849358,
+            "metadata": {
+              "iteration": 9
+            }
+          },
+          {
+            "name": "fuzzy_5000_medium_iteration_10",
+            "duration": 3.115040999999792,
+            "memoryUsed": 44914040,
+            "memoryDelta": 273648,
+            "timestamp": 1754287849361,
+            "metadata": {
+              "iteration": 10
+            }
+          }
+        ],
+        "percentiles": {
+          "p50": 3.0629579999999805,
+          "p90": 3.1170419999998558,
+          "p95": 3.1416659999999865,
+          "p99": 3.1416659999999865
+        },
+        "memoryPeakUsage": 44914040,
+        "memoryAverageUsage": 43551736.72727273
+      },
+      "category": "fuzzy_matching",
+      "dataSize": 5000,
+      "metadata": {
+        "itemCount": 5000,
+        "queryLength": 7,
+        "queryType": "medium"
+      }
+    },
+    {
+      "name": "Fuzzy Match - 5000 items, Long query (23 chars)",
+      "report": {
+        "totalDuration": 5.548958000000312,
+        "averageDuration": 0.5044507272727556,
+        "minDuration": 0.4980000000000473,
+        "maxDuration": 0.5183750000001055,
+        "iterations": 11,
+        "metrics": [
+          {
+            "name": "fuzzy_5000_long_iteration_0",
+            "duration": 0.503458000000137,
+            "memoryUsed": 45654344,
+            "memoryDelta": 182952,
+            "timestamp": 1754287849363,
+            "metadata": {
+              "iteration": 0
+            }
+          },
+          {
+            "name": "fuzzy_5000_long_iteration_1",
+            "duration": 0.5155420000000959,
+            "memoryUsed": 45837992,
+            "memoryDelta": 182936,
+            "timestamp": 1754287849364,
+            "metadata": {
+              "iteration": 1
+            }
+          },
+          {
+            "name": "fuzzy_5000_long_iteration_2",
+            "duration": 0.4988330000001042,
+            "memoryUsed": 46021496,
+            "memoryDelta": 182944,
+            "timestamp": 1754287849364,
+            "metadata": {
+              "iteration": 2
+            }
+          },
+          {
+            "name": "fuzzy_5000_long_iteration_3",
+            "duration": 0.5183750000001055,
+            "memoryUsed": 46205008,
+            "memoryDelta": 182952,
+            "timestamp": 1754287849365,
+            "metadata": {
+              "iteration": 3
+            }
+          },
+          {
+            "name": "fuzzy_5000_long_iteration_4",
+            "duration": 0.5023329999999078,
+            "memoryUsed": 46388504,
+            "memoryDelta": 182936,
+            "timestamp": 1754287849365,
+            "metadata": {
+              "iteration": 4
+            }
+          },
+          {
+            "name": "fuzzy_5000_long_iteration_5",
+            "duration": 0.49974999999994907,
+            "memoryUsed": 46572016,
+            "memoryDelta": 182952,
+            "timestamp": 1754287849366,
+            "metadata": {
+              "iteration": 5
+            }
+          },
+          {
+            "name": "fuzzy_5000_long_iteration_6",
+            "duration": 0.5040830000000369,
+            "memoryUsed": 46755544,
+            "memoryDelta": 182968,
+            "timestamp": 1754287849366,
+            "metadata": {
+              "iteration": 6
+            }
+          },
+          {
+            "name": "fuzzy_5000_long_iteration_7",
+            "duration": 0.4980000000000473,
+            "memoryUsed": 46939040,
+            "memoryDelta": 182936,
+            "timestamp": 1754287849367,
+            "metadata": {
+              "iteration": 7
+            }
+          },
+          {
+            "name": "fuzzy_5000_long_iteration_8",
+            "duration": 0.5022500000000036,
+            "memoryUsed": 47122544,
+            "memoryDelta": 182944,
+            "timestamp": 1754287849367,
+            "metadata": {
+              "iteration": 8
+            }
+          },
+          {
+            "name": "fuzzy_5000_long_iteration_9",
+            "duration": 0.5017500000001291,
+            "memoryUsed": 47306064,
+            "memoryDelta": 182960,
+            "timestamp": 1754287849368,
+            "metadata": {
+              "iteration": 9
+            }
+          },
+          {
+            "name": "fuzzy_5000_long_iteration_10",
+            "duration": 0.5045839999997952,
+            "memoryUsed": 47489568,
+            "memoryDelta": 182944,
+            "timestamp": 1754287849368,
+            "metadata": {
+              "iteration": 10
+            }
+          }
+        ],
+        "percentiles": {
+          "p50": 0.5023329999999078,
+          "p90": 0.5155420000000959,
+          "p95": 0.5183750000001055,
+          "p99": 0.5183750000001055
+        },
+        "memoryPeakUsage": 47489568,
+        "memoryAverageUsage": 46572010.90909091
+      },
+      "category": "fuzzy_matching",
+      "dataSize": 5000,
+      "metadata": {
+        "itemCount": 5000,
+        "queryLength": 25,
+        "queryType": "long"
+      }
+    },
+    {
+      "name": "Fuzzy Match - 5000 items, Partial hierarchical match",
+      "report": {
+        "totalDuration": 27.828334000000268,
+        "averageDuration": 2.52984854545457,
+        "minDuration": 2.4907089999999243,
+        "maxDuration": 2.566332999999986,
+        "iterations": 11,
+        "metrics": [
+          {
+            "name": "fuzzy_5000_partial_iteration_0",
+            "duration": 2.5558340000000044,
+            "memoryUsed": 48230992,
+            "memoryDelta": 183208,
+            "timestamp": 1754287849378,
+            "metadata": {
+              "iteration": 0
+            }
+          },
+          {
+            "name": "fuzzy_5000_partial_iteration_1",
+            "duration": 2.5286250000001473,
+            "memoryUsed": 48414920,
+            "memoryDelta": 183216,
+            "timestamp": 1754287849381,
+            "metadata": {
+              "iteration": 1
+            }
+          },
+          {
+            "name": "fuzzy_5000_partial_iteration_2",
+            "duration": 2.5425830000001497,
+            "memoryUsed": 48598688,
+            "memoryDelta": 183208,
+            "timestamp": 1754287849383,
+            "metadata": {
+              "iteration": 2
+            }
+          },
+          {
+            "name": "fuzzy_5000_partial_iteration_3",
+            "duration": 2.5179579999999078,
+            "memoryUsed": 48782480,
+            "memoryDelta": 183232,
+            "timestamp": 1754287849386,
+            "metadata": {
+              "iteration": 3
+            }
+          },
+          {
+            "name": "fuzzy_5000_partial_iteration_4",
+            "duration": 2.4907089999999243,
+            "memoryUsed": 48966248,
+            "memoryDelta": 183208,
+            "timestamp": 1754287849388,
+            "metadata": {
+              "iteration": 4
+            }
+          },
+          {
+            "name": "fuzzy_5000_partial_iteration_5",
+            "duration": 2.5434170000000904,
+            "memoryUsed": 49150024,
+            "memoryDelta": 183216,
+            "timestamp": 1754287849391,
+            "metadata": {
+              "iteration": 5
+            }
+          },
+          {
+            "name": "fuzzy_5000_partial_iteration_6",
+            "duration": 2.552500000000009,
+            "memoryUsed": 49333800,
+            "memoryDelta": 183216,
+            "timestamp": 1754287849394,
+            "metadata": {
+              "iteration": 6
+            }
+          },
+          {
+            "name": "fuzzy_5000_partial_iteration_7",
+            "duration": 2.566332999999986,
+            "memoryUsed": 49517568,
+            "memoryDelta": 183208,
+            "timestamp": 1754287849396,
+            "metadata": {
+              "iteration": 7
+            }
+          },
+          {
+            "name": "fuzzy_5000_partial_iteration_8",
+            "duration": 2.5176249999999527,
+            "memoryUsed": 49701336,
+            "memoryDelta": 183208,
+            "timestamp": 1754287849399,
+            "metadata": {
+              "iteration": 8
+            }
+          },
+          {
+            "name": "fuzzy_5000_partial_iteration_9",
+            "duration": 2.492375000000038,
+            "memoryUsed": 49885144,
+            "memoryDelta": 183248,
+            "timestamp": 1754287849401,
+            "metadata": {
+              "iteration": 9
+            }
+          },
+          {
+            "name": "fuzzy_5000_partial_iteration_10",
+            "duration": 2.520375000000058,
+            "memoryUsed": 50068912,
+            "memoryDelta": 183208,
+            "timestamp": 1754287849404,
+            "metadata": {
+              "iteration": 10
+            }
+          }
+        ],
+        "percentiles": {
+          "p50": 2.5286250000001473,
+          "p90": 2.5558340000000044,
+          "p95": 2.566332999999986,
+          "p99": 2.566332999999986
+        },
+        "memoryPeakUsage": 50068912,
+        "memoryAverageUsage": 49150010.18181818
+      },
+      "category": "fuzzy_matching",
+      "dataSize": 5000,
+      "metadata": {
+        "itemCount": 5000,
+        "queryLength": 10,
+        "queryType": "partial"
+      }
+    },
+    {
+      "name": "Fuzzy Match - 10000 items, Short query (2 chars)",
+      "report": {
+        "totalDuration": 74.07066599999962,
+        "averageDuration": 6.733696909090875,
+        "minDuration": 6.652165999999852,
+        "maxDuration": 6.951917000000094,
+        "iterations": 11,
+        "metrics": [
+          {
+            "name": "fuzzy_10000_short_iteration_0",
+            "duration": 6.709291000000121,
+            "memoryUsed": 54722208,
+            "memoryDelta": 547376,
+            "timestamp": 1754287849433,
+            "metadata": {
+              "iteration": 0
+            }
+          },
+          {
+            "name": "fuzzy_10000_short_iteration_1",
+            "duration": 6.707832999999937,
+            "memoryUsed": 55270280,
+            "memoryDelta": 547360,
+            "timestamp": 1754287849439,
+            "metadata": {
+              "iteration": 1
+            }
+          },
+          {
+            "name": "fuzzy_10000_short_iteration_2",
+            "duration": 6.652165999999852,
+            "memoryUsed": 55818216,
+            "memoryDelta": 547376,
+            "timestamp": 1754287849446,
+            "metadata": {
+              "iteration": 2
+            }
+          },
+          {
+            "name": "fuzzy_10000_short_iteration_3",
+            "duration": 6.768374999999878,
+            "memoryUsed": 56366176,
+            "memoryDelta": 547400,
+            "timestamp": 1754287849453,
+            "metadata": {
+              "iteration": 3
+            }
+          },
+          {
+            "name": "fuzzy_10000_short_iteration_4",
+            "duration": 6.951917000000094,
+            "memoryUsed": 56916992,
+            "memoryDelta": 550256,
+            "timestamp": 1754287849460,
+            "metadata": {
+              "iteration": 4
+            }
+          },
+          {
+            "name": "fuzzy_10000_short_iteration_5",
+            "duration": 6.788542000000007,
+            "memoryUsed": 57464896,
+            "memoryDelta": 547344,
+            "timestamp": 1754287849466,
+            "metadata": {
+              "iteration": 5
+            }
+          },
+          {
+            "name": "fuzzy_10000_short_iteration_6",
+            "duration": 6.742999999999938,
+            "memoryUsed": 58012800,
+            "memoryDelta": 547344,
+            "timestamp": 1754287849473,
+            "metadata": {
+              "iteration": 6
+            }
+          },
+          {
+            "name": "fuzzy_10000_short_iteration_7",
+            "duration": 6.692792000000054,
+            "memoryUsed": 58564760,
+            "memoryDelta": 551400,
+            "timestamp": 1754287849480,
+            "metadata": {
+              "iteration": 7
+            }
+          },
+          {
+            "name": "fuzzy_10000_short_iteration_8",
+            "duration": 6.706957999999986,
+            "memoryUsed": 59112672,
+            "memoryDelta": 547352,
+            "timestamp": 1754287849487,
+            "metadata": {
+              "iteration": 8
+            }
+          },
+          {
+            "name": "fuzzy_10000_short_iteration_9",
+            "duration": 6.674957999999833,
+            "memoryUsed": 59660608,
+            "memoryDelta": 547376,
+            "timestamp": 1754287849493,
+            "metadata": {
+              "iteration": 9
+            }
+          },
+          {
+            "name": "fuzzy_10000_short_iteration_10",
+            "duration": 6.674833999999919,
+            "memoryUsed": 60208528,
+            "memoryDelta": 547360,
+            "timestamp": 1754287849500,
+            "metadata": {
+              "iteration": 10
+            }
+          }
+        ],
+        "percentiles": {
+          "p50": 6.707832999999937,
+          "p90": 6.788542000000007,
+          "p95": 6.951917000000094,
+          "p99": 6.951917000000094
+        },
+        "memoryPeakUsage": 60208528,
+        "memoryAverageUsage": 57465285.09090909
+      },
+      "category": "fuzzy_matching",
+      "dataSize": 10000,
+      "metadata": {
+        "itemCount": 10000,
+        "queryLength": 2,
+        "queryType": "short"
+      }
+    },
+    {
+      "name": "Fuzzy Match - 10000 items, Medium query (7 chars)",
+      "report": {
+        "totalDuration": 68.06600000000003,
+        "averageDuration": 6.1878181818181845,
+        "minDuration": 6.101166000000376,
+        "maxDuration": 6.314540999999963,
+        "iterations": 11,
+        "metrics": [
+          {
+            "name": "fuzzy_10000_medium_iteration_0",
+            "duration": 6.293916999999965,
+            "memoryUsed": 62417464,
+            "memoryDelta": 550368,
+            "timestamp": 1754287849525,
+            "metadata": {
+              "iteration": 0
+            }
+          },
+          {
+            "name": "fuzzy_10000_medium_iteration_1",
+            "duration": 6.301208999999972,
+            "memoryUsed": 62967104,
+            "memoryDelta": 548928,
+            "timestamp": 1754287849532,
+            "metadata": {
+              "iteration": 1
+            }
+          },
+          {
+            "name": "fuzzy_10000_medium_iteration_2",
+            "duration": 6.314540999999963,
+            "memoryUsed": 63515040,
+            "memoryDelta": 547376,
+            "timestamp": 1754287849538,
+            "metadata": {
+              "iteration": 2
+            }
+          },
+          {
+            "name": "fuzzy_10000_medium_iteration_3",
+            "duration": 6.204707999999982,
+            "memoryUsed": 64069448,
+            "memoryDelta": 553848,
+            "timestamp": 1754287849544,
+            "metadata": {
+              "iteration": 3
+            }
+          },
+          {
+            "name": "fuzzy_10000_medium_iteration_4",
+            "duration": 6.1190419999998085,
+            "memoryUsed": 64617360,
+            "memoryDelta": 547352,
+            "timestamp": 1754287849550,
+            "metadata": {
+              "iteration": 4
+            }
+          },
+          {
+            "name": "fuzzy_10000_medium_iteration_5",
+            "duration": 6.146540999999843,
+            "memoryUsed": 65165296,
+            "memoryDelta": 547376,
+            "timestamp": 1754287849556,
+            "metadata": {
+              "iteration": 5
+            }
+          },
+          {
+            "name": "fuzzy_10000_medium_iteration_6",
+            "duration": 6.1963750000002165,
+            "memoryUsed": 65713216,
+            "memoryDelta": 547360,
+            "timestamp": 1754287849563,
+            "metadata": {
+              "iteration": 6
+            }
+          },
+          {
+            "name": "fuzzy_10000_medium_iteration_7",
+            "duration": 6.157459000000017,
+            "memoryUsed": 66261152,
+            "memoryDelta": 547376,
+            "timestamp": 1754287849569,
+            "metadata": {
+              "iteration": 7
+            }
+          },
+          {
+            "name": "fuzzy_10000_medium_iteration_8",
+            "duration": 6.129416999999648,
+            "memoryUsed": 66809056,
+            "memoryDelta": 547344,
+            "timestamp": 1754287849575,
+            "metadata": {
+              "iteration": 8
+            }
+          },
+          {
+            "name": "fuzzy_10000_medium_iteration_9",
+            "duration": 6.10162500000024,
+            "memoryUsed": 67371800,
+            "memoryDelta": 562184,
+            "timestamp": 1754287849581,
+            "metadata": {
+              "iteration": 9
+            }
+          },
+          {
+            "name": "fuzzy_10000_medium_iteration_10",
+            "duration": 6.101166000000376,
+            "memoryUsed": 67922152,
+            "memoryDelta": 549792,
+            "timestamp": 1754287849587,
+            "metadata": {
+              "iteration": 10
+            }
+          }
+        ],
+        "percentiles": {
+          "p50": 6.157459000000017,
+          "p90": 6.301208999999972,
+          "p95": 6.314540999999963,
+          "p99": 6.314540999999963
+        },
+        "memoryPeakUsage": 67922152,
+        "memoryAverageUsage": 65166280.72727273
+      },
+      "category": "fuzzy_matching",
+      "dataSize": 10000,
+      "metadata": {
+        "itemCount": 10000,
+        "queryLength": 7,
+        "queryType": "medium"
+      }
+    },
+    {
+      "name": "Fuzzy Match - 10000 items, Long query (23 chars)",
+      "report": {
+        "totalDuration": 11.647416000000248,
+        "averageDuration": 1.0588560000000227,
+        "minDuration": 1.03774999999996,
+        "maxDuration": 1.1837920000002669,
+        "iterations": 11,
+        "metrics": [
+          {
+            "name": "fuzzy_10000_long_iteration_0",
+            "duration": 1.0548330000001442,
+            "memoryUsed": 69389576,
+            "memoryDelta": 364712,
+            "timestamp": 1754287849591,
+            "metadata": {
+              "iteration": 0
+            }
+          },
+          {
+            "name": "fuzzy_10000_long_iteration_1",
+            "duration": 1.0389580000000933,
+            "memoryUsed": 69755008,
+            "memoryDelta": 364720,
+            "timestamp": 1754287849592,
+            "metadata": {
+              "iteration": 1
+            }
+          },
+          {
+            "name": "fuzzy_10000_long_iteration_2",
+            "duration": 1.1837920000002669,
+            "memoryUsed": 70120272,
+            "memoryDelta": 364704,
+            "timestamp": 1754287849594,
+            "metadata": {
+              "iteration": 2
+            }
+          },
+          {
+            "name": "fuzzy_10000_long_iteration_3",
+            "duration": 1.0738750000000437,
+            "memoryUsed": 70485568,
+            "memoryDelta": 364736,
+            "timestamp": 1754287849595,
+            "metadata": {
+              "iteration": 3
+            }
+          },
+          {
+            "name": "fuzzy_10000_long_iteration_4",
+            "duration": 1.0452500000001237,
+            "memoryUsed": 70850848,
+            "memoryDelta": 364720,
+            "timestamp": 1754287849596,
+            "metadata": {
+              "iteration": 4
+            }
+          },
+          {
+            "name": "fuzzy_10000_long_iteration_5",
+            "duration": 1.03774999999996,
+            "memoryUsed": 71216144,
+            "memoryDelta": 364736,
+            "timestamp": 1754287849597,
+            "metadata": {
+              "iteration": 5
+            }
+          },
+          {
+            "name": "fuzzy_10000_long_iteration_6",
+            "duration": 1.0377919999996266,
+            "memoryUsed": 71581408,
+            "memoryDelta": 364704,
+            "timestamp": 1754287849598,
+            "metadata": {
+              "iteration": 6
+            }
+          },
+          {
+            "name": "fuzzy_10000_long_iteration_7",
+            "duration": 1.0445420000000922,
+            "memoryUsed": 71946688,
+            "memoryDelta": 364720,
+            "timestamp": 1754287849599,
+            "metadata": {
+              "iteration": 7
+            }
+          },
+          {
+            "name": "fuzzy_10000_long_iteration_8",
+            "duration": 1.0460410000000593,
+            "memoryUsed": 72311984,
+            "memoryDelta": 364736,
+            "timestamp": 1754287849600,
+            "metadata": {
+              "iteration": 8
+            }
+          },
+          {
+            "name": "fuzzy_10000_long_iteration_9",
+            "duration": 1.0382079999999405,
+            "memoryUsed": 72677272,
+            "memoryDelta": 364728,
+            "timestamp": 1754287849601,
+            "metadata": {
+              "iteration": 9
+            }
+          },
+          {
+            "name": "fuzzy_10000_long_iteration_10",
+            "duration": 1.0463749999998981,
+            "memoryUsed": 73042576,
+            "memoryDelta": 364744,
+            "timestamp": 1754287849602,
+            "metadata": {
+              "iteration": 10
+            }
+          }
+        ],
+        "percentiles": {
+          "p50": 1.0452500000001237,
+          "p90": 1.0738750000000437,
+          "p95": 1.1837920000002669,
+          "p99": 1.1837920000002669
+        },
+        "memoryPeakUsage": 73042576,
+        "memoryAverageUsage": 71216122.18181819
+      },
+      "category": "fuzzy_matching",
+      "dataSize": 10000,
+      "metadata": {
+        "itemCount": 10000,
+        "queryLength": 25,
+        "queryType": "long"
+      }
+    },
+    {
+      "name": "Fuzzy Match - 10000 items, Partial hierarchical match",
+      "report": {
+        "totalDuration": 56.978956000000835,
+        "averageDuration": 5.179905090909167,
+        "minDuration": 5.101791000000048,
+        "maxDuration": 5.351750000000266,
+        "iterations": 11,
+        "metrics": [
+          {
+            "name": "fuzzy_10000_partial_iteration_0",
+            "duration": 5.141375000000153,
+            "memoryUsed": 74512056,
+            "memoryDelta": 365280,
+            "timestamp": 1754287849623,
+            "metadata": {
+              "iteration": 0
+            }
+          },
+          {
+            "name": "fuzzy_10000_partial_iteration_1",
+            "duration": 5.351750000000266,
+            "memoryUsed": 74877984,
+            "memoryDelta": 365216,
+            "timestamp": 1754287849628,
+            "metadata": {
+              "iteration": 1
+            }
+          },
+          {
+            "name": "fuzzy_10000_partial_iteration_2",
+            "duration": 5.213457999999719,
+            "memoryUsed": 75243768,
+            "memoryDelta": 365224,
+            "timestamp": 1754287849633,
+            "metadata": {
+              "iteration": 2
+            }
+          },
+          {
+            "name": "fuzzy_10000_partial_iteration_3",
+            "duration": 5.159708000000137,
+            "memoryUsed": 75609592,
+            "memoryDelta": 365264,
+            "timestamp": 1754287849638,
+            "metadata": {
+              "iteration": 3
+            }
+          },
+          {
+            "name": "fuzzy_10000_partial_iteration_4",
+            "duration": 5.181958000000122,
+            "memoryUsed": 75975400,
+            "memoryDelta": 365248,
+            "timestamp": 1754287849644,
+            "metadata": {
+              "iteration": 4
+            }
+          },
+          {
+            "name": "fuzzy_10000_partial_iteration_5",
+            "duration": 5.101791000000048,
+            "memoryUsed": 76345640,
+            "memoryDelta": 365232,
+            "timestamp": 1754287849649,
+            "metadata": {
+              "iteration": 5
+            }
+          },
+          {
+            "name": "fuzzy_10000_partial_iteration_6",
+            "duration": 5.189166999999998,
+            "memoryUsed": 76711416,
+            "memoryDelta": 365216,
+            "timestamp": 1754287849654,
+            "metadata": {
+              "iteration": 6
+            }
+          },
+          {
+            "name": "fuzzy_10000_partial_iteration_7",
+            "duration": 5.147291000000223,
+            "memoryUsed": 77077192,
+            "memoryDelta": 365216,
+            "timestamp": 1754287849659,
+            "metadata": {
+              "iteration": 7
+            }
+          },
+          {
+            "name": "fuzzy_10000_partial_iteration_8",
+            "duration": 5.137416999999914,
+            "memoryUsed": 77442984,
+            "memoryDelta": 365232,
+            "timestamp": 1754287849664,
+            "metadata": {
+              "iteration": 8
+            }
+          },
+          {
+            "name": "fuzzy_10000_partial_iteration_9",
+            "duration": 5.217208000000028,
+            "memoryUsed": 77808784,
+            "memoryDelta": 365240,
+            "timestamp": 1754287849669,
+            "metadata": {
+              "iteration": 9
+            }
+          },
+          {
+            "name": "fuzzy_10000_partial_iteration_10",
+            "duration": 5.137833000000228,
+            "memoryUsed": 78174600,
+            "memoryDelta": 365256,
+            "timestamp": 1754287849675,
+            "metadata": {
+              "iteration": 10
+            }
+          }
+        ],
+        "percentiles": {
+          "p50": 5.159708000000137,
+          "p90": 5.217208000000028,
+          "p95": 5.351750000000266,
+          "p99": 5.351750000000266
+        },
+        "memoryPeakUsage": 78174600,
+        "memoryAverageUsage": 76343583.27272727
+      },
+      "category": "fuzzy_matching",
+      "dataSize": 10000,
+      "metadata": {
+        "itemCount": 10000,
+        "queryLength": 10,
+        "queryType": "partial"
+      }
+    },
+    {
+      "name": "Config Scan - 1000 transactions",
+      "report": {
+        "totalDuration": 34.371833000000606,
+        "averageDuration": 3.124712090909146,
+        "minDuration": 2.9311250000000655,
+        "maxDuration": 3.392583000000286,
+        "iterations": 11,
+        "metrics": [
+          {
+            "name": "config_scan_1000_iteration_0",
+            "duration": 3.1262910000000375,
+            "memoryUsed": 95535808,
+            "memoryDelta": 3946752,
+            "timestamp": 1754287849690,
+            "metadata": {
+              "iteration": 0
+            }
+          },
+          {
+            "name": "config_scan_1000_iteration_1",
+            "duration": 3.243750000000091,
+            "memoryUsed": 99483208,
+            "memoryDelta": 3946688,
+            "timestamp": 1754287849693,
+            "metadata": {
+              "iteration": 1
+            }
+          },
+          {
+            "name": "config_scan_1000_iteration_2",
+            "duration": 3.3492499999997563,
+            "memoryUsed": 103430432,
+            "memoryDelta": 3946664,
+            "timestamp": 1754287849697,
+            "metadata": {
+              "iteration": 2
+            }
+          },
+          {
+            "name": "config_scan_1000_iteration_3",
+            "duration": 3.392583000000286,
+            "memoryUsed": 39630256,
+            "memoryDelta": -63800736,
+            "timestamp": 1754287849700,
+            "metadata": {
+              "iteration": 3
+            }
+          },
+          {
+            "name": "config_scan_1000_iteration_4",
+            "duration": 3.109917000000223,
+            "memoryUsed": 43580216,
+            "memoryDelta": 3949400,
+            "timestamp": 1754287849703,
+            "metadata": {
+              "iteration": 4
+            }
+          },
+          {
+            "name": "config_scan_1000_iteration_5",
+            "duration": 3.014709000000039,
+            "memoryUsed": 47548544,
+            "memoryDelta": 3967768,
+            "timestamp": 1754287849706,
+            "metadata": {
+              "iteration": 5
+            }
+          },
+          {
+            "name": "config_scan_1000_iteration_6",
+            "duration": 3.057125000000269,
+            "memoryUsed": 51506600,
+            "memoryDelta": 3957496,
+            "timestamp": 1754287849709,
+            "metadata": {
+              "iteration": 6
+            }
+          },
+          {
+            "name": "config_scan_1000_iteration_7",
+            "duration": 3.0429159999998774,
+            "memoryUsed": 55465096,
+            "memoryDelta": 3957936,
+            "timestamp": 1754287849712,
+            "metadata": {
+              "iteration": 7
+            }
+          },
+          {
+            "name": "config_scan_1000_iteration_8",
+            "duration": 2.9763340000004064,
+            "memoryUsed": 59412648,
+            "memoryDelta": 3946992,
+            "timestamp": 1754287849715,
+            "metadata": {
+              "iteration": 8
+            }
+          },
+          {
+            "name": "config_scan_1000_iteration_9",
+            "duration": 3.127832999999555,
+            "memoryUsed": 63368328,
+            "memoryDelta": 3955120,
+            "timestamp": 1754287849718,
+            "metadata": {
+              "iteration": 9
+            }
+          },
+          {
+            "name": "config_scan_1000_iteration_10",
+            "duration": 2.9311250000000655,
+            "memoryUsed": 67315880,
+            "memoryDelta": 3946992,
+            "timestamp": 1754287849721,
+            "metadata": {
+              "iteration": 10
+            }
+          }
+        ],
+        "percentiles": {
+          "p50": 3.109917000000223,
+          "p90": 3.3492499999997563,
+          "p95": 3.392583000000286,
+          "p99": 3.392583000000286
+        },
+        "memoryPeakUsage": 103430432,
+        "memoryAverageUsage": 66025183.27272727
+      },
+      "category": "configuration",
+      "dataSize": 1000,
+      "metadata": {
+        "transactionCount": 1000,
+        "fileSize": 150742
+      }
+    },
+    {
+      "name": "Config Scan - 5000 transactions",
+      "report": {
+        "totalDuration": 303.0468769999993,
+        "averageDuration": 15.152343849999966,
+        "minDuration": 14.567833999999948,
+        "maxDuration": 18.022291999999652,
+        "iterations": 20,
+        "metrics": [
+          {
+            "name": "config_scan_5000_iteration_0",
+            "duration": 14.698624999999993,
+            "memoryUsed": 84860216,
+            "memoryDelta": 19616016,
+            "timestamp": 1754287849790,
+            "metadata": {
+              "iteration": 0
+            }
+          },
+          {
+            "name": "config_scan_5000_iteration_1",
+            "duration": 14.835374999999658,
+            "memoryUsed": 104476952,
+            "memoryDelta": 19616024,
+            "timestamp": 1754287849805,
+            "metadata": {
+              "iteration": 1
+            }
+          },
+          {
+            "name": "config_scan_5000_iteration_2",
+            "duration": 15.556375000000116,
+            "memoryUsed": 55527104,
+            "memoryDelta": -48950408,
+            "timestamp": 1754287849821,
+            "metadata": {
+              "iteration": 2
+            }
+          },
+          {
+            "name": "config_scan_5000_iteration_3",
+            "duration": 14.856999999999971,
+            "memoryUsed": 75143632,
+            "memoryDelta": 19615968,
+            "timestamp": 1754287849835,
+            "metadata": {
+              "iteration": 3
+            }
+          },
+          {
+            "name": "config_scan_5000_iteration_4",
+            "duration": 14.781292000000121,
+            "memoryUsed": 94760280,
+            "memoryDelta": 19616088,
+            "timestamp": 1754287849850,
+            "metadata": {
+              "iteration": 4
+            }
+          },
+          {
+            "name": "config_scan_5000_iteration_5",
+            "duration": 15.343207999999777,
+            "memoryUsed": 46687968,
+            "memoryDelta": -48072872,
+            "timestamp": 1754287849866,
+            "metadata": {
+              "iteration": 5
+            }
+          },
+          {
+            "name": "config_scan_5000_iteration_6",
+            "duration": 14.587083999999777,
+            "memoryUsed": 66304400,
+            "memoryDelta": 19615872,
+            "timestamp": 1754287849880,
+            "metadata": {
+              "iteration": 6
+            }
+          },
+          {
+            "name": "config_scan_5000_iteration_7",
+            "duration": 14.854707999999846,
+            "memoryUsed": 85920880,
+            "memoryDelta": 19615920,
+            "timestamp": 1754287849895,
+            "metadata": {
+              "iteration": 7
+            }
+          },
+          {
+            "name": "config_scan_5000_iteration_8",
+            "duration": 14.602084000000104,
+            "memoryUsed": 105537600,
+            "memoryDelta": 19616160,
+            "timestamp": 1754287849910,
+            "metadata": {
+              "iteration": 8
+            }
+          },
+          {
+            "name": "config_scan_5000_iteration_9",
+            "duration": 18.022291999999652,
+            "memoryUsed": 18846424,
+            "memoryDelta": -86691736,
+            "timestamp": 1754287849928,
+            "metadata": {
+              "iteration": 9
+            }
+          },
+          {
+            "name": "config_scan_5000_iteration_10",
+            "duration": 16.626458000000184,
+            "memoryUsed": 38469536,
+            "memoryDelta": 19622528,
+            "timestamp": 1754287849944,
+            "metadata": {
+              "iteration": 10
+            }
+          },
+          {
+            "name": "config_scan_5000_iteration_11",
+            "duration": 15.578667000000223,
+            "memoryUsed": 58089472,
+            "memoryDelta": 19617608,
+            "timestamp": 1754287849960,
+            "metadata": {
+              "iteration": 11
+            }
+          },
+          {
+            "name": "config_scan_5000_iteration_12",
+            "duration": 15.35354099999995,
+            "memoryUsed": 10884776,
+            "memoryDelta": -47207024,
+            "timestamp": 1754287849975,
+            "metadata": {
+              "iteration": 12
+            }
+          },
+          {
+            "name": "config_scan_5000_iteration_13",
+            "duration": 14.567833999999948,
+            "memoryUsed": 30503192,
+            "memoryDelta": 19616088,
+            "timestamp": 1754287849990,
+            "metadata": {
+              "iteration": 13
+            }
+          },
+          {
+            "name": "config_scan_5000_iteration_14",
+            "duration": 14.684457999999722,
+            "memoryUsed": 50121576,
+            "memoryDelta": 19616056,
+            "timestamp": 1754287850005,
+            "metadata": {
+              "iteration": 14
+            }
+          },
+          {
+            "name": "config_scan_5000_iteration_15",
+            "duration": 14.726875000000291,
+            "memoryUsed": 69739896,
+            "memoryDelta": 19615992,
+            "timestamp": 1754287850019,
+            "metadata": {
+              "iteration": 15
+            }
+          },
+          {
+            "name": "config_scan_5000_iteration_16",
+            "duration": 15.042084000000159,
+            "memoryUsed": 23012784,
+            "memoryDelta": -46729440,
+            "timestamp": 1754287850034,
+            "metadata": {
+              "iteration": 16
+            }
+          },
+          {
+            "name": "config_scan_5000_iteration_17",
+            "duration": 14.5949999999998,
+            "memoryUsed": 42631032,
+            "memoryDelta": 19615920,
+            "timestamp": 1754287850049,
+            "metadata": {
+              "iteration": 17
+            }
+          },
+          {
+            "name": "config_scan_5000_iteration_18",
+            "duration": 15.080042000000049,
+            "memoryUsed": 62249904,
+            "memoryDelta": 19616184,
+            "timestamp": 1754287850064,
+            "metadata": {
+              "iteration": 18
+            }
+          },
+          {
+            "name": "config_scan_5000_iteration_19",
+            "duration": 14.653874999999971,
+            "memoryUsed": 81868728,
+            "memoryDelta": 19616496,
+            "timestamp": 1754287850079,
+            "metadata": {
+              "iteration": 19
+            }
+          }
+        ],
+        "percentiles": {
+          "p50": 14.835374999999658,
+          "p90": 15.578667000000223,
+          "p95": 16.626458000000184,
+          "p99": 18.022291999999652
+        },
+        "memoryPeakUsage": 105537600,
+        "memoryAverageUsage": 60281817.6
+      },
+      "category": "configuration",
+      "dataSize": 5000,
+      "metadata": {
+        "transactionCount": 5000,
+        "fileSize": 752378
+      }
+    },
+    {
+      "name": "Config Scan - 10000 transactions",
+      "report": {
+        "totalDuration": 330.5690819999995,
+        "averageDuration": 30.051734727272684,
+        "minDuration": 29.117291000000023,
+        "maxDuration": 30.835957999999664,
+        "iterations": 11,
+        "metrics": [
+          {
+            "name": "config_scan_10000_iteration_0",
+            "duration": 30.015084000000115,
+            "memoryUsed": 54296408,
+            "memoryDelta": -26968160,
+            "timestamp": 1754287850212,
+            "metadata": {
+              "iteration": 0
+            }
+          },
+          {
+            "name": "config_scan_10000_iteration_1",
+            "duration": 30.234208999999737,
+            "memoryUsed": 29029936,
+            "memoryDelta": -25267184,
+            "timestamp": 1754287850243,
+            "metadata": {
+              "iteration": 1
+            }
+          },
+          {
+            "name": "config_scan_10000_iteration_2",
+            "duration": 29.117291000000023,
+            "memoryUsed": 68234216,
+            "memoryDelta": 39203720,
+            "timestamp": 1754287850272,
+            "metadata": {
+              "iteration": 2
+            }
+          },
+          {
+            "name": "config_scan_10000_iteration_3",
+            "duration": 30.835957999999664,
+            "memoryUsed": 41027320,
+            "memoryDelta": -27207456,
+            "timestamp": 1754287850303,
+            "metadata": {
+              "iteration": 3
+            }
+          },
+          {
+            "name": "config_scan_10000_iteration_4",
+            "duration": 29.92604100000017,
+            "memoryUsed": 80231472,
+            "memoryDelta": 39203592,
+            "timestamp": 1754287850333,
+            "metadata": {
+              "iteration": 4
+            }
+          },
+          {
+            "name": "config_scan_10000_iteration_5",
+            "duration": 30.544624999999996,
+            "memoryUsed": 53025280,
+            "memoryDelta": -27206752,
+            "timestamp": 1754287850363,
+            "metadata": {
+              "iteration": 5
+            }
+          },
+          {
+            "name": "config_scan_10000_iteration_6",
+            "duration": 29.24404199999981,
+            "memoryUsed": 92230000,
+            "memoryDelta": 39204160,
+            "timestamp": 1754287850392,
+            "metadata": {
+              "iteration": 6
+            }
+          },
+          {
+            "name": "config_scan_10000_iteration_7",
+            "duration": 30.555665999999746,
+            "memoryUsed": 65054752,
+            "memoryDelta": -27175808,
+            "timestamp": 1754287850423,
+            "metadata": {
+              "iteration": 7
+            }
+          },
+          {
+            "name": "config_scan_10000_iteration_8",
+            "duration": 29.71695800000043,
+            "memoryUsed": 104259240,
+            "memoryDelta": 39203928,
+            "timestamp": 1754287850453,
+            "metadata": {
+              "iteration": 8
+            }
+          },
+          {
+            "name": "config_scan_10000_iteration_9",
+            "duration": 30.35824999999977,
+            "memoryUsed": 78387912,
+            "memoryDelta": -25871888,
+            "timestamp": 1754287850483,
+            "metadata": {
+              "iteration": 9
+            }
+          },
+          {
+            "name": "config_scan_10000_iteration_10",
+            "duration": 30.020958000000064,
+            "memoryUsed": 53118688,
+            "memoryDelta": -25269784,
+            "timestamp": 1754287850513,
+            "metadata": {
+              "iteration": 10
+            }
+          }
+        ],
+        "percentiles": {
+          "p50": 30.020958000000064,
+          "p90": 30.555665999999746,
+          "p95": 30.835957999999664,
+          "p99": 30.835957999999664
+        },
+        "memoryPeakUsage": 104259240,
+        "memoryAverageUsage": 65354111.27272727
+      },
+      "category": "configuration",
+      "dataSize": 10000,
+      "metadata": {
+        "transactionCount": 10000,
+        "fileSize": 1507014
+      }
+    },
+    {
+      "name": "Memory Usage - Parser 1000 transactions",
+      "report": {
+        "totalDuration": 28.62087500000007,
+        "averageDuration": 2.862087500000007,
+        "minDuration": 2.8016249999996035,
+        "maxDuration": 2.943916000000172,
+        "iterations": 10,
+        "metrics": [
+          {
+            "name": "memory_parser_1000_iteration_0",
+            "duration": 2.8383340000000317,
+            "memoryUsed": 69766928,
+            "memoryDelta": 3790568,
+            "timestamp": 1754287850527,
+            "metadata": {
+              "iteration": 0
+            }
+          },
+          {
+            "name": "memory_parser_1000_iteration_1",
+            "duration": 2.809708000000228,
+            "memoryUsed": 73558200,
+            "memoryDelta": 3790560,
+            "timestamp": 1754287850529,
+            "metadata": {
+              "iteration": 1
+            }
+          },
+          {
+            "name": "memory_parser_1000_iteration_2",
+            "duration": 2.8186250000003383,
+            "memoryUsed": 77349328,
+            "memoryDelta": 3790568,
+            "timestamp": 1754287850532,
+            "metadata": {
+              "iteration": 2
+            }
+          },
+          {
+            "name": "memory_parser_1000_iteration_3",
+            "duration": 2.943916000000172,
+            "memoryUsed": 81140408,
+            "memoryDelta": 3790520,
+            "timestamp": 1754287850535,
+            "metadata": {
+              "iteration": 3
+            }
+          },
+          {
+            "name": "memory_parser_1000_iteration_4",
+            "duration": 2.856499999999869,
+            "memoryUsed": 84931320,
+            "memoryDelta": 3790352,
+            "timestamp": 1754287850538,
+            "metadata": {
+              "iteration": 4
+            }
+          },
+          {
+            "name": "memory_parser_1000_iteration_5",
+            "duration": 2.872875000000022,
+            "memoryUsed": 88722288,
+            "memoryDelta": 3790408,
+            "timestamp": 1754287850541,
+            "metadata": {
+              "iteration": 5
+            }
+          },
+          {
+            "name": "memory_parser_1000_iteration_6",
+            "duration": 2.8950410000002194,
+            "memoryUsed": 92523736,
+            "memoryDelta": 3800888,
+            "timestamp": 1754287850544,
+            "metadata": {
+              "iteration": 6
+            }
+          },
+          {
+            "name": "memory_parser_1000_iteration_7",
+            "duration": 2.9221669999997175,
+            "memoryUsed": 96314928,
+            "memoryDelta": 3790632,
+            "timestamp": 1754287850547,
+            "metadata": {
+              "iteration": 7
+            }
+          },
+          {
+            "name": "memory_parser_1000_iteration_8",
+            "duration": 2.8016249999996035,
+            "memoryUsed": 100125448,
+            "memoryDelta": 3809960,
+            "timestamp": 1754287850550,
+            "metadata": {
+              "iteration": 8
+            }
+          },
+          {
+            "name": "memory_parser_1000_iteration_9",
+            "duration": 2.862083999999868,
+            "memoryUsed": 103916640,
+            "memoryDelta": 3790632,
+            "timestamp": 1754287850552,
+            "metadata": {
+              "iteration": 9
+            }
+          }
+        ],
+        "percentiles": {
+          "p50": 2.856499999999869,
+          "p90": 2.9221669999997175,
+          "p95": 2.943916000000172,
+          "p99": 2.943916000000172
+        },
+        "memoryPeakUsage": 103916640,
+        "memoryAverageUsage": 86834922.4
+      },
+      "category": "memory",
+      "dataSize": 1000,
+      "metadata": {
+        "component": "parser",
+        "itemCount": 1000
+      }
+    },
+    {
+      "name": "Memory Usage - Fuzzy Matcher 1000 items",
+      "report": {
+        "totalDuration": 7.992417000000387,
+        "averageDuration": 0.7992417000000387,
+        "minDuration": 0.7896249999998872,
+        "maxDuration": 0.8242090000003373,
+        "iterations": 10,
+        "metrics": [
+          {
+            "name": "memory_fuzzy_1000_iteration_0",
+            "duration": 0.8011250000004111,
+            "memoryUsed": 104334000,
+            "memoryDelta": 50624,
+            "timestamp": 1754287850556,
+            "metadata": {
+              "iteration": 0
+            }
+          },
+          {
+            "name": "memory_fuzzy_1000_iteration_1",
+            "duration": 0.7958340000000135,
+            "memoryUsed": 104385336,
+            "memoryDelta": 50624,
+            "timestamp": 1754287850557,
+            "metadata": {
+              "iteration": 1
+            }
+          },
+          {
+            "name": "memory_fuzzy_1000_iteration_2",
+            "duration": 0.7896249999998872,
+            "memoryUsed": 104436520,
+            "memoryDelta": 50624,
+            "timestamp": 1754287850558,
+            "metadata": {
+              "iteration": 2
+            }
+          },
+          {
+            "name": "memory_fuzzy_1000_iteration_3",
+            "duration": 0.796458000000257,
+            "memoryUsed": 104487704,
+            "memoryDelta": 50624,
+            "timestamp": 1754287850558,
+            "metadata": {
+              "iteration": 3
+            }
+          },
+          {
+            "name": "memory_fuzzy_1000_iteration_4",
+            "duration": 0.7921249999999418,
+            "memoryUsed": 104538888,
+            "memoryDelta": 50624,
+            "timestamp": 1754287850559,
+            "metadata": {
+              "iteration": 4
+            }
+          },
+          {
+            "name": "memory_fuzzy_1000_iteration_5",
+            "duration": 0.8242090000003373,
+            "memoryUsed": 104590152,
+            "memoryDelta": 50704,
+            "timestamp": 1754287850560,
+            "metadata": {
+              "iteration": 5
+            }
+          },
+          {
+            "name": "memory_fuzzy_1000_iteration_6",
+            "duration": 0.7944159999997282,
+            "memoryUsed": 104641368,
+            "memoryDelta": 50656,
+            "timestamp": 1754287850561,
+            "metadata": {
+              "iteration": 6
+            }
+          },
+          {
+            "name": "memory_fuzzy_1000_iteration_7",
+            "duration": 0.7907920000002377,
+            "memoryUsed": 104692552,
+            "memoryDelta": 50624,
+            "timestamp": 1754287850562,
+            "metadata": {
+              "iteration": 7
+            }
+          },
+          {
+            "name": "memory_fuzzy_1000_iteration_8",
+            "duration": 0.7927919999997357,
+            "memoryUsed": 104743744,
+            "memoryDelta": 50632,
+            "timestamp": 1754287850562,
+            "metadata": {
+              "iteration": 8
+            }
+          },
+          {
+            "name": "memory_fuzzy_1000_iteration_9",
+            "duration": 0.8150409999998374,
+            "memoryUsed": 104794928,
+            "memoryDelta": 50624,
+            "timestamp": 1754287850563,
+            "metadata": {
+              "iteration": 9
+            }
+          }
+        ],
+        "percentiles": {
+          "p50": 0.7944159999997282,
+          "p90": 0.8150409999998374,
+          "p95": 0.8242090000003373,
+          "p99": 0.8242090000003373
+        },
+        "memoryPeakUsage": 104794928,
+        "memoryAverageUsage": 104564519.2
+      },
+      "category": "memory",
+      "dataSize": 1000,
+      "metadata": {
+        "component": "fuzzy_matcher",
+        "itemCount": 1000
+      }
+    },
+    {
+      "name": "Memory Usage - Parser 5000 transactions",
+      "report": {
+        "totalDuration": 143.17408499999965,
+        "averageDuration": 14.317408499999965,
+        "minDuration": 14.00079199999982,
+        "maxDuration": 14.919417000000067,
+        "iterations": 10,
+        "metrics": [
+          {
+            "name": "memory_parser_5000_iteration_0",
+            "duration": 14.559583000000202,
+            "memoryUsed": 59786608,
+            "memoryDelta": -48119656,
+            "timestamp": 1754287850628,
+            "metadata": {
+              "iteration": 0
+            }
+          },
+          {
+            "name": "memory_parser_5000_iteration_1",
+            "duration": 14.00079199999982,
+            "memoryUsed": 78715104,
+            "memoryDelta": 18927784,
+            "timestamp": 1754287850642,
+            "metadata": {
+              "iteration": 1
+            }
+          },
+          {
+            "name": "memory_parser_5000_iteration_2",
+            "duration": 14.267833999999766,
+            "memoryUsed": 97642760,
+            "memoryDelta": 18927096,
+            "timestamp": 1754287850656,
+            "metadata": {
+              "iteration": 2
+            }
+          },
+          {
+            "name": "memory_parser_5000_iteration_3",
+            "duration": 14.919417000000067,
+            "memoryUsed": 50422288,
+            "memoryDelta": -47221032,
+            "timestamp": 1754287850671,
+            "metadata": {
+              "iteration": 3
+            }
+          },
+          {
+            "name": "memory_parser_5000_iteration_4",
+            "duration": 14.190000000000055,
+            "memoryUsed": 69350272,
+            "memoryDelta": 18927424,
+            "timestamp": 1754287850686,
+            "metadata": {
+              "iteration": 4
+            }
+          },
+          {
+            "name": "memory_parser_5000_iteration_5",
+            "duration": 14.170916000000034,
+            "memoryUsed": 88278664,
+            "memoryDelta": 18927832,
+            "timestamp": 1754287850700,
+            "metadata": {
+              "iteration": 5
+            }
+          },
+          {
+            "name": "memory_parser_5000_iteration_6",
+            "duration": 14.133084000000053,
+            "memoryUsed": 107206664,
+            "memoryDelta": 18927440,
+            "timestamp": 1754287850714,
+            "metadata": {
+              "iteration": 6
+            }
+          },
+          {
+            "name": "memory_parser_5000_iteration_7",
+            "duration": 14.713249999999789,
+            "memoryUsed": 59752760,
+            "memoryDelta": -47454464,
+            "timestamp": 1754287850729,
+            "metadata": {
+              "iteration": 7
+            }
+          },
+          {
+            "name": "memory_parser_5000_iteration_8",
+            "duration": 14.13491699999986,
+            "memoryUsed": 78680352,
+            "memoryDelta": 18927032,
+            "timestamp": 1754287850743,
+            "metadata": {
+              "iteration": 8
+            }
+          },
+          {
+            "name": "memory_parser_5000_iteration_9",
+            "duration": 14.084292000000005,
+            "memoryUsed": 97608056,
+            "memoryDelta": 18927144,
+            "timestamp": 1754287850757,
+            "metadata": {
+              "iteration": 9
+            }
+          }
+        ],
+        "percentiles": {
+          "p50": 14.170916000000034,
+          "p90": 14.713249999999789,
+          "p95": 14.919417000000067,
+          "p99": 14.919417000000067
+        },
+        "memoryPeakUsage": 107206664,
+        "memoryAverageUsage": 78744352.8
+      },
+      "category": "memory",
+      "dataSize": 5000,
+      "metadata": {
+        "component": "parser",
+        "itemCount": 5000
+      }
+    },
+    {
+      "name": "Memory Usage - Fuzzy Matcher 5000 items",
+      "report": {
+        "totalDuration": 39.29954199999975,
+        "averageDuration": 3.9299541999999748,
+        "minDuration": 3.8683750000000146,
+        "maxDuration": 3.9994580000002316,
+        "iterations": 10,
+        "metrics": [
+          {
+            "name": "memory_fuzzy_5000_iteration_0",
+            "duration": 3.8746249999999236,
+            "memoryUsed": 99611584,
+            "memoryDelta": 242552,
+            "timestamp": 1754287850773,
+            "metadata": {
+              "iteration": 0
+            }
+          },
+          {
+            "name": "memory_fuzzy_5000_iteration_1",
+            "duration": 3.9192920000000413,
+            "memoryUsed": 99854856,
+            "memoryDelta": 242560,
+            "timestamp": 1754287850777,
+            "metadata": {
+              "iteration": 1
+            }
+          },
+          {
+            "name": "memory_fuzzy_5000_iteration_2",
+            "duration": 3.9441249999999854,
+            "memoryUsed": 100100208,
+            "memoryDelta": 244792,
+            "timestamp": 1754287850781,
+            "metadata": {
+              "iteration": 2
+            }
+          },
+          {
+            "name": "memory_fuzzy_5000_iteration_3",
+            "duration": 3.977292000000034,
+            "memoryUsed": 100343320,
+            "memoryDelta": 242552,
+            "timestamp": 1754287850785,
+            "metadata": {
+              "iteration": 3
+            }
+          },
+          {
+            "name": "memory_fuzzy_5000_iteration_4",
+            "duration": 3.9994580000002316,
+            "memoryUsed": 100587024,
+            "memoryDelta": 243144,
+            "timestamp": 1754287850789,
+            "metadata": {
+              "iteration": 4
+            }
+          },
+          {
+            "name": "memory_fuzzy_5000_iteration_5",
+            "duration": 3.920249999999669,
+            "memoryUsed": 100830160,
+            "memoryDelta": 242576,
+            "timestamp": 1754287850793,
+            "metadata": {
+              "iteration": 5
+            }
+          },
+          {
+            "name": "memory_fuzzy_5000_iteration_6",
+            "duration": 3.9189159999996264,
+            "memoryUsed": 101073304,
+            "memoryDelta": 242584,
+            "timestamp": 1754287850797,
+            "metadata": {
+              "iteration": 6
+            }
+          },
+          {
+            "name": "memory_fuzzy_5000_iteration_7",
+            "duration": 3.8683750000000146,
+            "memoryUsed": 101316440,
+            "memoryDelta": 242576,
+            "timestamp": 1754287850800,
+            "metadata": {
+              "iteration": 7
+            }
+          },
+          {
+            "name": "memory_fuzzy_5000_iteration_8",
+            "duration": 3.9659999999998945,
+            "memoryUsed": 101559568,
+            "memoryDelta": 242568,
+            "timestamp": 1754287850804,
+            "metadata": {
+              "iteration": 8
+            }
+          },
+          {
+            "name": "memory_fuzzy_5000_iteration_9",
+            "duration": 3.9112090000003263,
+            "memoryUsed": 101802688,
+            "memoryDelta": 242560,
+            "timestamp": 1754287850808,
+            "metadata": {
+              "iteration": 9
+            }
+          }
+        ],
+        "percentiles": {
+          "p50": 3.9192920000000413,
+          "p90": 3.977292000000034,
+          "p95": 3.9994580000002316,
+          "p99": 3.9994580000002316
+        },
+        "memoryPeakUsage": 101802688,
+        "memoryAverageUsage": 100707915.2
+      },
+      "category": "memory",
+      "dataSize": 5000,
+      "metadata": {
+        "component": "fuzzy_matcher",
+        "itemCount": 5000
+      }
+    },
+    {
+      "name": "Memory Usage - Parser 10000 transactions",
+      "report": {
+        "totalDuration": 284.66929200000004,
+        "averageDuration": 28.466929200000003,
+        "minDuration": 27.84137499999997,
+        "maxDuration": 28.873207999999977,
+        "iterations": 10,
+        "metrics": [
+          {
+            "name": "memory_parser_10000_iteration_0",
+            "duration": 28.84216699999979,
+            "memoryUsed": 72028984,
+            "memoryDelta": -27033264,
+            "timestamp": 1754287850933,
+            "metadata": {
+              "iteration": 0
+            }
+          },
+          {
+            "name": "memory_parser_10000_iteration_1",
+            "duration": 28.165707999999995,
+            "memoryUsed": 109569688,
+            "memoryDelta": 37539992,
+            "timestamp": 1754287850961,
+            "metadata": {
+              "iteration": 1
+            }
+          },
+          {
+            "name": "memory_parser_10000_iteration_2",
+            "duration": 28.552875000000313,
+            "memoryUsed": 82196136,
+            "memoryDelta": -27374112,
+            "timestamp": 1754287850989,
+            "metadata": {
+              "iteration": 2
+            }
+          },
+          {
+            "name": "memory_parser_10000_iteration_3",
+            "duration": 27.84137499999997,
+            "memoryUsed": 119736864,
+            "memoryDelta": 37540168,
+            "timestamp": 1754287851017,
+            "metadata": {
+              "iteration": 3
+            }
+          },
+          {
+            "name": "memory_parser_10000_iteration_4",
+            "duration": 28.600708999999824,
+            "memoryUsed": 92363344,
+            "memoryDelta": -27374080,
+            "timestamp": 1754287851046,
+            "metadata": {
+              "iteration": 4
+            }
+          },
+          {
+            "name": "memory_parser_10000_iteration_5",
+            "duration": 28.78404099999989,
+            "memoryUsed": 65357144,
+            "memoryDelta": -27006760,
+            "timestamp": 1754287851075,
+            "metadata": {
+              "iteration": 5
+            }
+          },
+          {
+            "name": "memory_parser_10000_iteration_6",
+            "duration": 27.974334,
+            "memoryUsed": 102898024,
+            "memoryDelta": 37540320,
+            "timestamp": 1754287851103,
+            "metadata": {
+              "iteration": 6
+            }
+          },
+          {
+            "name": "memory_parser_10000_iteration_7",
+            "duration": 28.873207999999977,
+            "memoryUsed": 75525520,
+            "memoryDelta": -27373064,
+            "timestamp": 1754287851131,
+            "metadata": {
+              "iteration": 7
+            }
+          },
+          {
+            "name": "memory_parser_10000_iteration_8",
+            "duration": 28.203875000000153,
+            "memoryUsed": 113065768,
+            "memoryDelta": 37539688,
+            "timestamp": 1754287851160,
+            "metadata": {
+              "iteration": 8
+            }
+          },
+          {
+            "name": "memory_parser_10000_iteration_9",
+            "duration": 28.83100000000013,
+            "memoryUsed": 85692696,
+            "memoryDelta": -27373632,
+            "timestamp": 1754287851188,
+            "metadata": {
+              "iteration": 9
+            }
+          }
+        ],
+        "percentiles": {
+          "p50": 28.552875000000313,
+          "p90": 28.84216699999979,
+          "p95": 28.873207999999977,
+          "p99": 28.873207999999977
+        },
+        "memoryPeakUsage": 119736864,
+        "memoryAverageUsage": 91843416.8
+      },
+      "category": "memory",
+      "dataSize": 10000,
+      "metadata": {
+        "component": "parser",
+        "itemCount": 10000
+      }
+    },
+    {
+      "name": "Memory Usage - Fuzzy Matcher 10000 items",
+      "report": {
+        "totalDuration": 77.08083400000032,
+        "averageDuration": 7.7080834000000324,
+        "minDuration": 7.5978329999998095,
+        "maxDuration": 7.888250000000426,
+        "iterations": 10,
+        "metrics": [
+          {
+            "name": "memory_fuzzy_10000_iteration_0",
+            "duration": 7.676167000000078,
+            "memoryUsed": 89615224,
+            "memoryDelta": 485560,
+            "timestamp": 1754287851220,
+            "metadata": {
+              "iteration": 0
+            }
+          },
+          {
+            "name": "memory_fuzzy_10000_iteration_1",
+            "duration": 7.674082999999882,
+            "memoryUsed": 90101496,
+            "memoryDelta": 485560,
+            "timestamp": 1754287851228,
+            "metadata": {
+              "iteration": 1
+            }
+          },
+          {
+            "name": "memory_fuzzy_10000_iteration_2",
+            "duration": 7.6432089999998425,
+            "memoryUsed": 90587576,
+            "memoryDelta": 485520,
+            "timestamp": 1754287851236,
+            "metadata": {
+              "iteration": 2
+            }
+          },
+          {
+            "name": "memory_fuzzy_10000_iteration_3",
+            "duration": 7.760917000000063,
+            "memoryUsed": 91073696,
+            "memoryDelta": 485560,
+            "timestamp": 1754287851244,
+            "metadata": {
+              "iteration": 3
+            }
+          },
+          {
+            "name": "memory_fuzzy_10000_iteration_4",
+            "duration": 7.623000000000047,
+            "memoryUsed": 91559848,
+            "memoryDelta": 485592,
+            "timestamp": 1754287851251,
+            "metadata": {
+              "iteration": 4
+            }
+          },
+          {
+            "name": "memory_fuzzy_10000_iteration_5",
+            "duration": 7.5978329999998095,
+            "memoryUsed": 92045952,
+            "memoryDelta": 485544,
+            "timestamp": 1754287851259,
+            "metadata": {
+              "iteration": 5
+            }
+          },
+          {
+            "name": "memory_fuzzy_10000_iteration_6",
+            "duration": 7.750625000000127,
+            "memoryUsed": 92533008,
+            "memoryDelta": 486496,
+            "timestamp": 1754287851267,
+            "metadata": {
+              "iteration": 6
+            }
+          },
+          {
+            "name": "memory_fuzzy_10000_iteration_7",
+            "duration": 7.888250000000426,
+            "memoryUsed": 93019136,
+            "memoryDelta": 485568,
+            "timestamp": 1754287851274,
+            "metadata": {
+              "iteration": 7
+            }
+          },
+          {
+            "name": "memory_fuzzy_10000_iteration_8",
+            "duration": 7.7807920000000195,
+            "memoryUsed": 93505232,
+            "memoryDelta": 485536,
+            "timestamp": 1754287851282,
+            "metadata": {
+              "iteration": 8
+            }
+          },
+          {
+            "name": "memory_fuzzy_10000_iteration_9",
+            "duration": 7.685958000000028,
+            "memoryUsed": 93991320,
+            "memoryDelta": 485528,
+            "timestamp": 1754287851290,
+            "metadata": {
+              "iteration": 9
+            }
+          }
+        ],
+        "percentiles": {
+          "p50": 7.676167000000078,
+          "p90": 7.7807920000000195,
+          "p95": 7.888250000000426,
+          "p99": 7.888250000000426
+        },
+        "memoryPeakUsage": 93991320,
+        "memoryAverageUsage": 91803248.8
+      },
+      "category": "memory",
+      "dataSize": 10000,
+      "metadata": {
+        "component": "fuzzy_matcher",
+        "itemCount": 10000
+      }
+    }
+  ]
+}

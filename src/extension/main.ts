@@ -8,7 +8,7 @@ import {
     DEFAULT_ACCOUNT_PREFIXES, 
     DEFAULT_COMMODITIES 
 } from './types';
-import { IConfigManager as IHLedgerConfig, ConfigManager } from './core';
+import { IConfigManager as IHLedgerConfig, ConfigManager, getOptimizationManager, OptimizationManager } from './core';
 import { HLedgerEnterCommand } from './indentProvider';
 import { FuzzyMatcher, FuzzyMatch } from './completion/base/FuzzyMatcher';
 import { KeywordCompletionProvider as NewKeywordCompletionProvider } from './completion/providers/KeywordCompletionProvider';
@@ -404,6 +404,9 @@ export function activate(context: vscode.ExtensionContext): void {
     // No cache invalidation - caches are persistent for better performance
     console.log('HLedger extension activated with persistent caching');
 
+    // Initialize optimization manager
+    const optimizationManager = getOptimizationManager(context);
+    console.log('HLedger optimization manager initialized');
     
     // Apply custom color settings
     applyCustomColors();
@@ -504,5 +507,10 @@ export function activate(context: vscode.ExtensionContext): void {
 export function deactivate(): void {
     // Clean up project caches
     projectCache.clear();
-    console.log('HLedger extension deactivated, caches cleared');
+    
+    // Clean up optimization manager
+    const { disposeOptimizationManager } = require('./core');
+    disposeOptimizationManager();
+    
+    console.log('HLedger extension deactivated, caches cleared, optimization manager disposed');
 }

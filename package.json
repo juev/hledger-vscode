@@ -124,6 +124,55 @@
           "minimum": 5,
           "maximum": 50,
           "description": "Maximum number of account completion items to show (accounts are hierarchical, so more items are useful)"
+        },
+        "hledger.optimization.enableAsyncParsing": {
+          "type": "boolean",
+          "default": false,
+          "description": "Enable asynchronous file parsing for better performance with large files (experimental)"
+        },
+        "hledger.optimization.enableOptimizedFuzzyMatching": {
+          "type": "boolean",
+          "default": false,
+          "description": "Enable optimized fuzzy matching with indexing and caching (experimental)"
+        },
+        "hledger.optimization.enablePerformanceMonitoring": {
+          "type": "boolean",
+          "default": false,
+          "description": "Enable performance monitoring and metrics collection"
+        },
+        "hledger.optimization.enableBenchmarking": {
+          "type": "boolean",
+          "default": false,
+          "description": "Enable performance benchmarking capabilities"
+        },
+        "hledger.optimization.fallbackOnError": {
+          "type": "boolean",
+          "default": true,
+          "description": "Automatically fallback to standard components when optimized versions fail"
+        },
+        "hledger.optimization.maxFileSize": {
+          "type": "number",
+          "default": 10485760,
+          "minimum": 1048576,
+          "maximum": 104857600,
+          "description": "Maximum file size in bytes for async parsing (1MB to 100MB)"
+        },
+        "hledger.optimization.asyncChunkSize": {
+          "type": "number",
+          "default": 1000,
+          "minimum": 100,
+          "maximum": 10000,
+          "description": "Number of lines to process per chunk in async parsing"
+        },
+        "hledger.optimization.fuzzyIndexing": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable pre-indexing for fuzzy matching (improves performance with large datasets)"
+        },
+        "hledger.optimization.cacheResults": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable result caching for parsing and fuzzy matching"
         }
       }
     },
@@ -132,6 +181,21 @@
         "command": "hledger.onEnter",
         "title": "HLedger: Smart Enter",
         "when": "editorTextFocus && editorLangId == hledger"
+      },
+      {
+        "command": "hledger.optimization.runBenchmark",
+        "title": "HLedger: Run Performance Benchmark",
+        "category": "HLedger Optimization"
+      },
+      {
+        "command": "hledger.optimization.exportData",
+        "title": "HLedger: Export Performance Data",
+        "category": "HLedger Optimization"
+      },
+      {
+        "command": "hledger.optimization.resetMetrics",
+        "title": "HLedger: Reset Performance Metrics",
+        "category": "HLedger Optimization"
       }
     ],
     "keybindings": [

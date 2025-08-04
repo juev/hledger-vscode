@@ -1,3 +1,12 @@
+/** Forward declaration for AsyncParseOptions */
+interface AsyncParseOptions {
+    chunkSize?: number;
+    yieldEvery?: number;
+    maxFileSize?: number;
+    enableCache?: boolean;
+    timeout?: number;
+}
+
 /**
  * Interface for parsing HLedger files and content
  * Responsible for extracting structured data from hledger files
@@ -17,6 +26,47 @@ export interface IHLedgerParser {
      * @returns Parsed data structure
      */
     parseContent(content: string, basePath?: string): ParsedHLedgerData;
+}
+
+/**
+ * Extended interface for asynchronous HLedger parsing
+ * Adds async methods for better performance with large files
+ */
+export interface IAsyncHLedgerParser extends IHLedgerParser {
+    /**
+     * Parse a file asynchronously from filesystem
+     * @param filePath - Path to the hledger file
+     * @param options - Async parsing options
+     * @returns Promise of parsed data structure
+     */
+    parseFileAsync(filePath: string, options?: AsyncParseOptions): Promise<ParsedHLedgerData>;
+    
+    /**
+     * Parse hledger content asynchronously from string
+     * @param content - Raw hledger content
+     * @param basePath - Base path for resolving includes
+     * @param options - Async parsing options
+     * @returns Promise of parsed data structure
+     */
+    parseContentAsync(content: string, basePath?: string, options?: AsyncParseOptions): Promise<ParsedHLedgerData>;
+    
+    /**
+     * Parse multiple files asynchronously with controlled concurrency
+     * @param filePaths - Array of file paths to parse
+     * @param options - Async parsing options
+     * @returns Promise of combined parsed data
+     */
+    parseFilesAsync(filePaths: string[], options?: AsyncParseOptions): Promise<ParsedHLedgerData>;
+    
+    /**
+     * Clear internal caches
+     */
+    clearCache(): void;
+    
+    /**
+     * Get cache statistics
+     */
+    getCacheStats(): { size: number; entries: string[] };
 }
 
 /**
