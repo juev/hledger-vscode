@@ -22,7 +22,12 @@ import {
     InvalidationStrategy,
     createFilePath,
     createProjectPath,
-    createWorkspacePath
+    createWorkspacePath,
+    IEnhancedProjectCache,
+    IEnhancedWorkspaceCache,
+    PartialSmartCacheConfig,
+    ICacheDiagnostics,
+    InvalidationEventId
 } from './interfaces';
 import { createCacheInvalidationManager } from './CacheInvalidationManager';
 import { createSmartCache } from './SmartCache';
@@ -37,8 +42,8 @@ export class CachingSystem {
     private static instance: CachingSystem | null = null;
     
     private invalidationManager: ICacheInvalidationManager | null = null;
-    private enhancedProjectCache: any = null;
-    private enhancedWorkspaceCache: any = null;
+    private enhancedProjectCache: IEnhancedProjectCache | null = null;
+    private enhancedWorkspaceCache: IEnhancedWorkspaceCache | null = null;
     private disposables: vscode.Disposable[] = [];
     private config: CacheSystemConfig = DEFAULT_CACHE_SYSTEM_CONFIG;
     private isInitialized: boolean = false;
@@ -99,7 +104,7 @@ export class CachingSystem {
     /**
      * Get enhanced project cache (backward compatible)
      */
-    getProjectCache(): any {
+    getProjectCache(): IEnhancedProjectCache | null {
         if (!this.config.features.smartInvalidation) {
             // Return null to use legacy cache
             return null;
@@ -115,7 +120,7 @@ export class CachingSystem {
     /**
      * Get enhanced workspace cache (backward compatible)
      */
-    getWorkspaceCache(): any {
+    getWorkspaceCache(): IEnhancedWorkspaceCache | null {
         if (!this.config.features.smartInvalidation) {
             // Return null to use legacy cache
             return null;
@@ -133,7 +138,7 @@ export class CachingSystem {
      */
     createSmartCache<T extends CacheableData>(
         name: string, 
-        config: Partial<any> = {}
+        config: PartialSmartCacheConfig<T> = {}
     ): ISmartCache<T> | null {
         if (!this.config.features.smartInvalidation) {
             return null;
@@ -172,7 +177,7 @@ export class CachingSystem {
         
         try {
             await this.invalidationManager.processEvent({
-                id: `manual_${Date.now()}` as any,
+                id: `manual_${Date.now()}` as InvalidationEventId,
                 type: InvalidationEventType.MANUAL_INVALIDATION,
                 timestamp: Date.now(),
                 strategy: InvalidationStrategy.FULL,
@@ -190,13 +195,7 @@ export class CachingSystem {
     /**
      * Get system diagnostics
      */
-    getDiagnostics(): {
-        isInitialized: boolean;
-        enabledFeatures: string[];
-        invalidationStats: any;
-        projectCacheMetrics: any;
-        workspaceCacheMetrics: any;
-    } {
+    getDiagnostics(): ICacheDiagnostics {
         return {
             isInitialized: this.isInitialized,
             enabledFeatures: this.getEnabledFeatures(),
@@ -416,7 +415,7 @@ export function getCachingSystem(): CachingSystem {
  */
 export function createCache<T extends CacheableData>(
     name: string, 
-    config: Partial<any> = {}
+    config: PartialSmartCacheConfig<T> = {}
 ): ISmartCache<T> | null {
     return getCachingSystem().createSmartCache<T>(name, config);
 }
@@ -431,7 +430,7 @@ export async function invalidateCache(reason: string = 'manual'): Promise<void> 
 /**
  * Get system diagnostics (convenience function)
  */
-export function getCacheDiagnostics(): any {
+export function getCacheDiagnostics(): ICacheDiagnostics {
     return getCachingSystem().getDiagnostics();
 }
 

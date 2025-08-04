@@ -1,4 +1,4 @@
-import { IConfigManager, IHLedgerParser, IDataStore, IUsageTracker, IFileScanner } from './interfaces';
+import { IConfigManager, IHLedgerParser, IDataStore, IUsageTracker, IFileScanner, IConfigManagerComponents, IDataStoreInternal, IUsageTrackerInternal } from './interfaces';
 import { HLedgerParser } from './HLedgerParser';
 import { DataStore } from './DataStore';
 import { UsageTracker } from './UsageTracker';
@@ -157,67 +157,67 @@ export class ConfigManager implements IConfigManager {
     
     /** @deprecated Use getAccounts() instead */
     get accounts(): Set<string> {
-        return (this.dataStore as any).accounts;
+        return (this.dataStore as IDataStoreInternal).accounts;
     }
     
     /** @deprecated Use getDefinedAccounts() instead */
     get definedAccounts(): Set<string> {
-        return (this.dataStore as any).definedAccounts;
+        return (this.dataStore as IDataStoreInternal).definedAccounts;
     }
     
     /** @deprecated Use getUsedAccounts() instead */
     get usedAccounts(): Set<string> {
-        return (this.dataStore as any).usedAccounts;
+        return (this.dataStore as IDataStoreInternal).usedAccounts;
     }
     
     /** @deprecated Use getPayees() instead */
     get payees(): Set<string> {
-        return (this.dataStore as any).payees;
+        return (this.dataStore as IDataStoreInternal).payees;
     }
     
     /** @deprecated Use getTags() instead */
     get tags(): Set<string> {
-        return (this.dataStore as any).tags;
+        return (this.dataStore as IDataStoreInternal).tags;
     }
     
     /** @deprecated Use getCommodities() instead */
     get commodities(): Set<string> {
-        return (this.dataStore as any).commodities;
+        return (this.dataStore as IDataStoreInternal).commodities;
     }
     
     /** @deprecated Use getAliases() instead */
     get aliases(): Map<string, string> {
-        return (this.dataStore as any).aliases;
+        return (this.dataStore as IDataStoreInternal).aliases;
     }
     
     /** @deprecated Use getDefaultCommodity() instead */
     get defaultCommodity(): string | null {
-        return (this.dataStore as any).defaultCommodity;
+        return (this.dataStore as IDataStoreInternal).defaultCommodity;
     }
     
     /** @deprecated Use getLastDate() instead */
     get lastDate(): string | null {
-        return (this.dataStore as any).lastDate;
+        return (this.dataStore as IDataStoreInternal).lastDate;
     }
     
     /** @deprecated Internal usage tracking - use getAccountsByUsage() instead */
     get accountUsageCount(): Map<string, number> {
-        return (this.usageTracker as any).accountUsageCount;
+        return (this.usageTracker as IUsageTrackerInternal).accountUsageCount;
     }
     
     /** @deprecated Internal usage tracking - use getPayeesByUsage() instead */
     get payeeUsageCount(): Map<string, number> {
-        return (this.usageTracker as any).payeeUsageCount;
+        return (this.usageTracker as IUsageTrackerInternal).payeeUsageCount;
     }
     
     /** @deprecated Internal usage tracking - use getTagsByUsage() instead */
     get tagUsageCount(): Map<string, number> {
-        return (this.usageTracker as any).tagUsageCount;
+        return (this.usageTracker as IUsageTrackerInternal).tagUsageCount;
     }
     
     /** @deprecated Internal usage tracking - use getCommoditiesByUsage() instead */
     get commodityUsageCount(): Map<string, number> {
-        return (this.usageTracker as any).commodityUsageCount;
+        return (this.usageTracker as IUsageTrackerInternal).commodityUsageCount;
     }
     
     // === Utility Methods ===
@@ -241,7 +241,7 @@ export class ConfigManager implements IConfigManager {
     /**
      * Get internal components (for testing or advanced usage)
      */
-    getComponents() {
+    getComponents(): IConfigManagerComponents {
         return {
             parser: this.parser,
             dataStore: this.dataStore,

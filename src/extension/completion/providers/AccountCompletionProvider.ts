@@ -3,6 +3,7 @@ import { BaseCompletionProvider, CompletionData } from '../base/BaseCompletionPr
 import { CompletionItemOptions } from '../base/CompletionItemFactory';
 import { getConfig } from '../../main';
 import { DEFAULT_ACCOUNT_PREFIXES } from '../../types';
+import { ICompletionLimits, IFuzzyMatch } from '../../core/interfaces';
 
 interface AccountInfo {
     account: string;
@@ -101,7 +102,7 @@ export class AccountCompletionProvider extends BaseCompletionProvider {
         };
     }
     
-    protected applyLimits(matches: any[], limits: any): any[] {
+    protected applyLimits(matches: IFuzzyMatch[], limits: ICompletionLimits): IFuzzyMatch[] {
         // Accounts use maxAccountResults limit
         return matches.slice(0, limits.maxAccountResults);
     }

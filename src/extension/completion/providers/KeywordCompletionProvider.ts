@@ -2,6 +2,7 @@ import * as vscode from 'vscode';
 import { BaseCompletionProvider, CompletionData } from '../base/BaseCompletionProvider';
 import { CompletionItemOptions } from '../base/CompletionItemFactory';
 import { HLEDGER_KEYWORDS } from '../../types';
+import { ICompletionLimits, IFuzzyMatch } from '../../core/interfaces';
 
 /**
  * Provides completion for hledger keywords/directives
@@ -42,7 +43,7 @@ export class KeywordCompletionProvider extends BaseCompletionProvider {
         };
     }
     
-    protected applyLimits(matches: any[], limits: any): any[] {
+    protected applyLimits(matches: IFuzzyMatch[], limits: ICompletionLimits): IFuzzyMatch[] {
         // Keywords use the general maxResults limit
         return matches.slice(0, limits.maxResults);
     }

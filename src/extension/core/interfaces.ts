@@ -70,10 +70,26 @@ export interface IAsyncHLedgerParser extends IHLedgerParser {
 }
 
 /**
+ * Interface for accessing internal data store properties
+ * Used for backward compatibility with legacy property access
+ */
+export interface IDataStoreInternal {
+    readonly accounts: Set<string>;
+    readonly definedAccounts: Set<string>;
+    readonly usedAccounts: Set<string>;
+    readonly payees: Set<string>;
+    readonly tags: Set<string>;
+    readonly commodities: Set<string>;
+    readonly aliases: Map<string, string>;
+    readonly defaultCommodity: string | null;
+    readonly lastDate: string | null;
+}
+
+/**
  * Interface for storing and retrieving HLedger data
  * Responsible for managing all parsed data in memory
  */
-export interface IDataStore {
+export interface IDataStore extends IDataStoreInternal {
     // === Data Management ===
     
     /**
@@ -187,10 +203,21 @@ export interface IDataStore {
 }
 
 /**
+ * Interface for accessing internal usage tracker properties
+ * Used for backward compatibility with legacy property access
+ */
+export interface IUsageTrackerInternal {
+    readonly accountUsageCount: Map<string, number>;
+    readonly payeeUsageCount: Map<string, number>;
+    readonly tagUsageCount: Map<string, number>;
+    readonly commodityUsageCount: Map<string, number>;
+}
+
+/**
  * Interface for tracking usage frequency statistics
  * Responsible for maintaining usage counters for prioritization
  */
-export interface IUsageTracker {
+export interface IUsageTracker extends IUsageTrackerInternal {
     // === Usage Tracking ===
     
     /**
@@ -336,10 +363,68 @@ export interface ParsedHLedgerData {
 }
 
 /**
+ * Interface for configuration manager components
+ * Used for proper typing of internal components in ConfigManager
+ */
+export interface IConfigManagerComponents {
+    parser: IHLedgerParser;
+    dataStore: IDataStore;
+    usageTracker: IUsageTracker;
+    fileScanner: IFileScanner;
+}
+
+/**
+ * Interface for objects that have internal components
+ * Used for proper typing instead of casting to any
+ */
+export interface IComponentContainer {
+    getComponents(): IConfigManagerComponents;
+}
+
+/**
+ * Interface for text mate rule objects used in VS Code color customization
+ */
+export interface ITextMateRule {
+    scope?: string;
+    settings?: {
+        foreground?: string;
+        fontStyle?: string;
+    };
+}
+
+/**
+ * Interface for VS Code TextMate customizations
+ */
+export interface ITextMateCustomizations {
+    "[*]"?: {
+        textMateRules?: ITextMateRule[];
+        [key: string]: unknown;
+    };
+    [key: string]: unknown;
+}
+
+/**
+ * Interface for completion limits configuration
+ */
+export interface ICompletionLimits {
+    maxResults: number;
+    maxAccountResults: number;
+}
+
+/**
+ * Interface for fuzzy matcher match results
+ */
+export interface IFuzzyMatch {
+    item: string;
+    score: number;
+    matches: number[];
+}
+
+/**
  * Configuration manager interface that coordinates all components
  * This replaces the old IHLedgerConfig interface
  */
-export interface IConfigManager {
+export interface IConfigManager extends IComponentContainer {
     // === File Operations ===
     
     /**

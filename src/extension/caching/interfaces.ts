@@ -6,6 +6,7 @@
  */
 
 import * as vscode from 'vscode';
+import type { IConfigManager } from '../core/interfaces';
 
 // === BRANDED TYPES FOR TYPE SAFETY ===
 
@@ -357,9 +358,49 @@ export interface SmartCacheConfig<T> {
 }
 
 /**
+ * Partial smart cache configuration for creating new caches
+ */
+export type PartialSmartCacheConfig<T = CacheableData> = Partial<SmartCacheConfig<T>>;
+
+/**
+ * Interface for cache diagnostics information
+ */
+export interface ICacheDiagnostics {
+    readonly isInitialized: boolean;
+    readonly enabledFeatures: readonly string[];
+    readonly invalidationStats: InvalidationStats | null;
+    readonly projectCacheMetrics: CacheMetrics | null;
+    readonly workspaceCacheMetrics: CacheMetrics | null;
+}
+
+
+/**
+ * Interface for project configuration data stored in cache
+ */
+export interface IProjectConfigData {
+    readonly config: IConfigManager;
+    readonly scanTime: number;
+    readonly fileCount: number;
+    readonly accountCount: number;
+    readonly payeeCount: number;
+    readonly tagCount: number;
+    readonly commodityCount: number;
+}
+
+/**
+ * Interface for workspace configuration data stored in cache
+ */
+export interface IWorkspaceConfigData {
+    readonly config: IConfigManager;
+    readonly workspacePath: string;
+    readonly scanTime: number;
+    readonly lastUpdate: number;
+}
+
+/**
  * Generic constraint for cacheable data
  */
-export type CacheableData = Record<string, any> | readonly any[] | string | number | boolean | null;
+export type CacheableData = Record<string, unknown> | readonly unknown[] | string | number | boolean | null | IProjectConfigData | IWorkspaceConfigData;
 
 /**
  * Helper type to check if T extends CacheableData
@@ -436,16 +477,16 @@ export interface ISmartCache<T = CacheableData> {
 /**
  * Enhanced project cache with invalidation support
  */
-export interface IEnhancedProjectCache extends ISmartCache<any> {
+export interface IEnhancedProjectCache extends ISmartCache<IProjectConfigData> {
     /**
-     * Get configuration for specific project
+     * Get configuration for specific project (backward compatibility)
      */
-    getConfig(projectPath: ProjectPath): Promise<any | null>;
+    getConfig(projectPath: ProjectPath): Promise<IConfigManager | null>;
     
     /**
-     * Initialize project configuration
+     * Initialize project configuration (backward compatibility)
      */
-    initialize(projectPath: ProjectPath): Promise<any>;
+    initialize(projectPath: ProjectPath): Promise<IConfigManager>;
     
     /**
      * Check if project exists in cache
@@ -466,7 +507,7 @@ export interface IEnhancedProjectCache extends ISmartCache<any> {
 /**
  * Enhanced workspace cache with invalidation support
  */
-export interface IEnhancedWorkspaceCache extends ISmartCache<any> {
+export interface IEnhancedWorkspaceCache extends ISmartCache<IWorkspaceConfigData> {
     /**
      * Check if workspace cache is valid
      */
@@ -478,9 +519,9 @@ export interface IEnhancedWorkspaceCache extends ISmartCache<any> {
     update(workspacePath: WorkspacePath): Promise<void>;
     
     /**
-     * Get workspace configuration
+     * Get workspace configuration (backward compatibility)
      */
-    getConfig(): Promise<any | null>;
+    getConfig(): Promise<IConfigManager | null>;
     
     /**
      * Get current workspace path
@@ -496,7 +537,7 @@ export interface IEnhancedWorkspaceCache extends ISmartCache<any> {
 export abstract class CacheError extends Error {
     constructor(
         message: string,
-        public readonly context: Record<string, any> = {},
+        public readonly context: Record<string, unknown> = {},
         public readonly cause?: Error
     ) {
         super(message);
@@ -511,7 +552,7 @@ export class InvalidationError extends CacheError {
     constructor(
         message: string,
         public readonly event: InvalidationEvent,
-        context: Record<string, any> = {},
+        context: Record<string, unknown> = {},
         cause?: Error
     ) {
         super(message, { ...context, eventId: event.id, eventType: event.type }, cause);
@@ -525,7 +566,7 @@ export class FileWatcherError extends CacheError {
     constructor(
         message: string,
         public readonly watcherPath?: string,
-        context: Record<string, any> = {},
+        context: Record<string, unknown> = {},
         cause?: Error
     ) {
         super(message, { ...context, watcherPath }, cause);
@@ -539,7 +580,7 @@ export class CacheValidationError extends CacheError {
     constructor(
         message: string,
         public readonly cacheKey: CacheKey,
-        context: Record<string, any> = {},
+        context: Record<string, unknown> = {},
         cause?: Error
     ) {
         super(message, { ...context, cacheKey }, cause);

@@ -8,7 +8,7 @@ import {
     DEFAULT_ACCOUNT_PREFIXES, 
     DEFAULT_COMMODITIES 
 } from './types';
-import { IConfigManager as IHLedgerConfig, ConfigManager, getOptimizationManager, OptimizationManager } from './core';
+import { IConfigManager as IHLedgerConfig, ConfigManager, getOptimizationManager, OptimizationManager, IComponentContainer, ITextMateCustomizations, ITextMateRule } from './core';
 import { HLedgerEnterCommand } from './indentProvider';
 import { FuzzyMatcher, FuzzyMatch } from './completion/base/FuzzyMatcher';
 import { KeywordCompletionProvider as NewKeywordCompletionProvider } from './completion/providers/KeywordCompletionProvider';
@@ -197,8 +197,8 @@ export function getConfig(document: vscode.TextDocument): IHLedgerConfig {
     const config = new HLedgerConfig();
     
     // Copy data from cache - create a new config instance and merge
-    const cachedComponents = (cachedConfig as any).getComponents();
-    const configComponents = (config as any).getComponents();
+    const cachedComponents = (cachedConfig as IComponentContainer).getComponents();
+    const configComponents = (config as IComponentContainer).getComponents();
     
     configComponents.dataStore.merge(cachedComponents.dataStore);
     configComponents.usageTracker.merge(cachedComponents.usageTracker);
@@ -377,13 +377,13 @@ async function applyCustomColors(): Promise<void> {
         // Update TextMate rules in workspace settings only (not global)
         const currentTextMateCustomizations = editorConfig.get('tokenColorCustomizations') || {};
         
-        const updatedTextMateCustomizations = {
+        const updatedTextMateCustomizations: ITextMateCustomizations = {
             ...currentTextMateCustomizations,
             "[*]": {
-                ...((currentTextMateCustomizations as any)["[*]"] || {}),
+                ...((currentTextMateCustomizations as ITextMateCustomizations)["[*]"] || {}),
                 "textMateRules": [
                     // Keep existing non-hledger rules
-                    ...((currentTextMateCustomizations as any)["[*]"]?.textMateRules || []).filter((rule: any) => 
+                    ...((currentTextMateCustomizations as ITextMateCustomizations)["[*]"]?.textMateRules || []).filter((rule: ITextMateRule) => 
                         !rule.scope?.includes('.hledger')
                     ),
                     // Add our hledger rules
