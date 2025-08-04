@@ -391,7 +391,11 @@
     "test": "jest",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
-    "package": "vsce package",
+    "clean": "rimraf out *.vsix",
+    "prebuild": "npm run clean",
+    "build": "npm run compile",
+    "prepackage": "npm run clean",
+    "package": "npm run compile && vsce package",
     "publish": "vsce publish"
   },
   "devDependencies": {
@@ -401,6 +405,7 @@
     "@vscode/test-electron": "^2.5.2",
     "@vscode/vsce": "^2.22.0",
     "jest": "^30.0.5",
+    "rimraf": "^6.0.1",
     "ts-jest": "^29.4.0",
     "typescript": "^4.9.4"
   },
