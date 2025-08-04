@@ -1,4 +1,5 @@
 import { HLedgerConfig, ProjectCache } from '../main';
+import { createPayeeName, createTagEntry, createFilePath } from '../core/BrandedTypes';
 
 describe('Enhanced Caching System', () => {
     let config: HLedgerConfig;
@@ -75,8 +76,8 @@ describe('Enhanced Caching System', () => {
             
             // Initialize would normally scan workspace, but we'll mock a config
             const testConfig = new HLedgerConfig();
-            testConfig.payees.add('Test Store');
-            testConfig.tags.add('test');
+            testConfig.payees.add(createPayeeName('Test Store'));
+            testConfig.tags.add(createTagEntry('test'));
             
             // Manually set for testing
             projectCache['projects'].set('/test/project1', testConfig);
@@ -91,11 +92,11 @@ describe('Enhanced Caching System', () => {
             projectCache['projects'].set('/home/user/finance', testConfig);
             
             // Should find project for files within it
-            const projectPath = projectCache.findProjectForFile('/home/user/finance/2025.journal');
+            const projectPath = projectCache.findProjectForFile(createFilePath('/home/user/finance/2025.journal'));
             expect(projectPath).toBe('/home/user/finance');
             
             // Should not find project for unrelated files
-            const noProject = projectCache.findProjectForFile('/other/path/file.journal');
+            const noProject = projectCache.findProjectForFile(createFilePath('/other/path/file.journal'));
             expect(noProject).toBeNull();
         });
         

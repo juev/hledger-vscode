@@ -3,7 +3,24 @@ import { HLedgerParser } from './HLedgerParser';
 import { DataStore } from './DataStore';
 import { UsageTracker } from './UsageTracker';
 import { FileScanner } from './FileScanner';
-import { createAccountName, createPayeeName, createTagEntry, createCommodityName, createAccountAlias } from './BrandedTypes';
+import { 
+    createAccountName, 
+    createPayeeName, 
+    createTagEntry, 
+    createCommodityName, 
+    createAccountAlias,
+    createFilePath,
+    createWorkspacePath,
+    AccountName,
+    PayeeName,
+    TagEntry,
+    CommodityName,
+    AccountAlias,
+    DateString,
+    WorkspacePath,
+    FilePath,
+    unbranded
+} from './BrandedTypes';
 
 /**
  * Main configuration manager that coordinates all HLedger components
@@ -34,7 +51,7 @@ export class ConfigManager implements IConfigManager {
      * Parse a file and update internal state
      */
     parseFile(filePath: string): void {
-        const parsedData = this.parser.parseFile(filePath);
+        const parsedData = this.parser.parseFile(createFilePath(filePath));
         this.updateFromParsedData(parsedData);
     }
     
@@ -42,7 +59,7 @@ export class ConfigManager implements IConfigManager {
      * Parse content and update internal state
      */
     parseContent(content: string, basePath?: string): void {
-        const parsedData = this.parser.parseContent(content, basePath);
+        const parsedData = this.parser.parseContent(content, (basePath && basePath.trim() && basePath.trim().length > 0) ? createFilePath(basePath) : undefined);
         this.updateFromParsedData(parsedData);
     }
     
@@ -55,7 +72,7 @@ export class ConfigManager implements IConfigManager {
                 console.log('ConfigManager: Scanning workspace:', workspacePath);
             }
             
-            const files = this.fileScanner.scanWorkspace(workspacePath);
+            const files = this.fileScanner.scanWorkspace(createWorkspacePath(workspacePath));
             
             if (process.env.NODE_ENV !== 'test') {
                 console.log('ConfigManager: Found files:', files);
@@ -80,144 +97,144 @@ export class ConfigManager implements IConfigManager {
     
     // === Data Access Methods ===
     
-    getAccounts(): string[] {
+    getAccounts(): AccountName[] {
         return this.dataStore.getAccounts();
     }
     
-    getDefinedAccounts(): string[] {
+    getDefinedAccounts(): AccountName[] {
         return this.dataStore.getDefinedAccounts();
     }
     
-    getUsedAccounts(): string[] {
+    getUsedAccounts(): AccountName[] {
         return this.dataStore.getUsedAccounts();
     }
     
-    getUndefinedAccounts(): string[] {
+    getUndefinedAccounts(): AccountName[] {
         return this.dataStore.getUndefinedAccounts();
     }
     
-    getPayees(): string[] {
+    getPayees(): PayeeName[] {
         return this.dataStore.getPayees();
     }
     
-    getTags(): string[] {
+    getTags(): TagEntry[] {
         return this.dataStore.getTags();
     }
     
-    getCommodities(): string[] {
+    getCommodities(): CommodityName[] {
         return this.dataStore.getCommodities();
     }
     
-    getAliases(): Map<string, string> {
+    getAliases(): Map<AccountAlias, AccountName> {
         return this.dataStore.getAliases();
     }
     
-    getDefaultCommodity(): string | null {
+    getDefaultCommodity(): CommodityName | null {
         return this.dataStore.getDefaultCommodity();
     }
     
-    getLastDate(): string | null {
+    getLastDate(): DateString | null {
         return this.dataStore.getLastDate();
     }
     
     // === Usage-Based Methods ===
     
-    getAccountsByUsage(): Array<{account: string, count: number}> {
+    getAccountsByUsage(): Array<{account: AccountName, count: number}> {
         const accounts = this.dataStore.getAccounts();
         return accounts.map(account => ({
             account,
             count: this.usageTracker.getAccountUsage(account)
-        })).sort((a: {account: string, count: number}, b: {account: string, count: number}) => b.count - a.count);
+        })).sort((a: {account: AccountName, count: number}, b: {account: AccountName, count: number}) => b.count - a.count);
     }
     
-    getPayeesByUsage(): Array<{payee: string, count: number}> {
+    getPayeesByUsage(): Array<{payee: PayeeName, count: number}> {
         const payees = this.dataStore.getPayees();
         return payees.map(payee => ({
             payee,
             count: this.usageTracker.getPayeeUsage(payee)
-        })).sort((a: {payee: string, count: number}, b: {payee: string, count: number}) => b.count - a.count);
+        })).sort((a: {payee: PayeeName, count: number}, b: {payee: PayeeName, count: number}) => b.count - a.count);
     }
     
-    getTagsByUsage(): Array<{tag: string, count: number}> {
+    getTagsByUsage(): Array<{tag: TagEntry, count: number}> {
         const tags = this.dataStore.getTags();
         return tags.map(tag => ({
             tag,
             count: this.usageTracker.getTagUsage(tag)
-        })).sort((a: {tag: string, count: number}, b: {tag: string, count: number}) => b.count - a.count);
+        })).sort((a: {tag: TagEntry, count: number}, b: {tag: TagEntry, count: number}) => b.count - a.count);
     }
     
-    getCommoditiesByUsage(): Array<{commodity: string, count: number}> {
+    getCommoditiesByUsage(): Array<{commodity: CommodityName, count: number}> {
         const commodities = this.dataStore.getCommodities();
         return commodities.map(commodity => ({
             commodity,
             count: this.usageTracker.getCommodityUsage(commodity)
-        })).sort((a: {commodity: string, count: number}, b: {commodity: string, count: number}) => b.count - a.count);
+        })).sort((a: {commodity: CommodityName, count: number}, b: {commodity: CommodityName, count: number}) => b.count - a.count);
     }
     
     // === Legacy Properties (for backward compatibility) ===
     
     /** @deprecated Use getAccounts() instead */
-    get accounts(): Set<string> {
+    get accounts(): Set<AccountName> {
         return (this.dataStore as IDataStoreInternal).accounts;
     }
     
     /** @deprecated Use getDefinedAccounts() instead */
-    get definedAccounts(): Set<string> {
+    get definedAccounts(): Set<AccountName> {
         return (this.dataStore as IDataStoreInternal).definedAccounts;
     }
     
     /** @deprecated Use getUsedAccounts() instead */
-    get usedAccounts(): Set<string> {
+    get usedAccounts(): Set<AccountName> {
         return (this.dataStore as IDataStoreInternal).usedAccounts;
     }
     
     /** @deprecated Use getPayees() instead */
-    get payees(): Set<string> {
+    get payees(): Set<PayeeName> {
         return (this.dataStore as IDataStoreInternal).payees;
     }
     
     /** @deprecated Use getTags() instead */
-    get tags(): Set<string> {
+    get tags(): Set<TagEntry> {
         return (this.dataStore as IDataStoreInternal).tags;
     }
     
     /** @deprecated Use getCommodities() instead */
-    get commodities(): Set<string> {
+    get commodities(): Set<CommodityName> {
         return (this.dataStore as IDataStoreInternal).commodities;
     }
     
     /** @deprecated Use getAliases() instead */
-    get aliases(): Map<string, string> {
+    get aliases(): Map<AccountAlias, AccountName> {
         return (this.dataStore as IDataStoreInternal).aliases;
     }
     
     /** @deprecated Use getDefaultCommodity() instead */
-    get defaultCommodity(): string | null {
+    get defaultCommodity(): CommodityName | null {
         return (this.dataStore as IDataStoreInternal).defaultCommodity;
     }
     
     /** @deprecated Use getLastDate() instead */
-    get lastDate(): string | null {
+    get lastDate(): DateString | null {
         return (this.dataStore as IDataStoreInternal).lastDate;
     }
     
     /** @deprecated Internal usage tracking - use getAccountsByUsage() instead */
-    get accountUsageCount(): Map<string, number> {
+    get accountUsageCount(): Map<AccountName, number> {
         return (this.usageTracker as IUsageTrackerInternal).accountUsageCount;
     }
     
     /** @deprecated Internal usage tracking - use getPayeesByUsage() instead */
-    get payeeUsageCount(): Map<string, number> {
+    get payeeUsageCount(): Map<PayeeName, number> {
         return (this.usageTracker as IUsageTrackerInternal).payeeUsageCount;
     }
     
     /** @deprecated Internal usage tracking - use getTagsByUsage() instead */
-    get tagUsageCount(): Map<string, number> {
+    get tagUsageCount(): Map<TagEntry, number> {
         return (this.usageTracker as IUsageTrackerInternal).tagUsageCount;
     }
     
     /** @deprecated Internal usage tracking - use getCommoditiesByUsage() instead */
-    get commodityUsageCount(): Map<string, number> {
+    get commodityUsageCount(): Map<CommodityName, number> {
         return (this.usageTracker as IUsageTrackerInternal).commodityUsageCount;
     }
     

@@ -7,6 +7,11 @@ import * as fs from 'fs/promises';
 import * as fssync from 'fs';
 import * as path from 'path';
 import { IAsyncHLedgerParser, ParsedHLedgerData } from './interfaces';
+import { 
+    AccountName, PayeeName, CommodityName, TagEntry, AccountAlias, DateString,
+    createAccountName, createPayeeName, createCommodityName, createTagEntry, 
+    createAccountAlias, createDateString 
+} from './BrandedTypes';
 
 // Declare global gc function for TypeScript
 declare global {
@@ -223,19 +228,19 @@ export class AsyncHLedgerParser implements IAsyncHLedgerParser {
      */
     private createEmptyData(): ParsedHLedgerData {
         return {
-            accounts: new Set<string>(),
-            definedAccounts: new Set<string>(),
-            usedAccounts: new Set<string>(),
-            payees: new Set<string>(),
-            tags: new Set<string>(),
-            commodities: new Set<string>(),
-            aliases: new Map<string, string>(),
+            accounts: new Set<AccountName>(),
+            definedAccounts: new Set<AccountName>(),
+            usedAccounts: new Set<AccountName>(),
+            payees: new Set<PayeeName>(),
+            tags: new Set<TagEntry>(),
+            commodities: new Set<CommodityName>(),
+            aliases: new Map<AccountAlias, AccountName>(),
             defaultCommodity: null,
             lastDate: null,
-            accountUsage: new Map<string, number>(),
-            payeeUsage: new Map<string, number>(),
-            tagUsage: new Map<string, number>(),
-            commodityUsage: new Map<string, number>()
+            accountUsage: new Map<AccountName, number>(),
+            payeeUsage: new Map<PayeeName, number>(),
+            tagUsage: new Map<TagEntry, number>(),
+            commodityUsage: new Map<CommodityName, number>()
         };
     }
 
@@ -257,7 +262,7 @@ export class AsyncHLedgerParser implements IAsyncHLedgerParser {
             // Likely date - use optimized regex
             const dateMatch = trimmed.match(/^(\d{4}[-/.]\d{1,2}[-/.]\d{1,2}|\d{1,2}[-/.]\d{1,2})/);
             if (dateMatch) {
-                data.lastDate = dateMatch[1];
+                data.lastDate = createDateString(dateMatch[1]);
                 this.parseTransactionLine(trimmed, data);
                 return;
             }
@@ -271,7 +276,11 @@ export class AsyncHLedgerParser implements IAsyncHLedgerParser {
             
             switch (directive) {
                 case 'account':
-                    data.definedAccounts.add(content.split(';')[0].trim());
+                    try {
+                        data.definedAccounts.add(createAccountName(content.split(';')[0].trim()));
+                    } catch (error) {
+                        // Skip invalid account names
+                    }
                     return;
                     
                 case 'alias':
@@ -279,14 +288,24 @@ export class AsyncHLedgerParser implements IAsyncHLedgerParser {
                     if (equalIndex > 0) {
                         const alias = content.substring(0, equalIndex).trim();
                         const target = content.substring(equalIndex + 1).trim();
-                        data.aliases.set(alias, target);
-                        data.definedAccounts.add(alias);
-                        data.definedAccounts.add(target);
+                        try {
+                            const aliasName = createAccountAlias(alias);
+                            const targetName = createAccountName(target);
+                            data.aliases.set(aliasName, targetName);
+                            data.definedAccounts.add(createAccountName(alias));
+                            data.definedAccounts.add(targetName);
+                        } catch (error) {
+                            // Skip invalid aliases
+                        }
                     }
                     return;
                     
                 case 'commodity':
-                    data.commodities.add(content);
+                    try {
+                        data.commodities.add(createCommodityName(content));
+                    } catch (error) {
+                        // Skip invalid commodity names
+                    }
                     return;
                     
                 case 'include':
@@ -301,7 +320,7 @@ export class AsyncHLedgerParser implements IAsyncHLedgerParser {
         
         // Default commodity (single character directive)
         if (trimmed[0] === 'D' && trimmed[1] === ' ') {
-            data.defaultCommodity = trimmed.substring(2).trim();
+            data.defaultCommodity = createCommodityName(trimmed.substring(2).trim());
             return;
         }
         
@@ -354,8 +373,13 @@ export class AsyncHLedgerParser implements IAsyncHLedgerParser {
         
         const description = line.substring(startPos, descriptionEnd).trim();
         if (description) {
-            data.payees.add(description);
-            this.incrementUsage(data.payeeUsage, description);
+            try {
+                const payeeName = createPayeeName(description);
+                data.payees.add(payeeName);
+                this.incrementUsage(data.payeeUsage, payeeName);
+            } catch (error) {
+                // Skip invalid payee names
+            }
         }
         
         // Extract tags from comment
@@ -403,8 +427,13 @@ export class AsyncHLedgerParser implements IAsyncHLedgerParser {
         
         const account = line.substring(start, accountEnd).trim();
         if (account) {
-            data.usedAccounts.add(account);
-            this.incrementUsage(data.accountUsage, account);
+            try {
+                const accountName = createAccountName(account);
+                data.usedAccounts.add(accountName);
+                this.incrementUsage(data.accountUsage, accountName);
+            } catch (error) {
+                // Skip invalid account names
+            }
         }
         
         // Extract commodities and tags from remaining content
@@ -418,7 +447,7 @@ export class AsyncHLedgerParser implements IAsyncHLedgerParser {
             // Check for date: tags
             const dateTagMatch = comment.match(/\bdate:(\d{4}[-/.]\d{1,2}[-/.]\d{1,2}|\d{1,2}[-/.]\d{1,2})/);
             if (dateTagMatch) {
-                data.lastDate = dateTagMatch[1];
+                data.lastDate = createDateString(dateTagMatch[1]);
             }
             
             this.extractTags(comment, data);
@@ -448,8 +477,13 @@ export class AsyncHLedgerParser implements IAsyncHLedgerParser {
             // Check for colon
             if (i < comment.length && comment[i] === ':') {
                 const tag = comment.substring(tagStart, i);
-                data.tags.add(tag);
-                this.incrementUsage(data.tagUsage, tag);
+                try {
+                    const tagEntry = createTagEntry(tag);
+                    data.tags.add(tagEntry);
+                    this.incrementUsage(data.tagUsage, tagEntry);
+                } catch (error) {
+                    // Skip invalid tag entries
+                }
                 
                 // Skip to next potential tag
                 while (i < comment.length && comment[i] !== ' ' && comment[i] !== ',' && comment[i] !== ';') {
@@ -481,8 +515,13 @@ export class AsyncHLedgerParser implements IAsyncHLedgerParser {
                 
                 const commodity = amount.substring(commodityStart, i);
                 if (commodity.length >= 1) {
-                    data.commodities.add(commodity);
-                    this.incrementUsage(data.commodityUsage, commodity);
+                    try {
+                        const commodityName = createCommodityName(commodity);
+                        data.commodities.add(commodityName);
+                        this.incrementUsage(data.commodityUsage, commodityName);
+                    } catch (error) {
+                        // Skip invalid commodity names
+                    }
                 }
             } else {
                 i++;

@@ -138,7 +138,7 @@ export class FileScanner implements IFileScanner {
         
         while (currentDir !== root) {
             // Look for hledger files in this directory (non-recursive)
-            const hledgerFiles = this.findHLedgerFiles(currentDir, false);
+            const hledgerFiles = this.findHLedgerFiles(createFilePath(currentDir), false);
             if (hledgerFiles.length > 0) {
                 return currentDir;
             }

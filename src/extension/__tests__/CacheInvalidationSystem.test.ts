@@ -196,7 +196,7 @@ describe('Cache Invalidation System', () => {
         let registry: InvalidationStrategyRegistry;
         
         beforeEach(() => {
-            registry = new InvalidationStrategyRegistry();
+            registry = InvalidationStrategyRegistry.getInstance();
         });
         
         test('should register and retrieve strategies', () => {

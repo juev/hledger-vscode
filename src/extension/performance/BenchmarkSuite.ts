@@ -180,13 +180,7 @@ export class BenchmarkSuite {
             ...options
         };
 
-        this.profiler = new PerformanceProfiler({
-            enableMemoryTracking: this.options.includeMemoryTracking,
-            warmupIterations: this.options.warmupIterations,
-            minIterations: this.options.minIterations,
-            maxIterations: this.options.maxIterations,
-            enableGC: true
-        });
+        this.profiler = PerformanceProfiler.getInstance();
     }
 
     /**

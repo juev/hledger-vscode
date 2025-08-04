@@ -127,11 +127,43 @@ export interface ExtensionContext {
     subscriptions: Disposable[];
     workspaceState: any;
     globalState: any;
+    secrets: any;
+    extensionUri: Uri;
     extensionPath: string;
+    environmentVariableCollection: any;
     storagePath?: string;
     globalStoragePath: string;
     logPath: string;
+    logUri: Uri;
+    storageUri?: Uri;
+    globalStorageUri: Uri;
+    asAbsolutePath(relativePath: string): string;
+    extension: any;
+    extensionMode: any;
+    languageModelAccessInformation: any;
 }
+
+// Mock ExtensionContext implementation for tests
+export const createMockExtensionContext = (overrides: Partial<ExtensionContext> = {}): ExtensionContext => ({
+    subscriptions: [],
+    workspaceState: { get: jest.fn(), update: jest.fn() },
+    globalState: { get: jest.fn(), update: jest.fn() },
+    secrets: { get: jest.fn(), store: jest.fn(), delete: jest.fn() },
+    extensionUri: Uri.file('/test/extension'),
+    extensionPath: '/test/extension',
+    environmentVariableCollection: { replace: jest.fn(), append: jest.fn(), prepend: jest.fn() },
+    storagePath: '/test/storage',
+    globalStoragePath: '/test/global-storage',
+    logPath: '/test/logs',
+    logUri: Uri.file('/test/logs'),
+    storageUri: Uri.file('/test/storage'),
+    globalStorageUri: Uri.file('/test/global-storage'),
+    asAbsolutePath: (relativePath: string) => `/test/extension/${relativePath}`,
+    extension: { id: 'test.extension' },
+    extensionMode: 1, // Normal extension mode
+    languageModelAccessInformation: { canSendRequest: jest.fn() },
+    ...overrides
+});
 
 export const workspace = {
     getWorkspaceFolder: jest.fn(),

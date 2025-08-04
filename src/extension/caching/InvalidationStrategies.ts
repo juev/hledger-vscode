@@ -492,12 +492,6 @@ export class InvalidationStrategyRegistry extends SyncSingleton {
             .map(s => s.name);
     }
 
-    /**
-     * Get singleton instance of InvalidationStrategyRegistry
-     */
-    public static getInstance(context?: vscode.ExtensionContext): InvalidationStrategyRegistry {
-        return super.getInstance.call(this, context) as InvalidationStrategyRegistry;
-    }
 
     /**
      * Reset singleton for testing

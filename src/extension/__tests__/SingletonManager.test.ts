@@ -7,7 +7,6 @@ import { OptimizationManager } from '../core/OptimizationManager';
 import { PerformanceProfiler } from '../performance/PerformanceProfiler';
 import { InvalidationStrategyRegistry } from '../caching/InvalidationStrategies';
 import { WorkspaceCache, ProjectCache } from '../main';
-
 // Mock VS Code API
 jest.mock('vscode', () => ({
     window: {
@@ -30,6 +29,28 @@ jest.mock('vscode', () => ({
         }))
     }
 }));
+
+// Create mock context helper
+const createMockExtensionContext = (overrides: any = {}): any => ({
+    subscriptions: [],
+    workspaceState: { get: jest.fn(), update: jest.fn() },
+    globalState: { get: jest.fn(), update: jest.fn() },
+    secrets: { get: jest.fn(), store: jest.fn(), delete: jest.fn() },
+    extensionUri: { scheme: 'file', path: '/test/extension' },
+    extensionPath: '/test/extension',
+    environmentVariableCollection: { replace: jest.fn(), append: jest.fn(), prepend: jest.fn() },
+    storagePath: '/test/storage',
+    globalStoragePath: '/test/global-storage',
+    logPath: '/test/logs',
+    logUri: { scheme: 'file', path: '/test/logs' },
+    storageUri: { scheme: 'file', path: '/test/storage' },
+    globalStorageUri: { scheme: 'file', path: '/test/global-storage' },
+    asAbsolutePath: (relativePath: string) => `/test/extension/${relativePath}`,
+    extension: { id: 'test.extension' },
+    extensionMode: 1,
+    languageModelAccessInformation: { canSendRequest: jest.fn() },
+    ...overrides
+});
 
 // Test implementation of BaseSingleton
 class TestAsyncSingleton extends BaseSingleton {
@@ -88,10 +109,10 @@ describe('SingletonManager', () => {
         });
 
         it('should pass context to initialize method', async () => {
-            const context = { test: 'value' };
+            const context = createMockExtensionContext({ extensionPath: '/test/custom' });
             const instance = await TestAsyncSingleton.getInstance(context);
             
-            expect(instance.initializeContext).toBe(context);
+            expect(instance.initializeContext).toEqual(context);
         });
 
         it('should handle concurrent initialization', async () => {
@@ -138,10 +159,10 @@ describe('SingletonManager', () => {
         });
 
         it('should pass context to initialize method', () => {
-            const context = { test: 'value' };
+            const context = createMockExtensionContext({ extensionPath: '/test/custom' });
             const instance = TestSyncSingleton.getInstance(context);
             
-            expect(instance.initializeContext).toBe(context);
+            expect(instance.initializeContext).toEqual(context);
         });
 
         it('should reset and dispose properly', () => {

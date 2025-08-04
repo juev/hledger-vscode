@@ -55,17 +55,17 @@ export class PerformanceProfiler extends SyncSingleton {
     private startMemory: number = 0;
     private options: Required<ProfilerOptions>;
 
-    constructor(options: ProfilerOptions = {}) {
+    constructor(context?: vscode.ExtensionContext) {
         super();
+        // Default options for profiler
         this.options = {
-            enableMemoryTracking: options.enableMemoryTracking ?? true,
-            enableGC: options.enableGC ?? false,
-            warmupIterations: options.warmupIterations ?? 3,
-            minIterations: options.minIterations ?? 10,
-            maxIterations: options.maxIterations ?? 1000,
+            enableMemoryTracking: true,
+            enableGC: false,
+            warmupIterations: 3,
+            minIterations: 10,
+            maxIterations: 1000,
             maxDuration: 30000, // 30 seconds
-            collectMetadata: true,
-            ...options
+            collectMetadata: true
         };
     }
 
@@ -360,12 +360,6 @@ export class PerformanceProfiler extends SyncSingleton {
         return Math.round(bytes / Math.pow(1024, i) * 100) / 100 + ' ' + sizes[i];
     }
 
-    /**
-     * Get singleton instance of PerformanceProfiler
-     */
-    public static getInstance(context?: vscode.ExtensionContext): PerformanceProfiler {
-        return super.getInstance.call(this, context);
-    }
 
     /**
      * Reset singleton for testing

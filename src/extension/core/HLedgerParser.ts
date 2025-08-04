@@ -56,7 +56,7 @@ export class HLedgerParser implements IHLedgerParser {
         const lines = content.split('\n');
         
         for (const line of lines) {
-            this.parseLine(line, data, basePath || createFilePath(''));
+            this.parseLine(line, data, basePath);
         }
         
         // Union all accounts (defined + used)
@@ -90,7 +90,7 @@ export class HLedgerParser implements IHLedgerParser {
     /**
      * Parse a single line and update data structure
      */
-    private parseLine(line: string, data: ParsedHLedgerData, basePath: FilePath): void {
+    private parseLine(line: string, data: ParsedHLedgerData, basePath?: FilePath): void {
         const trimmed = line.trim();
         
         // Skip empty lines and comments

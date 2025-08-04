@@ -519,7 +519,7 @@ export class EnhancedWorkspaceCache implements IEnhancedWorkspaceCache {
         
         this.legacyWorkspacePath = workspacePath;
         this.legacyConfig = new ConfigManager();
-        this.legacyConfig.scanWorkspace(workspacePath);
+        this.legacyConfig.scanWorkspace(createWorkspacePath(workspacePath));
         this.legacyLastUpdate = Date.now();
         
         // Also update smart cache asynchronously

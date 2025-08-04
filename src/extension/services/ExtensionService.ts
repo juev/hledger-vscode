@@ -2,6 +2,7 @@ import * as vscode from 'vscode';
 import * as path from 'path';
 import { IExtensionService, IConfigService, IThemeService, IProviderService } from './interfaces';
 import { IConfigManager as IHLedgerConfig, ConfigManager, OptimizationManager, IComponentContainer } from '../core';
+import { createFilePath, createWorkspacePath } from '../core/BrandedTypes';
 import { SingletonLifecycleManager } from '../core/SingletonManager';
 import { ProjectCache } from '../main'; // Import existing cache classes
 
@@ -89,13 +90,13 @@ export class ExtensionService implements IExtensionService {
         const projectCacheInstance = ProjectCache.getInstance();
         
         // Try to find existing project for this file
-        let projectPath = projectCacheInstance.findProjectForFile(filePath);
+        let projectPath = projectCacheInstance.findProjectForFile(createFilePath(filePath));
         
         if (!projectPath) {
             // If no project found, try to determine project from workspace
             const workspaceFolder = vscode.workspace.getWorkspaceFolder(document.uri);
             if (workspaceFolder) {
-                projectPath = workspaceFolder.uri.fsPath;
+                projectPath = createWorkspacePath(workspaceFolder.uri.fsPath);
             } else {
                 // No workspace, parse only current document
                 const config = new ConfigManager() as any;
@@ -105,9 +106,9 @@ export class ExtensionService implements IExtensionService {
         }
         
         // Get or initialize project cache
-        let cachedConfig = projectCacheInstance.getConfig(projectPath);
+        let cachedConfig = projectCacheInstance.getConfig(projectPath as string);
         if (!cachedConfig) {
-            cachedConfig = projectCacheInstance.initializeProject(projectPath);
+            cachedConfig = projectCacheInstance.initializeProject(projectPath as string);
         }
         
         // Create a copy of cached config and merge with current document

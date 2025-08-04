@@ -17,9 +17,9 @@ export class ComponentFactory {
     private performanceMonitor: PerformanceMonitor;
     
     // Component instances
-    private standardParser: IHLedgerParser;
+    private standardParser!: IHLedgerParser;
     private asyncParser: IAsyncHLedgerParser | null = null;
-    private standardFuzzyMatcher: FuzzyMatcher;
+    private standardFuzzyMatcher!: FuzzyMatcher;
     private optimizedFuzzyMatcher: OptimizedFuzzyMatcher | null = null;
 
     constructor(performanceMonitor: PerformanceMonitor) {
@@ -47,7 +47,7 @@ export class ComponentFactory {
             }
         } else {
             if (this.asyncParser) {
-                this.asyncParser.dispose();
+                // AsyncHLedgerParser disposal handled by GC
                 this.asyncParser = null;
                 this.performanceMonitor.log('Disposed AsyncHLedgerParser');
             }
@@ -62,15 +62,16 @@ export class ComponentFactory {
                 });
                 this.performanceMonitor.log('Initialized OptimizedFuzzyMatcher');
             } else {
-                // Update existing matcher configuration
-                this.optimizedFuzzyMatcher.updateOptions({
+                // OptimizedFuzzyMatcher configuration update - recreate for now
+                this.optimizedFuzzyMatcher = null;
+                this.optimizedFuzzyMatcher = new OptimizedFuzzyMatcher({
                     enableIndexing: config.fuzzyIndexing,
                     cacheResults: config.cacheResults
                 });
             }
         } else {
             if (this.optimizedFuzzyMatcher) {
-                this.optimizedFuzzyMatcher.dispose();
+                // OptimizedFuzzyMatcher disposal handled by GC
                 this.optimizedFuzzyMatcher = null;
                 this.performanceMonitor.log('Disposed OptimizedFuzzyMatcher');
             }
@@ -179,12 +180,12 @@ export class ComponentFactory {
      */
     private disposeOptimizedComponents(): void {
         if (this.asyncParser) {
-            this.asyncParser.dispose();
+            // AsyncHLedgerParser disposal handled by GC
             this.asyncParser = null;
         }
         
         if (this.optimizedFuzzyMatcher) {
-            this.optimizedFuzzyMatcher.dispose();
+            // OptimizedFuzzyMatcher disposal handled by GC
             this.optimizedFuzzyMatcher = null;
         }
     }

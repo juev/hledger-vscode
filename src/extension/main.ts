@@ -124,12 +124,6 @@ export class WorkspaceCache extends SyncSingleton implements IWorkspaceCache {
         super.dispose();
     }
 
-    /**
-     * Get singleton instance
-     */
-    public static getInstance(context?: vscode.ExtensionContext): WorkspaceCache {
-        return super.getInstance.call(this, context) as WorkspaceCache;
-    }
 
     /**
      * Reset singleton for testing
@@ -214,12 +208,6 @@ export class ProjectCache extends SyncSingleton implements IProjectCache {
         }
     }
 
-    /**
-     * Get singleton instance of ProjectCache
-     */
-    public static getInstance(context?: vscode.ExtensionContext): ProjectCache {
-        return super.getInstance.call(this, context) as ProjectCache;
-    }
 
     /**
      * Reset singleton for testing
@@ -273,13 +261,13 @@ export function getConfig(document: vscode.TextDocument): IHLedgerConfig {
     const projectCacheInstance = ProjectCache.getInstance();
     
     // Try to find existing project for this file
-    let projectPath = projectCacheInstance.findProjectForFile(filePath);
+    let projectPath = projectCacheInstance.findProjectForFile(createFilePath(filePath));
     
     if (!projectPath) {
         // If no project found, try to determine project from workspace
         const workspaceFolder = vscode.workspace.getWorkspaceFolder(document.uri);
         if (workspaceFolder) {
-            projectPath = workspaceFolder.uri.fsPath;
+            projectPath = createWorkspacePath(workspaceFolder.uri.fsPath);
         } else {
             // No workspace, parse only current document
             const config = new ConfigManager() as any;
@@ -289,9 +277,9 @@ export function getConfig(document: vscode.TextDocument): IHLedgerConfig {
     }
     
     // Get or initialize project cache
-    let cachedConfig = projectCacheInstance.getConfig(projectPath);
+    let cachedConfig = projectCacheInstance.getConfig(projectPath as string);
     if (!cachedConfig) {
-        cachedConfig = projectCacheInstance.initializeProject(projectPath);
+        cachedConfig = projectCacheInstance.initializeProject(projectPath as string);
     }
     
     // Create a copy of cached config and merge with current document

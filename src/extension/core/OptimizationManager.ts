@@ -65,12 +65,6 @@ export class OptimizationManager extends SyncSingleton {
         SingletonLifecycleManager.register(this);
     }
 
-    /**
-     * Get singleton instance
-     */
-    public static getInstance(context?: vscode.ExtensionContext): OptimizationManager {
-        return super.getInstance.call(this, context);
-    }
 
     /**
      * Reset singleton for testing
@@ -233,30 +227,6 @@ export class OptimizationManager extends SyncSingleton {
         super.dispose();
     }
 
-    /**
-     * Get singleton instance of OptimizationManager
-     */
-    public static getInstance(context?: vscode.ExtensionContext): OptimizationManager {
-        const instances = SyncSingleton.getActiveInstances();
-        const existing = instances.get('OptimizationManager') as OptimizationManager;
-        if (existing && existing.isInitialized()) {
-            return existing;
-        }
-        
-        const instance = new OptimizationManager(context);
-        instance.initialize(context);
-        return instance;
-    }
-
-    /**
-     * Reset singleton for testing
-     */
-    public static resetInstance(): void {
-        const instance = OptimizationManager.getActiveInstances().get('OptimizationManager');
-        if (instance) {
-            instance.reset();
-        }
-    }
 }
 
 /**
