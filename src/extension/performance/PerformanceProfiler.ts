@@ -3,6 +3,8 @@
  * Provides comprehensive performance measurement and analysis tools
  */
 
+import { SyncSingleton, SingletonLifecycleManager } from '../core/SingletonManager';
+
 /** Branded type for performance metric names to ensure type safety */
 type MetricName = string & { readonly __brand: unique symbol };
 
@@ -46,23 +48,45 @@ export interface ProfilerOptions {
 /**
  * High-precision performance profiler with memory tracking
  */
-export class PerformanceProfiler {
+export class PerformanceProfiler extends SyncSingleton {
     private metrics: PerformanceMetrics[] = [];
     private startTime: number = 0;
     private startMemory: number = 0;
     private options: Required<ProfilerOptions>;
 
     constructor(options: ProfilerOptions = {}) {
+        super();
         this.options = {
-            enableMemoryTracking: true,
-            enableGC: false,
-            warmupIterations: 3,
-            minIterations: 10,
-            maxIterations: 1000,
+            enableMemoryTracking: options.enableMemoryTracking ?? true,
+            enableGC: options.enableGC ?? false,
+            warmupIterations: options.warmupIterations ?? 3,
+            minIterations: options.minIterations ?? 10,
+            maxIterations: options.maxIterations ?? 1000,
             maxDuration: 30000, // 30 seconds
             collectMetadata: true,
             ...options
         };
+    }
+
+    protected getSingletonKey(): string {
+        return 'PerformanceProfiler';
+    }
+
+    protected initialize(): void {
+        // Initialize profiler state
+        this.metrics = [];
+        this.startTime = 0;
+        this.startMemory = 0;
+        
+        // Register with lifecycle manager
+        SingletonLifecycleManager.register(this);
+    }
+
+    /**
+     * Clear all metrics
+     */
+    clearMetrics(): void {
+        this.metrics = [];
     }
 
     /**
@@ -334,12 +358,46 @@ export class PerformanceProfiler {
         const i = Math.floor(Math.log(bytes) / Math.log(1024));
         return Math.round(bytes / Math.pow(1024, i) * 100) / 100 + ' ' + sizes[i];
     }
+
+    /**
+     * Get singleton instance of PerformanceProfiler
+     */
+    public static getInstance(): PerformanceProfiler {
+        const instances = SyncSingleton.getActiveInstances();
+        const existing = instances.get('PerformanceProfiler') as PerformanceProfiler;
+        if (existing && existing.isInitialized()) {
+            return existing;
+        }
+        
+        const instance = new PerformanceProfiler();
+        instance.initialize();
+        return instance;
+    }
+
+    /**
+     * Reset singleton for testing
+     */
+    public static resetInstance(): void {
+        const instance = PerformanceProfiler.getActiveInstances().get('PerformanceProfiler');
+        if (instance) {
+            instance.reset();
+        }
+    }
+
+    /**
+     * Override dispose to cleanup resources properly
+     */
+    public dispose(): void {
+        this.clearMetrics();
+        super.dispose();
+    }
 }
 
 /**
  * Singleton instance for global profiling
+ * @deprecated Use PerformanceProfiler.getInstance() instead
  */
-export const profiler = new PerformanceProfiler();
+export const profiler = PerformanceProfiler.getInstance();
 
 /**
  * Type-safe decorator for profiling synchronous methods
@@ -354,7 +412,7 @@ export function profile(name?: string) {
         const profileName = name || `${(target.constructor as { name: string }).name}.${propertyKey}`;
 
         descriptor.value = function (this: T, ...args: unknown[]) {
-            return profiler.profile(profileName, () => originalMethod.apply(this, args));
+            return PerformanceProfiler.getInstance().profile(profileName, () => originalMethod.apply(this, args));
         };
 
         return descriptor;
@@ -374,7 +432,7 @@ export function profileAsync(name?: string) {
         const profileName = name || `${(target.constructor as { name: string }).name}.${propertyKey}`;
 
         descriptor.value = async function (this: T, ...args: unknown[]) {
-            return profiler.profileAsync(profileName, () => originalMethod.apply(this, args));
+            return PerformanceProfiler.getInstance().profileAsync(profileName, () => originalMethod.apply(this, args));
         };
 
         return descriptor;

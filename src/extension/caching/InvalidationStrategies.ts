@@ -9,6 +9,7 @@
  */
 
 import * as path from 'path';
+import { SyncSingleton, SingletonLifecycleManager } from '../core/SingletonManager';
 import {
     ICacheInvalidationStrategy,
     InvalidationContext,
@@ -419,15 +420,26 @@ export class SmartInvalidationStrategy extends BaseInvalidationStrategy {
 /**
  * Strategy registry for managing all available strategies
  */
-export class InvalidationStrategyRegistry {
+export class InvalidationStrategyRegistry extends SyncSingleton {
     private readonly strategies: Map<string, ICacheInvalidationStrategy> = new Map();
     
     constructor() {
+        super();
+    }
+
+    protected getSingletonKey(): string {
+        return 'InvalidationStrategyRegistry';
+    }
+
+    protected initialize(): void {
         // Register default strategies
         this.register(new PartialInvalidationStrategy());
         this.register(new CascadeInvalidationStrategy());  
         this.register(new FullInvalidationStrategy());
         this.register(new SmartInvalidationStrategy());
+
+        // Register with lifecycle manager
+        SingletonLifecycleManager.register(this);
     }
     
     /**
@@ -478,9 +490,43 @@ export class InvalidationStrategyRegistry {
             .sort((a, b) => b.priority - a.priority)
             .map(s => s.name);
     }
+
+    /**
+     * Get singleton instance of InvalidationStrategyRegistry
+     */
+    public static getInstance(): InvalidationStrategyRegistry {
+        const instances = SyncSingleton.getActiveInstances();
+        const existing = instances.get('InvalidationStrategyRegistry') as InvalidationStrategyRegistry;
+        if (existing && existing.isInitialized()) {
+            return existing;
+        }
+        
+        const instance = new InvalidationStrategyRegistry();
+        instance.initialize();
+        return instance;
+    }
+
+    /**
+     * Reset singleton for testing
+     */
+    public static resetInstance(): void {
+        const instance = InvalidationStrategyRegistry.getActiveInstances().get('InvalidationStrategyRegistry');
+        if (instance) {
+            instance.reset();
+        }
+    }
+
+    /**
+     * Override dispose to cleanup resources properly
+     */
+    public dispose(): void {
+        this.strategies.clear();
+        super.dispose();
+    }
 }
 
 /**
  * Default strategy registry instance
+ * @deprecated Use InvalidationStrategyRegistry.getInstance() instead
  */
-export const defaultStrategyRegistry = new InvalidationStrategyRegistry();
+export const defaultStrategyRegistry = InvalidationStrategyRegistry.getInstance();

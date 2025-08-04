@@ -10,6 +10,7 @@ import { HLedgerParser } from './HLedgerParser';
 import { AsyncHLedgerParser, AsyncParseOptions } from './AsyncHLedgerParser';
 import { FuzzyMatcher, FuzzyMatch, FuzzyMatchOptions } from '../completion/base/FuzzyMatcher';
 import { OptimizedFuzzyMatcher, OptimizedFuzzyMatchOptions } from '../completion/base/OptimizedFuzzyMatcher';
+import { SyncSingleton, SingletonLifecycleManager } from './SingletonManager';
 
 /** Configuration interface for optimization settings */
 export interface OptimizationConfig {
@@ -51,7 +52,7 @@ export interface OptimizationMetrics {
  * Central optimization manager that coordinates performance enhancements
  * with fallback safety and monitoring capabilities
  */
-export class OptimizationManager {
+export class OptimizationManager extends SyncSingleton {
     private config: OptimizationConfig;
     private metrics: OptimizationMetrics;
     private standardParser: IHLedgerParser;
@@ -60,8 +61,18 @@ export class OptimizationManager {
     private optimizedFuzzyMatcher: OptimizedFuzzyMatcher | null = null;
     private profiler: PerformanceProfiler;
     private outputChannel: vscode.OutputChannel | null = null;
+    private configurationWatcher: vscode.Disposable | null = null;
 
     constructor(context?: vscode.ExtensionContext) {
+        super();
+        // Initialization will happen in initialize() method
+    }
+
+    protected getSingletonKey(): string {
+        return 'OptimizationManager';
+    }
+
+    protected initialize(context?: vscode.ExtensionContext): void {
         this.config = this.loadConfiguration();
         this.metrics = this.initializeMetrics();
         this.standardParser = new HLedgerParser();
@@ -78,6 +89,9 @@ export class OptimizationManager {
 
         // Setup configuration change listener
         this.setupConfigurationWatcher();
+
+        // Register with lifecycle manager
+        SingletonLifecycleManager.register(this);
     }
 
     /**
@@ -378,12 +392,13 @@ export class OptimizationManager {
      * Setup configuration change watcher
      */
     private setupConfigurationWatcher(): void {
-        vscode.workspace.onDidChangeConfiguration(event => {
+        this.configurationWatcher = vscode.workspace.onDidChangeConfiguration(event => {
             if (event.affectsConfiguration('hledger.optimization')) {
                 const newConfig = this.loadConfiguration();
                 this.updateConfiguration(newConfig);
             }
         });
+        this.addDisposable(this.configurationWatcher);
     }
 
     /**
@@ -457,26 +472,70 @@ export class OptimizationManager {
             console.log(logMessage);
         }
     }
+
+    /**
+     * Override dispose to cleanup resources properly
+     */
+    public dispose(): void {
+        // Dispose output channel if we created it
+        if (this.outputChannel) {
+            this.outputChannel.dispose();
+            this.outputChannel = null;
+        }
+        
+        // Dispose optimized components
+        if (this.optimizedFuzzyMatcher) {
+            this.optimizedFuzzyMatcher.dispose();
+            this.optimizedFuzzyMatcher = null;
+        }
+        
+        if (this.asyncParser) {
+            this.asyncParser.dispose();
+            this.asyncParser = null;
+        }
+
+        // Call parent dispose
+        super.dispose();
+    }
+
+    /**
+     * Get singleton instance of OptimizationManager
+     */
+    public static getInstance(context?: vscode.ExtensionContext): OptimizationManager {
+        const instances = SyncSingleton.getActiveInstances();
+        const existing = instances.get('OptimizationManager') as OptimizationManager;
+        if (existing && existing.isInitialized()) {
+            return existing;
+        }
+        
+        const instance = new OptimizationManager(context);
+        instance.initialize(context);
+        return instance;
+    }
+
+    /**
+     * Reset singleton for testing
+     */
+    public static resetInstance(): void {
+        const instance = OptimizationManager.getActiveInstances().get('OptimizationManager');
+        if (instance) {
+            instance.reset();
+        }
+    }
 }
 
 /**
- * Global optimization manager instance
- */
-let globalOptimizationManager: OptimizationManager | null = null;
-
-/**
  * Get or create global optimization manager
+ * @deprecated Use OptimizationManager.getInstance() instead
  */
 export function getOptimizationManager(context?: vscode.ExtensionContext): OptimizationManager {
-    if (!globalOptimizationManager) {
-        globalOptimizationManager = new OptimizationManager(context);
-    }
-    return globalOptimizationManager;
+    return OptimizationManager.getInstance(context);
 }
 
 /**
  * Dispose global optimization manager
+ * @deprecated Use OptimizationManager.resetInstance() instead
  */
 export function disposeOptimizationManager(): void {
-    globalOptimizationManager = null;
+    OptimizationManager.resetInstance();
 }

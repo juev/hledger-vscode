@@ -50,7 +50,7 @@ export {
 
 export interface IProjectCache {
     getConfig(projectPath: WorkspacePath): IConfigManager | null;
-    initialize(projectPath: WorkspacePath): IConfigManager;
+    initializeProject(projectPath: WorkspacePath): IConfigManager;
     hasProject(projectPath: WorkspacePath): boolean;
     findProjectForFile(filePath: FilePath): WorkspacePath | null;
     clear(): void;

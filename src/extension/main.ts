@@ -8,7 +8,8 @@ import {
     DEFAULT_ACCOUNT_PREFIXES, 
     DEFAULT_COMMODITIES 
 } from './types';
-import { IConfigManager as IHLedgerConfig, ConfigManager, getOptimizationManager, OptimizationManager, IComponentContainer, ITextMateCustomizations, ITextMateRule } from './core';
+import { IConfigManager as IHLedgerConfig, ConfigManager, OptimizationManager, IComponentContainer, ITextMateCustomizations, ITextMateRule } from './core';
+import { SyncSingleton, SingletonLifecycleManager } from './core/SingletonManager';
 import { HLedgerEnterCommand } from './indentProvider';
 import { FuzzyMatcher, FuzzyMatch } from './completion/base/FuzzyMatcher';
 import { KeywordCompletionProvider as NewKeywordCompletionProvider } from './completion/providers/KeywordCompletionProvider';
@@ -18,12 +19,10 @@ import { DateCompletionProvider as NewDateCompletionProvider } from './completio
 import { PayeeCompletionProvider as NewPayeeCompletionProvider } from './completion/providers/PayeeCompletionProvider';
 import { TagCompletionProvider as NewTagCompletionProvider } from './completion/providers/TagCompletionProvider';
 
-// Create a global instance of FuzzyMatcher for backward compatibility
-const globalFuzzyMatcher = new FuzzyMatcher();
-
-// Backward-compatible fuzzy match function that uses the new FuzzyMatcher class
+// Backward-compatible fuzzy match function that creates a new FuzzyMatcher instance
 export function fuzzyMatch(query: string, items: string[]): FuzzyMatch[] {
-    return globalFuzzyMatcher.match(query, items);
+    const matcher = new FuzzyMatcher();
+    return matcher.match(query, items);
 }
 
 // Safe file search without shell execution
@@ -63,10 +62,28 @@ export class HLedgerConfig extends ConfigManager implements IHLedgerConfig {
     }
 }
 
-export class WorkspaceCache implements IWorkspaceCache {
+export class WorkspaceCache extends SyncSingleton implements IWorkspaceCache {
     private config: IHLedgerConfig | null = null;
     private lastUpdate: number = 0;
     private workspacePath: string | null = null;
+
+    constructor() {
+        super();
+    }
+
+    protected getSingletonKey(): string {
+        return 'WorkspaceCache';
+    }
+
+    protected initialize(): void {
+        // Initialize cache state
+        this.config = null;
+        this.lastUpdate = 0;
+        this.workspacePath = null;
+        
+        // Register with lifecycle manager
+        SingletonLifecycleManager.register(this);
+    }
     
     isValid(workspacePath: string): boolean {
         return this.config !== null && 
@@ -98,16 +115,67 @@ export class WorkspaceCache implements IWorkspaceCache {
         this.config = null;
         this.lastUpdate = 0;
     }
+
+    /**
+     * Get singleton instance of WorkspaceCache
+     */
+    public static getInstance(): WorkspaceCache {
+        const instances = SyncSingleton.getActiveInstances();
+        const existing = instances.get('WorkspaceCache') as WorkspaceCache;
+        if (existing && existing.isInitialized()) {
+            return existing;
+        }
+        
+        const instance = new WorkspaceCache();
+        instance.initialize();
+        return instance;
+    }
+
+    /**
+     * Reset singleton for testing
+     */
+    public static resetInstance(): void {
+        const instance = WorkspaceCache.getActiveInstances().get('WorkspaceCache');
+        if (instance) {
+            instance.reset();
+        }
+    }
+
+    /**
+     * Override dispose to cleanup resources properly
+     */
+    public dispose(): void {
+        this.config = null;
+        this.workspacePath = null;
+        this.lastUpdate = 0;
+        super.dispose();
+    }
 }
 
-export class ProjectCache implements IProjectCache {
+export class ProjectCache extends SyncSingleton implements IProjectCache {
     private projects: Map<string, IHLedgerConfig> = new Map();
+
+    constructor() {
+        super();
+    }
+
+    protected getSingletonKey(): string {
+        return 'ProjectCache';
+    }
+
+    protected initialize(): void {
+        // Initialize cache state
+        this.projects.clear();
+        
+        // Register with lifecycle manager
+        SingletonLifecycleManager.register(this);
+    }
     
     getConfig(projectPath: string): IHLedgerConfig | null {
         return this.projects.get(projectPath) || null;
     }
     
-    initialize(projectPath: string): IHLedgerConfig {
+    initializeProject(projectPath: string): IHLedgerConfig {
         console.log('Initializing project cache for:', projectPath);
         
         const config = new ConfigManager();
@@ -154,10 +222,42 @@ export class ProjectCache implements IProjectCache {
             console.log('Project cache cleared');
         }
     }
+
+    /**
+     * Get singleton instance of ProjectCache
+     */
+    public static getInstance(): ProjectCache {
+        const instances = SyncSingleton.getActiveInstances();
+        const existing = instances.get('ProjectCache') as ProjectCache;
+        if (existing && existing.isInitialized()) {
+            return existing;
+        }
+        
+        const instance = new ProjectCache();
+        instance.initialize();
+        return instance;
+    }
+
+    /**
+     * Reset singleton for testing
+     */
+    public static resetInstance(): void {
+        const instance = ProjectCache.getActiveInstances().get('ProjectCache');
+        if (instance) {
+            instance.reset();
+        }
+    }
+
+    /**
+     * Override dispose to cleanup resources properly
+     */
+    public dispose(): void {
+        this.projects.clear();
+        super.dispose();
+    }
 }
 
-const workspaceCache = new WorkspaceCache(); // Available for future workspace-level caching features
-const projectCache = new ProjectCache();
+// Deprecated: Use WorkspaceCache.getInstance() and ProjectCache.getInstance() instead
 
 // Get completion limits from configuration
 function getCompletionLimits(): { maxResults: number, maxAccountResults: number } {
@@ -170,9 +270,10 @@ function getCompletionLimits(): { maxResults: number, maxAccountResults: number 
 
 export function getConfig(document: vscode.TextDocument): IHLedgerConfig {
     const filePath = document.uri.fsPath;
+    const projectCacheInstance = ProjectCache.getInstance();
     
     // Try to find existing project for this file
-    let projectPath = projectCache.findProjectForFile(filePath);
+    let projectPath = projectCacheInstance.findProjectForFile(filePath);
     
     if (!projectPath) {
         // If no project found, try to determine project from workspace
@@ -188,9 +289,9 @@ export function getConfig(document: vscode.TextDocument): IHLedgerConfig {
     }
     
     // Get or initialize project cache
-    let cachedConfig = projectCache.getConfig(projectPath);
+    let cachedConfig = projectCacheInstance.getConfig(projectPath);
     if (!cachedConfig) {
-        cachedConfig = projectCache.initialize(projectPath);
+        cachedConfig = projectCacheInstance.initializeProject(projectPath);
     }
     
     // Create a copy of cached config and merge with current document
@@ -404,8 +505,11 @@ export function activate(context: vscode.ExtensionContext): void {
     // No cache invalidation - caches are persistent for better performance
     console.log('HLedger extension activated with persistent caching');
 
+    // Notify lifecycle manager that extension is activating
+    SingletonLifecycleManager.onExtensionActivated();
+
     // Initialize optimization manager
-    const optimizationManager = getOptimizationManager(context);
+    const optimizationManager = OptimizationManager.getInstance(context);
     console.log('HLedger optimization manager initialized');
     
     // Apply custom color settings
@@ -505,12 +609,9 @@ export function activate(context: vscode.ExtensionContext): void {
 }
 
 export function deactivate(): void {
-    // Clean up project caches
-    projectCache.clear();
+    // Notify lifecycle manager that extension is deactivating
+    // This will properly dispose all managed singletons
+    SingletonLifecycleManager.onExtensionDeactivated();
     
-    // Clean up optimization manager
-    const { disposeOptimizationManager } = require('./core');
-    disposeOptimizationManager();
-    
-    console.log('HLedger extension deactivated, caches cleared, optimization manager disposed');
+    console.log('HLedger extension deactivated, all singletons disposed');
 }
