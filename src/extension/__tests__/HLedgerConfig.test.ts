@@ -170,17 +170,14 @@ account Assets:Bank
                 throw new Error('Permission denied');
             });
             
-            const consoleSpy = jest.spyOn(console, 'error').mockImplementation();
+            // HLedgerParser now silently handles errors in test environment
+            // Just ensure no exception is thrown
+            expect(() => {
+                config.parseFile('/error/file.journal');
+            }).not.toThrow();
             
-            config.parseFile('/error/file.journal');
-            
-            expect(consoleSpy).toHaveBeenCalledWith(
-                'Error parsing file:',
-                '/error/file.journal',
-                expect.any(Error)
-            );
-            
-            consoleSpy.mockRestore();
+            // Verify that no data was parsed due to error
+            expect(config.getAccounts()).toEqual([]);
         });
     });
 });

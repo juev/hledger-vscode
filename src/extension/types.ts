@@ -1,43 +1,10 @@
-export interface IHLedgerConfig {
-    accounts: Set<string>;
-    definedAccounts: Set<string>;
-    usedAccounts: Set<string>;
-    aliases: Map<string, string>;
-    commodities: Set<string>;
-    defaultCommodity: string | null;
-    lastDate: string | null;
-    payees: Set<string>; // Stores/payees
-    tags: Set<string>;   // Tags/categories
-    
-    // Usage counters for frequency-based prioritization
-    accountUsageCount: Map<string, number>;
-    payeeUsageCount: Map<string, number>;
-    tagUsageCount: Map<string, number>;
-    commodityUsageCount: Map<string, number>;
-    
-    parseFile(filePath: string): void;
-    parseContent(content: string, basePath?: string): void;
-    scanWorkspace(workspacePath: string): void;
-    getAccounts(): string[];
-    getDefinedAccounts(): string[];
-    getUsedAccounts(): string[];
-    getUndefinedAccounts(): string[];
-    getCommodities(): string[];
-    getAliases(): Map<string, string>;
-    getLastDate(): string | null;
-    getPayees(): string[];
-    getTags(): string[];
-    
-    // Methods to get sorted lists by usage frequency
-    getAccountsByUsage(): Array<{account: string, count: number}>;
-    getPayeesByUsage(): Array<{payee: string, count: number}>;
-    getTagsByUsage(): Array<{tag: string, count: number}>;
-    getCommoditiesByUsage(): Array<{commodity: string, count: number}>;
-}
+// Re-export interfaces from core module for backward compatibility
+export type { IConfigManager as IHLedgerConfig } from './core';
+import type { IConfigManager } from './core';
 
 export interface IProjectCache {
-    getConfig(projectPath: string): IHLedgerConfig | null;
-    initialize(projectPath: string): IHLedgerConfig;
+    getConfig(projectPath: string): IConfigManager | null;
+    initialize(projectPath: string): IConfigManager;
     hasProject(projectPath: string): boolean;
     findProjectForFile(filePath: string): string | null;
     clear(): void;
@@ -46,7 +13,7 @@ export interface IProjectCache {
 export interface IWorkspaceCache {
     isValid(workspacePath: string): boolean;
     update(workspacePath: string): void;
-    getConfig(): IHLedgerConfig | null;
+    getConfig(): IConfigManager | null;
     invalidate(): void;
 }
 

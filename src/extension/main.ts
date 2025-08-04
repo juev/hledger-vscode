@@ -2,13 +2,13 @@ import * as vscode from 'vscode';
 import * as fs from 'fs';
 import * as path from 'path';
 import { 
-    IHLedgerConfig, 
     IWorkspaceCache, 
     IProjectCache,
     HLEDGER_KEYWORDS, 
     DEFAULT_ACCOUNT_PREFIXES, 
     DEFAULT_COMMODITIES 
 } from './types';
+import { IConfigManager as IHLedgerConfig, ConfigManager } from './core';
 import { HLedgerEnterCommand } from './indentProvider';
 import { FuzzyMatcher, FuzzyMatch } from './completion/base/FuzzyMatcher';
 import { KeywordCompletionProvider as NewKeywordCompletionProvider } from './completion/providers/KeywordCompletionProvider';
@@ -56,275 +56,10 @@ function findHLedgerFiles(dir: string, recursive: boolean = true): string[] {
     return results;
 }
 
-export class HLedgerConfig implements IHLedgerConfig {
-    accounts: Set<string> = new Set();
-    definedAccounts: Set<string> = new Set();
-    usedAccounts: Set<string> = new Set();
-    aliases: Map<string, string> = new Map();
-    commodities: Set<string> = new Set();
-    defaultCommodity: string | null = null;
-    lastDate: string | null = null;
-    payees: Set<string> = new Set(); // Stores/payees
-    tags: Set<string> = new Set();   // Tags/categories
-    
-    // Usage counters for frequency-based prioritization
-    accountUsageCount: Map<string, number> = new Map();
-    payeeUsageCount: Map<string, number> = new Map();
-    tagUsageCount: Map<string, number> = new Map();
-    commodityUsageCount: Map<string, number> = new Map();
-    
-    parseFile(filePath: string): void {
-        try {
-            if (!fs.existsSync(filePath)) {
-                return;
-            }
-            
-            const content = fs.readFileSync(filePath, 'utf8');
-            this.parseContent(content, path.dirname(filePath));
-        } catch (error) {
-            console.error('Error parsing file:', filePath, error);
-        }
-    }
-    
-    parseContent(content: string, basePath: string = ''): void {
-        const lines = content.split('\n');
-        
-        for (const line of lines) {
-            const trimmed = line.trim();
-            
-            // Extract dates from transactions for date completion (keep the most recent)
-            // Support all hledger date formats: YYYY-MM-DD, YYYY/MM/DD, YYYY.MM.DD, MM-DD, MM/DD, MM.DD
-            const dateMatch = trimmed.match(/^(\d{4}[-/.]\d{1,2}[-/.]\d{1,2}|\d{1,2}[-/.]\d{1,2})/);
-            if (dateMatch) {
-                this.lastDate = dateMatch[1];
-                
-                // Extract payee from transaction line
-                // Format: DATE [*|!] [CODE] DESCRIPTION [; COMMENT]
-                // Support payee|note format as per hledger spec
-                const transactionMatch = trimmed.match(/^(\d{4}[-/.]\d{1,2}[-/.]\d{1,2}|\d{1,2}[-/.]\d{1,2})\s*(\*|!)?\s*(\([^)]+\))?\s*([^;]+)(?:;(.*))?$/);
-                if (transactionMatch) {
-                    const description = transactionMatch[4]?.trim();
-                    if (description) {
-                        // Store entire description as payee, including pipe characters
-                        // Do not split on | to support payees like "Store | Branch"
-                        this.payees.add(description);
-                        // Increment usage count for payee
-                        this.payeeUsageCount.set(description, (this.payeeUsageCount.get(description) || 0) + 1);
-                    }
-                    
-                    // Extract tags from comment
-                    const comment = transactionMatch[5]?.trim();
-                    if (comment) {
-                        // Look for tags in format: tag:value
-                        const tagMatches = comment.match(/(^|[,\s])([a-zA-Z\u0400-\u04FF][a-zA-Z\u0400-\u04FF0-9_]*):([^\s,;]+)/g);
-                        if (tagMatches) {
-                            tagMatches.forEach(match => {
-                                const tagMatch = match.trim().match(/([a-zA-Z\u0400-\u04FF][a-zA-Z\u0400-\u04FF0-9_]*):(.+)/);
-                                if (tagMatch) {
-                                    const tag = tagMatch[1];
-                                    this.tags.add(tag);
-                                    // Increment usage count for tag
-                                    this.tagUsageCount.set(tag, (this.tagUsageCount.get(tag) || 0) + 1);
-                                }
-                            });
-                        }
-                    }
-                }
-            }
-            
-            // Account definitions
-            const accountMatch = trimmed.match(/^account\s+([^;]+)/);
-            if (accountMatch) {
-                const account = accountMatch[1].trim();
-                this.accounts.add(account);
-                this.definedAccounts.add(account);
-                continue;
-            }
-            
-            // Alias definitions
-            const aliasMatch = trimmed.match(/^alias\s+([^=]+)\s*=\s*(.+)/);
-            if (aliasMatch) {
-                const alias = aliasMatch[1].trim();
-                const target = aliasMatch[2].trim();
-                this.aliases.set(alias, target);
-                this.accounts.add(alias);
-                this.accounts.add(target);
-                continue;
-            }
-            
-            // Commodity definitions
-            const commodityMatch = trimmed.match(/^commodity\s+(.+)/);
-            if (commodityMatch) {
-                const commodity = commodityMatch[1].trim();
-                this.commodities.add(commodity);
-                continue;
-            }
-            
-            // Default commodity
-            const defaultMatch = trimmed.match(/^D\s+(.+)/);
-            if (defaultMatch) {
-                this.defaultCommodity = defaultMatch[1].trim();
-                continue;
-            }
-            
-            // Include files
-            const includeMatch = trimmed.match(/^include\s+(.+)/);
-            if (includeMatch && basePath) {
-                const includePath = includeMatch[1].trim();
-                const fullPath = path.resolve(basePath, includePath);
-                this.parseFile(fullPath);
-                continue;
-            }
-            
-            // Extract accounts from transactions
-            if (/^\s+/.test(line)) { // Check that line starts with spaces
-                // Parse posting line: ACCOUNT [AMOUNT] [@ PRICE] [= BALANCE_ASSERTION] [; COMMENT]
-                // Support cost/price notation: @ unit_price, @@ total_price
-                // Support balance assertions: = single commodity balance, == sole commodity balance
-                const postingMatch = line.match(/^\s+([A-Za-z\u0400-\u04FF][A-Za-z\u0400-\u04FF0-9:_\-\s]*?)(?:\s{2,}([^@=;]+))?(?:\s*@@?\s*[^=;]+)?(?:\s*==?\s*[^;]+)?(?:\s*;(.*))?$/);
-                if (postingMatch) {
-                    const account = postingMatch[1].trim();
-                    this.accounts.add(account);
-                    this.usedAccounts.add(account);
-                    // Increment usage count for account
-                    this.accountUsageCount.set(account, (this.accountUsageCount.get(account) || 0) + 1);
-                    
-                    // Extract and count commodities from amount
-                    const amount = postingMatch[2]?.trim();
-                    if (amount) {
-                        // Match commodity symbols (letters, symbols like $, €, etc.)
-                        const commodityMatch = amount.match(/([A-Z]{3,}|[^\d\s.,+-]+)/);
-                        if (commodityMatch) {
-                            const commodity = commodityMatch[1].trim();
-                            this.commodities.add(commodity);
-                            // Increment usage count for commodity
-                            this.commodityUsageCount.set(commodity, (this.commodityUsageCount.get(commodity) || 0) + 1);
-                        }
-                    }
-                    
-                    // Parse posting comment for tags including date:
-                    const postingComment = postingMatch[3]?.trim();
-                    if (postingComment) {
-                        // Look for date:DATE tags specifically
-                        const dateTagMatch = postingComment.match(/\bdate:(\d{4}[-/.]\d{1,2}[-/.]\d{1,2}|\d{1,2}[-/.]\d{1,2})/);
-                        if (dateTagMatch) {
-                            // Store posting dates for date completion
-                            this.lastDate = dateTagMatch[1];
-                        }
-                        
-                        // Parse other tags from posting comments
-                        const tagMatches = postingComment.match(/(^|[,\s])([a-zA-Z\u0400-\u04FF][a-zA-Z\u0400-\u04FF0-9_]*):([^\s,;]+)/g);
-                        if (tagMatches) {
-                            tagMatches.forEach(match => {
-                                const tagMatch = match.trim().match(/([a-zA-Z\u0400-\u04FF][a-zA-Z\u0400-\u04FF0-9_]*):(.+)/);
-                                if (tagMatch) {
-                                    const tag = tagMatch[1];
-                                    this.tags.add(tag);
-                                    // Increment usage count for tag
-                                    this.tagUsageCount.set(tag, (this.tagUsageCount.get(tag) || 0) + 1);
-                                }
-                            });
-                        }
-                    }
-                }
-            }
-        }
-    }
-    
-    getAccounts(): string[] {
-        return Array.from(this.accounts);
-    }
-    
-    getDefinedAccounts(): string[] {
-        return Array.from(this.definedAccounts);
-    }
-    
-    getUsedAccounts(): string[] {
-        return Array.from(this.usedAccounts);
-    }
-    
-    getUndefinedAccounts(): string[] {
-        return Array.from(this.usedAccounts).filter(acc => !this.definedAccounts.has(acc));
-    }
-    
-    getCommodities(): string[] {
-        return Array.from(this.commodities);
-    }
-    
-    getAliases(): Map<string, string> {
-        return this.aliases;
-    }
-    
-    getLastDate(): string | null {
-        return this.lastDate;
-    }
-    
-    getPayees(): string[] {
-        return Array.from(this.payees);
-    }
-    
-    getTags(): string[] {
-        return Array.from(this.tags);
-    }
-    
-    // Methods to get sorted lists by usage frequency
-    getAccountsByUsage(): Array<{account: string, count: number}> {
-        return Array.from(this.accounts).map(account => ({
-            account,
-            count: this.accountUsageCount.get(account) || 0
-        })).sort((a, b) => b.count - a.count);
-    }
-    
-    getPayeesByUsage(): Array<{payee: string, count: number}> {
-        return Array.from(this.payees).map(payee => ({
-            payee,
-            count: this.payeeUsageCount.get(payee) || 0
-        })).sort((a, b) => b.count - a.count);
-    }
-    
-    getTagsByUsage(): Array<{tag: string, count: number}> {
-        return Array.from(this.tags).map(tag => ({
-            tag,
-            count: this.tagUsageCount.get(tag) || 0
-        })).sort((a, b) => b.count - a.count);
-    }
-    
-    getCommoditiesByUsage(): Array<{commodity: string, count: number}> {
-        return Array.from(this.commodities).map(commodity => ({
-            commodity,
-            count: this.commodityUsageCount.get(commodity) || 0
-        })).sort((a, b) => b.count - a.count);
-    }
-    
-    scanWorkspace(workspacePath: string): void {
-        try {
-            if (process.env.NODE_ENV !== 'test') {
-                console.log('Scanning workspace:', workspacePath);
-            }
-            const files = findHLedgerFiles(workspacePath, true);
-            if (process.env.NODE_ENV !== 'test') {
-                console.log('Found files:', files);
-            }
-            
-            for (const file of files) {
-                if (process.env.NODE_ENV !== 'test') {
-                    console.log('Parsing file:', file);
-                }
-                this.parseFile(file);
-            }
-            
-            if (process.env.NODE_ENV !== 'test') {
-                console.log('Total accounts found:', this.accounts.size);
-            }
-            if (process.env.NODE_ENV !== 'test') {
-                console.log('Defined accounts:', Array.from(this.definedAccounts));
-            }
-            if (process.env.NODE_ENV !== 'test') {
-                console.log('Used accounts:', Array.from(this.usedAccounts));
-            }
-        } catch (error) {
-            console.error('Error scanning workspace:', error);
-        }
+// Legacy class for backward compatibility - replaced by ConfigManager
+export class HLedgerConfig extends ConfigManager implements IHLedgerConfig {
+    constructor() {
+        super();
     }
 }
 
@@ -344,7 +79,7 @@ export class WorkspaceCache implements IWorkspaceCache {
             console.log('Updating workspace cache for:', workspacePath);
         }
         this.workspacePath = workspacePath;
-        this.config = new HLedgerConfig();
+        this.config = new ConfigManager();
         this.config.scanWorkspace(workspacePath);
         this.lastUpdate = Date.now();
         if (process.env.NODE_ENV !== 'test') {
@@ -375,7 +110,7 @@ export class ProjectCache implements IProjectCache {
     initialize(projectPath: string): IHLedgerConfig {
         console.log('Initializing project cache for:', projectPath);
         
-        const config = new HLedgerConfig();
+        const config = new ConfigManager();
         config.scanWorkspace(projectPath);
         
         this.projects.set(projectPath, config);
@@ -446,7 +181,7 @@ export function getConfig(document: vscode.TextDocument): IHLedgerConfig {
             projectPath = workspaceFolder.uri.fsPath;
         } else {
             // No workspace, parse only current document
-            const config = new HLedgerConfig();
+            const config = new ConfigManager();
             config.parseContent(document.getText(), path.dirname(filePath));
             return config;
         }
@@ -461,26 +196,14 @@ export function getConfig(document: vscode.TextDocument): IHLedgerConfig {
     // Create a copy of cached config and merge with current document
     const config = new HLedgerConfig();
     
-    // Copy data from cache
-    cachedConfig.accounts.forEach(acc => config.accounts.add(acc));
-    cachedConfig.definedAccounts.forEach(acc => config.definedAccounts.add(acc));
-    cachedConfig.usedAccounts.forEach(acc => config.usedAccounts.add(acc));
-    cachedConfig.commodities.forEach(comm => config.commodities.add(comm));
-    cachedConfig.payees.forEach(payee => config.payees.add(payee));
-    cachedConfig.tags.forEach(tag => config.tags.add(tag));
-    config.aliases = new Map(cachedConfig.getAliases());
-    config.defaultCommodity = cachedConfig.defaultCommodity;
-    config.lastDate = cachedConfig.lastDate;
+    // Copy data from cache - create a new config instance and merge
+    const cachedComponents = (cachedConfig as any).getComponents();
+    const configComponents = (config as any).getComponents();
     
-    // Copy usage counts from cache
-    cachedConfig.accountUsageCount.forEach((count, account) => 
-        config.accountUsageCount.set(account, count));
-    cachedConfig.payeeUsageCount.forEach((count, payee) => 
-        config.payeeUsageCount.set(payee, count));
-    cachedConfig.tagUsageCount.forEach((count, tag) => 
-        config.tagUsageCount.set(tag, count));
-    cachedConfig.commodityUsageCount.forEach((count, commodity) => 
-        config.commodityUsageCount.set(commodity, count));
+    configComponents.dataStore.merge(cachedComponents.dataStore);
+    configComponents.usageTracker.merge(cachedComponents.usageTracker);
+    
+    // Usage counts are already merged via usageTracker.merge() above
     
     // Parse current document to get latest changes
     config.parseContent(document.getText(), path.dirname(filePath));
