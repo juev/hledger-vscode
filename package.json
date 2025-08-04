@@ -173,6 +173,85 @@
           "type": "boolean",
           "default": true,
           "description": "Enable result caching for parsing and fuzzy matching"
+        },
+        "hledger.cache.smartInvalidation": {
+          "type": "boolean",
+          "default": false,
+          "description": "Enable smart cache invalidation with enhanced caches (experimental)"
+        },
+        "hledger.cache.fileWatching": {
+          "type": "boolean",
+          "default": false,
+          "description": "Enable file system watching for automatic cache invalidation (experimental)"
+        },
+        "hledger.cache.cascadeInvalidation": {
+          "type": "boolean",
+          "default": false,
+          "description": "Enable cascade invalidation based on file dependencies (experimental)"
+        },
+        "hledger.cache.compressionEnabled": {
+          "type": "boolean",
+          "default": false,
+          "description": "Enable cache data compression for memory efficiency (experimental)"
+        },
+        "hledger.cache.persistentCache": {
+          "type": "boolean",
+          "default": false,
+          "description": "Enable persistent cache across VS Code sessions (experimental)"
+        },
+        "hledger.cache.metricsCollection": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable cache performance metrics collection"
+        },
+        "hledger.cache.debugLogging": {
+          "type": "boolean",
+          "default": false,
+          "description": "Enable detailed debug logging for cache operations"
+        },
+        "hledger.cache.debounceMs": {
+          "type": "number",
+          "default": 100,
+          "minimum": 50,
+          "maximum": 1000,
+          "description": "Debounce time in milliseconds for file system events"
+        },
+        "hledger.cache.maxBatchSize": {
+          "type": "number",
+          "default": 50,
+          "minimum": 10,
+          "maximum": 200,
+          "description": "Maximum number of events to batch together for processing"
+        },
+        "hledger.cache.maxAge": {
+          "type": "number",
+          "default": 300000,
+          "minimum": 60000,
+          "maximum": 3600000,
+          "description": "Maximum cache entry age in milliseconds (1 minute to 1 hour)"
+        },
+        "hledger.cache.maxSize": {
+          "type": "number",
+          "default": 1000,
+          "minimum": 100,
+          "maximum": 10000,
+          "description": "Maximum number of entries per cache"
+        },
+        "hledger.cache.watchPatterns": {
+          "type": "array",
+          "default": ["**/*.journal", "**/*.hledger", "**/*.ledger"],
+          "items": {
+            "type": "string"
+          },
+          "description": "File patterns to watch for changes (glob patterns)"
+        },
+        "hledger.cache.excludePatterns": {
+          "type": "array",
+          "default": ["**/node_modules/**", "**/.git/**"],
+          "items": {
+            "type": "string"
+          },
+          "description": "File patterns to exclude from watching (glob patterns)"
         }
       }
     },
@@ -196,6 +275,26 @@
         "command": "hledger.optimization.resetMetrics",
         "title": "HLedger: Reset Performance Metrics",
         "category": "HLedger Optimization"
+      },
+      {
+        "command": "hledger.cache.invalidateAll",
+        "title": "HLedger: Invalidate All Caches",
+        "category": "HLedger Cache"
+      },
+      {
+        "command": "hledger.cache.invalidateProject",
+        "title": "HLedger: Invalidate Project Cache",
+        "category": "HLedger Cache"
+      },
+      {
+        "command": "hledger.cache.showDiagnostics",
+        "title": "HLedger: Show Cache Diagnostics",
+        "category": "HLedger Cache"
+      },
+      {
+        "command": "hledger.cache.exportMetrics",
+        "title": "HLedger: Export Cache Metrics",
+        "category": "HLedger Cache"
       }
     ],
     "keybindings": [
