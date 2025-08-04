@@ -2,10 +2,10 @@ import * as vscode from 'vscode';
 import { BaseCompletionProvider, CompletionData } from '../base/BaseCompletionProvider';
 import { CompletionItemOptions } from '../base/CompletionItemFactory';
 import { getConfig } from '../../main';
-import { DEFAULT_COMMODITIES } from '../../types';
+import { DEFAULT_COMMODITIES_BRANDED, CommodityName, unbranded } from '../../types';
 
 interface CommodityInfo {
-    commodity: string;
+    commodity: CommodityName;
     detail: string;
     priority: number;
     usageCount: number;
@@ -56,7 +56,7 @@ export class CommodityCompletionProvider extends BaseCompletionProvider {
         });
         
         // Add default commodities if they don't exist
-        DEFAULT_COMMODITIES.forEach(commodity => {
+        DEFAULT_COMMODITIES_BRANDED.forEach(commodity => {
             if (!commoditiesByUsage.some(c => c.commodity === commodity)) {
                 commodityInfoList.push({
                     commodity,
@@ -74,17 +74,17 @@ export class CommodityCompletionProvider extends BaseCompletionProvider {
             // Priority 1 (configured): +5 bonus, Priority 2 (default): +0 bonus
             const priorityBonus = info.priority === 1 ? 5 : 0;
             const score = info.usageCount + priorityBonus;
-            usageCounts.set(info.commodity, score);
+            usageCounts.set(unbranded(info.commodity), score);
         });
         
         // Store commodity info in a map for later lookup
         this.commodityInfoMap = new Map<string, CommodityInfo>();
         commodityInfoList.forEach(info => {
-            this.commodityInfoMap!.set(info.commodity, info);
+            this.commodityInfoMap!.set(unbranded(info.commodity), info);
         });
         
         return {
-            items: commodityInfoList.map(info => info.commodity),
+            items: commodityInfoList.map(info => unbranded(info.commodity)),
             query: typedText,
             usageCounts
         };

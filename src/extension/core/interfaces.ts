@@ -1,3 +1,18 @@
+import {
+    AccountName,
+    PayeeName,
+    CommodityName,
+    TagName,
+    TagEntry,
+    DateString,
+    FilePath,
+    AccountAlias,
+    HLedgerKeyword,
+    WorkspacePath,
+    CacheKey,
+    CacheValue
+} from './BrandedTypes';
+
 /** Forward declaration for AsyncParseOptions */
 interface AsyncParseOptions {
     chunkSize?: number;
@@ -17,7 +32,7 @@ export interface IHLedgerParser {
      * @param filePath - Path to the hledger file
      * @returns Parsed data structure
      */
-    parseFile(filePath: string): ParsedHLedgerData;
+    parseFile(filePath: FilePath): ParsedHLedgerData;
     
     /**
      * Parse hledger content from string
@@ -25,7 +40,7 @@ export interface IHLedgerParser {
      * @param basePath - Base path for resolving includes
      * @returns Parsed data structure
      */
-    parseContent(content: string, basePath?: string): ParsedHLedgerData;
+    parseContent(content: string, basePath?: FilePath): ParsedHLedgerData;
 }
 
 /**
@@ -39,7 +54,7 @@ export interface IAsyncHLedgerParser extends IHLedgerParser {
      * @param options - Async parsing options
      * @returns Promise of parsed data structure
      */
-    parseFileAsync(filePath: string, options?: AsyncParseOptions): Promise<ParsedHLedgerData>;
+    parseFileAsync(filePath: FilePath, options?: AsyncParseOptions): Promise<ParsedHLedgerData>;
     
     /**
      * Parse hledger content asynchronously from string
@@ -48,7 +63,7 @@ export interface IAsyncHLedgerParser extends IHLedgerParser {
      * @param options - Async parsing options
      * @returns Promise of parsed data structure
      */
-    parseContentAsync(content: string, basePath?: string, options?: AsyncParseOptions): Promise<ParsedHLedgerData>;
+    parseContentAsync(content: string, basePath?: FilePath, options?: AsyncParseOptions): Promise<ParsedHLedgerData>;
     
     /**
      * Parse multiple files asynchronously with controlled concurrency
@@ -56,7 +71,7 @@ export interface IAsyncHLedgerParser extends IHLedgerParser {
      * @param options - Async parsing options
      * @returns Promise of combined parsed data
      */
-    parseFilesAsync(filePaths: string[], options?: AsyncParseOptions): Promise<ParsedHLedgerData>;
+    parseFilesAsync(filePaths: FilePath[], options?: AsyncParseOptions): Promise<ParsedHLedgerData>;
     
     /**
      * Clear internal caches
@@ -74,15 +89,15 @@ export interface IAsyncHLedgerParser extends IHLedgerParser {
  * Used for backward compatibility with legacy property access
  */
 export interface IDataStoreInternal {
-    readonly accounts: Set<string>;
-    readonly definedAccounts: Set<string>;
-    readonly usedAccounts: Set<string>;
-    readonly payees: Set<string>;
-    readonly tags: Set<string>;
-    readonly commodities: Set<string>;
-    readonly aliases: Map<string, string>;
-    readonly defaultCommodity: string | null;
-    readonly lastDate: string | null;
+    readonly accounts: Set<AccountName>;
+    readonly definedAccounts: Set<AccountName>;
+    readonly usedAccounts: Set<AccountName>;
+    readonly payees: Set<PayeeName>;
+    readonly tags: Set<TagEntry>;
+    readonly commodities: Set<CommodityName>;
+    readonly aliases: Map<AccountAlias, AccountName>;
+    readonly defaultCommodity: CommodityName | null;
+    readonly lastDate: DateString | null;
 }
 
 /**
@@ -95,99 +110,99 @@ export interface IDataStore extends IDataStoreInternal {
     /**
      * Add an account to the store
      */
-    addAccount(account: string): void;
+    addAccount(account: AccountName): void;
     
     /**
      * Add a defined account (from account directive)
      */
-    addDefinedAccount(account: string): void;
+    addDefinedAccount(account: AccountName): void;
     
     /**
      * Add a used account (from transactions)
      */
-    addUsedAccount(account: string): void;
+    addUsedAccount(account: AccountName): void;
     
     /**
      * Add a payee to the store
      */
-    addPayee(payee: string): void;
+    addPayee(payee: PayeeName): void;
     
     /**
      * Add a tag to the store
      */
-    addTag(tag: string): void;
+    addTag(tag: TagEntry): void;
     
     /**
      * Add a commodity to the store
      */
-    addCommodity(commodity: string): void;
+    addCommodity(commodity: CommodityName): void;
     
     /**
      * Set an account alias
      */
-    setAlias(alias: string, target: string): void;
+    setAlias(alias: AccountAlias, target: AccountName): void;
     
     /**
      * Set the default commodity
      */
-    setDefaultCommodity(commodity: string): void;
+    setDefaultCommodity(commodity: CommodityName): void;
     
     /**
      * Set the last transaction date
      */
-    setLastDate(date: string): void;
+    setLastDate(date: DateString): void;
     
     // === Data Retrieval ===
     
     /**
      * Get all accounts (defined + used)
      */
-    getAccounts(): string[];
+    getAccounts(): AccountName[];
     
     /**
      * Get only defined accounts
      */
-    getDefinedAccounts(): string[];
+    getDefinedAccounts(): AccountName[];
     
     /**
      * Get only used accounts
      */
-    getUsedAccounts(): string[];
+    getUsedAccounts(): AccountName[];
     
     /**
      * Get undefined accounts (used but not defined)
      */
-    getUndefinedAccounts(): string[];
+    getUndefinedAccounts(): AccountName[];
     
     /**
      * Get all payees
      */
-    getPayees(): string[];
+    getPayees(): PayeeName[];
     
     /**
      * Get all tags
      */
-    getTags(): string[];
+    getTags(): TagEntry[];
     
     /**
      * Get all commodities
      */
-    getCommodities(): string[];
+    getCommodities(): CommodityName[];
     
     /**
      * Get all aliases as a Map
      */
-    getAliases(): Map<string, string>;
+    getAliases(): Map<AccountAlias, AccountName>;
     
     /**
      * Get the default commodity
      */
-    getDefaultCommodity(): string | null;
+    getDefaultCommodity(): CommodityName | null;
     
     /**
      * Get the last transaction date
      */
-    getLastDate(): string | null;
+    getLastDate(): DateString | null;
     
     // === Utility ===
     
@@ -207,10 +222,10 @@ export interface IDataStore extends IDataStoreInternal {
  * Used for backward compatibility with legacy property access
  */
 export interface IUsageTrackerInternal {
-    readonly accountUsageCount: Map<string, number>;
-    readonly payeeUsageCount: Map<string, number>;
-    readonly tagUsageCount: Map<string, number>;
-    readonly commodityUsageCount: Map<string, number>;
+    readonly accountUsageCount: Map<AccountName, number>;
+    readonly payeeUsageCount: Map<PayeeName, number>;
+    readonly tagUsageCount: Map<TagEntry, number>;
+    readonly commodityUsageCount: Map<CommodityName, number>;
 }
 
 /**
@@ -223,66 +238,66 @@ export interface IUsageTracker extends IUsageTrackerInternal {
     /**
      * Increment usage count for an account
      */
-    incrementAccountUsage(account: string): void;
+    incrementAccountUsage(account: AccountName): void;
     
     /**
      * Increment usage count for a payee
      */
-    incrementPayeeUsage(payee: string): void;
+    incrementPayeeUsage(payee: PayeeName): void;
     
     /**
      * Increment usage count for a tag
      */
-    incrementTagUsage(tag: string): void;
+    incrementTagUsage(tag: TagEntry): void;
     
     /**
      * Increment usage count for a commodity
      */
-    incrementCommodityUsage(commodity: string): void;
+    incrementCommodityUsage(commodity: CommodityName): void;
     
     // === Sorted Results ===
     
     /**
      * Get accounts sorted by usage frequency (most used first)
      */
-    getAccountsByUsage(): Array<{account: string, count: number}>;
+    getAccountsByUsage(): Array<{account: AccountName, count: number}>;
     
     /**
      * Get payees sorted by usage frequency (most used first)
      */
-    getPayeesByUsage(): Array<{payee: string, count: number}>;
+    getPayeesByUsage(): Array<{payee: PayeeName, count: number}>;
     
     /**
      * Get tags sorted by usage frequency (most used first)
      */
-    getTagsByUsage(): Array<{tag: string, count: number}>;
+    getTagsByUsage(): Array<{tag: TagEntry, count: number}>;
     
     /**
      * Get commodities sorted by usage frequency (most used first)
      */
-    getCommoditiesByUsage(): Array<{commodity: string, count: number}>;
+    getCommoditiesByUsage(): Array<{commodity: CommodityName, count: number}>;
     
     // === Individual Usage Retrieval ===
     
     /**
      * Get usage count for a specific account
      */
-    getAccountUsage(account: string): number;
+    getAccountUsage(account: AccountName): number;
     
     /**
      * Get usage count for a specific payee
      */
-    getPayeeUsage(payee: string): number;
+    getPayeeUsage(payee: PayeeName): number;
     
     /**
      * Get usage count for a specific tag
      */
-    getTagUsage(tag: string): number;
+    getTagUsage(tag: TagEntry): number;
     
     /**
      * Get usage count for a specific commodity
      */
-    getCommodityUsage(commodity: string): number;
+    getCommodityUsage(commodity: CommodityName): number;
     
     // === Utility ===
     
@@ -308,14 +323,14 @@ export interface IFileScanner {
      * @param recursive - Whether to search recursively
      * @returns Array of file paths
      */
-    findHLedgerFiles(dir: string, recursive?: boolean): string[];
+    findHLedgerFiles(dir: FilePath, recursive?: boolean): FilePath[];
     
     /**
      * Scan workspace for hledger files
      * @param workspacePath - Workspace root path
      * @returns Array of file paths
      */
-    scanWorkspace(workspacePath: string): string[];
+    scanWorkspace(workspacePath: WorkspacePath): FilePath[];
 }
 
 /**
@@ -323,43 +338,43 @@ export interface IFileScanner {
  */
 export interface ParsedHLedgerData {
     /** All accounts (union of defined and used) */
-    accounts: Set<string>;
+    accounts: Set<AccountName>;
     
     /** Accounts defined with 'account' directive */
-    definedAccounts: Set<string>;
+    definedAccounts: Set<AccountName>;
     
     /** Accounts used in transactions */
-    usedAccounts: Set<string>;
+    usedAccounts: Set<AccountName>;
     
     /** Payees extracted from transaction descriptions */
-    payees: Set<string>;
+    payees: Set<PayeeName>;
     
     /** Tags extracted from comments */
-    tags: Set<string>;
+    tags: Set<TagEntry>;
     
     /** Commodities (currencies) found */
-    commodities: Set<string>;
+    commodities: Set<CommodityName>;
     
     /** Account aliases */
-    aliases: Map<string, string>;
+    aliases: Map<AccountAlias, AccountName>;
     
     /** Default commodity from 'D' directive */
-    defaultCommodity: string | null;
+    defaultCommodity: CommodityName | null;
     
     /** Last transaction date encountered */
-    lastDate: string | null;
+    lastDate: DateString | null;
     
     /** Usage statistics for accounts */
-    accountUsage: Map<string, number>;
+    accountUsage: Map<AccountName, number>;
     
     /** Usage statistics for payees */
-    payeeUsage: Map<string, number>;
+    payeeUsage: Map<PayeeName, number>;
     
     /** Usage statistics for tags */
-    tagUsage: Map<string, number>;
+    tagUsage: Map<TagEntry, number>;
     
     /** Usage statistics for commodities */
-    commodityUsage: Map<string, number>;
+    commodityUsage: Map<CommodityName, number>;
 }
 
 /**
@@ -430,76 +445,77 @@ export interface IConfigManager extends IComponentContainer {
     /**
      * Parse a file and update internal state
      */
-    parseFile(filePath: string): void;
+    parseFile(filePath: FilePath): void;
     
     /**
      * Parse content and update internal state
      */
-    parseContent(content: string, basePath?: string): void;
+    parseContent(content: string, basePath?: FilePath): void;
     
     /**
      * Scan workspace for files and parse them
      */
-    scanWorkspace(workspacePath: string): void;
+    scanWorkspace(workspacePath: WorkspacePath): void;
     
     // === Data Access Methods (for backward compatibility) ===
     
-    getAccounts(): string[];
-    getDefinedAccounts(): string[];
-    getUsedAccounts(): string[];
-    getUndefinedAccounts(): string[];
-    getPayees(): string[];
-    getTags(): string[];
-    getCommodities(): string[];
-    getAliases(): Map<string, string>;
-    getDefaultCommodity(): string | null;
-    getLastDate(): string | null;
+    getAccounts(): AccountName[];
+    getDefinedAccounts(): AccountName[];
+    getUsedAccounts(): AccountName[];
+    getUndefinedAccounts(): AccountName[];
+    getPayees(): PayeeName[];
+    getTags(): TagEntry[];
+    getCommodities(): CommodityName[];
+    getAliases(): Map<AccountAlias, AccountName>;
+    getDefaultCommodity(): CommodityName | null;
+    getLastDate(): DateString | null;
     
     // === Usage-Based Methods ===
     
-    getAccountsByUsage(): Array<{account: string, count: number}>;
-    getPayeesByUsage(): Array<{payee: string, count: number}>;
-    getTagsByUsage(): Array<{tag: string, count: number}>;
-    getCommoditiesByUsage(): Array<{commodity: string, count: number}>;
+    getAccountsByUsage(): Array<{account: AccountName, count: number}>;
+    getPayeesByUsage(): Array<{payee: PayeeName, count: number}>;
+    getTagsByUsage(): Array<{tag: TagEntry, count: number}>;
+    getCommoditiesByUsage(): Array<{commodity: CommodityName, count: number}>;
     
     // === Legacy Properties (for backward compatibility) ===
     
     /** @deprecated Use getAccounts() instead */
-    readonly accounts: Set<string>;
+    readonly accounts: Set<AccountName>;
     
     /** @deprecated Use getDefinedAccounts() instead */
-    readonly definedAccounts: Set<string>;
+    readonly definedAccounts: Set<AccountName>;
     
     /** @deprecated Use getUsedAccounts() instead */
-    readonly usedAccounts: Set<string>;
+    readonly usedAccounts: Set<AccountName>;
     
     /** @deprecated Use getPayees() instead */
-    readonly payees: Set<string>;
+    readonly payees: Set<PayeeName>;
     
     /** @deprecated Use getTags() instead */
-    readonly tags: Set<string>;
+    readonly tags: Set<TagEntry>;
     
     /** @deprecated Use getCommodities() instead */
-    readonly commodities: Set<string>;
+    readonly commodities: Set<CommodityName>;
+    
     
     /** @deprecated Use getAliases() instead */
-    readonly aliases: Map<string, string>;
+    readonly aliases: Map<AccountAlias, AccountName>;
     
     /** @deprecated Use getDefaultCommodity() instead */
-    readonly defaultCommodity: string | null;
+    readonly defaultCommodity: CommodityName | null;
     
     /** @deprecated Use getLastDate() instead */
-    readonly lastDate: string | null;
+    readonly lastDate: DateString | null;
     
     /** @deprecated Internal usage tracking - use getAccountsByUsage() instead */
-    readonly accountUsageCount: Map<string, number>;
+    readonly accountUsageCount: Map<AccountName, number>;
     
     /** @deprecated Internal usage tracking - use getPayeesByUsage() instead */
-    readonly payeeUsageCount: Map<string, number>;
+    readonly payeeUsageCount: Map<PayeeName, number>;
     
     /** @deprecated Internal usage tracking - use getTagsByUsage() instead */
-    readonly tagUsageCount: Map<string, number>;
+    readonly tagUsageCount: Map<TagEntry, number>;
     
     /** @deprecated Internal usage tracking - use getCommoditiesByUsage() instead */
-    readonly commodityUsageCount: Map<string, number>;
+    readonly commodityUsageCount: Map<CommodityName, number>;
 }

@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
 import { BaseCompletionProvider, CompletionData } from '../base/BaseCompletionProvider';
 import { CompletionItemOptions } from '../base/CompletionItemFactory';
-import { HLEDGER_KEYWORDS } from '../../types';
+import { HLEDGER_KEYWORDS_BRANDED, unbranded } from '../../types';
 import { ICompletionLimits, IFuzzyMatch } from '../../core/interfaces';
 
 /**
@@ -30,7 +30,7 @@ export class KeywordCompletionProvider extends BaseCompletionProvider {
         // Return keywords without artificial usage counts
         // Let FuzzyMatcher sort by relevance based on query match quality
         return {
-            items: [...HLEDGER_KEYWORDS],
+            items: HLEDGER_KEYWORDS_BRANDED.map(unbranded),
             query: typedText
             // No usageCounts - rely on FuzzyMatcher's relevance scoring
         };

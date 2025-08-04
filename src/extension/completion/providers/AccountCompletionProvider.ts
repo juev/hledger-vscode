@@ -2,11 +2,11 @@ import * as vscode from 'vscode';
 import { BaseCompletionProvider, CompletionData } from '../base/BaseCompletionProvider';
 import { CompletionItemOptions } from '../base/CompletionItemFactory';
 import { getConfig } from '../../main';
-import { DEFAULT_ACCOUNT_PREFIXES } from '../../types';
+import { DEFAULT_ACCOUNT_PREFIXES_BRANDED, AccountName, unbranded } from '../../types';
 import { ICompletionLimits, IFuzzyMatch } from '../../core/interfaces';
 
 interface AccountInfo {
-    account: string;
+    account: AccountName;
     kind: vscode.CompletionItemKind;
     detail: string;
     priority: number;
@@ -59,7 +59,7 @@ export class AccountCompletionProvider extends BaseCompletionProvider {
         });
         
         // Add default prefixes if they don't exist
-        DEFAULT_ACCOUNT_PREFIXES.forEach(prefix => {
+        DEFAULT_ACCOUNT_PREFIXES_BRANDED.forEach(prefix => {
             if (!accountInfoList.some(info => info.account === prefix)) {
                 accountInfoList.push({
                     account: prefix,
@@ -78,17 +78,17 @@ export class AccountCompletionProvider extends BaseCompletionProvider {
             // Priority 1 (defined): +10 bonus, Priority 2 (used): +5 bonus, Priority 3 (default): +0 bonus
             const priorityBonus = info.priority === 1 ? 10 : info.priority === 2 ? 5 : 0;
             const score = info.usageCount + priorityBonus;
-            usageCounts.set(info.account, score);
+            usageCounts.set(unbranded(info.account), score);
         });
         
         // Store account info in a map for later lookup
         this.accountInfoMap = new Map<string, AccountInfo>();
         accountInfoList.forEach(info => {
-            this.accountInfoMap!.set(info.account, info);
+            this.accountInfoMap!.set(unbranded(info.account), info);
         });
         
         return {
-            items: accountInfoList.map(info => info.account),
+            items: accountInfoList.map(info => unbranded(info.account)),
             query: typedText,
             usageCounts
         };

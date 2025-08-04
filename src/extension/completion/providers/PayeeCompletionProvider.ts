@@ -2,9 +2,10 @@ import * as vscode from 'vscode';
 import { BaseCompletionProvider, CompletionData } from '../base/BaseCompletionProvider';
 import { CompletionItemOptions } from '../base/CompletionItemFactory';
 import { getConfig } from '../../main';
+import { PayeeName, unbranded } from '../../types';
 
 interface PayeeInfo {
-    payee: string;
+    payee: PayeeName;
     detail: string;
     usageCount: number;
 }
@@ -73,17 +74,17 @@ export class PayeeCompletionProvider extends BaseCompletionProvider {
         // Create usage counts map for fuzzy matcher
         const usageCounts = new Map<string, number>();
         payeeInfoList.forEach(info => {
-            usageCounts.set(info.payee, info.usageCount);
+            usageCounts.set(unbranded(info.payee), info.usageCount);
         });
         
         // Store payee info in a map for later lookup
         this.payeeInfoMap = new Map<string, PayeeInfo>();
         payeeInfoList.forEach(info => {
-            this.payeeInfoMap!.set(info.payee, info);
+            this.payeeInfoMap!.set(unbranded(info.payee), info);
         });
         
         return {
-            items: payeeInfoList.map(info => info.payee),
+            items: payeeInfoList.map(info => unbranded(info.payee)),
             query: typedText,
             usageCounts
         };

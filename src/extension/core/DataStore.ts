@@ -1,33 +1,42 @@
 import { IDataStore } from './interfaces';
+import {
+    AccountName,
+    PayeeName,
+    CommodityName,
+    TagEntry,
+    DateString,
+    AccountAlias,
+    unbranded
+} from './BrandedTypes';
 
 /**
  * In-memory data store for HLedger parsed data
  * Responsible for storing and retrieving all parsed information
  */
 export class DataStore implements IDataStore {
-    private _accounts: Set<string> = new Set();
-    private _definedAccounts: Set<string> = new Set();
-    private _usedAccounts: Set<string> = new Set();
-    private _payees: Set<string> = new Set();
-    private _tags: Set<string> = new Set();
-    private _commodities: Set<string> = new Set();
-    private _aliases: Map<string, string> = new Map();
-    private _defaultCommodity: string | null = null;
-    private _lastDate: string | null = null;
+    private _accounts: Set<AccountName> = new Set();
+    private _definedAccounts: Set<AccountName> = new Set();
+    private _usedAccounts: Set<AccountName> = new Set();
+    private _payees: Set<PayeeName> = new Set();
+    private _tags: Set<TagEntry> = new Set();
+    private _commodities: Set<CommodityName> = new Set();
+    private _aliases: Map<AccountAlias, AccountName> = new Map();
+    private _defaultCommodity: CommodityName | null = null;
+    private _lastDate: DateString | null = null;
     
     // === Data Management ===
     
     /**
      * Add an account to the store
      */
-    addAccount(account: string): void {
+    addAccount(account: AccountName): void {
         this._accounts.add(account);
     }
     
     /**
      * Add a defined account (from account directive)
      */
-    addDefinedAccount(account: string): void {
+    addDefinedAccount(account: AccountName): void {
         this._definedAccounts.add(account);
         this._accounts.add(account); // Also add to main accounts set
     }
@@ -35,7 +44,7 @@ export class DataStore implements IDataStore {
     /**
      * Add a used account (from transactions)
      */
-    addUsedAccount(account: string): void {
+    addUsedAccount(account: AccountName): void {
         this._usedAccounts.add(account);
         this._accounts.add(account); // Also add to main accounts set
     }
@@ -43,44 +52,43 @@ export class DataStore implements IDataStore {
     /**
      * Add a payee to the store
      */
-    addPayee(payee: string): void {
+    addPayee(payee: PayeeName): void {
         this._payees.add(payee);
     }
     
     /**
      * Add a tag to the store
      */
-    addTag(tag: string): void {
+    addTag(tag: TagEntry): void {
         this._tags.add(tag);
     }
     
     /**
      * Add a commodity to the store
      */
-    addCommodity(commodity: string): void {
+    addCommodity(commodity: CommodityName): void {
         this._commodities.add(commodity);
     }
     
     /**
      * Set an account alias
      */
-    setAlias(alias: string, target: string): void {
+    setAlias(alias: AccountAlias, target: AccountName): void {
         this._aliases.set(alias, target);
-        this.addAccount(alias);
-        this.addAccount(target);
+        this.addAccount(target); // Only add the target account to accounts set
     }
     
     /**
      * Set the default commodity
      */
-    setDefaultCommodity(commodity: string): void {
+    setDefaultCommodity(commodity: CommodityName): void {
         this._defaultCommodity = commodity;
     }
     
     /**
      * Set the last transaction date
      */
-    setLastDate(date: string): void {
+    setLastDate(date: DateString): void {
         this._lastDate = date;
     }
     
@@ -89,70 +97,70 @@ export class DataStore implements IDataStore {
     /**
      * Get all accounts (defined + used)
      */
-    getAccounts(): string[] {
+    getAccounts(): AccountName[] {
         return Array.from(this._accounts);
     }
     
     /**
      * Get only defined accounts
      */
-    getDefinedAccounts(): string[] {
+    getDefinedAccounts(): AccountName[] {
         return Array.from(this._definedAccounts);
     }
     
     /**
      * Get only used accounts
      */
-    getUsedAccounts(): string[] {
+    getUsedAccounts(): AccountName[] {
         return Array.from(this._usedAccounts);
     }
     
     /**
      * Get undefined accounts (used but not defined)
      */
-    getUndefinedAccounts(): string[] {
+    getUndefinedAccounts(): AccountName[] {
         return Array.from(this._usedAccounts).filter(acc => !this._definedAccounts.has(acc));
     }
     
     /**
      * Get all payees
      */
-    getPayees(): string[] {
+    getPayees(): PayeeName[] {
         return Array.from(this._payees);
     }
     
     /**
      * Get all tags
      */
-    getTags(): string[] {
+    getTags(): TagEntry[] {
         return Array.from(this._tags);
     }
     
     /**
      * Get all commodities
      */
-    getCommodities(): string[] {
+    getCommodities(): CommodityName[] {
         return Array.from(this._commodities);
     }
     
     /**
      * Get all aliases as a Map
      */
-    getAliases(): Map<string, string> {
+    getAliases(): Map<AccountAlias, AccountName> {
         return new Map(this._aliases); // Return a copy to prevent external modification
     }
     
     /**
      * Get the default commodity
      */
-    getDefaultCommodity(): string | null {
+    getDefaultCommodity(): CommodityName | null {
         return this._defaultCommodity;
     }
     
     /**
      * Get the last transaction date
      */
-    getLastDate(): string | null {
+    getLastDate(): DateString | null {
         return this._lastDate;
     }
     
@@ -208,7 +216,7 @@ export class DataStore implements IDataStore {
      * Get accounts set (read-only)
      * @deprecated Use getAccounts() method instead
      */
-    get accounts(): Set<string> {
+    get accounts(): Set<AccountName> {
         return new Set(this._accounts); // Return copy to prevent modification
     }
     
@@ -216,7 +224,7 @@ export class DataStore implements IDataStore {
      * Get defined accounts set (read-only)
      * @deprecated Use getDefinedAccounts() method instead
      */
-    get definedAccounts(): Set<string> {
+    get definedAccounts(): Set<AccountName> {
         return new Set(this._definedAccounts);
     }
     
@@ -224,7 +232,7 @@ export class DataStore implements IDataStore {
      * Get used accounts set (read-only)
      * @deprecated Use getUsedAccounts() method instead
      */
-    get usedAccounts(): Set<string> {
+    get usedAccounts(): Set<AccountName> {
         return new Set(this._usedAccounts);
     }
     
@@ -232,7 +240,7 @@ export class DataStore implements IDataStore {
      * Get payees set (read-only)
      * @deprecated Use getPayees() method instead
      */
-    get payees(): Set<string> {
+    get payees(): Set<PayeeName> {
         return new Set(this._payees);
     }
     
@@ -240,7 +248,7 @@ export class DataStore implements IDataStore {
      * Get tags set (read-only)
      * @deprecated Use getTags() method instead
      */
-    get tags(): Set<string> {
+    get tags(): Set<TagEntry> {
         return new Set(this._tags);
     }
     
@@ -248,7 +256,7 @@ export class DataStore implements IDataStore {
      * Get commodities set (read-only)
      * @deprecated Use getCommodities() method instead
      */
-    get commodities(): Set<string> {
+    get commodities(): Set<CommodityName> {
         return new Set(this._commodities);
     }
     
@@ -256,7 +264,7 @@ export class DataStore implements IDataStore {
      * Get aliases map (read-only)
      * @deprecated Use getAliases() method instead
      */
-    get aliases(): Map<string, string> {
+    get aliases(): Map<AccountAlias, AccountName> {
         return new Map(this._aliases);
     }
     
@@ -264,7 +272,7 @@ export class DataStore implements IDataStore {
      * Get default commodity (read-only)
      * @deprecated Use getDefaultCommodity() method instead
      */
-    get defaultCommodity(): string | null {
+    get defaultCommodity(): CommodityName | null {
         return this._defaultCommodity;
     }
     
@@ -272,7 +280,7 @@ export class DataStore implements IDataStore {
      * Get last date (read-only)
      * @deprecated Use getLastDate() method instead
      */
-    get lastDate(): string | null {
+    get lastDate(): DateString | null {
         return this._lastDate;
     }
 }

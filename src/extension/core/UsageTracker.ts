@@ -1,70 +1,76 @@
 import { IUsageTracker } from './interfaces';
+import {
+    AccountName,
+    PayeeName,
+    CommodityName,
+    TagEntry
+} from './BrandedTypes';
 
 /**
  * Usage frequency tracker for HLedger completion prioritization
  * Maintains usage counters for accounts, payees, tags, and commodities
  */
 export class UsageTracker implements IUsageTracker {
-    private _accountUsage: Map<string, number> = new Map();
-    private _payeeUsage: Map<string, number> = new Map();
-    private _tagUsage: Map<string, number> = new Map();
-    private _commodityUsage: Map<string, number> = new Map();
+    private _accountUsage: Map<AccountName, number> = new Map();
+    private _payeeUsage: Map<PayeeName, number> = new Map();
+    private _tagUsage: Map<TagEntry, number> = new Map();
+    private _commodityUsage: Map<CommodityName, number> = new Map();
     
     // === Usage Tracking ===
     
     /**
      * Increment usage count for an account
      */
-    incrementAccountUsage(account: string): void {
+    incrementAccountUsage(account: AccountName): void {
         this._accountUsage.set(account, (this._accountUsage.get(account) || 0) + 1);
     }
     
     /**
      * Increment usage count for a payee
      */
-    incrementPayeeUsage(payee: string): void {
+    incrementPayeeUsage(payee: PayeeName): void {
         this._payeeUsage.set(payee, (this._payeeUsage.get(payee) || 0) + 1);
     }
     
     /**
      * Increment usage count for a tag
      */
-    incrementTagUsage(tag: string): void {
+    incrementTagUsage(tag: TagEntry): void {
         this._tagUsage.set(tag, (this._tagUsage.get(tag) || 0) + 1);
     }
     
     /**
      * Increment usage count for a commodity
      */
-    incrementCommodityUsage(commodity: string): void {
+    incrementCommodityUsage(commodity: CommodityName): void {
         this._commodityUsage.set(commodity, (this._commodityUsage.get(commodity) || 0) + 1);
     }
     
     /**
      * Set usage count for an account (for batch operations)
      */
-    setAccountUsage(account: string, count: number): void {
+    setAccountUsage(account: AccountName, count: number): void {
         this._accountUsage.set(account, count);
     }
     
     /**
      * Set usage count for a payee (for batch operations)
      */
-    setPayeeUsage(payee: string, count: number): void {
+    setPayeeUsage(payee: PayeeName, count: number): void {
         this._payeeUsage.set(payee, count);
     }
     
     /**
      * Set usage count for a tag (for batch operations)
      */
-    setTagUsage(tag: string, count: number): void {
+    setTagUsage(tag: TagEntry, count: number): void {
         this._tagUsage.set(tag, count);
     }
     
     /**
      * Set usage count for a commodity (for batch operations)
      */
-    setCommodityUsage(commodity: string, count: number): void {
+    setCommodityUsage(commodity: CommodityName, count: number): void {
         this._commodityUsage.set(commodity, count);
     }
     
@@ -73,28 +79,28 @@ export class UsageTracker implements IUsageTracker {
     /**
      * Get usage count for an account
      */
-    getAccountUsage(account: string): number {
+    getAccountUsage(account: AccountName): number {
         return this._accountUsage.get(account) || 0;
     }
     
     /**
      * Get usage count for a payee
      */
-    getPayeeUsage(payee: string): number {
+    getPayeeUsage(payee: PayeeName): number {
         return this._payeeUsage.get(payee) || 0;
     }
     
     /**
      * Get usage count for a tag
      */
-    getTagUsage(tag: string): number {
+    getTagUsage(tag: TagEntry): number {
         return this._tagUsage.get(tag) || 0;
     }
     
     /**
      * Get usage count for a commodity
      */
-    getCommodityUsage(commodity: string): number {
+    getCommodityUsage(commodity: CommodityName): number {
         return this._commodityUsage.get(commodity) || 0;
     }
     
@@ -103,7 +109,7 @@ export class UsageTracker implements IUsageTracker {
     /**
      * Get accounts sorted by usage frequency (most used first)
      */
-    getAccountsByUsage(): Array<{account: string, count: number}> {
+    getAccountsByUsage(): Array<{account: AccountName, count: number}> {
         return Array.from(this._accountUsage.entries())
             .map(([account, count]) => ({ account, count }))
             .sort((a, b) => b.count - a.count);
@@ -112,7 +118,7 @@ export class UsageTracker implements IUsageTracker {
     /**
      * Get payees sorted by usage frequency (most used first)
      */
-    getPayeesByUsage(): Array<{payee: string, count: number}> {
+    getPayeesByUsage(): Array<{payee: PayeeName, count: number}> {
         return Array.from(this._payeeUsage.entries())
             .map(([payee, count]) => ({ payee, count }))
             .sort((a, b) => b.count - a.count);
@@ -121,7 +127,7 @@ export class UsageTracker implements IUsageTracker {
     /**
      * Get tags sorted by usage frequency (most used first)
      */
-    getTagsByUsage(): Array<{tag: string, count: number}> {
+    getTagsByUsage(): Array<{tag: TagEntry, count: number}> {
         return Array.from(this._tagUsage.entries())
             .map(([tag, count]) => ({ tag, count }))
             .sort((a, b) => b.count - a.count);
@@ -130,7 +136,7 @@ export class UsageTracker implements IUsageTracker {
     /**
      * Get commodities sorted by usage frequency (most used first)
      */
-    getCommoditiesByUsage(): Array<{commodity: string, count: number}> {
+    getCommoditiesByUsage(): Array<{commodity: CommodityName, count: number}> {
         return Array.from(this._commodityUsage.entries())
             .map(([commodity, count]) => ({ commodity, count }))
             .sort((a, b) => b.count - a.count);
@@ -139,7 +145,7 @@ export class UsageTracker implements IUsageTracker {
     /**
      * Get accounts with usage data for a given list (preserves order, adds usage count)
      */
-    getAccountsWithUsage(accounts: string[]): Array<{account: string, count: number}> {
+    getAccountsWithUsage(accounts: AccountName[]): Array<{account: AccountName, count: number}> {
         return accounts.map(account => ({
             account,
             count: this.getAccountUsage(account)
@@ -149,7 +155,7 @@ export class UsageTracker implements IUsageTracker {
     /**
      * Get payees with usage data for a given list (preserves order, adds usage count)
      */
-    getPayeesWithUsage(payees: string[]): Array<{payee: string, count: number}> {
+    getPayeesWithUsage(payees: PayeeName[]): Array<{payee: PayeeName, count: number}> {
         return payees.map(payee => ({
             payee,
             count: this.getPayeeUsage(payee)
@@ -159,7 +165,7 @@ export class UsageTracker implements IUsageTracker {
     /**
      * Get tags with usage data for a given list (preserves order, adds usage count)
      */
-    getTagsWithUsage(tags: string[]): Array<{tag: string, count: number}> {
+    getTagsWithUsage(tags: TagEntry[]): Array<{tag: TagEntry, count: number}> {
         return tags.map(tag => ({
             tag,
             count: this.getTagUsage(tag)
@@ -169,7 +175,7 @@ export class UsageTracker implements IUsageTracker {
     /**
      * Get commodities with usage data for a given list (preserves order, adds usage count)
      */
-    getCommoditiesWithUsage(commodities: string[]): Array<{commodity: string, count: number}> {
+    getCommoditiesWithUsage(commodities: CommodityName[]): Array<{commodity: CommodityName, count: number}> {
         return commodities.map(commodity => ({
             commodity,
             count: this.getCommodityUsage(commodity)
@@ -219,7 +225,7 @@ export class UsageTracker implements IUsageTracker {
      * Get account usage map (read-only copy)
      * @deprecated Use getAccountsByUsage() or getAccountUsage() methods instead
      */
-    get accountUsageCount(): Map<string, number> {
+    get accountUsageCount(): Map<AccountName, number> {
         return new Map(this._accountUsage);
     }
     
@@ -227,7 +233,7 @@ export class UsageTracker implements IUsageTracker {
      * Get payee usage map (read-only copy)
      * @deprecated Use getPayeesByUsage() or getPayeeUsage() methods instead
      */
-    get payeeUsageCount(): Map<string, number> {
+    get payeeUsageCount(): Map<PayeeName, number> {
         return new Map(this._payeeUsage);
     }
     
@@ -235,7 +241,7 @@ export class UsageTracker implements IUsageTracker {
      * Get tag usage map (read-only copy)
      * @deprecated Use getTagsByUsage() or getTagUsage() methods instead
      */
-    get tagUsageCount(): Map<string, number> {
+    get tagUsageCount(): Map<TagEntry, number> {
         return new Map(this._tagUsage);
     }
     
@@ -243,7 +249,7 @@ export class UsageTracker implements IUsageTracker {
      * Get commodity usage map (read-only copy)
      * @deprecated Use getCommoditiesByUsage() or getCommodityUsage() methods instead
      */
-    get commodityUsageCount(): Map<string, number> {
+    get commodityUsageCount(): Map<CommodityName, number> {
         return new Map(this._commodityUsage);
     }
 }

@@ -1,24 +1,70 @@
 // Re-export interfaces from core module for backward compatibility
 export type { IConfigManager as IHLedgerConfig } from './core';
 import type { IConfigManager } from './core';
+import type { FilePath, WorkspacePath } from './core/BrandedTypes';
+
+// Re-export branded types for external use
+export type {
+    AccountName,
+    PayeeName,
+    CommodityName,
+    TagName,
+    TagEntry,
+    DateString,
+    FilePath,
+    AccountAlias,
+    HLedgerKeyword,
+    WorkspacePath,
+    CacheKey,
+    CacheValue
+} from './core/BrandedTypes';
+
+// Re-export branded type constructors and utilities
+export {
+    createAccountName,
+    createPayeeName,
+    createCommodityName,
+    createTagName,
+    createTagEntry,
+    createDateString,
+    createFilePath,
+    createAccountAlias,
+    createHLedgerKeyword,
+    createWorkspacePath,
+    createCacheKey,
+    createCacheValue,
+    isAccountName,
+    isPayeeName,
+    isCommodityName,
+    isTagName,
+    isTagEntry,
+    isDateString,
+    unbranded,
+    toBrandedArray,
+    toBrandedSet,
+    toBrandedMap,
+    HLEDGER_KEYWORDS_BRANDED,
+    DEFAULT_ACCOUNT_PREFIXES_BRANDED,
+    DEFAULT_COMMODITIES_BRANDED
+} from './core/BrandedTypes';
 
 export interface IProjectCache {
-    getConfig(projectPath: string): IConfigManager | null;
-    initialize(projectPath: string): IConfigManager;
-    hasProject(projectPath: string): boolean;
-    findProjectForFile(filePath: string): string | null;
+    getConfig(projectPath: WorkspacePath): IConfigManager | null;
+    initialize(projectPath: WorkspacePath): IConfigManager;
+    hasProject(projectPath: WorkspacePath): boolean;
+    findProjectForFile(filePath: FilePath): WorkspacePath | null;
     clear(): void;
 }
 
 export interface IWorkspaceCache {
-    isValid(workspacePath: string): boolean;
-    update(workspacePath: string): void;
+    isValid(workspacePath: WorkspacePath): boolean;
+    update(workspacePath: WorkspacePath): void;
     getConfig(): IConfigManager | null;
     invalidate(): void;
 }
 
 export interface AccountSuggestion {
-    account: string;
+    account: string; // Keep as string for VS Code completion API compatibility
     kind: string;
     detail: string;
     priority: string;

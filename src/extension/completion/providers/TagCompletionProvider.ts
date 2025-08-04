@@ -2,9 +2,10 @@ import * as vscode from 'vscode';
 import { BaseCompletionProvider, CompletionData } from '../base/BaseCompletionProvider';
 import { CompletionItemOptions } from '../base/CompletionItemFactory';
 import { getConfig } from '../../main';
+import { TagEntry, unbranded } from '../../types';
 
 interface TagInfo {
-    tag: string;
+    tag: TagEntry;
     detail: string;
     usageCount: number;
 }
@@ -52,17 +53,17 @@ export class TagCompletionProvider extends BaseCompletionProvider {
         // Create usage counts map for fuzzy matcher
         const usageCounts = new Map<string, number>();
         tagInfoList.forEach(info => {
-            usageCounts.set(info.tag, info.usageCount);
+            usageCounts.set(unbranded(info.tag), info.usageCount);
         });
         
         // Store tag info in a map for later lookup
         this.tagInfoMap = new Map<string, TagInfo>();
         tagInfoList.forEach(info => {
-            this.tagInfoMap!.set(info.tag, info);
+            this.tagInfoMap!.set(unbranded(info.tag), info);
         });
         
         return {
-            items: tagInfoList.map(info => info.tag),
+            items: tagInfoList.map(info => unbranded(info.tag)),
             query: typedText,
             usageCounts
         };

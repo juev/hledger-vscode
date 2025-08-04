@@ -1,6 +1,22 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import { IHLedgerParser, ParsedHLedgerData } from './interfaces';
+import {
+    AccountName,
+    PayeeName,
+    CommodityName,
+    TagEntry,
+    DateString,
+    FilePath,
+    AccountAlias,
+    createAccountName,
+    createPayeeName,
+    createCommodityName,
+    createTagEntry,
+    createDateString,
+    createFilePath,
+    createAccountAlias
+} from './BrandedTypes';
 
 /**
  * Pure parser for HLedger files without side effects
@@ -13,14 +29,14 @@ export class HLedgerParser implements IHLedgerParser {
      * @param filePath - Path to the hledger file
      * @returns Parsed data structure
      */
-    parseFile(filePath: string): ParsedHLedgerData {
+    parseFile(filePath: FilePath): ParsedHLedgerData {
         try {
             if (!fs.existsSync(filePath)) {
                 return this.createEmptyData();
             }
             
             const content = fs.readFileSync(filePath, 'utf8');
-            return this.parseContent(content, path.dirname(filePath));
+            return this.parseContent(content, createFilePath(path.dirname(filePath)));
         } catch (error) {
             if (process.env.NODE_ENV !== 'test') {
                 console.error('Error parsing file:', filePath, error);
@@ -35,12 +51,12 @@ export class HLedgerParser implements IHLedgerParser {
      * @param basePath - Base path for resolving includes
      * @returns Parsed data structure
      */
-    parseContent(content: string, basePath: string = ''): ParsedHLedgerData {
+    parseContent(content: string, basePath?: FilePath): ParsedHLedgerData {
         const data = this.createEmptyData();
         const lines = content.split('\n');
         
         for (const line of lines) {
-            this.parseLine(line, data, basePath);
+            this.parseLine(line, data, basePath || createFilePath(''));
         }
         
         // Union all accounts (defined + used)
@@ -55,26 +71,26 @@ export class HLedgerParser implements IHLedgerParser {
      */
     private createEmptyData(): ParsedHLedgerData {
         return {
-            accounts: new Set<string>(),
-            definedAccounts: new Set<string>(),
-            usedAccounts: new Set<string>(),
-            payees: new Set<string>(),
-            tags: new Set<string>(),
-            commodities: new Set<string>(),
-            aliases: new Map<string, string>(),
+            accounts: new Set<AccountName>(),
+            definedAccounts: new Set<AccountName>(),
+            usedAccounts: new Set<AccountName>(),
+            payees: new Set<PayeeName>(),
+            tags: new Set<TagEntry>(),
+            commodities: new Set<CommodityName>(),
+            aliases: new Map<AccountAlias, AccountName>(),
             defaultCommodity: null,
             lastDate: null,
-            accountUsage: new Map<string, number>(),
-            payeeUsage: new Map<string, number>(),
-            tagUsage: new Map<string, number>(),
-            commodityUsage: new Map<string, number>()
+            accountUsage: new Map<AccountName, number>(),
+            payeeUsage: new Map<PayeeName, number>(),
+            tagUsage: new Map<TagEntry, number>(),
+            commodityUsage: new Map<CommodityName, number>()
         };
     }
     
     /**
      * Parse a single line and update data structure
      */
-    private parseLine(line: string, data: ParsedHLedgerData, basePath: string): void {
+    private parseLine(line: string, data: ParsedHLedgerData, basePath: FilePath): void {
         const trimmed = line.trim();
         
         // Skip empty lines and comments
@@ -86,7 +102,11 @@ export class HLedgerParser implements IHLedgerParser {
         // Support all hledger date formats: YYYY-MM-DD, YYYY/MM/DD, YYYY.MM.DD, MM-DD, MM/DD, MM.DD
         const dateMatch = trimmed.match(/^(\d{4}[-/.]\d{1,2}[-/.]\d{1,2}|\d{1,2}[-/.]\d{1,2})/);
         if (dateMatch) {
-            data.lastDate = dateMatch[1];
+            try {
+                data.lastDate = createDateString(dateMatch[1]);
+            } catch (error) {
+                // Skip invalid dates
+            }
             this.parseTransactionLine(trimmed, data);
             return;
         }
@@ -94,34 +114,49 @@ export class HLedgerParser implements IHLedgerParser {
         // Account definitions
         const accountMatch = trimmed.match(/^account\s+([^;]+)/);
         if (accountMatch) {
-            const account = accountMatch[1].trim();
-            data.definedAccounts.add(account);
+            try {
+                const account = createAccountName(accountMatch[1].trim());
+                data.definedAccounts.add(account);
+            } catch (error) {
+                // Skip invalid account names
+            }
             return;
         }
         
         // Alias definitions
         const aliasMatch = trimmed.match(/^alias\s+([^=]+)\s*=\s*(.+)/);
         if (aliasMatch) {
-            const alias = aliasMatch[1].trim();
-            const target = aliasMatch[2].trim();
-            data.aliases.set(alias, target);
-            data.definedAccounts.add(alias);
-            data.definedAccounts.add(target);
+            try {
+                const alias = createAccountAlias(aliasMatch[1].trim());
+                const target = createAccountName(aliasMatch[2].trim());
+                data.aliases.set(alias, target);
+                data.definedAccounts.add(target);
+            } catch (error) {
+                // Skip invalid aliases
+            }
             return;
         }
         
         // Commodity definitions
         const commodityMatch = trimmed.match(/^commodity\s+(.+)/);
         if (commodityMatch) {
-            const commodity = commodityMatch[1].trim();
-            data.commodities.add(commodity);
+            try {
+                const commodity = createCommodityName(commodityMatch[1].trim());
+                data.commodities.add(commodity);
+            } catch (error) {
+                // Skip invalid commodities
+            }
             return;
         }
         
         // Default commodity
         const defaultMatch = trimmed.match(/^D\s+(.+)/);
         if (defaultMatch) {
-            data.defaultCommodity = defaultMatch[1].trim();
+            try {
+                data.defaultCommodity = createCommodityName(defaultMatch[1].trim());
+            } catch (error) {
+                // Skip invalid default commodity
+            }
             return;
         }
         
@@ -130,8 +165,12 @@ export class HLedgerParser implements IHLedgerParser {
         if (includeMatch && basePath) {
             const includePath = includeMatch[1].trim();
             const fullPath = path.resolve(basePath, includePath);
-            const includedData = this.parseFile(fullPath);
-            this.mergeData(data, includedData);
+            try {
+                const includedData = this.parseFile(createFilePath(fullPath));
+                this.mergeData(data, includedData);
+            } catch (error) {
+                // Skip files that can't be included
+            }
             return;
         }
         
@@ -156,11 +195,16 @@ export class HLedgerParser implements IHLedgerParser {
         
         const description = transactionMatch[4]?.trim();
         if (description) {
-            // Store entire description as payee, including pipe characters
-            // Do not split on | to support payees like "Store | Branch"
-            data.payees.add(description);
-            // Increment usage count for payee
-            this.incrementUsage(data.payeeUsage, description);
+            try {
+                // Store entire description as payee, including pipe characters
+                // Do not split on | to support payees like "Store | Branch"
+                const payee = createPayeeName(description);
+                data.payees.add(payee);
+                // Increment usage count for payee
+                this.incrementUsage(data.payeeUsage, payee);
+            } catch (error) {
+                // Skip invalid payee names
+            }
         }
         
         // Extract tags from comment
@@ -182,10 +226,15 @@ export class HLedgerParser implements IHLedgerParser {
             return;
         }
         
-        const account = postingMatch[1].trim();
-        data.usedAccounts.add(account);
-        // Increment usage count for account
-        this.incrementUsage(data.accountUsage, account);
+        const accountStr = postingMatch[1].trim();
+        try {
+            const account = createAccountName(accountStr);
+            data.usedAccounts.add(account);
+            // Increment usage count for account
+            this.incrementUsage(data.accountUsage, account);
+        } catch (error) {
+            // Skip invalid account names
+        }
         
         // Extract and count commodities from amount
         const amount = postingMatch[2]?.trim();
@@ -199,8 +248,12 @@ export class HLedgerParser implements IHLedgerParser {
             // Look for date:DATE tags specifically
             const dateTagMatch = postingComment.match(/\bdate:(\d{4}[-/.]\d{1,2}[-/.]\d{1,2}|\d{1,2}[-/.]\d{1,2})/);
             if (dateTagMatch) {
-                // Store posting dates for date completion
-                data.lastDate = dateTagMatch[1];
+                try {
+                    // Store posting dates for date completion
+                    data.lastDate = createDateString(dateTagMatch[1]);
+                } catch (error) {
+                    // Skip invalid dates
+                }
             }
             
             // Parse other tags from posting comments
@@ -221,10 +274,14 @@ export class HLedgerParser implements IHLedgerParser {
         tagMatches.forEach(match => {
             const tagMatch = match.trim().match(/([a-zA-Z\u0400-\u04FF][a-zA-Z\u0400-\u04FF0-9_]*):(.+)/);
             if (tagMatch) {
-                const tag = tagMatch[1];
-                data.tags.add(tag);
-                // Increment usage count for tag
-                this.incrementUsage(data.tagUsage, tag);
+                try {
+                    const tagEntry = createTagEntry(match.trim());
+                    data.tags.add(tagEntry);
+                    // Increment usage count for tag
+                    this.incrementUsage(data.tagUsage, tagEntry);
+                } catch (error) {
+                    // Skip invalid tag entries
+                }
             }
         });
     }
@@ -236,17 +293,21 @@ export class HLedgerParser implements IHLedgerParser {
         // Match commodity symbols (letters, symbols like $, €, etc.)
         const commodityMatch = amount.match(/([A-Z]{3,}|[^\d\s.,+-]+)/);
         if (commodityMatch) {
-            const commodity = commodityMatch[1].trim();
-            data.commodities.add(commodity);
-            // Increment usage count for commodity
-            this.incrementUsage(data.commodityUsage, commodity);
+            try {
+                const commodity = createCommodityName(commodityMatch[1].trim());
+                data.commodities.add(commodity);
+                // Increment usage count for commodity
+                this.incrementUsage(data.commodityUsage, commodity);
+            } catch (error) {
+                // Skip invalid commodities
+            }
         }
     }
     
     /**
      * Increment usage count for an item
      */
-    private incrementUsage(usageMap: Map<string, number>, item: string): void {
+    private incrementUsage<T extends AccountName | PayeeName | TagEntry | CommodityName>(usageMap: Map<T, number>, item: T): void {
         usageMap.set(item, (usageMap.get(item) || 0) + 1);
     }
     
@@ -283,7 +344,7 @@ export class HLedgerParser implements IHLedgerParser {
     /**
      * Merge usage counts from source map into target map
      */
-    private mergeUsageMap(target: Map<string, number>, source: Map<string, number>): void {
+    private mergeUsageMap<T extends AccountName | PayeeName | TagEntry | CommodityName>(target: Map<T, number>, source: Map<T, number>): void {
         source.forEach((count, item) => {
             target.set(item, (target.get(item) || 0) + count);
         });
