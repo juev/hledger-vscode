@@ -19,6 +19,7 @@ export class DataStore implements IDataStore {
     private _usedAccounts: Set<AccountName> = new Set();
     private _payees: Set<PayeeName> = new Set();
     private _tags: Set<TagEntry> = new Set();
+    private _tagValues: Map<string, Set<string>> = new Map();
     private _commodities: Set<CommodityName> = new Set();
     private _aliases: Map<AccountAlias, AccountName> = new Map();
     private _defaultCommodity: CommodityName | null = null;
@@ -164,6 +165,26 @@ export class DataStore implements IDataStore {
         return this._lastDate;
     }
     
+    // === Tag Value Methods ===
+    
+    /**
+     * Get tag values for a specific tag name
+     */
+    getTagValues(tagName: string): string[] {
+        const values = this._tagValues.get(tagName);
+        return values ? Array.from(values) : [];
+    }
+    
+    /**
+     * Add a tag value for a specific tag name
+     */
+    addTagValue(tagName: string, value: string): void {
+        if (!this._tagValues.has(tagName)) {
+            this._tagValues.set(tagName, new Set());
+        }
+        this._tagValues.get(tagName)!.add(value);
+    }
+    
     // === Utility ===
     
     /**
@@ -175,6 +196,7 @@ export class DataStore implements IDataStore {
         this._usedAccounts.clear();
         this._payees.clear();
         this._tags.clear();
+        this._tagValues.clear();
         this._commodities.clear();
         this._aliases.clear();
         this._defaultCommodity = null;
@@ -193,6 +215,14 @@ export class DataStore implements IDataStore {
         // Merge other data
         other.getPayees().forEach(payee => this.addPayee(payee));
         other.getTags().forEach(tag => this.addTag(tag));
+        
+        // Merge tag values
+        other.getTags().forEach(tag => {
+            const tagName = unbranded(tag);
+            const values = other.getTagValues(tagName);
+            values.forEach(value => this.addTagValue(tagName, value));
+        });
+        
         other.getCommodities().forEach(commodity => this.addCommodity(commodity));
         
         // Merge aliases

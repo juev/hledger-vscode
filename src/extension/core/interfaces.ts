@@ -204,6 +204,18 @@ export interface IDataStore extends IDataStoreInternal {
      */
     getLastDate(): DateString | null;
     
+    // === Tag Value Methods ===
+    
+    /**
+     * Get tag values for a specific tag name
+     */
+    getTagValues(tagName: string): string[];
+    
+    /**
+     * Add a tag value for a specific tag name
+     */
+    addTagValue(tagName: string, value: string): void;
+    
     // === Utility ===
     
     /**
@@ -276,6 +288,28 @@ export interface IUsageTracker extends IUsageTrackerInternal {
      * Get commodities sorted by usage frequency (most used first)
      */
     getCommoditiesByUsage(): Array<{commodity: CommodityName, count: number}>;
+    
+    // === Tag Value Methods ===
+    
+    /**
+     * Get tag values for a specific tag name
+     */
+    getTagValues(tagName: string): string[];
+    
+    /**
+     * Get tag values sorted by usage frequency for a specific tag name
+     */
+    getTagValuesByUsage(tagName: string): Array<{value: string, count: number}>;
+    
+    /**
+     * Add a tag value for a specific tag name
+     */
+    addTagValue(tagName: string, value: string): void;
+    
+    /**
+     * Increment usage count for a specific tag value
+     */
+    incrementTagValueUsage(tagName: string, value: string): void;
     
     // === Individual Usage Retrieval ===
     
@@ -372,6 +406,9 @@ export interface ParsedHLedgerData {
     
     /** Usage statistics for tags */
     tagUsage: Map<TagEntry, number>;
+    
+    /** Tag values organized by tag name with usage counts */
+    tagValueUsage?: Map<string, Map<string, number>>;
     
     /** Usage statistics for commodities */
     commodityUsage: Map<CommodityName, number>;
@@ -476,6 +513,18 @@ export interface IConfigManager extends IComponentContainer {
     getPayeesByUsage(): Array<{payee: PayeeName, count: number}>;
     getTagsByUsage(): Array<{tag: TagEntry, count: number}>;
     getCommoditiesByUsage(): Array<{commodity: CommodityName, count: number}>;
+    
+    // === Tag Value Methods ===
+    
+    /**
+     * Get tag values for a specific tag name
+     */
+    getTagValues(tagName: string): string[];
+    
+    /**
+     * Get tag values sorted by usage frequency for a specific tag name
+     */
+    getTagValuesByUsage(tagName: string): Array<{value: string, count: number}>;
     
     // === Legacy Properties (for backward compatibility) ===
     

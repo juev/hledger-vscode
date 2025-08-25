@@ -3,7 +3,8 @@ import {
     AccountName,
     PayeeName,
     CommodityName,
-    TagEntry
+    TagEntry,
+    unbranded
 } from './BrandedTypes';
 
 /**
@@ -14,6 +15,8 @@ export class UsageTracker implements IUsageTracker {
     private _accountUsage: Map<AccountName, number> = new Map();
     private _payeeUsage: Map<PayeeName, number> = new Map();
     private _tagUsage: Map<TagEntry, number> = new Map();
+    private _tagValueUsage: Map<string, Map<string, number>> = new Map();
+    private _tagValueLastUsed: Map<string, Map<string, number>> = new Map();
     private _commodityUsage: Map<CommodityName, number> = new Map();
     
     // === Usage Tracking ===
@@ -142,6 +145,69 @@ export class UsageTracker implements IUsageTracker {
             .sort((a, b) => b.count - a.count);
     }
     
+    // === Tag Value Methods ===
+    
+    /**
+     * Get tag values for a specific tag name
+     */
+    getTagValues(tagName: string): string[] {
+        const values = this._tagValueUsage.get(tagName);
+        return values ? Array.from(values.keys()) : [];
+    }
+    
+    /**
+     * Get tag values sorted by last usage time (most recent first)
+     */
+    getTagValuesByUsage(tagName: string): Array<{value: string, count: number}> {
+        const values = this._tagValueUsage.get(tagName);
+        const lastUsed = this._tagValueLastUsed.get(tagName);
+        if (!values) {
+            return [];
+        }
+        return Array.from(values.entries())
+            .map(([value, count]) => ({ 
+                value, 
+                count, 
+                lastUsed: lastUsed?.get(value) || 0 
+            }))
+            .sort((a, b) => b.lastUsed - a.lastUsed)
+            .map(({ value, count }) => ({ value, count }));
+    }
+    
+    /**
+     * Add a tag value for a specific tag name
+     */
+    addTagValue(tagName: string, value: string): void {
+        if (!this._tagValueUsage.has(tagName)) {
+            this._tagValueUsage.set(tagName, new Map());
+        }
+        if (!this._tagValueLastUsed.has(tagName)) {
+            this._tagValueLastUsed.set(tagName, new Map());
+        }
+        const valueMap = this._tagValueUsage.get(tagName)!;
+        const lastUsedMap = this._tagValueLastUsed.get(tagName)!;
+        if (!valueMap.has(value)) {
+            valueMap.set(value, 0);
+            lastUsedMap.set(value, Date.now());
+        }
+    }
+    
+    /**
+     * Increment usage count for a specific tag value and update last used timestamp
+     */
+    incrementTagValueUsage(tagName: string, value: string): void {
+        if (!this._tagValueUsage.has(tagName)) {
+            this._tagValueUsage.set(tagName, new Map());
+        }
+        if (!this._tagValueLastUsed.has(tagName)) {
+            this._tagValueLastUsed.set(tagName, new Map());
+        }
+        const valueMap = this._tagValueUsage.get(tagName)!;
+        const lastUsedMap = this._tagValueLastUsed.get(tagName)!;
+        valueMap.set(value, (valueMap.get(value) || 0) + 1);
+        lastUsedMap.set(value, Date.now());
+    }
+    
     /**
      * Get accounts with usage data for a given list (preserves order, adds usage count)
      */
@@ -191,6 +257,8 @@ export class UsageTracker implements IUsageTracker {
         this._accountUsage.clear();
         this._payeeUsage.clear();
         this._tagUsage.clear();
+        this._tagValueUsage.clear();
+        this._tagValueLastUsed.clear();
         this._commodityUsage.clear();
     }
     
@@ -211,6 +279,27 @@ export class UsageTracker implements IUsageTracker {
         // Merge tag usage
         other.getTagsByUsage().forEach(({ tag, count }) => {
             this._tagUsage.set(tag, (this._tagUsage.get(tag) || 0) + count);
+        });
+        
+        // Merge tag value usage
+        other.getTagsByUsage().forEach(({ tag, count: _ }) => {
+            const tagName = unbranded(tag);
+            const tagValues = other.getTagValuesByUsage(tagName);
+            tagValues.forEach(({ value, count }) => {
+                if (!this._tagValueUsage.has(tagName)) {
+                    this._tagValueUsage.set(tagName, new Map());
+                }
+                if (!this._tagValueLastUsed.has(tagName)) {
+                    this._tagValueLastUsed.set(tagName, new Map());
+                }
+                const valueMap = this._tagValueUsage.get(tagName)!;
+                const lastUsedMap = this._tagValueLastUsed.get(tagName)!;
+                valueMap.set(value, (valueMap.get(value) || 0) + count);
+                // Use current timestamp for merged items since we don't have their original timestamp
+                if (!lastUsedMap.has(value)) {
+                    lastUsedMap.set(value, Date.now());
+                }
+            });
         });
         
         // Merge commodity usage

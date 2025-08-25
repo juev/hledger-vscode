@@ -171,6 +171,16 @@ export class ConfigManager implements IConfigManager {
         })).sort((a: {commodity: CommodityName, count: number}, b: {commodity: CommodityName, count: number}) => b.count - a.count);
     }
     
+    // === Tag Value Methods ===
+    
+    getTagValues(tagName: string): string[] {
+        return this.dataStore.getTagValues(tagName);
+    }
+    
+    getTagValuesByUsage(tagName: string): Array<{value: string, count: number}> {
+        return this.usageTracker.getTagValuesByUsage(tagName);
+    }
+    
     // === Legacy Properties (for backward compatibility) ===
     
     /** @deprecated Use getAccounts() instead */
@@ -316,5 +326,17 @@ export class ConfigManager implements IConfigManager {
                 this.usageTracker.incrementCommodityUsage(createCommodityName(commodity));
             }
         });
+        
+        // Update tag values if present
+        if (parsedData.tagValueUsage) {
+            parsedData.tagValueUsage.forEach((valueMap: Map<string, number>, tagName: string) => {
+                valueMap.forEach((count: number, value: string) => {
+                    this.dataStore.addTagValue(tagName, value);
+                    for (let i = 0; i < count; i++) {
+                        this.usageTracker.incrementTagValueUsage(tagName, value);
+                    }
+                });
+            });
+        }
     }
 }

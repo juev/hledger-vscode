@@ -239,7 +239,11 @@
         },
         "hledger.cache.watchPatterns": {
           "type": "array",
-          "default": ["**/*.journal", "**/*.hledger", "**/*.ledger"],
+          "default": [
+            "**/*.journal",
+            "**/*.hledger",
+            "**/*.ledger"
+          ],
           "items": {
             "type": "string"
           },
@@ -247,7 +251,10 @@
         },
         "hledger.cache.excludePatterns": {
           "type": "array",
-          "default": ["**/node_modules/**", "**/.git/**"],
+          "default": [
+            "**/node_modules/**",
+            "**/.git/**"
+          ],
           "items": {
             "type": "string"
           },

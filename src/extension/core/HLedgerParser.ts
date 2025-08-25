@@ -178,6 +178,14 @@ export class HLedgerParser implements IHLedgerParser {
         
         // Parse posting lines (lines starting with whitespace)
         if (/^\s+/.test(line)) {
+            // Check if it's a comment-only line
+            const commentOnlyMatch = line.match(/^\s*;\s*(.+)$/);
+            if (commentOnlyMatch) {
+                // Parse comment-only line for tags
+                this.extractTags(commentOnlyMatch[1], data);
+                return;
+            }
+            
             this.parsePostingLine(line, data);
             return;
         }
@@ -267,27 +275,48 @@ export class HLedgerParser implements IHLedgerParser {
      * Extract tags from comment text
      */
     private extractTags(comment: string, data: ParsedHLedgerData): void {
-        // Look for tags in format: tag:value
-        const tagMatches = comment.match(/(^|[,\s])([a-zA-Z\u0400-\u04FF][a-zA-Z\u0400-\u04FF0-9_]*):([^\s,;]+)/g);
+        // Look for tags in format: tag:value or tag: value (single word values only)
+        // This regex matches:
+        // 1. tagname: value
+        // 2. tagname:value
+        // Values are single words (no spaces allowed)
+        const tagMatches = comment.match(/([a-zA-Z\u0400-\u04FF][a-zA-Z\u0400-\u04FF0-9_]*)\s*:\s*([^\s,;]+)/g);
         if (!tagMatches) {
             return;
         }
         
+        // Process each matched tag
         tagMatches.forEach(match => {
-            const tagMatch = match.trim().match(/([a-zA-Z\u0400-\u04FF][a-zA-Z\u0400-\u04FF0-9_]*):(.+)/);
+            const tagMatch = match.trim().match(/([a-zA-Z\u0400-\u04FF][a-zA-Z\u0400-\u04FF0-9_]*)\s*:\s*([^\s,;]+)/);
             if (tagMatch) {
-                try {
-                    // Store only the tag name, not the full tag:value
-                    const tagName = tagMatch[1];
-                    const tagEntry = createTagEntry(tagName);
-                    data.tags.add(tagEntry);
-                    // Increment usage count for tag
-                    this.incrementUsage(data.tagUsage, tagEntry);
-                } catch (error) {
-                    // Skip invalid tag entries
-                }
+                this.processTagMatch(tagMatch[1], tagMatch[2], data);
             }
         });
+    }
+    
+    /**
+     * Process a single tag match and add it to data
+     */
+    private processTagMatch(tagName: string, tagValue: string, data: ParsedHLedgerData): void {
+        try {
+            const tagEntry = createTagEntry(tagName);
+            data.tags.add(tagEntry);
+            
+            // Track tag value usage
+            if (!data.tagValueUsage) {
+                data.tagValueUsage = new Map();
+            }
+            if (!data.tagValueUsage.has(tagName)) {
+                data.tagValueUsage.set(tagName, new Map());
+            }
+            const valueMap = data.tagValueUsage.get(tagName)!;
+            valueMap.set(tagValue, (valueMap.get(tagValue) || 0) + 1);
+            
+            // Increment usage count for tag
+            this.incrementUsage(data.tagUsage, tagEntry);
+        } catch (error) {
+            // Skip invalid tag entries
+        }
     }
     
     /**

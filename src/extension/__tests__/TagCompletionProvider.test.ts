@@ -74,9 +74,30 @@ describe('TagCompletionProvider', () => {
             getTagsByUsage: jest.fn().mockReturnValue([
                 { tag: 'category', count: 8 },
                 { tag: 'project', count: 5 },
+                { tag: 'Event', count: 4 },
                 { tag: 'location', count: 3 },
-                { tag: 'vendor', count: 2 }
-            ])
+                { tag: 'vendor', count: 2 },
+                { tag: 'Status', count: 2 }
+            ]),
+            getTagValuesByUsage: jest.fn().mockImplementation((tagName: string) => {
+                if (tagName === 'Event') {
+                    return [
+                        { value: '2025-02-freiburg', count: 2 },
+                        { value: '2025-03-berlin', count: 1 }
+                    ];
+                } else if (tagName === 'Subscription') {
+                    return [
+                        { value: 'monthly', count: 3 },
+                        { value: 'yearly', count: 1 }
+                    ];
+                } else if (tagName === 'Status') {
+                    return [
+                        { value: 'confirmed', count: 2 },
+                        { value: 'pending', count: 1 }
+                    ];
+                }
+                return [];
+            })
         };
         
         (getConfig as jest.Mock).mockReturnValue(mockConfig);
@@ -169,6 +190,53 @@ describe('TagCompletionProvider', () => {
             expect(items.length).toBeGreaterThan(0);
             expect(items[0].label).toBe('категория');
         });
+        
+        it('should provide completions for tags in middle of comments', () => {
+            mockDocument.lineAt.mockReturnValue({ text: '  Expenses:Food  50.00 USD ; some comment Event' });
+            
+            const items = provider.provideCompletionItems(
+                mockDocument,
+                mockPosition(0, 47),
+                mockToken,
+                mockContext
+            ) as vscode.CompletionItem[];
+            
+            expect(items).toBeDefined();
+            expect(items.length).toBeGreaterThan(0);
+            expect(items[0].label).toBe('Event');
+        });
+        
+        it('should provide tag value completions for tags in middle of comments', () => {
+            mockDocument.lineAt.mockReturnValue({ text: '  Expenses:Food  50.00 USD ; some comment Event: ' });
+            
+            const items = provider.provideCompletionItems(
+                mockDocument,
+                mockPosition(0, 49),
+                mockToken,
+                mockContext
+            ) as vscode.CompletionItem[];
+            
+            expect(items).toBeDefined();
+            expect(items.length).toBe(2);
+            expect(items[0].label).toBe('2025-02-freiburg');
+            expect(items[1].label).toBe('2025-03-berlin');
+        });
+        
+        it('should handle multiple tags in same comment', () => {
+            mockDocument.lineAt.mockReturnValue({ text: '  Expenses:Food ; Status: confirmed Event: ' });
+            
+            const items = provider.provideCompletionItems(
+                mockDocument,
+                mockPosition(0, 42),
+                mockToken,
+                mockContext
+            ) as vscode.CompletionItem[];
+            
+            expect(items).toBeDefined();
+            expect(items.length).toBe(2);
+            expect(items[0].label).toBe('2025-02-freiburg');
+            expect(items[1].label).toBe('2025-03-berlin');
+        });
     });
     
     describe('tag completions', () => {
@@ -185,8 +253,10 @@ describe('TagCompletionProvider', () => {
             // Should be sorted by usage count
             expect(items[0].label).toBe('category'); // 8 uses
             expect(items[1].label).toBe('project');  // 5 uses
-            expect(items[2].label).toBe('location'); // 3 uses
-            expect(items[3].label).toBe('vendor');   // 2 uses
+            expect(items[2].label).toBe('Event');    // 4 uses
+            expect(items[3].label).toBe('location'); // 3 uses
+            expect(items[4].label).toBe('vendor');   // 2 uses
+            expect(items[5].label).toBe('Status');   // 2 uses
         });
         
         it('should include usage count in detail', () => {
@@ -244,7 +314,7 @@ describe('TagCompletionProvider', () => {
             ) as vscode.CompletionItem[];
             
             const categoryItem = items.find(item => item.label === 'category');
-            expect(categoryItem?.insertText).toBe('category:');
+            expect(categoryItem?.insertText).toBe('category: ');
         });
         
         it('should set proper range for replacements', () => {
@@ -291,6 +361,123 @@ describe('TagCompletionProvider', () => {
             );
             
             expect(items).toBeUndefined();
+        });
+    });
+    
+    describe('tag value completions', () => {
+        it('should provide tag values when completing after colon', () => {
+            mockDocument.lineAt.mockReturnValue({ text: '  Expenses:Travel ; Event: ' });
+            
+            const items = provider.provideCompletionItems(
+                mockDocument,
+                mockPosition(0, 26),
+                mockToken,
+                mockContext
+            ) as vscode.CompletionItem[];
+            
+            expect(items).toBeDefined();
+            expect(items.length).toBe(2);
+            expect(items[0].label).toBe('2025-02-freiburg'); // Most used
+            expect(items[1].label).toBe('2025-03-berlin');
+        });
+        
+        it('should filter tag values based on typed text', () => {
+            mockDocument.lineAt.mockReturnValue({ text: '  Expenses:Travel ; Event: freiburg' });
+            
+            const items = provider.provideCompletionItems(
+                mockDocument,
+                mockPosition(0, 31),
+                mockToken,
+                mockContext
+            ) as vscode.CompletionItem[];
+            
+            expect(items).toBeDefined();
+            if (items) {
+                expect(items.length).toBeGreaterThan(0);
+                const labels = items.map(item => item.label.toString());
+                expect(labels).toContain('2025-02-freiburg');
+                expect(labels).not.toContain('2025-03-berlin');
+            }
+        });
+        
+        it('should provide subscription tag values', () => {
+            mockDocument.lineAt.mockReturnValue({ text: '  Expenses:Software ; Subscription: ' });
+            
+            const items = provider.provideCompletionItems(
+                mockDocument,
+                mockPosition(0, 35),
+                mockToken,
+                mockContext
+            ) as vscode.CompletionItem[];
+            
+            expect(items).toBeDefined();
+            expect(items.length).toBe(2);
+            expect(items[0].label).toBe('monthly'); // Most used (count: 3)
+            expect(items[1].label).toBe('yearly');  // Less used (count: 1)
+        });
+        
+        it('should set correct item kind for tag values', () => {
+            mockDocument.lineAt.mockReturnValue({ text: '  Expenses:Travel ; Event: ' });
+            
+            const items = provider.provideCompletionItems(
+                mockDocument,
+                mockPosition(0, 26),
+                mockToken,
+                mockContext
+            ) as vscode.CompletionItem[];
+            
+            expect(items).toBeDefined();
+            expect(items.length).toBeGreaterThan(0);
+            items.forEach(item => {
+                expect(item.kind).toBe(vscode.CompletionItemKind.Value);
+            });
+        });
+        
+        it('should include usage count in tag value detail', () => {
+            mockDocument.lineAt.mockReturnValue({ text: '  Expenses:Travel ; Event: ' });
+            
+            const items = provider.provideCompletionItems(
+                mockDocument,
+                mockPosition(0, 26),
+                mockToken,
+                mockContext
+            ) as vscode.CompletionItem[];
+            
+            const freiburgItem = items.find(item => item.label === '2025-02-freiburg');
+            expect(freiburgItem?.detail).toBe('Event value (used 2 times)');
+            
+            const berlinItem = items.find(item => item.label === '2025-03-berlin');
+            expect(berlinItem?.detail).toBe('Event value (used 1 times)');
+        });
+        
+        it('should handle no tag values for unknown tag', () => {
+            mockDocument.lineAt.mockReturnValue({ text: '  Expenses:Travel ; UnknownTag: ' });
+            
+            const items = provider.provideCompletionItems(
+                mockDocument,
+                mockPosition(0, 31),
+                mockToken,
+                mockContext
+            );
+            
+            expect(items).toBeUndefined();
+        });
+        
+        it('should not insert colon for tag values', () => {
+            mockDocument.lineAt.mockReturnValue({ text: '  Expenses:Travel ; Event: ' });
+            
+            const items = provider.provideCompletionItems(
+                mockDocument,
+                mockPosition(0, 26),
+                mockToken,
+                mockContext
+            ) as vscode.CompletionItem[];
+            
+            expect(items).toBeDefined();
+            items.forEach(item => {
+                expect(item.insertText).toBe(item.label);
+                expect(item.insertText).not.toContain(':');
+            });
         });
     });
     
