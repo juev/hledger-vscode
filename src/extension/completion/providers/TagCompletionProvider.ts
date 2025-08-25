@@ -58,7 +58,7 @@ export class TagCompletionProvider extends BaseCompletionProvider {
                 const tagName = lastTagMatch[1];
                 const tagEndIndex = lastTagMatch.index! + lastTagMatch[0].length;
                 const typedValue = commentText.substring(tagEndIndex);
-                const tagValuesByUsage = config.getTagValuesByUsage(tagName);
+                const tagValuesByUsage = config.getTagValuesByLastUsed(tagName);
                 
                 if (tagValuesByUsage.length === 0) {
                     return null;

@@ -79,7 +79,7 @@ describe('TagCompletionProvider', () => {
                 { tag: 'vendor', count: 2 },
                 { tag: 'Status', count: 2 }
             ]),
-            getTagValuesByUsage: jest.fn().mockImplementation((tagName: string) => {
+            getTagValuesByLastUsed: jest.fn().mockImplementation((tagName: string) => {
                 if (tagName === 'Event') {
                     return [
                         { value: '2025-02-freiburg', count: 2 },

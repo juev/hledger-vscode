@@ -297,9 +297,9 @@ export interface IUsageTracker extends IUsageTrackerInternal {
     getTagValues(tagName: string): string[];
     
     /**
-     * Get tag values sorted by usage frequency for a specific tag name
+     * Get tag values sorted by last usage time (most recent first) for a specific tag name
      */
-    getTagValuesByUsage(tagName: string): Array<{value: string, count: number}>;
+    getTagValuesByLastUsed(tagName: string): Array<{value: string, count: number}>;
     
     /**
      * Add a tag value for a specific tag name
@@ -522,9 +522,9 @@ export interface IConfigManager extends IComponentContainer {
     getTagValues(tagName: string): string[];
     
     /**
-     * Get tag values sorted by usage frequency for a specific tag name
+     * Get tag values sorted by last usage time (most recent first) for a specific tag name
      */
-    getTagValuesByUsage(tagName: string): Array<{value: string, count: number}>;
+    getTagValuesByLastUsed(tagName: string): Array<{value: string, count: number}>;
     
     // === Legacy Properties (for backward compatibility) ===
     

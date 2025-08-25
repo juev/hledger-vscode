@@ -177,8 +177,8 @@ export class ConfigManager implements IConfigManager {
         return this.dataStore.getTagValues(tagName);
     }
     
-    getTagValuesByUsage(tagName: string): Array<{value: string, count: number}> {
-        return this.usageTracker.getTagValuesByUsage(tagName);
+    getTagValuesByLastUsed(tagName: string): Array<{value: string, count: number}> {
+        return this.usageTracker.getTagValuesByLastUsed(tagName);
     }
     
     // === Legacy Properties (for backward compatibility) ===

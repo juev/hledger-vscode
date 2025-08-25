@@ -158,7 +158,7 @@ export class UsageTracker implements IUsageTracker {
     /**
      * Get tag values sorted by last usage time (most recent first)
      */
-    getTagValuesByUsage(tagName: string): Array<{value: string, count: number}> {
+    getTagValuesByLastUsed(tagName: string): Array<{value: string, count: number}> {
         const values = this._tagValueUsage.get(tagName);
         const lastUsed = this._tagValueLastUsed.get(tagName);
         if (!values) {
@@ -284,7 +284,7 @@ export class UsageTracker implements IUsageTracker {
         // Merge tag value usage
         other.getTagsByUsage().forEach(({ tag, count: _ }) => {
             const tagName = unbranded(tag);
-            const tagValues = other.getTagValuesByUsage(tagName);
+            const tagValues = other.getTagValuesByLastUsed(tagName);
             tagValues.forEach(({ value, count }) => {
                 if (!this._tagValueUsage.has(tagName)) {
                     this._tagValueUsage.set(tagName, new Map());
