@@ -3,6 +3,9 @@
   "name": "hledger",
   "patterns": [
     {
+      "include": "#block-comment"
+    },
+    {
       "include": "#comment"
     },
     {
@@ -25,16 +28,36 @@
     }
   ],
   "repository": {
+    "block-comment": {
+      "patterns": [
+        {
+          "name": "comment.block.hledger",
+          "begin": "^\\s*(comment)\\b",
+          "beginCaptures": {
+            "1": {
+              "name": "keyword.directive.comment.hledger"
+            }
+          },
+          "end": "^\\s*(end\\s+comment)\\b|\\z",
+          "endCaptures": {
+            "1": {
+              "name": "keyword.directive.comment.end.hledger"
+            }
+          },
+          "contentName": "comment.block.content.hledger"
+        }
+      ]
+    },
     "comment": {
       "patterns": [
         {
           "name": "comment.line.semicolon.hledger",
-          "match": "^\\s*;.*$",
+          "match": "^\\s*;+.*$",
           "captures": {
             "0": {
               "patterns": [
                 {
-                  "include": "#comment-tags"
+                  "include": "#comment-content"
                 }
               ]
             }
@@ -42,7 +65,16 @@
         },
         {
           "name": "comment.line.number-sign.hledger", 
-          "match": "^\\s*#.*$"
+          "match": "^\\s*#.*$",
+          "captures": {
+            "0": {
+              "patterns": [
+                {
+                  "include": "#comment-content"
+                }
+              ]
+            }
+          }
         }
       ]
     },
@@ -200,6 +232,19 @@
           "end": "^(?=\\S)|^$",
           "patterns": [
             {
+              "name": "comment.line.semicolon.transaction.hledger",
+              "match": "^\\s+;+.*$",
+              "captures": {
+                "0": {
+                  "patterns": [
+                    {
+                      "include": "#comment-content"
+                    }
+                  ]
+                }
+              }
+            },
+            {
               "include": "#posting"
             },
             {
@@ -253,6 +298,19 @@
           },
           "end": "^(?=\\S)|^$",
           "patterns": [
+            {
+              "name": "comment.line.semicolon.transaction.hledger",
+              "match": "^\\s+;+.*$",
+              "captures": {
+                "0": {
+                  "patterns": [
+                    {
+                      "include": "#comment-content"
+                    }
+                  ]
+                }
+              }
+            },
             {
               "include": "#posting"
             },
@@ -567,7 +625,7 @@
       "patterns": [
         {
           "name": "comment.line.semicolon.hledger",
-          "match": ";\\s*(.*)$",
+          "match": ";+\\s*(.*)$",
           "captures": {
             "1": {
               "patterns": [

@@ -4,3 +4,6 @@ out
 .vscode-test
 *.log
 show-changelog.js
+
+/.idea
+.DS_Store
