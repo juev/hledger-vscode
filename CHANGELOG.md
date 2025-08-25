@@ -1,5 +1,10 @@
 # Change Log
 
+## [0.2.1] - 2025-08-25
+
+### Fixed
+- fix(syntax): correct comment syntax highlighting
+
 ## [0.2.0] - 2025-08-04
 
 ### Added

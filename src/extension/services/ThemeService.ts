@@ -172,7 +172,7 @@ export class ThemeService implements IThemeService {
                     "foreground": colors.payee
                 }
             },
-            // Comment styles
+            // Comment styles - all comments should have consistent styling
             {
                 "scope": "comment.line.semicolon.hledger",
                 "settings": { 
@@ -182,6 +182,41 @@ export class ThemeService implements IThemeService {
             },
             {
                 "scope": "comment.line.number-sign.hledger",
+                "settings": { 
+                    "foreground": colors.comment,
+                    "fontStyle": "italic"
+                }
+            },
+            {
+                "scope": "comment.block.hledger",
+                "settings": { 
+                    "foreground": colors.comment,
+                    "fontStyle": "italic"
+                }
+            },
+            {
+                "scope": "comment.block.content.hledger",
+                "settings": { 
+                    "foreground": colors.comment,
+                    "fontStyle": "italic"
+                }
+            },
+            {
+                "scope": "comment.line.semicolon.transaction.hledger",
+                "settings": { 
+                    "foreground": colors.comment,
+                    "fontStyle": "italic"
+                }
+            },
+            {
+                "scope": "keyword.directive.comment.hledger",
+                "settings": { 
+                    "foreground": colors.comment,
+                    "fontStyle": "italic"
+                }
+            },
+            {
+                "scope": "keyword.directive.comment.end.hledger",
                 "settings": { 
                     "foreground": colors.comment,
                     "fontStyle": "italic"
