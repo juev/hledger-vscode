@@ -58,6 +58,9 @@ export class ExtensionService implements IExtensionService {
             // Setup provider configuration watching
             this.providerService.updateProvidersOnConfigChange();
 
+            // Setup document change watching for real-time tag detection
+            this.setupDocumentWatching();
+
             console.log('HLedger extension services initialized successfully');
 
         } catch (error) {
@@ -143,9 +146,101 @@ export class ExtensionService implements IExtensionService {
     }
 
     /**
+     * Setup document change watching for real-time tag detection
+     */
+    private setupDocumentWatching(): void {
+        // Watch for text document changes to update tag parsing in real-time
+        const documentChangeListener = vscode.workspace.onDidChangeTextDocument(event => {
+            const document = event.document;
+            
+            // Only handle HLedger files
+            if (!this.isHLedgerFile(document)) {
+                return;
+            }
+
+            // Debounce changes to avoid excessive parsing
+            if (this.documentChangeTimeout) {
+                clearTimeout(this.documentChangeTimeout);
+            }
+            this.documentChangeTimeout = setTimeout(() => {
+                this.updateDocumentCache(document);
+            }, 500); // Wait 500ms after last change
+        });
+
+        this.disposables.push(documentChangeListener);
+    }
+
+    /**
+     * Timeout for debouncing document changes
+     */
+    private documentChangeTimeout: NodeJS.Timeout | null = null;
+
+    /**
+     * Check if a document is an HLedger file
+     */
+    private isHLedgerFile(document: vscode.TextDocument): boolean {
+        const fileName = path.basename(document.uri.fsPath).toLowerCase();
+        const extension = path.extname(fileName);
+        
+        return extension === '.journal' || 
+               extension === '.hledger' || 
+               extension === '.ledger' ||
+               fileName === 'journal';
+    }
+
+    /**
+     * Update the document cache with latest changes
+     */
+    private updateDocumentCache(document: vscode.TextDocument): void {
+        try {
+            const filePath = document.uri.fsPath;
+            const projectCacheInstance = ProjectCache.getInstance();
+            
+            // Find project for this file
+            let projectPath = projectCacheInstance.findProjectForFile(createFilePath(filePath));
+            
+            if (!projectPath) {
+                const workspaceFolder = vscode.workspace.getWorkspaceFolder(document.uri);
+                if (workspaceFolder) {
+                    projectPath = createWorkspacePath(workspaceFolder.uri.fsPath);
+                }
+            }
+
+            if (projectPath) {
+                // Get the cached config for this project
+                let cachedConfig = projectCacheInstance.getConfig(projectPath as string);
+                
+                if (cachedConfig) {
+                    // Parse current document and merge with cache
+                    const tempConfig = new ConfigManager();
+                    tempConfig.parseContent(document.getText(), path.dirname(filePath));
+                    
+                    // Merge the new data into the cached config
+                    const cachedComponents = (cachedConfig as IComponentContainer).getComponents();
+                    const tempComponents = (tempConfig as IComponentContainer).getComponents();
+                    
+                    // Update cached data with new tags/accounts/etc from current document
+                    cachedComponents.dataStore.merge(tempComponents.dataStore);
+                    cachedComponents.usageTracker.merge(tempComponents.usageTracker);
+                    
+                    console.log('Updated document cache for real-time tag detection');
+                }
+            }
+        } catch (error) {
+            console.warn('Error updating document cache:', error);
+        }
+    }
+
+    /**
      * Dispose of resources
      */
     public dispose(): void {
+        // Clear document change timeout
+        if (this.documentChangeTimeout) {
+            clearTimeout(this.documentChangeTimeout);
+            this.documentChangeTimeout = null;
+        }
+
         // Stop configuration watching
         this.configService.stopWatching();
 

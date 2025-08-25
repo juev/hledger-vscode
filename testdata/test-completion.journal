@@ -1,0 +1,33 @@
+2025-01-29 * DB Bahn
+    ; Event: 2025-02-freiburg
+    ; Muenster - Freiburg
+    Expenses:Travels:Transport                          101.80 EUR
+    Assets:Mastercard
+
+2025-08-06 * Backblaze
+    ; Subscription: monthly
+    Expenses:Subscriptions:Backblaze                      2.61 EUR
+    Assets:Mastercard
+
+2025-01-15 * Another Event
+    ; Event: 2025-03-berlin
+    ; Project: website
+    Expenses:Events                                      50.00 EUR
+    Assets:Checking
+
+2025-01-20 * Another Subscription
+    ; Subscription: yearly
+    ; Category: software
+    Expenses:Software                                    99.00 EUR
+    Assets:Checking
+
+2025-01-25 * Final Event
+    ; Event: 2025-02-freiburg
+    ; Status: confirmed
+    Expenses:Events                                      25.00 EUR
+    Assets:Cash
+
+2025-01-30 * Test multiple tags
+    ; Status: pending Category: hardware Event: 
+    Expenses:Equipment                                   150.00 EUR
+    Assets:Cash
