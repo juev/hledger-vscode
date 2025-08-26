@@ -23,15 +23,19 @@ export function activate(context: vscode.ExtensionContext): void {
         const cache = new SimpleProjectCache();
         globalConfig = new HLedgerConfig(parser, cache);
         
-        // Register strict completion provider with minimal triggers
-        // Using 24x7 IntelliSense + contextual triggers strategy
+        // Register strict completion provider with necessary triggers
+        // VS Code requires explicit triggers - 24x7 IntelliSense doesn't work automatically
         const strictProvider = new StrictCompletionProvider(globalConfig);
         context.subscriptions.push(
             vscode.languages.registerCompletionItemProvider(
                 'hledger',
                 strictProvider,
-                ':', '@', ';'  // Only contextually meaningful triggers
-                // 24x7 IntelliSense handles: digits for dates, letters for accounts/payees, letters after amounts for currencies
+                // Triggers for different completion contexts:
+                '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',  // Date completion at line start
+                ' ',  // After date for accounts, after amount for currencies
+                ':',  // Account hierarchy
+                '@',  // Commodities
+                ';'   // Comments (future use)
             )
         );
         

@@ -7,6 +7,7 @@ import { StrictPositionValidator } from './strict/StrictPositionValidator';
 import { AccountCompleter } from './completion/AccountCompleter';
 import { CommodityCompleter } from './completion/CommodityCompleter';
 import { DateCompleter } from './completion/DateCompleter';
+import { PayeeCompleter } from './completion/PayeeCompleter';
 
 export class StrictCompletionProvider implements vscode.CompletionItemProvider {
     private positionAnalyzer = new StrictPositionAnalyzer();
@@ -17,12 +18,14 @@ export class StrictCompletionProvider implements vscode.CompletionItemProvider {
     private dateCompleter: DateCompleter;
     private accountCompleter: AccountCompleter;
     private commodityCompleter: CommodityCompleter;
+    private payeeCompleter: PayeeCompleter;
     
     constructor(private config: HLedgerConfig) {
         // Initialize completers with config
         this.dateCompleter = new DateCompleter(config);
         this.accountCompleter = new AccountCompleter(config);
         this.commodityCompleter = new CommodityCompleter(config);
+        this.payeeCompleter = new PayeeCompleter(config);
     }
     
     provideCompletionItems(
@@ -69,8 +72,7 @@ export class StrictCompletionProvider implements vscode.CompletionItemProvider {
                 return this.provideCommodityCompletion(context);
                 
             case 'payee':
-                // Payee completions are NOT USED in new algorithm
-                return [];
+                return this.providePayeeCompletion(context);
                 
             default:
                 return [];
@@ -108,6 +110,17 @@ export class StrictCompletionProvider implements vscode.CompletionItemProvider {
         // Convert StrictCompletionContext to legacy CompletionContext for existing CommodityCompleter
         const legacyContext = this.convertToLegacyContext(context, 'commodity');
         return this.commodityCompleter.complete(legacyContext);
+    }
+    
+    private providePayeeCompletion(context: StrictCompletionContext): vscode.CompletionItem[] {
+        // Additional strict validation
+        if (!this.validator.isPayeePosition(context.position.lineText, context.position.character)) {
+            return [];
+        }
+        
+        // Convert StrictCompletionContext to legacy CompletionContext for existing PayeeCompleter
+        const legacyContext = this.convertToLegacyContext(context, 'payee');
+        return this.payeeCompleter.complete(legacyContext);
     }
     
     /**

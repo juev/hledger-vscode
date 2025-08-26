@@ -3,8 +3,8 @@ import { CompletionType } from '../types';
 
 export enum LineContext {
     LineStart = 'line_start',           // Beginning of line - only dates allowed
-    AfterDate = 'after_date',           // After date - only payee (NOT USED)  
-    InPosting = 'in_posting',           // Indented line - only accounts allowed
+    AfterDate = 'after_date',           // After date - payee/description  
+    InPosting = 'in_posting',           // Indented line - accounts (expense/income categories)
     AfterAmount = 'after_amount',       // After amount - only currency allowed
     Forbidden = 'forbidden'             // Forbidden zone - no completions allowed
 }
@@ -68,13 +68,14 @@ export class StrictPositionAnalyzer {
     private determineLineContext(lineText: string, cursorPos: number): LineContext {
         const beforeCursor = lineText.substring(0, cursorPos);
         
-        // Check forbidden zone (priority)
-        if (StrictPositionAnalyzer.STRICT_PATTERNS.FORBIDDEN_AFTER_AMOUNT.test(beforeCursor)) {
+        // Check forbidden zone - after amount + two or more spaces
+        if (/\d+(\.\d+)?\s{2,}/.test(beforeCursor)) {
             return LineContext.Forbidden;
         }
         
         // Check currency position (after amount + single space)
-        if (StrictPositionAnalyzer.STRICT_PATTERNS.CURRENCY_AFTER_AMOUNT.test(beforeCursor)) {
+        if (/\d+(\.\d+)?\s[A-Z]*$/.test(beforeCursor) || 
+            /\d+(\.\d+)?\s[$€£¥₽]*$/.test(beforeCursor)) {
             return LineContext.AfterAmount;
         }
         
@@ -83,13 +84,15 @@ export class StrictPositionAnalyzer {
             return LineContext.InPosting;
         }
         
-        // Check line beginning for dates (including special "0" handling)
-        if (cursorPos <= 12 && this.isDateContext(lineText, cursorPos)) {
+        // Check line beginning for dates - ANY digit at line start triggers date completion
+        if (cursorPos > 0 && /^\d/.test(beforeCursor)) {
             return LineContext.LineStart;
         }
         
-        // After date with status
-        if (StrictPositionAnalyzer.STRICT_PATTERNS.DATE_WITH_STATUS.test(beforeCursor)) {
+        // After date (with or without status) + space - for payee/description
+        if (/^\d{4}[-/]\d{1,2}[-/]\d{1,2}\s+/.test(beforeCursor) ||
+            /^\d{1,2}[-/]\d{1,2}\s+/.test(beforeCursor) ||
+            /^\d{1,2}[-/]\d{1,2}[-/]\d{4}\s+/.test(beforeCursor)) {
             return LineContext.AfterDate;
         }
         
@@ -117,8 +120,8 @@ export class StrictPositionAnalyzer {
                 break;
                 
             case LineContext.AfterDate:
-                // NOT USED in new algorithm
-                baseContext.suppressAll = true;
+                // Payee/description after date
+                baseContext.allowedTypes = ['payee'];
                 break;
                 
             case LineContext.InPosting:

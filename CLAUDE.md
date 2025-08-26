@@ -106,6 +106,55 @@ npm run lint
 - Use `performance-engineer` for optimization tasks
 - Use `test-automator` for test creation or fixes
 
+## Completion System - Strict Position-Based Algorithm
+
+### Trigger Configuration
+
+The extension uses explicit triggers for VS Code completion activation:
+
+**Required Triggers** (registered in `main.ts`):
+- **'0'-'9'** - Activates date completion at line start
+- **' ' (space)** - Activates payee/account/commodity completions based on context
+- **':'** - Activates account hierarchy completion (e.g., `Assets:Cash`)
+- **'@'** - Activates commodity/currency completion
+- **';'** - Reserved for future comment completion
+
+### Completion Logic by Position
+
+The strict position-based algorithm (`StrictPositionAnalyzer`) determines completion type:
+
+1. **Date Completion**
+   - **Position**: Beginning of line when typing any digit
+   - **Pattern**: `/^\d/` 
+   - **Example**: `2024-01-15` or `01/15`
+
+2. **Payee Completion**
+   - **Position**: After date + space(s)
+   - **Pattern**: `/^\d{4}[-/]\d{1,2}[-/]\d{1,2}\s+/` and variants
+   - **Example**: `2024-01-15 Amazon`
+
+3. **Account Completion** 
+   - **Position**: Indented lines (expense/income categories)
+   - **Pattern**: `/^\s+/` (line starts with spaces/tabs)
+   - **Example**: `  Assets:Checking`
+
+4. **Commodity/Currency Completion**
+   - **Position**: After amount + single space
+   - **Pattern**: `/\d+(\.\d+)?\s[A-Z]*$/`
+   - **Example**: `100.00 USD`
+
+5. **Forbidden Zone**
+   - **Position**: After amount + two or more spaces
+   - **Pattern**: `/\d+(\.\d+)?\s{2,}/`
+   - **No completions allowed**
+
+### Implementation Components
+
+- **StrictPositionAnalyzer**: Determines context based on cursor position
+- **StrictPositionValidator**: Validates if position allows specific completion
+- **CompletionSuppressor**: Blocks completions in forbidden zones
+- **StrictCompletionProvider**: Main provider coordinating all completions
+
 ## Current Architecture (v0.2.1)
 
 **IMPORTANT**: Use `backend-architect` expert for all architecture analysis and modifications.

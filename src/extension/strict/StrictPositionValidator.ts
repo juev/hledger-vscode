@@ -1,6 +1,7 @@
 export interface PositionValidator {
     isDatePosition(line: string, character: number): boolean;
     isAccountPosition(line: string, character: number): boolean; 
+    isPayeePosition(line: string, character: number): boolean;
     isCommodityPosition(line: string, character: number): boolean;
     isForbiddenPosition(line: string, character: number): boolean;
 }
@@ -8,28 +9,35 @@ export interface PositionValidator {
 export class StrictPositionValidator implements PositionValidator {
     
     isDatePosition(line: string, character: number): boolean {
-        // STRICT: Only at line beginning (character <= 12) when typing digits
-        if (character > 12) return false;
-        
         const beforeCursor = line.substring(0, character);
         
-        // Special handling for "0" at beginning
-        if (this.isZeroDateStart(beforeCursor, character)) {
-            return true;
-        }
-        
-        // Regular dates: complete or partial
-        return /^\d{1,4}([-/]\d{0,2}([-/]\d{0,2})?)?$/.test(beforeCursor);
+        // ANY digit at the beginning of line is a date position
+        return /^\d/.test(beforeCursor);
     }
     
     isAccountPosition(line: string, character: number): boolean {
-        // STRICT: Only on indented lines, only when typing account name
-        if (!line.startsWith(' ') && !line.startsWith('\t')) return false;
-        
         const beforeCursor = line.substring(0, character);
         
-        // Check that we are at beginning of account name or its part
-        return /^\s{2,}[A-Za-z][A-Za-z0-9:_-]*$/.test(beforeCursor);
+        // Accounts ONLY on indented lines (expense/income categories)
+        if (line.startsWith(' ') || line.startsWith('\t')) {
+            // Check that we are at beginning of account name or its part
+            return /^\s+[A-Za-z]?[A-Za-z0-9:_-]*$/.test(beforeCursor);
+        }
+        
+        return false;
+    }
+    
+    isPayeePosition(line: string, character: number): boolean {
+        const beforeCursor = line.substring(0, character);
+        
+        // Payee after date + space(s)
+        if (/^\d{4}[-/]\d{1,2}[-/]\d{1,2}\s+.*$/.test(beforeCursor) ||
+            /^\d{1,2}[-/]\d{1,2}\s+.*$/.test(beforeCursor) ||
+            /^\d{1,2}[-/]\d{1,2}[-/]\d{4}\s+.*$/.test(beforeCursor)) {
+            return true;
+        }
+        
+        return false;
     }
     
     isCommodityPosition(line: string, character: number): boolean {
