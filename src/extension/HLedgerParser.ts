@@ -190,7 +190,7 @@ export class HLedgerParser {
             if (accountName) {
                 data.accounts.add(accountName);
                 data.definedAccounts.add(accountName);
-                this.incrementUsage(data.accountUsage, accountName);
+                // Don't increment usage for account definitions - only count actual usage
             }
             return;
         }
@@ -200,7 +200,7 @@ export class HLedgerParser {
             const commodityName = createCommodityCode(trimmedLine.substring(10).trim());
             if (commodityName) {
                 data.commodities.add(commodityName);
-                this.incrementUsage(data.commodityUsage, commodityName);
+                // Don't increment usage for commodity definitions - only count actual usage
             }
             return;
         }
@@ -211,7 +211,7 @@ export class HLedgerParser {
             if (commodityName) {
                 data.defaultCommodity = commodityName;
                 data.commodities.add(commodityName);
-                this.incrementUsage(data.commodityUsage, commodityName);
+                // Don't increment usage for default commodity definition - only count actual usage
             }
             return;
         }
@@ -316,15 +316,29 @@ export class HLedgerParser {
     }
 
     private extractTags(line: string, data: MutableParsedHLedgerData): void {
-        // Match tag:value patterns (supports Unicode characters including Cyrillic)
-        const tagMatches = line.match(/([\p{L}\p{N}_]+):\s*([^,;\s]+)/gu);
+        // Extract tags only from comments (after ; or #)
+        // Tags are in the format tag:value within comments
+        const commentMatch = line.match(/[;#](.*)$/);
+        if (!commentMatch) return;
+        
+        const commentText = commentMatch[1];
+        
+        // Match tag:value patterns within comments only
+        // This prevents matching account names like "Expenses:Food"
+        const tagMatches = commentText.match(/\b([\p{L}\p{N}_]+):\s*([\p{L}\p{N}_]+)\b/gu);
         if (tagMatches) {
             for (const match of tagMatches) {
-                const [tag, value] = match.split(':');
-                if (tag && value) {
-                    const tagName = createTagName(tag.trim());
-                    data.tags.add(tagName);
-                    this.incrementUsage(data.tagUsage, tagName);
+                const colonIndex = match.indexOf(':');
+                if (colonIndex !== -1) {
+                    const tagPart = match.substring(0, colonIndex).trim();
+                    const valuePart = match.substring(colonIndex + 1).trim();
+                    if (tagPart && valuePart) {
+                        // Special handling: if tag is "tag", use the value as tag name
+                        // This supports patterns like "tag:fastfood" where "fastfood" is the tag
+                        const tagName = createTagName(tagPart === 'tag' ? valuePart : tagPart);
+                        data.tags.add(tagName);
+                        this.incrementUsage(data.tagUsage, tagName);
+                    }
                 }
             }
         }

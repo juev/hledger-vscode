@@ -63,9 +63,9 @@ export class HLedgerConfig {
             this.lastWorkspacePath = projectPath;
         }
         
-        // Parse current document to get latest changes
-        const currentData = this.parser.parseContent(document.getText(), path.dirname(filePath));
-        this.mergeCurrentData(currentData);
+        // Note: We don't need to merge current document data because parseWorkspace
+        // already includes all files in the workspace, including the current document.
+        // Merging would cause double counting of usage statistics.
     }
 
     // Helper method to cast readonly data to mutable for internal operations

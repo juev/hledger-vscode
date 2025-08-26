@@ -43,8 +43,7 @@ export class AccountCompleter {
             documentation.appendMarkdown(`**Account hierarchy:** ${parts.join(' → ')}\n\n`);
         }
         
-        documentation.appendMarkdown(`**Usage count:** ${usageCount}\n`);
-        documentation.appendMarkdown(`**Match score:** ${Math.round(match.score)}`);
+        documentation.appendMarkdown(`**Usage count:** ${usageCount}`);
         
         item.documentation = documentation;
 
