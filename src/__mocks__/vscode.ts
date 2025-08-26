@@ -46,7 +46,9 @@ export class CompletionItem {
 
     constructor(label: string, kind?: CompletionItemKind) {
         this.label = label;
-        this.kind = kind;
+        if (kind !== undefined) {
+            this.kind = kind;
+        }
     }
 }
 
@@ -220,7 +222,7 @@ export const workspace = {
     getWorkspaceFolder: jest.fn(),
     onDidOpenTextDocument: jest.fn(() => ({ dispose: jest.fn() })),
     onDidSaveTextDocument: jest.fn(() => ({ dispose: jest.fn() })),
-    workspaceFolders: [],
+    workspaceFolders: [] as WorkspaceFolder[],
     fs: {
         readFile: jest.fn(),
         writeFile: jest.fn(),
@@ -260,7 +262,9 @@ export class MarkdownString {
 
     constructor(value?: string, supportThemeIcons?: boolean) {
         this.value = value || '';
-        this.supportThemeIcons = supportThemeIcons;
+        if (supportThemeIcons !== undefined) {
+            this.supportThemeIcons = supportThemeIcons;
+        }
     }
 
     appendText(value: string): MarkdownString {
