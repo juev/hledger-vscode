@@ -408,6 +408,14 @@ The current architecture provides these benefits:
 - Use `test-automator` for test creation/fixes
 - Use `debugger` for issue diagnosis
 
+**CRITICAL - Code Style and Comments**:
+
+- **MANDATORY**: ALL comments MUST be in English only
+- **NO EXCEPTIONS**: Never write comments in Russian or any other language
+- **Professional Standards**: Use clear, concise technical English
+- **Consistency**: Maintain consistent terminology across all files
+- **JSDoc Format**: Follow JSDoc conventions for method documentation
+
 **CRITICAL - Test Data File Management**:
 
 - **MANDATORY**: ALL test data files MUST be placed ONLY in `testdata/` directory

@@ -6,7 +6,7 @@ import * as path from 'path';
 import { HLedgerParser, ParsedHLedgerData } from './HLedgerParser';
 import { HLedgerConfig } from './HLedgerConfig';
 import { SimpleProjectCache } from './SimpleProjectCache';
-import { HLedgerCompletionProvider } from './HLedgerCompletionProvider';
+import { StrictCompletionProvider } from './StrictCompletionProvider';
 import { HLedgerEnterCommand } from './HLedgerEnterCommand';
 import { registerColorConfiguration } from './ColorConfiguration';
 import { SimpleFuzzyMatcher } from './SimpleFuzzyMatcher';
@@ -23,13 +23,15 @@ export function activate(context: vscode.ExtensionContext): void {
         const cache = new SimpleProjectCache();
         globalConfig = new HLedgerConfig(parser, cache);
         
-        // Register unified completion provider for all types
-        const completionProvider = new HLedgerCompletionProvider(globalConfig);
+        // Register strict completion provider with minimal triggers
+        // Using 24x7 IntelliSense + contextual triggers strategy
+        const strictProvider = new StrictCompletionProvider(globalConfig);
         context.subscriptions.push(
             vscode.languages.registerCompletionItemProvider(
-                'hledger', completionProvider, 
-                ':', ' ', '@', '#', ';', 
-                '0', '1', '2', '3', '4', '5', '6', '7', '8', '9'  // Add digits as triggers for date completion
+                'hledger',
+                strictProvider,
+                ':', '@', ';'  // Only contextually meaningful triggers
+                // 24x7 IntelliSense handles: digits for dates, letters for accounts/payees, letters after amounts for currencies
             )
         );
         
@@ -40,7 +42,20 @@ export function activate(context: vscode.ExtensionContext): void {
         // Register color configuration commands
         registerColorConfiguration(context);
         
-        console.log('HLedger extension activated with simplified architecture (FASE G)');
+        // Register manual completion commands
+        context.subscriptions.push(
+            vscode.commands.registerCommand('hledger.triggerDateCompletion', () => {
+                vscode.commands.executeCommand('editor.action.triggerSuggest');
+            })
+        );
+        
+        context.subscriptions.push(
+            vscode.commands.registerCommand('hledger.triggerAccountCompletion', () => {
+                vscode.commands.executeCommand('editor.action.triggerSuggest');
+            })
+        );
+        
+        console.log('HLedger extension activated with strict completion architecture (STRICT)');
         
     } catch (error) {
         console.error('HLedger extension activation failed:', error);

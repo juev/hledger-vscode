@@ -86,6 +86,7 @@ export type CompletionType =
     | 'tag'
     | 'commodity'
     | 'date'
+    | 'none'
     | 'keyword';
 
 /**
