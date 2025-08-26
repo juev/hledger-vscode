@@ -1,0 +1,55 @@
+; Test file for completion provider verification
+; Tests date, payee, account, commodity, and tag completions
+
+; Test 1: Date completion at line start
+; Type: 2, 20, 202, 2025 - should trigger date completion
+
+
+; Test 2: Payee completion after date
+; Type payee name after date
+
+
+; Test 3: Account completion in posting line (indented)
+; Add account after indentation
+
+
+; Test 4: Commodity completion after amount in posting line
+; Add currency after amount
+
+
+; Test 5: Tag completion in comment
+; Add tags like category:
+
+
+; Previous transactions for frequency testing
+2025-01-01 Amazon
+    Expenses:Shopping    $100.00
+    Assets:Bank
+
+2025-01-02 Amazon
+    Expenses:Shopping    $50.00
+    Assets:Bank
+
+2025-01-03 Walmart
+    Expenses:Groceries  $75.00
+    Assets:Bank
+
+2025-01-04 Amazon
+    Expenses:Shopping    $25.00
+    Assets:Bank
+
+2025-01-05 Walmart  
+    Expenses:Groceries  $45.00
+    Assets:Bank
+
+; Account definitions
+account Assets:Bank
+account Assets:Cash
+account Expenses:Shopping
+account Expenses:Groceries
+account Income:Salary
+
+; Commodity definitions
+commodity USD
+commodity EUR
+commodity RUB

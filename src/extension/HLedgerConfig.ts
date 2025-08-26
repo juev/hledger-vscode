@@ -21,9 +21,13 @@ export class HLedgerConfig {
         CURRENCY_CONTEXT: /[\d$€£¥₽]\s*$/,
         POSTING_WITH_AMOUNTS: /^\s+.*\d+/,
         ACCOUNT_END: /^\s+[^0-9]*\s+/,
-        FULL_DATE: /^\d{0,4}([-\/]\d{0,2}([-\/]\d{0,2})?)?$/,
-        SHORT_DATE: /^(0[1-9]|1[0-2])([-\/](0[1-9]|[12]\d|3[01]))?$/,
-        DATE_IN_TRANSACTION: /^\s*\d{4}[-\/]\d{2}[-\/]\d{2}\s*[*!]?\s*/
+        // Improved date patterns for progressive typing
+        NUMERIC_START: /^\d{1,4}$/,  // Just digits at line start (for typing year)
+        PARTIAL_DATE: /^\d{1,4}[-\/]?\d{0,2}[-\/]?\d{0,2}$/,  // Flexible partial date
+        FULL_DATE: /^\d{4}[-\/]\d{1,2}[-\/]\d{1,2}$/,  // Complete date format
+        SHORT_DATE: /^(0?[1-9]|1[0-2])[-\/](0?[1-9]|[12]\d|3[01])$/,  // MM/DD or M/D format
+        // Fixed: Support both full dates (YYYY-MM-DD) and short dates (MM-DD) in transactions
+        DATE_IN_TRANSACTION: /^\s*(?:\d{4}[-\/]\d{1,2}[-\/]\d{1,2}|\d{1,2}[-\/]\d{1,2})\s*[*!]?\s*/
     } as const;
 
     private parser: HLedgerParser;
@@ -245,15 +249,21 @@ export class HLedgerConfig {
             return { type: 'tag', query: '' };
         }
 
-        // Check for date context (beginning of line with date pattern)
-        // More flexible date detection - allow longer positions and better regex
+        // Check for date context FIRST - at beginning of line with numeric input
         const lineStart = beforeCursor.trimStart();
         if (this.isDateContext(lineStart, position.character - (beforeCursor.length - lineStart.length))) {
-            return { type: 'date', query: word };
+            return { type: 'date', query: lineStart };  // Use lineStart as query for better matching
         }
 
-        // Check for hledger keywords at beginning of line
-        if (HLedgerConfig.PATTERNS.KEYWORD_CONTEXT.test(beforeCursor) && position.character < 20) {
+        // Check for payee context BEFORE commodity (after date in transaction line)
+        if (this.isPayeePosition(line, position.character)) {
+            return { type: 'payee', query: word };
+        }
+
+        // Check for hledger keywords at beginning of line (but not if it looks like a date)
+        if (HLedgerConfig.PATTERNS.KEYWORD_CONTEXT.test(beforeCursor) && 
+            position.character < 20 && 
+            !HLedgerConfig.PATTERNS.NUMERIC_START.test(lineStart)) {
             return { type: 'keyword', query: word };
         }
 
@@ -267,14 +277,9 @@ export class HLedgerConfig {
             return { type: 'commodity', query: word };
         }
 
-        // Check for commodity context in amount positions (after numbers/amounts)
+        // Check for commodity context ONLY in posting lines (after numbers/amounts)
         if (this.isInAmountPosition(line, position.character)) {
             return { type: 'commodity', query: word };
-        }
-
-        // Check for payee context (after date in transaction line)
-        if (this.isPayeePosition(line, position.character)) {
-            return { type: 'payee', query: word };
         }
 
         // Check for account directive context
@@ -293,38 +298,47 @@ export class HLedgerConfig {
 
     private isDateContext(lineStart: string, positionInTrimmed: number): boolean {
         // Check if we're at the beginning of a line typing a date
-        // Support multiple date formats using pre-compiled patterns
+        // Be very permissive - any digits at line start could be a date
+        
+        // First check: any numeric input at line start (for progressive typing)
+        const isNumericStart = HLedgerConfig.PATTERNS.NUMERIC_START.test(lineStart);
+        
+        // Second check: partial date patterns
+        const isPartialDate = HLedgerConfig.PATTERNS.PARTIAL_DATE.test(lineStart);
+        
+        // Third check: complete date formats
         const isFullDate = HLedgerConfig.PATTERNS.FULL_DATE.test(lineStart);
         const isShortDate = HLedgerConfig.PATTERNS.SHORT_DATE.test(lineStart);
-        const isValidPattern = isFullDate || isShortDate;
         
-        // Allow longer positions for short dates (up to 5 chars: "08-10")
-        const maxPosition = isShortDate ? 5 : 10;
+        // Accept any of these patterns
+        const isValidPattern = isNumericStart || isPartialDate || isFullDate || isShortDate;
         
-        return isValidPattern && positionInTrimmed <= maxPosition;
+        // Be generous with position - allow up to 12 characters for date entry
+        return isValidPattern && positionInTrimmed <= 12;
     }
 
     private isInAmountPosition(line: string, position: number): boolean {
-        // Improved amount position detection using pre-compiled patterns
+        // Amount position detection - ONLY for posting lines (indented)
         const beforeCursor = line.substring(0, position);
         
-        // Check if we're after a number (with optional whitespace)
+        // Critical: Only check for amounts in posting lines (indented lines)
+        // This prevents false positives on transaction lines with dates
+        if (!HLedgerConfig.PATTERNS.INDENTED_LINE.test(line)) {
+            return false;
+        }
+        
+        // Check if we're after a number (with optional whitespace) in a posting line
         if (HLedgerConfig.PATTERNS.AFTER_NUMBER.test(beforeCursor)) {
-            return true;
+            // Make sure we're past the account name part
+            const accountMatch = beforeCursor.match(HLedgerConfig.PATTERNS.ACCOUNT_END);
+            if (accountMatch && position > accountMatch[0].length) {
+                return true;
+            }
         }
         
         // Check if we're between currency symbols and numbers
         if (HLedgerConfig.PATTERNS.CURRENCY_CONTEXT.test(beforeCursor)) {
             return true;
-        }
-        
-        // Check if we're in a posting line with amounts (indented line with numbers)
-        if (HLedgerConfig.PATTERNS.POSTING_WITH_AMOUNTS.test(beforeCursor)) {
-            // Make sure we're not in the account name part
-            const accountMatch = beforeCursor.match(HLedgerConfig.PATTERNS.ACCOUNT_END);
-            if (accountMatch && position > accountMatch[0].length) {
-                return true;
-            }
         }
         
         return false;
@@ -335,7 +349,9 @@ export class HLedgerConfig {
         const beforeCursor = line.substring(0, position);
         const dateMatch = beforeCursor.match(HLedgerConfig.PATTERNS.DATE_IN_TRANSACTION);
         
-        return !!dateMatch && position > dateMatch[0].length;
+        // Fixed: Use >= instead of > to handle cursor at end of date match
+        // This covers cases like "2024-08-23 |" where cursor is right after the space
+        return !!dateMatch && position >= dateMatch[0].length;
     }
 
     // Note: isKeywordContext method was inlined to use pre-compiled patterns directly
