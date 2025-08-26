@@ -319,7 +319,7 @@ export class HLedgerParser {
         // Extract tags only from comments (after ; or #)
         // Tags are in the format tag:value within comments
         const commentMatch = line.match(/[;#](.*)$/);
-        if (!commentMatch) return;
+        if (!commentMatch || !commentMatch[1]) return;
 
         const commentText = commentMatch[1];
 
