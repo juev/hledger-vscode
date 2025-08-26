@@ -250,7 +250,7 @@ export class HLedgerParser {
 
     private handleAliasDirective(line: string, data: MutableParsedHLedgerData): void {
         const aliasMatch = line.match(/alias\s+([^=]+)=(.+)/);
-        if (aliasMatch) {
+        if (aliasMatch && aliasMatch[1] && aliasMatch[2]) {
             const alias = createAccountName(aliasMatch[1].trim());
             const account = createAccountName(aliasMatch[2].trim());
             data.aliases.set(alias, account);
@@ -259,7 +259,7 @@ export class HLedgerParser {
 
     private handleTransactionLine(line: string, data: MutableParsedHLedgerData): void {
         const dateMatch = line.match(/^(\d{4}[-\/\.]\d{2}[-\/\.]\d{2}|\d{2}[-\/\.]\d{2})/);
-        if (dateMatch) {
+        if (dateMatch && dateMatch[1]) {
             data.lastDate = dateMatch[1];
         }
 
@@ -280,7 +280,7 @@ export class HLedgerParser {
         // Extract account name (everything before amount)
         let accountName = '';
         const parts = trimmedLine.split(/\s{2,}|\t/);
-        if (parts.length > 0) {
+        if (parts.length > 0 && parts[0]) {
             accountName = parts[0].trim();
             
             // Remove leading/trailing spaces and handle account hierarchy
@@ -293,7 +293,7 @@ export class HLedgerParser {
         }
 
         // Extract commodity from amount (if present)
-        if (parts.length > 1) {
+        if (parts.length > 1 && parts[1]) {
             const amountPart = parts[1].trim();
             this.extractCommodityFromAmount(amountPart, data);
         }
@@ -312,7 +312,7 @@ export class HLedgerParser {
         
         // Split only by ; to separate payee from comment, but preserve pipe characters
         const parts = cleaned.split(/[;]/);
-        return parts[0].trim();
+        return parts[0] ? parts[0].trim() : '';
     }
 
     private extractTags(line: string, data: MutableParsedHLedgerData): void {
@@ -333,7 +333,7 @@ export class HLedgerParser {
     private extractCommodityFromAmount(amountStr: string, data: MutableParsedHLedgerData): void {
         // Match currency symbols and commodity codes
         const commodityMatch = amountStr.match(/([A-Z]{2,}|\$|€|£|¥|₽)/);
-        if (commodityMatch) {
+        if (commodityMatch && commodityMatch[1]) {
             const commodity = createCommodityCode(commodityMatch[1]);
             data.commodities.add(commodity);
             this.incrementUsage(data.commodityUsage, commodity);
