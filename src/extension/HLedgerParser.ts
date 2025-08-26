@@ -180,7 +180,13 @@ export class HLedgerParser {
 
         // Account directive
         if (trimmedLine.startsWith('account ')) {
-            const accountName = createAccountName(trimmedLine.substring(8).trim());
+            let accountLine = trimmedLine.substring(8).trim();
+            // Remove inline comments
+            const commentIndex = accountLine.indexOf(';');
+            if (commentIndex !== -1) {
+                accountLine = accountLine.substring(0, commentIndex).trim();
+            }
+            const accountName = createAccountName(accountLine);
             if (accountName) {
                 data.accounts.add(accountName);
                 data.definedAccounts.add(accountName);
@@ -301,14 +307,17 @@ export class HLedgerParser {
         let cleaned = line.replace(/^(\d{4}[-\/\.]\d{2}[-\/\.]\d{2}|\d{2}[-\/\.]\d{2})/, '').trim();
         cleaned = cleaned.replace(/^[*!]\s*/, '').trim(); // Remove status
         
+        // Remove transaction codes like (REF123), (CODE456)
+        cleaned = cleaned.replace(/^\([^)]+\)\s*/, '').trim();
+        
         // Split only by ; to separate payee from comment, but preserve pipe characters
         const parts = cleaned.split(/[;]/);
         return parts[0].trim();
     }
 
     private extractTags(line: string, data: MutableParsedHLedgerData): void {
-        // Match tag:value patterns
-        const tagMatches = line.match(/(\w+):\s*([^,;\s]+)/g);
+        // Match tag:value patterns (supports Unicode characters including Cyrillic)
+        const tagMatches = line.match(/([\p{L}\p{N}_]+):\s*([^,;\s]+)/gu);
         if (tagMatches) {
             for (const match of tagMatches) {
                 const [tag, value] = match.split(':');

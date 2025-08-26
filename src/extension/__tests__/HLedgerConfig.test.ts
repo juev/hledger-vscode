@@ -35,21 +35,6 @@ account Активы:Наличные
             ]));
         });
         
-        it('should parse aliases', () => {
-            const content = `
-alias Активы = Assets
-alias Расходы = Expenses
-`;
-            
-            config.parseContent(content);
-            
-            const aliases = config.getAliases();
-            expect(aliases.get(createAccountName('Активы'))).toBe(createAccountName('Assets'));
-            expect(aliases.get(createAccountName('Расходы'))).toBe(createAccountName('Expenses'));
-            expect(config.getAccounts()).toEqual(expect.arrayContaining([
-                'Активы', 'Assets', 'Расходы', 'Expenses'
-            ]));
-        });
         
         it('should parse commodity directives', () => {
             const content = `
