@@ -1,4 +1,4 @@
-import * as vscode from 'vscode';
+// Simple fuzzy matching implementation
 import { CompletionScore, UsageCount, createCompletionScore } from './types';
 
 /**

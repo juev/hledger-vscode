@@ -9,7 +9,7 @@ import { HLedgerCompletionProvider } from './HLedgerCompletionProvider';
 import { HLedgerEnterCommand } from './HLedgerEnterCommand';
 import { registerColorConfiguration } from './ColorConfiguration';
 import { SimpleFuzzyMatcher } from './SimpleFuzzyMatcher';
-import { createCacheKey, CacheValue } from './types';
+import { createCacheKey } from './types';
 
 // Global instances for simplified architecture
 let globalConfig: HLedgerConfig;

@@ -290,3 +290,40 @@ export const coerceTagNames = (values: string[]): TagName[] => {
 export const coerceCommodityCodes = (values: string[]): CommodityCode[] => {
     return values as CommodityCode[];
 };
+
+// Modern Result type for better error handling
+export type Result<T, E = Error> = 
+    | { readonly success: true; readonly data: T }
+    | { readonly success: false; readonly error: E };
+
+// Helper functions for Result type
+export const success = <T>(data: T): Result<T, never> => ({ success: true, data });
+export const failure = <E>(error: E): Result<never, E> => ({ success: false, error });
+
+// Type guard for Result
+export const isSuccess = <T, E>(result: Result<T, E>): result is { success: true; data: T } => {
+    return result.success;
+};
+
+export const isFailure = <T, E>(result: Result<T, E>): result is { success: false; error: E } => {
+    return !result.success;
+};
+
+// Validation result type for input validation
+export interface ValidationResult<T> {
+    readonly isValid: boolean;
+    readonly value?: T;
+    readonly errors: readonly string[];
+}
+
+// Helper to create validation results
+export const validationSuccess = <T>(value: T): ValidationResult<T> => ({
+    isValid: true,
+    value,
+    errors: []
+});
+
+export const validationFailure = <T = never>(errors: string[]): ValidationResult<T> => ({
+    isValid: false,
+    errors
+});

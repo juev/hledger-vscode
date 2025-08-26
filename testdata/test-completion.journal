@@ -1,0 +1,26 @@
+; Test file for completion functionality
+
+; Test full date completion - type "2024" and see if date completion works
+2024-01-15 * Test transaction
+    Assets:Checking     $100.00
+    Expenses:Food
+
+; Test short date completion - type "08-10" and see if date completion works
+08-10 * Short date format transaction
+    Assets:Cash         $50.00
+    Expenses:Groceries
+
+; Test month completion - type "08" and see if date completion suggests short format
+08-
+
+; Test commodity completion - type amount and see if currency suggestions appear
+2024-01-16 * Another transaction  
+    Assets:Cash         50 
+    Expenses:Entertainment
+
+; Test payee completion
+2024-01-17 * 
+
+; Test account completion in posting lines
+2024-01-18 * Test posting
+    

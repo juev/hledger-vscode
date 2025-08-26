@@ -12,6 +12,20 @@ import { CompletionContext, AccountName, PayeeName, TagName, CommodityCode, Usag
 export { CompletionContext } from './types';
 
 export class HLedgerConfig {
+    // Pre-compiled regex patterns for performance optimization
+    private static readonly PATTERNS = {
+        TAG_IN_COMMENT: /\w+:\s*$|\/\w+:\w*$/,
+        INDENTED_LINE: /^\s+/,
+        KEYWORD_CONTEXT: /^\s*\w*$/,
+        AFTER_NUMBER: /\d+(\.\d+)?\s*$/,
+        CURRENCY_CONTEXT: /[\d$€£¥₽]\s*$/,
+        POSTING_WITH_AMOUNTS: /^\s+.*\d+/,
+        ACCOUNT_END: /^\s+[^0-9]*\s+/,
+        FULL_DATE: /^\d{0,4}([-\/]\d{0,2}([-\/]\d{0,2})?)?$/,
+        SHORT_DATE: /^(0[1-9]|1[0-2])([-\/](0[1-9]|[12]\d|3[01]))?$/,
+        DATE_IN_TRANSACTION: /^\s*\d{4}[-\/]\d{2}[-\/]\d{2}\s*[*!]?\s*/
+    } as const;
+
     private parser: HLedgerParser;
     private cache: SimpleProjectCache;
     private data: ParsedHLedgerData | null = null;
@@ -51,8 +65,31 @@ export class HLedgerConfig {
     }
 
     // Helper method to cast readonly data to mutable for internal operations
-    private asMutable(data: ParsedHLedgerData): any {
-        return data as any;
+    // Type-safe conversion that preserves structure while allowing mutations
+    private asMutable(data: ParsedHLedgerData): {
+        accounts: Set<AccountName>;
+        usedAccounts: Set<AccountName>;
+        payees: Set<PayeeName>;
+        tags: Set<TagName>;
+        commodities: Set<CommodityCode>;
+        accountUsage: Map<AccountName, UsageCount>;
+        payeeUsage: Map<PayeeName, UsageCount>;
+        tagUsage: Map<TagName, UsageCount>;
+        commodityUsage: Map<CommodityCode, UsageCount>;
+    } {
+        // Safe cast through unknown to bypass readonly constraints
+        // This is justified because we know the underlying implementation uses mutable collections
+        return data as unknown as {
+            accounts: Set<AccountName>;
+            usedAccounts: Set<AccountName>;
+            payees: Set<PayeeName>;
+            tags: Set<TagName>;
+            commodities: Set<CommodityCode>;
+            accountUsage: Map<AccountName, UsageCount>;
+            payeeUsage: Map<PayeeName, UsageCount>;
+            tagUsage: Map<TagName, UsageCount>;
+            commodityUsage: Map<CommodityCode, UsageCount>;
+        };
     }
 
     // Merge current document data with cached workspace data
@@ -202,25 +239,37 @@ export class HLedgerConfig {
         // Check if we're in a comment
         if (beforeCursor.includes(';') || beforeCursor.includes('#')) {
             // Look for tag patterns in comments
-            if (/\w+:\s*$/.test(beforeCursor) || /\w+:\w*$/.test(beforeCursor)) {
+            if (HLedgerConfig.PATTERNS.TAG_IN_COMMENT.test(beforeCursor)) {
                 return { type: 'tag', query: word };
             }
             return { type: 'tag', query: '' };
         }
 
+        // Check for date context (beginning of line with date pattern)
+        // More flexible date detection - allow longer positions and better regex
+        const lineStart = beforeCursor.trimStart();
+        if (this.isDateContext(lineStart, position.character - (beforeCursor.length - lineStart.length))) {
+            return { type: 'date', query: word };
+        }
+
+        // Check for hledger keywords at beginning of line
+        if (HLedgerConfig.PATTERNS.KEYWORD_CONTEXT.test(beforeCursor) && position.character < 20) {
+            return { type: 'keyword', query: word };
+        }
+
         // Check for account context (indented lines or after account keyword)
-        if (beforeCursor.match(/^\s+/) || beforeCursor.includes('account ')) {
+        if (HLedgerConfig.PATTERNS.INDENTED_LINE.test(beforeCursor) && !this.isInAmountPosition(line, position.character)) {
             return { type: 'account', query: word };
         }
 
-        // Check for commodity context (after commodity keyword or in amounts)
-        if (beforeCursor.includes('commodity ') || this.isInAmountPosition(line, position.character)) {
+        // Check for explicit commodity context (after commodity keyword)
+        if (beforeCursor.includes('commodity ')) {
             return { type: 'commodity', query: word };
         }
 
-        // Check for date context (beginning of line with date pattern)
-        if (position.character < 15 && /^\d{0,4}[-\/]?\d{0,2}[-\/]?\d{0,2}$/.test(beforeCursor.trim())) {
-            return { type: 'date', query: word };
+        // Check for commodity context in amount positions (after numbers/amounts)
+        if (this.isInAmountPosition(line, position.character)) {
+            return { type: 'commodity', query: word };
         }
 
         // Check for payee context (after date in transaction line)
@@ -228,35 +277,68 @@ export class HLedgerConfig {
             return { type: 'payee', query: word };
         }
 
-        // Check for hledger keywords
-        if (position.character < 20 && this.isKeywordContext(beforeCursor)) {
-            return { type: 'keyword', query: word };
+        // Check for account directive context
+        if (beforeCursor.includes('account ')) {
+            return { type: 'account', query: word };
         }
 
-        // Default to account completion
-        return { type: 'account', query: word };
+        // Default to account completion for indented lines
+        if (HLedgerConfig.PATTERNS.INDENTED_LINE.test(beforeCursor)) {
+            return { type: 'account', query: word };
+        }
+
+        // Default to keyword completion for line start
+        return { type: 'keyword', query: word };
+    }
+
+    private isDateContext(lineStart: string, positionInTrimmed: number): boolean {
+        // Check if we're at the beginning of a line typing a date
+        // Support multiple date formats using pre-compiled patterns
+        const isFullDate = HLedgerConfig.PATTERNS.FULL_DATE.test(lineStart);
+        const isShortDate = HLedgerConfig.PATTERNS.SHORT_DATE.test(lineStart);
+        const isValidPattern = isFullDate || isShortDate;
+        
+        // Allow longer positions for short dates (up to 5 chars: "08-10")
+        const maxPosition = isShortDate ? 5 : 10;
+        
+        return isValidPattern && positionInTrimmed <= maxPosition;
     }
 
     private isInAmountPosition(line: string, position: number): boolean {
-        // Simple heuristic: amount positions typically have numbers or currency symbols nearby
+        // Improved amount position detection using pre-compiled patterns
         const beforeCursor = line.substring(0, position);
-        const afterCursor = line.substring(position);
         
-        return /[\d$€£¥₽]/.test(beforeCursor + afterCursor);
+        // Check if we're after a number (with optional whitespace)
+        if (HLedgerConfig.PATTERNS.AFTER_NUMBER.test(beforeCursor)) {
+            return true;
+        }
+        
+        // Check if we're between currency symbols and numbers
+        if (HLedgerConfig.PATTERNS.CURRENCY_CONTEXT.test(beforeCursor)) {
+            return true;
+        }
+        
+        // Check if we're in a posting line with amounts (indented line with numbers)
+        if (HLedgerConfig.PATTERNS.POSTING_WITH_AMOUNTS.test(beforeCursor)) {
+            // Make sure we're not in the account name part
+            const accountMatch = beforeCursor.match(HLedgerConfig.PATTERNS.ACCOUNT_END);
+            if (accountMatch && position > accountMatch[0].length) {
+                return true;
+            }
+        }
+        
+        return false;
     }
 
     private isPayeePosition(line: string, position: number): boolean {
         // Payee comes after date and optional status in transaction lines
         const beforeCursor = line.substring(0, position);
-        const dateMatch = beforeCursor.match(/^\s*\d{4}[-\/]\d{2}[-\/]\d{2}\s*[*!]?\s*/);
+        const dateMatch = beforeCursor.match(HLedgerConfig.PATTERNS.DATE_IN_TRANSACTION);
         
         return !!dateMatch && position > dateMatch[0].length;
     }
 
-    private isKeywordContext(beforeCursor: string): boolean {
-        // Keywords typically appear at the beginning of lines
-        return /^\s*\w*$/.test(beforeCursor);
-    }
+    // Note: isKeywordContext method was inlined to use pre-compiled patterns directly
 
     // Clear cache
     clearCache(): void {
