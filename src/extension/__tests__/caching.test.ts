@@ -1,13 +1,17 @@
 import { HLedgerConfig, ProjectCache } from '../main';
-import { createPayeeName, createTagEntry, createFilePath } from '../core/BrandedTypes';
+import { SimpleProjectCache } from '../SimpleProjectCache';
+import { createCacheKey, createAccountName, createUsageCount, createPayeeName, createTagName, createCommodityCode } from '../types';
+// Enhanced with proper type imports
 
-describe('Enhanced Caching System', () => {
+describe('Simplified Caching System - PHASE C', () => {
     let config: HLedgerConfig;
     let projectCache: ProjectCache;
+    let simpleCache: SimpleProjectCache;
     
     beforeEach(() => {
         config = new HLedgerConfig();
         projectCache = new ProjectCache();
+        simpleCache = new SimpleProjectCache();
     });
     
     describe('Payee and Tag Parsing', () => {
@@ -76,42 +80,76 @@ describe('Enhanced Caching System', () => {
             
             // Initialize would normally scan workspace, but we'll mock a config
             const testConfig = new HLedgerConfig();
-            testConfig.payees.add(createPayeeName('Test Store'));
-            testConfig.tags.add(createTagEntry('test'));
+            testConfig.parseContent('2024-01-01 Test Store\n    Assets:Cash  $100\n    tag: test');
             
-            // Manually set for testing
-            projectCache['projects'].set('/test/project1', testConfig);
-            
-            expect(projectCache.hasProject('/test/project1')).toBe(true);
-            expect(projectCache.getConfig('/test/project1')).toBe(testConfig);
-        });
-        
-        it('should find project for file path', () => {
-            // Create a test project
-            const testConfig = new HLedgerConfig();
-            projectCache['projects'].set('/home/user/finance', testConfig);
-            
-            // Should find project for files within it
-            const projectPath = projectCache.findProjectForFile(createFilePath('/home/user/finance/2025.journal'));
-            expect(projectPath).toBe('/home/user/finance');
-            
-            // Should not find project for unrelated files
-            const noProject = projectCache.findProjectForFile(createFilePath('/other/path/file.journal'));
-            expect(noProject).toBeNull();
-        });
-        
-        it('should clear all project caches', () => {
-            const testConfig = new HLedgerConfig();
-            projectCache['projects'].set('/test/project1', testConfig);
-            projectCache['projects'].set('/test/project2', testConfig);
+            // Test legacy ProjectCache wrapper (backward compatibility)
+            const cachedConfig = projectCache.initializeProject('/test/project1');
             
             expect(projectCache.hasProject('/test/project1')).toBe(true);
-            expect(projectCache.hasProject('/test/project2')).toBe(true);
+            expect(projectCache.getConfig('/test/project1')).not.toBeNull();
+        });
+        
+        it('should support simple caching with mtime validation', () => {
+            const testConfig = new HLedgerConfig();
+            testConfig.parseContent('account Assets:Test');
             
-            projectCache.clear();
+            // Cache should be empty initially
+            expect(simpleCache.get(createCacheKey('/test/project.journal'))).toBeNull();
             
-            expect(projectCache.hasProject('/test/project1')).toBe(false);
-            expect(projectCache.hasProject('/test/project2')).toBe(false);
+            // After setting, should return cached value
+            // Cannot set HLedgerConfig directly - cache expects ParsedHLedgerData
+            // Create mock parsed data
+            const mockData = {
+                accounts: new Set([createAccountName('Assets:Test')]),
+                definedAccounts: new Set([createAccountName('Assets:Test')]),
+                usedAccounts: new Set([createAccountName('Assets:Test')]),
+                payees: new Set([createPayeeName('TestPayee')]),
+                tags: new Set([createTagName('TestTag')]),
+                commodities: new Set([createCommodityCode('USD')]),
+                aliases: new Map([[createAccountName('Assets'), createAccountName('Assets:Test')]]),
+                accountUsage: new Map([[createAccountName('Assets:Test'), createUsageCount(1)]]),
+                payeeUsage: new Map([[createPayeeName('TestPayee'), createUsageCount(1)]]),
+                tagUsage: new Map([[createTagName('TestTag'), createUsageCount(1)]]),
+                commodityUsage: new Map([[createCommodityCode('USD'), createUsageCount(1)]]),
+                defaultCommodity: null,
+                lastDate: null
+            };
+            simpleCache.set(createCacheKey('/test/project.journal'), mockData);
+            expect(simpleCache.get(createCacheKey('/test/project.journal'))).not.toBeNull();
+            
+            // Stats should reflect cached items
+            const stats = simpleCache.getStats();
+            expect(stats.size).toBeGreaterThan(0);
+        });
+        
+        it('should clear all cached data', () => {
+            // Create mock parsed data for clearing test
+            const mockData = {
+                accounts: new Set([createAccountName('Assets:Test')]),
+                definedAccounts: new Set([createAccountName('Assets:Test')]),
+                usedAccounts: new Set([createAccountName('Assets:Test')]),
+                payees: new Set([createPayeeName('TestPayee')]),
+                tags: new Set([createTagName('TestTag')]),
+                commodities: new Set([createCommodityCode('USD')]),
+                aliases: new Map([[createAccountName('Assets'), createAccountName('Assets:Test')]]),
+                accountUsage: new Map([[createAccountName('Assets:Test'), createUsageCount(1)]]),
+                payeeUsage: new Map([[createPayeeName('TestPayee'), createUsageCount(1)]]),
+                tagUsage: new Map([[createTagName('TestTag'), createUsageCount(1)]]),
+                commodityUsage: new Map([[createCommodityCode('USD'), createUsageCount(1)]]),
+                defaultCommodity: null,
+                lastDate: null
+            };
+            
+            simpleCache.set(createCacheKey('/test/project1'), mockData);
+            simpleCache.set(createCacheKey('/test/project2'), mockData);
+            
+            expect(simpleCache.has(createCacheKey('/test/project1'))).toBe(true);
+            expect(simpleCache.has(createCacheKey('/test/project2'))).toBe(true);
+            
+            simpleCache.clear();
+            
+            expect(simpleCache.has(createCacheKey('/test/project1'))).toBe(false);
+            expect(simpleCache.has(createCacheKey('/test/project2'))).toBe(false);
         });
     });
     

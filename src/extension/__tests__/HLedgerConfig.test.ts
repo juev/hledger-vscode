@@ -1,5 +1,5 @@
 import { HLedgerConfig } from '../main';
-import { createAccountAlias } from '../core/BrandedTypes';
+import { createAccountName } from '../types';
 import * as fs from 'fs';
 import * as path from 'path';
 
@@ -44,8 +44,8 @@ alias Расходы = Expenses
             config.parseContent(content);
             
             const aliases = config.getAliases();
-            expect(aliases.get(createAccountAlias('Активы'))).toBe('Assets');
-            expect(aliases.get(createAccountAlias('Расходы'))).toBe('Expenses');
+            expect(aliases.get(createAccountName('Активы'))).toBe(createAccountName('Assets'));
+            expect(aliases.get(createAccountName('Расходы'))).toBe(createAccountName('Expenses'));
             expect(config.getAccounts()).toEqual(expect.arrayContaining([
                 'Активы', 'Assets', 'Расходы', 'Expenses'
             ]));

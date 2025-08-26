@@ -56,13 +56,13 @@ export class Range {
 
     constructor(startLine: number, startCharacter: number, endLine: number, endCharacter: number);
     constructor(start: Position, end: Position);
-    constructor(startOrStartLine: any, startCharacterOrEnd?: any, endLine?: number, endCharacter?: number) {
+    constructor(startOrStartLine: Position | number, startCharacterOrEnd?: Position | number, endLine?: number, endCharacter?: number) {
         if (typeof startOrStartLine === 'number') {
-            this.start = new Position(startOrStartLine, startCharacterOrEnd);
+            this.start = new Position(startOrStartLine, startCharacterOrEnd as number);
             this.end = new Position(endLine!, endCharacter!);
         } else {
             this.start = startOrStartLine;
-            this.end = startCharacterOrEnd;
+            this.end = startCharacterOrEnd as Position;
         }
     }
 }
@@ -77,15 +77,19 @@ export class Position {
     }
 }
 
+/**
+ * Mock TextDocument interface for VS Code API compatibility.
+ * Provides type-safe document operations for testing.
+ */
 export interface TextDocument {
-    uri: Uri;
-    fileName: string;
-    languageId: string;
-    version: number;
-    isDirty: boolean;
-    isClosed: boolean;
-    isUntitled: boolean;
-    lineCount: number;
+    readonly uri: Uri;
+    readonly fileName: string;
+    readonly languageId: string;
+    readonly version: number;
+    readonly isDirty: boolean;
+    readonly isClosed: boolean;
+    readonly isUntitled: boolean;
+    readonly lineCount: number;
     getText(): string;
     getText(range: Range): string;
     lineAt(line: number): TextLine;
@@ -110,7 +114,7 @@ export interface Uri {
     fsPath: string;
     with(change: { scheme?: string; authority?: string; path?: string; query?: string; fragment?: string }): Uri;
     toString(skipEncoding?: boolean): string;
-    toJSON(): any;
+    toJSON(): Record<string, unknown>;
 }
 
 export interface WorkspaceFolder {
@@ -123,14 +127,61 @@ export interface Disposable {
     dispose(): void;
 }
 
+/**
+ * Storage interface for workspace/global state.
+ */
+interface ExtensionStorage {
+    get<T>(key: string): T | undefined;
+    get<T>(key: string, defaultValue: T): T;
+    update(key: string, value: unknown): Thenable<void>;
+    keys(): readonly string[];
+}
+
+/**
+ * Environment variable collection interface.
+ */
+interface EnvironmentVariableCollection {
+    replace(variable: string, value: string): void;
+    append(variable: string, value: string): void;
+    prepend(variable: string, value: string): void;
+}
+
+/**
+ * Extension secrets interface.
+ */
+interface ExtensionSecrets {
+    get(key: string): Thenable<string | undefined>;
+    store(key: string, value: string): Thenable<void>;
+    delete(key: string): Thenable<void>;
+}
+
+/**
+ * Language model access information interface.
+ */
+interface LanguageModelAccessInformation {
+    canSendRequest(): boolean;
+}
+
+/**
+ * Extension information interface.
+ */
+interface ExtensionInfo {
+    readonly id: string;
+    readonly packageJSON: Record<string, unknown>;
+}
+
+/**
+ * Mock ExtensionContext interface for VS Code API compatibility.
+ * Provides type-safe extension context operations for testing.
+ */
 export interface ExtensionContext {
     subscriptions: Disposable[];
-    workspaceState: any;
-    globalState: any;
-    secrets: any;
+    workspaceState: ExtensionStorage;
+    globalState: ExtensionStorage;
+    secrets: ExtensionSecrets;
     extensionUri: Uri;
     extensionPath: string;
-    environmentVariableCollection: any;
+    environmentVariableCollection: EnvironmentVariableCollection;
     storagePath?: string;
     globalStoragePath: string;
     logPath: string;
@@ -138,16 +189,16 @@ export interface ExtensionContext {
     storageUri?: Uri;
     globalStorageUri: Uri;
     asAbsolutePath(relativePath: string): string;
-    extension: any;
-    extensionMode: any;
-    languageModelAccessInformation: any;
+    extension: ExtensionInfo;
+    extensionMode: number; // ExtensionMode enum
+    languageModelAccessInformation: LanguageModelAccessInformation;
 }
 
 // Mock ExtensionContext implementation for tests
 export const createMockExtensionContext = (overrides: Partial<ExtensionContext> = {}): ExtensionContext => ({
     subscriptions: [],
-    workspaceState: { get: jest.fn(), update: jest.fn() },
-    globalState: { get: jest.fn(), update: jest.fn() },
+    workspaceState: { get: jest.fn(), update: jest.fn(), keys: jest.fn(() => []) },
+    globalState: { get: jest.fn(), update: jest.fn(), keys: jest.fn(() => []) },
     secrets: { get: jest.fn(), store: jest.fn(), delete: jest.fn() },
     extensionUri: Uri.file('/test/extension'),
     extensionPath: '/test/extension',
@@ -159,7 +210,7 @@ export const createMockExtensionContext = (overrides: Partial<ExtensionContext> 
     storageUri: Uri.file('/test/storage'),
     globalStorageUri: Uri.file('/test/global-storage'),
     asAbsolutePath: (relativePath: string) => `/test/extension/${relativePath}`,
-    extension: { id: 'test.extension' },
+    extension: { id: 'test.extension', packageJSON: {} },
     extensionMode: 1, // Normal extension mode
     languageModelAccessInformation: { canSendRequest: jest.fn() },
     ...overrides
@@ -198,6 +249,33 @@ export class SemanticTokensLegend {
     constructor(tokenTypes: readonly string[], tokenModifiers: readonly string[] = []) {
         this.tokenTypes = tokenTypes;
         this.tokenModifiers = tokenModifiers;
+    }
+}
+
+export class MarkdownString {
+    value: string;
+    isTrusted?: boolean;
+    supportThemeIcons?: boolean;
+    uris?: { [id: string]: Uri };
+
+    constructor(value?: string, supportThemeIcons?: boolean) {
+        this.value = value || '';
+        this.supportThemeIcons = supportThemeIcons;
+    }
+
+    appendText(value: string): MarkdownString {
+        this.value += value;
+        return this;
+    }
+
+    appendMarkdown(value: string): MarkdownString {
+        this.value += value;
+        return this;
+    }
+
+    appendCodeblock(value: string, language?: string): MarkdownString {
+        this.value += '```' + (language || '') + '\n' + value + '\n```\n';
+        return this;
     }
 }
 
