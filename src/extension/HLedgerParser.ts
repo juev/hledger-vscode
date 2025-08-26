@@ -5,7 +5,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import * as vscode from 'vscode';
-import { 
+import {
     AccountName, PayeeName, TagName, CommodityCode, UsageCount,
     createAccountName, createPayeeName, createTagName, createCommodityCode, createUsageCount
 } from './types';
@@ -21,13 +21,13 @@ interface MutableParsedHLedgerData {
     tags: Set<TagName>;
     commodities: Set<CommodityCode>;
     aliases: Map<AccountName, AccountName>;
-    
+
     // Usage tracking with branded types for frequency-based prioritization
     accountUsage: Map<AccountName, UsageCount>;
     payeeUsage: Map<PayeeName, UsageCount>;
     tagUsage: Map<TagName, UsageCount>;
     commodityUsage: Map<CommodityCode, UsageCount>;
-    
+
     defaultCommodity: CommodityCode | null;
     lastDate: string | null;
 }
@@ -44,13 +44,13 @@ export interface ParsedHLedgerData {
     readonly tags: ReadonlySet<TagName>;
     readonly commodities: ReadonlySet<CommodityCode>;
     readonly aliases: ReadonlyMap<AccountName, AccountName>;
-    
+
     // Usage tracking with branded types for frequency-based prioritization
     readonly accountUsage: ReadonlyMap<AccountName, UsageCount>;
     readonly payeeUsage: ReadonlyMap<PayeeName, UsageCount>;
     readonly tagUsage: ReadonlyMap<TagName, UsageCount>;
     readonly commodityUsage: ReadonlyMap<CommodityCode, UsageCount>;
-    
+
     readonly defaultCommodity: CommodityCode | null;
     readonly lastDate: string | null;
 }
@@ -70,13 +70,13 @@ export interface ParsedHLedgerData {
  * hledger 1.43 specification for maximum compatibility.
  */
 export class HLedgerParser {
-    
+
     parseFile(filePath: string): ParsedHLedgerData {
         try {
             if (!fs.existsSync(filePath)) {
                 return this.toReadonly(this.createEmptyData());
             }
-            
+
             const content = fs.readFileSync(filePath, 'utf8');
             const basePath = path.dirname(filePath);
             return this.parseContent(content, basePath);
@@ -108,13 +108,13 @@ export class HLedgerParser {
     parseContent(content: string, basePath?: string): ParsedHLedgerData {
         const data = this.createEmptyData();
         const lines = content.split('\n');
-        
+
         let inTransaction = false;
         let transactionPayee = '';
-        
+
         for (const line of lines) {
             const trimmedLine = line.trim();
-            
+
             // Update transaction state BEFORE parsing the line
             if (trimmedLine && !line.startsWith(' ') && !line.startsWith('\t')) {
                 if (this.isTransactionLine(trimmedLine)) {
@@ -125,24 +125,24 @@ export class HLedgerParser {
                     transactionPayee = '';
                 }
             }
-            
+
             this.parseLine(line, data, basePath, inTransaction, transactionPayee);
         }
-        
+
         return this.toReadonly(data);
     }
 
     private async parseContentAsync(content: string, basePath?: string): Promise<ParsedHLedgerData> {
         const data = this.createEmptyData();
         const lines = content.split('\n');
-        
+
         let inTransaction = false;
         let transactionPayee = '';
         let processedLines = 0;
-        
+
         for (const line of lines) {
             const trimmedLine = line.trim();
-            
+
             // Update transaction state BEFORE parsing the line
             if (trimmedLine && !line.startsWith(' ') && !line.startsWith('\t')) {
                 if (this.isTransactionLine(trimmedLine)) {
@@ -153,16 +153,16 @@ export class HLedgerParser {
                     transactionPayee = '';
                 }
             }
-            
+
             this.parseLine(line, data, basePath, inTransaction, transactionPayee);
-            
+
             // Yield control every 1000 lines for large files
             processedLines++;
             if (processedLines % 1000 === 0) {
                 await new Promise(resolve => setTimeout(resolve, 0));
             }
         }
-        
+
         return this.toReadonly(data);
     }
 
@@ -276,13 +276,13 @@ export class HLedgerParser {
 
     private handlePostingLine(line: string, data: MutableParsedHLedgerData, transactionPayee: string): void {
         const trimmedLine = line.trim();
-        
+
         // Extract account name (everything before amount)
         let accountName = '';
         const parts = trimmedLine.split(/\s{2,}|\t/);
         if (parts.length > 0 && parts[0]) {
             accountName = parts[0].trim();
-            
+
             // Remove leading/trailing spaces and handle account hierarchy
             if (accountName) {
                 const account = createAccountName(accountName);
@@ -306,10 +306,10 @@ export class HLedgerParser {
         // Remove date and status, extract payee (handle both full and short date formats)
         let cleaned = line.replace(/^(\d{4}[-\/\.]\d{2}[-\/\.]\d{2}|\d{2}[-\/\.]\d{2})/, '').trim();
         cleaned = cleaned.replace(/^[*!]\s*/, '').trim(); // Remove status
-        
+
         // Remove transaction codes like (REF123), (CODE456)
         cleaned = cleaned.replace(/^\([^)]+\)\s*/, '').trim();
-        
+
         // Split only by ; to separate payee from comment, but preserve pipe characters
         const parts = cleaned.split(/[;]/);
         return parts[0] ? parts[0].trim() : '';
@@ -320,12 +320,13 @@ export class HLedgerParser {
         // Tags are in the format tag:value within comments
         const commentMatch = line.match(/[;#](.*)$/);
         if (!commentMatch) return;
-        
+
         const commentText = commentMatch[1];
-        
+
         // Match tag:value patterns within comments only
         // This prevents matching account names like "Expenses:Food"
-        const tagMatches = commentText.match(/\b([\p{L}\p{N}_]+):\s*([\p{L}\p{N}_]+)\b/gu);
+        // Note: Removed \b word boundaries because they don't work with Unicode characters like Cyrillic
+        const tagMatches = commentText.match(/([\p{L}\p{N}_]+):\s*([\p{L}\p{N}_]+)/gu);
         if (tagMatches) {
             for (const match of tagMatches) {
                 const colonIndex = match.indexOf(':');
@@ -372,36 +373,36 @@ export class HLedgerParser {
         source.payees.forEach(p => target.payees.add(p));
         source.tags.forEach(t => target.tags.add(t));
         source.commodities.forEach(c => target.commodities.add(c));
-        
+
         // Merge maps
         source.aliases.forEach((value, key) => target.aliases.set(key, value));
-        
+
         // Merge usage maps
         source.accountUsage.forEach((count, key) => {
             const existing = target.accountUsage.get(key) || createUsageCount(0);
             target.accountUsage.set(key, createUsageCount(existing + count));
         });
-        
+
         source.payeeUsage.forEach((count, key) => {
             const existing = target.payeeUsage.get(key) || createUsageCount(0);
             target.payeeUsage.set(key, createUsageCount(existing + count));
         });
-        
+
         source.tagUsage.forEach((count, key) => {
             const existing = target.tagUsage.get(key) || createUsageCount(0);
             target.tagUsage.set(key, createUsageCount(existing + count));
         });
-        
+
         source.commodityUsage.forEach((count, key) => {
             const existing = target.commodityUsage.get(key) || createUsageCount(0);
             target.commodityUsage.set(key, createUsageCount(existing + count));
         });
-        
+
         // Update last date if newer
         if (source.lastDate && (!target.lastDate || source.lastDate > target.lastDate)) {
             target.lastDate = source.lastDate;
         }
-        
+
         // Update default commodity
         if (source.defaultCommodity) {
             target.defaultCommodity = source.defaultCommodity;
@@ -425,7 +426,7 @@ export class HLedgerParser {
             lastDate: null
         };
     }
-    
+
     private toReadonly(data: MutableParsedHLedgerData): ParsedHLedgerData {
         return data as ParsedHLedgerData;
     }
@@ -433,7 +434,7 @@ export class HLedgerParser {
     // Convenience method for scanning entire workspace
     parseWorkspace(workspacePath: string): ParsedHLedgerData {
         const data = this.createEmptyData();
-        
+
         try {
             const files = this.findHLedgerFiles(workspacePath);
             for (const file of files) {
@@ -445,20 +446,20 @@ export class HLedgerParser {
                 console.error('Error scanning workspace:', workspacePath, error);
             }
         }
-        
+
         return this.toReadonly(data);
     }
 
     private findHLedgerFiles(dirPath: string): string[] {
         const files: string[] = [];
         const hledgerExtensions = ['.journal', '.hledger', '.ledger'];
-        
+
         try {
             const entries = fs.readdirSync(dirPath, { withFileTypes: true });
-            
+
             for (const entry of entries) {
                 const fullPath = path.join(dirPath, entry.name);
-                
+
                 if (entry.isDirectory() && !entry.name.startsWith('.')) {
                     // Recursively search subdirectories
                     files.push(...this.findHLedgerFiles(fullPath));
@@ -472,7 +473,7 @@ export class HLedgerParser {
         } catch (error) {
             // Silently ignore directory access errors
         }
-        
+
         return files;
     }
 }
