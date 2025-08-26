@@ -1,7 +1,8 @@
 // main.ts - Simplified entry point for hledger extension
-// ~100 lines according to REFACTORING.md FASE G
+// Refactored architecture with ~190 lines (FASE G)
 
 import * as vscode from 'vscode';
+import * as path from 'path';
 import { HLedgerParser, ParsedHLedgerData } from './HLedgerParser';
 import { HLedgerConfig } from './HLedgerConfig';
 import { SimpleProjectCache } from './SimpleProjectCache';
@@ -157,7 +158,6 @@ export class ProjectCache {
 
     findProjectForFile(filePath: string): string | null {
         // Simple implementation - use directory of file
-        const path = require('path');
         return path.dirname(filePath);
     }
 
