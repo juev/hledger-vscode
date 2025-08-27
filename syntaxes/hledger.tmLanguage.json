@@ -9,9 +9,6 @@
       "include": "#comment"
     },
     {
-      "include": "#comment-tags"
-    },
-    {
       "include": "#directive"
     },
     {
@@ -63,71 +60,18 @@
     "comment": {
       "patterns": [
         {
-          "name": "comment.line.semicolon.single.hledger",
-          "begin": "^\\s*;\\s*",
+          "name": "comment.line.semicolon.hledger",
+          "begin": "^\\s*;+\\s*",
           "end": "$",
-          "beginCaptures": {
-            "0": {
-              "name": "comment.line.semicolon.hledger"
-            }
-          },
           "patterns": [
             {
-              "name": "meta.tag.basic.hledger",
-              "match": "([a-zA-Z][a-zA-Z0-9_]*)(:)([^\\s,;]*)",
-              "captures": {
-                "1": {
-                  "name": "entity.name.tag.hledger"
-                },
-                "2": {
-                  "name": "punctuation.separator.key-value.hledger"
-                },
-                "3": {
-                  "name": "string.unquoted.tag-value.hledger"
-                }
-              }
-            }
-          ]
-        },
-        {
-          "name": "comment.line.semicolon.multiple.hledger",
-          "begin": "^\\s*;{2,}\\s*",
-          "end": "$",
-          "beginCaptures": {
-            "0": {
-              "name": "comment.line.semicolon.multiple.hledger"
-            }
-          },
-          "patterns": [
-            {
-              "name": "meta.tag.basic.hledger",
-              "match": "([a-zA-Z][a-zA-Z0-9_]*)(:)([^\\s,;]*)",
-              "captures": {
-                "1": {
-                  "name": "entity.name.tag.hledger"
-                },
-                "2": {
-                  "name": "punctuation.separator.key-value.hledger"
-                },
-                "3": {
-                  "name": "string.unquoted.tag-value.hledger"
-                }
-              }
+              "include": "#comment-content"
             }
           ]
         },
         {
           "name": "comment.line.number-sign.hledger",
-          "match": "^\\s*#.*$",
-          "captures": {
-            "0": {
-              "patterns": [
-                {
-                  "include": "#comment-content"
-                }
-              ]
-            }
-          }
+          "match": "^\\s*#.*$"
         }
       ]
     },
@@ -135,7 +79,7 @@
       "patterns": [
         {
           "name": "meta.directive.hledger",
-          "match": "^(account|commodity|D|decimal-mark|include|P|payee|tag|year|alias|apply account|end apply account|comment|end comment|Y)\\b",
+          "match": "^(account|commodity|D|decimal-mark|include|P|payee|tag|year|alias|apply account|end apply account|comment|end comment|Y|balance-type)\\b",
           "captures": {
             "1": {
               "name": "keyword.directive.hledger"
@@ -168,20 +112,13 @@
         },
         {
           "name": "meta.directive.account.hledger",
-          "match": "^(account)\\s+([^;]+)(;.*)?$",
+          "match": "^(account)\\s+([^;]+)",
           "captures": {
             "1": {
               "name": "keyword.directive.hledger"
             },
             "2": {
               "name": "entity.name.function.account.defined.hledger"
-            },
-            "3": {
-              "patterns": [
-                {
-                  "include": "#comment-tags"
-                }
-              ]
             }
           }
         },
@@ -236,18 +173,6 @@
               ]
             }
           }
-        },
-        {
-          "name": "meta.directive.balance-type.hledger",
-          "match": "^(balance-type)\\s+(.*)$",
-          "captures": {
-            "1": {
-              "name": "keyword.directive.hledger"
-            },
-            "2": {
-              "name": "string.unquoted.balance-type.hledger"
-            }
-          }
         }
       ]
     },
@@ -255,7 +180,7 @@
       "patterns": [
         {
           "name": "meta.directive.csv.hledger",
-          "match": "^(source|encoding|separator|skip|date-format|timezone|newest-first|intra-day-reversed|decimal-mark|fields)\\b",
+          "match": "^(source|encoding|separator|skip|date-format|timezone|newest-first|intra-day-reversed|decimal-mark|fields|if)\\b",
           "captures": {
             "1": {
               "name": "keyword.directive.csv.hledger"
@@ -271,66 +196,6 @@
             },
             "2": {
               "name": "string.quoted.hledger"
-            }
-          }
-        },
-        {
-          "name": "meta.directive.csv.encoding.hledger",
-          "match": "^(encoding)\\s+(.*)$",
-          "captures": {
-            "1": {
-              "name": "keyword.directive.csv.hledger"
-            },
-            "2": {
-              "name": "string.unquoted.encoding.hledger"
-            }
-          }
-        },
-        {
-          "name": "meta.directive.csv.separator.hledger",
-          "match": "^(separator)\\s+(.*)$",
-          "captures": {
-            "1": {
-              "name": "keyword.directive.csv.hledger"
-            },
-            "2": {
-              "name": "string.unquoted.separator.hledger"
-            }
-          }
-        },
-        {
-          "name": "meta.directive.csv.skip.hledger",
-          "match": "^(skip)\\s+(\\d+)$",
-          "captures": {
-            "1": {
-              "name": "keyword.directive.csv.hledger"
-            },
-            "2": {
-              "name": "constant.numeric.integer.hledger"
-            }
-          }
-        },
-        {
-          "name": "meta.directive.csv.date-format.hledger",
-          "match": "^(date-format)\\s+(.*)$",
-          "captures": {
-            "1": {
-              "name": "keyword.directive.csv.hledger"
-            },
-            "2": {
-              "name": "string.unquoted.date-format.hledger"
-            }
-          }
-        },
-        {
-          "name": "meta.directive.csv.timezone.hledger",
-          "match": "^(timezone)\\s+(.*)$",
-          "captures": {
-            "1": {
-              "name": "keyword.directive.csv.hledger"
-            },
-            "2": {
-              "name": "string.unquoted.timezone.hledger"
             }
           }
         },
@@ -375,8 +240,8 @@
     "transaction": {
       "patterns": [
         {
-          "name": "meta.transaction.full-date.hledger",
-          "begin": "^(\\d{4}[-/.]\\d{1,2}[-/.]\\d{1,2})((?:=\\d{4}[-/.]\\d{1,2}[-/.]\\d{1,2})?)\\s*(\\*|!)?\\s*(\\([^)]+\\))?\\s*([^;]*?)(;.*)?$",
+          "name": "meta.transaction.hledger",
+          "begin": "^(\\d{4}[-/.]\\d{1,2}[-/.]\\d{1,2}|\\d{1,2}[-/.]\\d{1,2})((?:=\\d{4}[-/.]\\d{1,2}[-/.]\\d{1,2}|=\\d{1,2}[-/.]\\d{1,2})?)\\s*(\\*|!)?\\s*(\\([^)]+\\))?\\s*([^;]*?)(;.*)?$",
           "beginCaptures": {
             "1": {
               "name": "constant.numeric.date.hledger"
@@ -413,93 +278,13 @@
             "6": {
               "patterns": [
                 {
-                  "include": "#comment-tags"
+                  "include": "#comment-content"
                 }
               ]
             }
           },
           "end": "^(?=\\S)|^$",
           "patterns": [
-            {
-              "name": "comment.line.semicolon.transaction.hledger",
-              "match": "^\\s+;+.*$",
-              "captures": {
-                "0": {
-                  "patterns": [
-                    {
-                      "include": "#comment-content"
-                    }
-                  ]
-                }
-              }
-            },
-            {
-              "include": "#posting"
-            },
-            {
-              "include": "#comment"
-            }
-          ]
-        },
-        {
-          "name": "meta.transaction.short-date.hledger",
-          "begin": "^(\\d{1,2}[-/.]\\d{1,2})((?:=\\d{1,2}[-/.]\\d{1,2})?)\\s*(\\*|!)?\\s*(\\([^)]+\\))?\\s*([^;]*?)(;.*)?$",
-          "beginCaptures": {
-            "1": {
-              "name": "constant.numeric.date.hledger"
-            },
-            "2": {
-              "name": "constant.numeric.date.secondary.hledger"
-            },
-            "3": {
-              "name": "keyword.operator.status.hledger"
-            },
-            "4": {
-              "name": "entity.name.tag.code.hledger"
-            },
-            "5": {
-              "patterns": [
-                {
-                  "name": "meta.payee-note.hledger",
-                  "match": "([^|]+?)\\s*\\|\\s*(.*)",
-                  "captures": {
-                    "1": {
-                      "name": "entity.name.tag.payee.hledger"
-                    },
-                    "2": {
-                      "name": "string.unquoted.note.hledger"
-                    }
-                  }
-                },
-                {
-                  "name": "entity.name.tag.payee.hledger",
-                  "match": ".*"
-                }
-              ]
-            },
-            "6": {
-              "patterns": [
-                {
-                  "include": "#comment-tags"
-                }
-              ]
-            }
-          },
-          "end": "^(?=\\S)|^$",
-          "patterns": [
-            {
-              "name": "comment.line.semicolon.transaction.hledger",
-              "match": "^\\s+;+.*$",
-              "captures": {
-                "0": {
-                  "patterns": [
-                    {
-                      "include": "#comment-content"
-                    }
-                  ]
-                }
-              }
-            },
             {
               "include": "#posting"
             },
@@ -513,7 +298,7 @@
     "posting": {
       "patterns": [
         {
-          "name": "meta.posting.with-amount.hledger",
+          "name": "meta.posting.hledger",
           "match": "^\\s+(\\S.*?)\\s{2,}([^;]+?)\\s*(;.*)?$",
           "captures": {
             "1": {
@@ -538,42 +323,6 @@
               ]
             },
             "3": {
-              "name": "comment.line.semicolon.inline.hledger",
-              "patterns": [
-                {
-                  "include": "#comment-content"
-                }
-              ]
-            }
-          }
-        },
-        {
-          "name": "meta.posting.with-tab-amount.hledger",
-          "match": "^\\s+(\\S.*?)\\t+([^;]+?)\\s*(;.*)?$",
-          "captures": {
-            "1": {
-              "patterns": [
-                {
-                  "include": "#account-types"
-                }
-              ]
-            },
-            "2": {
-              "name": "meta.amount-section.hledger",
-              "patterns": [
-                {
-                  "include": "#amount"
-                },
-                {
-                  "include": "#cost-notation"
-                },
-                {
-                  "include": "#assertion"
-                }
-              ]
-            },
-            "3": {
-              "name": "comment.line.semicolon.inline.hledger",
               "patterns": [
                 {
                   "include": "#comment-content"
@@ -594,7 +343,6 @@
               ]
             },
             "2": {
-              "name": "comment.line.semicolon.inline.hledger",
               "patterns": [
                 {
                   "include": "#comment-content"
@@ -738,7 +486,7 @@
             "5": {
               "patterns": [
                 {
-                  "include": "#comment-tags"
+                  "include": "#comment-content"
                 }
               ]
             }
@@ -786,57 +534,27 @@
       "patterns": [
         {
           "name": "entity.name.function.account.asset.hledger",
-          "match": "\\b(Assets?|Активы?)\\b.*"
+          "match": "\\b(Assets?)\\b.*"
         },
         {
           "name": "entity.name.function.account.liability.hledger",
-          "match": "\\b(Liabilit(y|ies)|Пассивы?)\\b.*"
+          "match": "\\b(Liabilit(y|ies))\\b.*"
         },
         {
           "name": "entity.name.function.account.equity.hledger",
-          "match": "\\b(Equity|Собственны[ей]|Капитал)\\b.*"
+          "match": "\\b(Equity)\\b.*"
         },
         {
           "name": "entity.name.function.account.income.hledger",
-          "match": "\\b(Income|Revenue|Доходы?)\\b.*"
+          "match": "\\b(Income|Revenue)\\b.*"
         },
         {
           "name": "entity.name.function.account.expense.hledger",
-          "match": "\\b(Expenses?|Расходы?)\\b.*"
+          "match": "\\b(Expenses?)\\b.*"
         },
         {
           "name": "entity.name.function.account.hledger",
           "match": ".*"
-        }
-      ]
-    },
-    "comment-tags": {
-      "patterns": [
-        {
-          "name": "comment.line.semicolon.hledger",
-          "match": ";+\\s*(.*)$",
-          "captures": {
-            "1": {
-              "patterns": [
-                {
-                  "include": "#comment-content"
-                }
-              ]
-            }
-          }
-        },
-        {
-          "name": "comment.inline.semicolon.hledger",
-          "match": "\\s*;+\\s*(.*)$",
-          "captures": {
-            "1": {
-              "patterns": [
-                {
-                  "include": "#comment-content"
-                }
-              ]
-            }
-          }
         }
       ]
     },
@@ -929,7 +647,7 @@
             "4": {
               "patterns": [
                 {
-                  "include": "#comment-tags"
+                  "include": "#comment-content"
                 }
               ]
             }
