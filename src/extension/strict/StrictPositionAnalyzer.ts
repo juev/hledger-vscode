@@ -83,30 +83,39 @@ export class StrictPositionAnalyzer {
     private determineLineContext(lineText: string, cursorPos: number): LineContext {
         const beforeCursor = lineText.substring(0, cursorPos);
         
-        // Priority 1: Check forbidden zone - after amount + two or more spaces
+        // Priority 1: Check if we are in a comment (highest priority for tags)
+        if (this.isInCommentContext(lineText, cursorPos)) {
+            // Check if we are after a tag name and colon
+            if (this.isInTagValueContext(lineText, cursorPos)) {
+                return LineContext.InTagValue;
+            }
+            return LineContext.InComment;
+        }
+        
+        // Priority 2: Check forbidden zone - after amount + two or more spaces
         if (/\d+(\.\d+)?\s{2,}/.test(beforeCursor)) {
             return LineContext.Forbidden;
         }
         
-        // Priority 2: Check currency position (after amount + single space)
+        // Priority 3: Check currency position (after amount + single space)
         // Only match if we have posting indentation + account + amount + space + currency
         // Pattern: "  Account  123.45 USD" but NOT date patterns like "2024-01-15 Amazon"
         if (/^\s+[\p{L}\p{N}:_-]+\s+\d+(\.\d+)?\s+[\p{Lu}\p{Sc}$€£¥₽]*$/u.test(beforeCursor)) {
             return LineContext.AfterAmount;
         }
         
-        // Priority 3: Check indented line for accounts
+        // Priority 4: Check indented line for accounts
         if (lineText.startsWith(' ') || lineText.startsWith('\t')) {
             return LineContext.InPosting;
         }
         
-        // Priority 4: CRITICAL FIX - Check after date + space BEFORE line start detection
+        // Priority 5: CRITICAL FIX - Check after date + space BEFORE line start detection
         // This ensures proper payee completion after date + space
         if (this.isAfterDateWithSpace(beforeCursor)) {
             return LineContext.AfterDate;
         }
         
-        // Priority 5: Check line beginning for dates - ANY digit at line start triggers date completion
+        // Priority 6: Check line beginning for dates - ANY digit at line start triggers date completion
         // This comes AFTER after-date detection to prevent conflicts
         if (cursorPos > 0 && this.isDateContext(lineText, cursorPos)) {
             return LineContext.LineStart;
@@ -125,6 +134,49 @@ export class StrictPositionAnalyzer {
         // Examples: "2024-01-15 ", "2024-01-15 * ", "01/15 Amazon", "2024-12-31 ! Банк"
         return StrictPositionAnalyzer.STRICT_PATTERNS.AFTER_DATE_PATTERN.test(beforeCursor) ||
                StrictPositionAnalyzer.STRICT_PATTERNS.DATE_WITH_STATUS_AND_SPACE.test(beforeCursor);
+    }
+    
+    /**
+     * Determines if cursor is in a comment context (after ; or #)
+     */
+    private isInCommentContext(lineText: string, cursorPos: number): boolean {
+        // Find the position of comment markers ; or #
+        const semicolonIndex = lineText.indexOf(';');
+        const hashIndex = lineText.indexOf('#');
+        
+        // Check if cursor is after a comment marker
+        if (semicolonIndex !== -1 && cursorPos > semicolonIndex) {
+            return true;
+        }
+        if (hashIndex !== -1 && cursorPos > hashIndex) {
+            return true;
+        }
+        
+        return false;
+    }
+    
+    /**
+     * Determines if cursor is after a tag name and colon (ready for tag value input)
+     */
+    private isInTagValueContext(lineText: string, cursorPos: number): boolean {
+        const beforeCursor = lineText.substring(0, cursorPos);
+        
+        // Find the last comment marker position
+        const lastSemicolon = beforeCursor.lastIndexOf(';');
+        const lastHash = beforeCursor.lastIndexOf('#');
+        const commentStart = Math.max(lastSemicolon, lastHash);
+        
+        if (commentStart === -1) {
+            return false;
+        }
+        
+        // Get text after comment marker
+        const afterComment = beforeCursor.substring(commentStart + 1);
+        
+        // Check if we have a tag name followed by colon
+        // Pattern: optional whitespace, tag name (letters/numbers/underscore), colon, optional whitespace
+        const tagValuePattern = /^\s*[\p{L}\p{N}_]+:\s*[\p{L}\p{N}\s]*$/u;
+        return tagValuePattern.test(afterComment);
     }
     
     private applyStrictRules(
@@ -160,6 +212,16 @@ export class StrictPositionAnalyzer {
             case LineContext.AfterAmount:
                 // Strictly only currency completion after amount + single space
                 baseContext.allowedTypes = ['commodity'];
+                break;
+                
+            case LineContext.InComment:
+                // Tag name completion in comments
+                baseContext.allowedTypes = ['tag'];
+                break;
+                
+            case LineContext.InTagValue:
+                // Tag value completion after tag name and colon
+                baseContext.allowedTypes = ['tag_value'];
                 break;
                 
             case LineContext.Forbidden:
