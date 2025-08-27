@@ -173,8 +173,14 @@ export const DEFAULT_ACCOUNT_PREFIXES = [
 ];
 
 export const DEFAULT_COMMODITIES = [
-    'USD', 'EUR', 'GBP', 'JPY', 'CAD', 'AUD', 'CHF',
-    '$', '€', '£', '¥', '₽', 'BTC', 'ETH'
+    // Major world currencies (ISO 4217 codes)
+    'USD', 'EUR', 'GBP', 'JPY', 'CAD', 'AUD', 'CHF', 'CNY', 'INR', 'BRL', 'RUB', 'KRW', 'MXN', 'SGD', 'HKD', 'NOK', 'SEK', 'DKK', 'PLN', 'CZK', 'HUF', 'TRY', 'ZAR', 'NZD', 'THB',
+    // Currency symbols (Unicode Currency Symbols block)
+    '$', '€', '£', '¥', '₽', '₩', '₹', '₪', '¢', '¥', '₫', '₱', '₲', '₴', '₵', '₸', '₺', '₼', '₾', '₿',
+    // Cryptocurrencies
+    'BTC', 'ETH', 'LTC', 'BCH', 'ADA', 'DOT', 'XRP', 'DOGE', 'USDT', 'USDC', 'BNB', 'SOL', 'MATIC', 'AVAX',
+    // Precious metals and commodities
+    'XAU', 'XAG', 'XPT', 'XPD', 'OIL', 'GAS', 'GOLD', 'SILVER'
 ];
 
 export const HLEDGER_KEYWORDS = [
@@ -199,7 +205,27 @@ export const isTagName = (value: string): value is TagName => {
 };
 
 export const isCommodityCode = (value: string): value is CommodityCode => {
-    return typeof value === 'string' && value.length > 0;
+    if (typeof value !== 'string' || value.length === 0) {
+        return false;
+    }
+    
+    // Enhanced Unicode-aware commodity validation
+    // Matches currency symbols (Unicode Currency Symbols block)
+    if (/^\p{Sc}$/u.test(value)) {
+        return true;
+    }
+    
+    // Matches ISO 4217 currency codes (2-4 uppercase letters)
+    if (/^[A-Z]{2,4}$/u.test(value)) {
+        return true;
+    }
+    
+    // Matches commodity codes with optional numbers (supports international letters)
+    if (/^[\p{L}\p{N}]{2,8}$/u.test(value)) {
+        return true;
+    }
+    
+    return false;
 };
 
 export const isFilePath = (value: string): value is FilePath => {

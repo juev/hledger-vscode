@@ -44,7 +44,7 @@ export class SimpleFuzzyMatcher {
      * @returns Array of FuzzyMatch results with up to maxResults (default 100)
      */
     match<T extends string>(query: string, items: readonly T[], options: FuzzyMatchOptions<T> = {}): FuzzyMatch<T>[] {
-        const lowerQuery = query.toLowerCase();
+        const lowerQuery = query.toLocaleLowerCase();
         const maxResults = options.maxResults || 100;
         
         // Handle empty query
@@ -56,11 +56,11 @@ export class SimpleFuzzyMatcher {
         }
         
         return items
-            .filter(item => options.caseSensitive ? item.includes(query) : item.toLowerCase().includes(lowerQuery))
+            .filter(item => options.caseSensitive ? item.includes(query) : item.toLocaleLowerCase().includes(lowerQuery))
             .sort((a, b) => {
                 // Enhanced sorting: exact match first, then prefix match, then usage
-                const aLower = a.toLowerCase();
-                const bLower = b.toLowerCase();
+                const aLower = a.toLocaleLowerCase();
+                const bLower = b.toLocaleLowerCase();
                 const aExact = aLower === lowerQuery;
                 const bExact = bLower === lowerQuery;
                 const aStarts = aLower.startsWith(lowerQuery);
@@ -81,8 +81,8 @@ export class SimpleFuzzyMatcher {
                     if (aUsage !== bUsage) return bUsage - aUsage;
                 }
                 
-                // Finally alphabetically
-                return a.localeCompare(b);
+                // Finally alphabetically with proper Unicode collation
+                return a.localeCompare(b, undefined, { numeric: true, caseFirst: 'lower' });
             })
             .slice(0, maxResults)
             .map(item => ({
@@ -102,8 +102,8 @@ export class SimpleFuzzyMatcher {
      */
     private calculateScore<T extends string>(item: T, query: string, options: FuzzyMatchOptions<T>): CompletionScore {
         let score = 0;
-        const itemLower = item.toLowerCase();
-        const queryLower = query.toLowerCase();
+        const itemLower = item.toLocaleLowerCase();
+        const queryLower = query.toLocaleLowerCase();
         
         // Exact match gets highest score
         if (itemLower === queryLower) {

@@ -312,7 +312,11 @@ export class HLedgerParser {
 
         // Split only by ; to separate payee from comment, but preserve pipe characters
         const parts = cleaned.split(/[;]/);
-        return parts[0] ? parts[0].trim() : '';
+        const payee = parts[0] ? parts[0].trim() : '';
+        
+        // Normalize Unicode characters for consistent matching (NFC normalization)
+        // This ensures characters like Cyrillic are handled consistently
+        return payee ? payee.normalize('NFC') : '';
     }
 
     private extractTags(line: string, data: MutableParsedHLedgerData): void {
@@ -346,8 +350,10 @@ export class HLedgerParser {
     }
 
     private extractCommodityFromAmount(amountStr: string, data: MutableParsedHLedgerData): void {
-        // Match currency symbols and commodity codes
-        const commodityMatch = amountStr.match(/([A-Z]{2,}|\$|€|£|¥|₽)/);
+        // Enhanced Unicode-aware commodity extraction
+        // Matches international currency symbols, cryptocurrency symbols, and commodity codes
+        // Supports Latin, Cyrillic, Greek, and other Unicode letter systems
+        const commodityMatch = amountStr.match(/(\p{Sc}|[\p{L}]{2,}\d*|[A-Z]{2,}\d*)/u);
         if (commodityMatch && commodityMatch[1]) {
             const commodity = createCommodityCode(commodityMatch[1]);
             data.commodities.add(commodity);
