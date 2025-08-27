@@ -220,7 +220,7 @@ describe('StrictPositionValidator', () => {
 
     describe('Performance', () => {
         it('should validate positions quickly', () => {
-            const testCases = [
+            const testCases: [string, number][] = [
                 ['2024-01-15', 10],
                 ['  Assets:Cash', 13],
                 ['  Assets:Cash  100.00 USD', 25],
@@ -232,10 +232,10 @@ describe('StrictPositionValidator', () => {
             // Run each validation 250 times (1000 total)
             testCases.forEach(([line, pos]) => {
                 for (let i = 0; i < 250; i++) {
-                    validator.isDatePosition(line, pos as number);
-                    validator.isAccountPosition(line, pos as number);
-                    validator.isCommodityPosition(line, pos as number);
-                    validator.isForbiddenPosition(line, pos as number);
+                    validator.isDatePosition(line, pos);
+                    validator.isAccountPosition(line, pos);
+                    validator.isCommodityPosition(line, pos);
+                    validator.isForbiddenPosition(line, pos);
                 }
             });
 

@@ -2,63 +2,8 @@
 import * as vscode from 'vscode';
 import { StrictPositionAnalyzer, LineContext, StrictCompletionContext } from '../strict/StrictPositionAnalyzer';
 
-// Mock VS Code classes
-class MockTextDocument implements vscode.TextDocument {
-    uri!: vscode.Uri;
-    fileName!: string;
-    isUntitled!: boolean;
-    languageId!: string;
-    version!: number;
-    isDirty!: boolean;
-    isClosed!: boolean;
-    eol!: vscode.EndOfLine;
-    
-    constructor(private lines: string[]) {}
-    
-    save(): Thenable<boolean> {
-        throw new Error('Method not implemented.');
-    }
-    
-    lineCount = this.lines.length;
-    
-    lineAt(line: number): vscode.TextLine {
-        return {
-            lineNumber: line,
-            text: this.lines[line] || '',
-            range: new vscode.Range(line, 0, line, this.lines[line]?.length || 0),
-            rangeIncludingLineBreak: new vscode.Range(line, 0, line + 1, 0),
-            firstNonWhitespaceCharacterIndex: 0,
-            isEmptyOrWhitespace: !this.lines[line] || this.lines[line].trim() === ''
-        };
-    }
-    
-    offsetAt(position: vscode.Position): number {
-        throw new Error('Method not implemented.');
-    }
-    
-    positionAt(offset: number): vscode.Position {
-        throw new Error('Method not implemented.');
-    }
-    
-    getText(range?: vscode.Range): string {
-        if (!range) {
-            return this.lines.join('\n');
-        }
-        throw new Error('Method not implemented.');
-    }
-    
-    getWordRangeAtPosition(position: vscode.Position, regex?: RegExp): vscode.Range | undefined {
-        throw new Error('Method not implemented.');
-    }
-    
-    validateRange(range: vscode.Range): vscode.Range {
-        throw new Error('Method not implemented.');
-    }
-    
-    validatePosition(position: vscode.Position): vscode.Position {
-        throw new Error('Method not implemented.');
-    }
-}
+// Import MockTextDocument from the mock
+const { MockTextDocument } = vscode as any;
 
 describe('StrictPositionAnalyzer', () => {
     let analyzer: StrictPositionAnalyzer;

@@ -34,6 +34,21 @@ export enum CompletionTriggerKind {
     TriggerForIncompleteCompletions = 2
 }
 
+export enum EndOfLine {
+    LF = 1,
+    CRLF = 2
+}
+
+export interface CompletionContext {
+    triggerKind: CompletionTriggerKind;
+    triggerCharacter?: string;
+}
+
+export interface CancellationToken {
+    isCancellationRequested: boolean;
+    onCancellationRequested: any;
+}
+
 export class CompletionItem {
     label: string;
     kind?: CompletionItemKind;
@@ -92,10 +107,18 @@ export interface TextDocument {
     readonly isClosed: boolean;
     readonly isUntitled: boolean;
     readonly lineCount: number;
+    readonly eol: EndOfLine;
+    readonly encoding: string;
+    save(): Thenable<boolean>;
     getText(): string;
     getText(range: Range): string;
     lineAt(line: number): TextLine;
     lineAt(position: Position): TextLine;
+    offsetAt(position: Position): number;
+    positionAt(offset: number): Position;
+    getWordRangeAtPosition(position: Position, regex?: RegExp): Range | undefined;
+    validateRange(range: Range): Range;
+    validatePosition(position: Position): Position;
 }
 
 export interface TextLine {
@@ -127,6 +150,16 @@ export interface WorkspaceFolder {
 
 export interface Disposable {
     dispose(): void;
+}
+
+export class Disposable {
+    constructor(private disposeFunction?: () => void) {}
+    
+    dispose(): void {
+        if (this.disposeFunction) {
+            this.disposeFunction();
+        }
+    }
 }
 
 /**
@@ -297,3 +330,168 @@ export const Uri = {
     }),
     parse: jest.fn()
 };
+
+/**
+ * Mock TextDocument implementation for testing.
+ * Provides full compatibility with VS Code TextDocument interface.
+ */
+export class MockTextDocument implements TextDocument {
+    readonly uri: Uri;
+    readonly fileName: string;
+    readonly languageId: string;
+    readonly version: number;
+    readonly isDirty: boolean;
+    readonly isClosed: boolean;
+    readonly isUntitled: boolean;
+    readonly lineCount: number;
+    readonly eol: EndOfLine;
+    readonly encoding: string;
+    
+    constructor(
+        private lines: string[],
+        options: Partial<{
+            uri: Uri;
+            fileName: string;
+            languageId: string;
+            version: number;
+            isDirty: boolean;
+            isClosed: boolean;
+            isUntitled: boolean;
+            eol: EndOfLine;
+            encoding: string;
+        }> = {}
+    ) {
+        this.uri = options.uri || Uri.file('/test/document.txt');
+        this.fileName = options.fileName || '/test/document.txt';
+        this.languageId = options.languageId || 'hledger';
+        this.version = options.version || 1;
+        this.isDirty = options.isDirty || false;
+        this.isClosed = options.isClosed || false;
+        this.isUntitled = options.isUntitled || false;
+        this.lineCount = this.lines.length;
+        this.eol = options.eol || EndOfLine.LF;
+        this.encoding = options.encoding || 'utf8';
+    }
+    
+    save(): Thenable<boolean> {
+        return Promise.resolve(true);
+    }
+    
+    getText(): string;
+    getText(range: Range): string;
+    getText(range?: Range): string {
+        if (!range) {
+            return this.lines.join('\n');
+        }
+        
+        const startLine = Math.max(0, Math.min(range.start.line, this.lines.length - 1));
+        const endLine = Math.max(0, Math.min(range.end.line, this.lines.length - 1));
+        
+        if (startLine === endLine) {
+            const line = this.lines[startLine] || '';
+            const startChar = Math.max(0, Math.min(range.start.character, line.length));
+            const endChar = Math.max(startChar, Math.min(range.end.character, line.length));
+            return line.substring(startChar, endChar);
+        }
+        
+        const result: string[] = [];
+        for (let i = startLine; i <= endLine; i++) {
+            const line = this.lines[i] || '';
+            if (i === startLine) {
+                const startChar = Math.max(0, Math.min(range.start.character, line.length));
+                result.push(line.substring(startChar));
+            } else if (i === endLine) {
+                const endChar = Math.max(0, Math.min(range.end.character, line.length));
+                result.push(line.substring(0, endChar));
+            } else {
+                result.push(line);
+            }
+        }
+        
+        return result.join('\n');
+    }
+    
+    lineAt(line: number): TextLine;
+    lineAt(position: Position): TextLine;
+    lineAt(lineOrPosition: number | Position): TextLine {
+        const lineNumber = typeof lineOrPosition === 'number' ? lineOrPosition : lineOrPosition.line;
+        const lineText = this.lines[lineNumber] || '';
+        
+        return {
+            lineNumber,
+            text: lineText,
+            range: new Range(lineNumber, 0, lineNumber, lineText.length),
+            rangeIncludingLineBreak: new Range(lineNumber, 0, lineNumber + 1, 0),
+            firstNonWhitespaceCharacterIndex: lineText.search(/\S/),
+            isEmptyOrWhitespace: lineText.trim() === ''
+        };
+    }
+    
+    offsetAt(position: Position): number {
+        let offset = 0;
+        for (let i = 0; i < Math.min(position.line, this.lines.length); i++) {
+            offset += (this.lines[i] || '').length + 1; // +1 for line break
+        }
+        if (position.line < this.lines.length) {
+            const line = this.lines[position.line] || '';
+            offset += Math.min(position.character, line.length);
+        }
+        return offset;
+    }
+    
+    positionAt(offset: number): Position {
+        let currentOffset = 0;
+        for (let line = 0; line < this.lines.length; line++) {
+            const lineText = this.lines[line] || '';
+            if (currentOffset + lineText.length >= offset) {
+                return new Position(line, offset - currentOffset);
+            }
+            currentOffset += lineText.length + 1; // +1 for line break
+        }
+        // If offset is beyond document, return end position
+        const lastLine = Math.max(0, this.lines.length - 1);
+        const lastLineText = this.lines[lastLine] || '';
+        return new Position(lastLine, lastLineText.length);
+    }
+    
+    getWordRangeAtPosition(position: Position, regex?: RegExp): Range | undefined {
+        const line = this.lines[position.line];
+        if (!line) return undefined;
+        
+        const wordRegex = regex || /[-?\.:a-zA-Z0-9_\s]+/;
+        const matches = Array.from(line.matchAll(new RegExp(wordRegex, 'g')));
+        
+        for (const match of matches) {
+            if (match.index !== undefined) {
+                const start = match.index;
+                const end = start + match[0].length;
+                if (position.character >= start && position.character <= end) {
+                    return new Range(position.line, start, position.line, end);
+                }
+            }
+        }
+        
+        return undefined;
+    }
+    
+    validateRange(range: Range): Range {
+        const startLine = Math.max(0, Math.min(range.start.line, this.lines.length - 1));
+        const endLine = Math.max(startLine, Math.min(range.end.line, this.lines.length - 1));
+        
+        const startLineText = this.lines[startLine] || '';
+        const endLineText = this.lines[endLine] || '';
+        
+        const startChar = Math.max(0, Math.min(range.start.character, startLineText.length));
+        const endChar = Math.max(0, Math.min(range.end.character, endLineText.length));
+        
+        return new Range(startLine, startChar, endLine, endChar);
+    }
+    
+    validatePosition(position: Position): Position {
+        const line = Math.max(0, Math.min(position.line, this.lines.length - 1));
+        const lineText = this.lines[line] || '';
+        const character = Math.max(0, Math.min(position.character, lineText.length));
+        
+        return new Position(line, character);
+    }
+}
