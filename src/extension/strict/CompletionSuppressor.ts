@@ -75,6 +75,14 @@ export class CompletionSuppressor {
                 // Only payee completions allowed after date + space
                 return type === 'payee';
                 
+            case LineContext.InComment:
+                // Only tag name completions allowed in comments
+                return type === 'tag';
+                
+            case LineContext.InTagValue:
+                // Only tag value completions allowed after tag name and colon
+                return type === 'tag_value';
+                
             case LineContext.Forbidden:
                 // Nothing allowed in forbidden zones
                 return false;

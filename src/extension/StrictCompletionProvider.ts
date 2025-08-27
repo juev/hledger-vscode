@@ -8,6 +8,7 @@ import { AccountCompleter } from './completion/AccountCompleter';
 import { CommodityCompleter } from './completion/CommodityCompleter';
 import { DateCompleter } from './completion/DateCompleter';
 import { PayeeCompleter } from './completion/PayeeCompleter';
+import { TagCompleter } from './completion/TagCompleter';
 
 export class StrictCompletionProvider implements vscode.CompletionItemProvider {
     private positionAnalyzer = new StrictPositionAnalyzer();
@@ -19,6 +20,7 @@ export class StrictCompletionProvider implements vscode.CompletionItemProvider {
     private accountCompleter: AccountCompleter;
     private commodityCompleter: CommodityCompleter;
     private payeeCompleter: PayeeCompleter;
+    private tagCompleter: TagCompleter;
     
     constructor(private config: HLedgerConfig) {
         // Initialize completers with config
@@ -26,6 +28,7 @@ export class StrictCompletionProvider implements vscode.CompletionItemProvider {
         this.accountCompleter = new AccountCompleter(config);
         this.commodityCompleter = new CommodityCompleter(config);
         this.payeeCompleter = new PayeeCompleter(config);
+        this.tagCompleter = new TagCompleter(config);
     }
     
     provideCompletionItems(
@@ -79,6 +82,12 @@ export class StrictCompletionProvider implements vscode.CompletionItemProvider {
             case 'payee':
                 return this.providePayeeCompletion(context);
                 
+            case 'tag':
+                return this.provideTagCompletion(context);
+                
+            case 'tag_value':
+                return this.provideTagValueCompletion(context);
+                
             default:
                 return [];
         }
@@ -126,6 +135,28 @@ export class StrictCompletionProvider implements vscode.CompletionItemProvider {
         // Convert StrictCompletionContext to legacy CompletionContext for existing PayeeCompleter
         const legacyContext = this.convertToLegacyContext(context, 'payee');
         return this.payeeCompleter.complete(legacyContext);
+    }
+    
+    private provideTagCompletion(context: StrictCompletionContext): vscode.CompletionItem[] {
+        // Additional strict validation for tag position
+        if (!this.validator.isTagPosition(context.position.lineText, context.position.character)) {
+            return [];
+        }
+        
+        // Convert StrictCompletionContext to legacy CompletionContext for existing TagCompleter
+        const legacyContext = this.convertToLegacyContext(context, 'tag');
+        return this.tagCompleter.complete(legacyContext);
+    }
+    
+    private provideTagValueCompletion(context: StrictCompletionContext): vscode.CompletionItem[] {
+        // Additional strict validation for tag value position
+        if (!this.validator.isTagValuePosition(context.position.lineText, context.position.character)) {
+            return [];
+        }
+        
+        // Convert StrictCompletionContext to legacy CompletionContext for existing TagCompleter
+        const legacyContext = this.convertToLegacyContext(context, 'tag_value');
+        return this.tagCompleter.complete(legacyContext);
     }
     
     /**
@@ -177,6 +208,14 @@ export class StrictCompletionProvider implements vscode.CompletionItemProvider {
             case 'commodity':
                 return context.lineContext === 'after_amount' &&
                        this.validator.isCommodityPosition(context.position.lineText, context.position.character);
+                       
+            case 'tag':
+                return context.lineContext === 'in_comment' &&
+                       this.validator.isTagPosition(context.position.lineText, context.position.character);
+                       
+            case 'tag_value':
+                return context.lineContext === 'in_tag_value' &&
+                       this.validator.isTagValuePosition(context.position.lineText, context.position.character);
                        
             default:
                 return false;
