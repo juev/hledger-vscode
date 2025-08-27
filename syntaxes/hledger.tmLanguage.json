@@ -9,7 +9,13 @@
       "include": "#comment"
     },
     {
+      "include": "#comment-tags"
+    },
+    {
       "include": "#directive"
+    },
+    {
+      "include": "#csv-directive"
     },
     {
       "include": "#periodic-transaction"
@@ -25,6 +31,12 @@
     },
     {
       "include": "#posting"
+    },
+    {
+      "include": "#timeclock"
+    },
+    {
+      "include": "#timedot"
     }
   ],
   "repository": {
@@ -51,20 +63,61 @@
     "comment": {
       "patterns": [
         {
-          "name": "comment.line.semicolon.hledger",
-          "match": "^\\s*;+.*$",
-          "captures": {
+          "name": "comment.line.semicolon.single.hledger",
+          "begin": "^\\s*;\\s*",
+          "end": "$",
+          "beginCaptures": {
             "0": {
-              "patterns": [
-                {
-                  "include": "#comment-content"
-                }
-              ]
+              "name": "comment.line.semicolon.hledger"
             }
-          }
+          },
+          "patterns": [
+            {
+              "name": "meta.tag.basic.hledger",
+              "match": "([a-zA-Z][a-zA-Z0-9_]*)(:)([^\\s,;]*)",
+              "captures": {
+                "1": {
+                  "name": "entity.name.tag.hledger"
+                },
+                "2": {
+                  "name": "punctuation.separator.key-value.hledger"
+                },
+                "3": {
+                  "name": "string.unquoted.tag-value.hledger"
+                }
+              }
+            }
+          ]
         },
         {
-          "name": "comment.line.number-sign.hledger", 
+          "name": "comment.line.semicolon.multiple.hledger",
+          "begin": "^\\s*;{2,}\\s*",
+          "end": "$",
+          "beginCaptures": {
+            "0": {
+              "name": "comment.line.semicolon.multiple.hledger"
+            }
+          },
+          "patterns": [
+            {
+              "name": "meta.tag.basic.hledger",
+              "match": "([a-zA-Z][a-zA-Z0-9_]*)(:)([^\\s,;]*)",
+              "captures": {
+                "1": {
+                  "name": "entity.name.tag.hledger"
+                },
+                "2": {
+                  "name": "punctuation.separator.key-value.hledger"
+                },
+                "3": {
+                  "name": "string.unquoted.tag-value.hledger"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "comment.line.number-sign.hledger",
           "match": "^\\s*#.*$",
           "captures": {
             "0": {
@@ -149,13 +202,16 @@
         },
         {
           "name": "meta.directive.commodity.hledger",
-          "match": "^(commodity)\\s+(.*)$",
+          "match": "^(commodity)\\s+([^\\s]+)\\s+(.*)$",
           "captures": {
             "1": {
               "name": "keyword.directive.hledger"
             },
             "2": {
               "name": "entity.name.type.commodity.defined.hledger"
+            },
+            "3": {
+              "name": "string.unquoted.format.hledger"
             }
           }
         },
@@ -180,6 +236,139 @@
               ]
             }
           }
+        },
+        {
+          "name": "meta.directive.balance-type.hledger",
+          "match": "^(balance-type)\\s+(.*)$",
+          "captures": {
+            "1": {
+              "name": "keyword.directive.hledger"
+            },
+            "2": {
+              "name": "string.unquoted.balance-type.hledger"
+            }
+          }
+        }
+      ]
+    },
+    "csv-directive": {
+      "patterns": [
+        {
+          "name": "meta.directive.csv.hledger",
+          "match": "^(source|encoding|separator|skip|date-format|timezone|newest-first|intra-day-reversed|decimal-mark|fields)\\b",
+          "captures": {
+            "1": {
+              "name": "keyword.directive.csv.hledger"
+            }
+          }
+        },
+        {
+          "name": "meta.directive.csv.source.hledger",
+          "match": "^(source)\\s+(.*)$",
+          "captures": {
+            "1": {
+              "name": "keyword.directive.csv.hledger"
+            },
+            "2": {
+              "name": "string.quoted.hledger"
+            }
+          }
+        },
+        {
+          "name": "meta.directive.csv.encoding.hledger",
+          "match": "^(encoding)\\s+(.*)$",
+          "captures": {
+            "1": {
+              "name": "keyword.directive.csv.hledger"
+            },
+            "2": {
+              "name": "string.unquoted.encoding.hledger"
+            }
+          }
+        },
+        {
+          "name": "meta.directive.csv.separator.hledger",
+          "match": "^(separator)\\s+(.*)$",
+          "captures": {
+            "1": {
+              "name": "keyword.directive.csv.hledger"
+            },
+            "2": {
+              "name": "string.unquoted.separator.hledger"
+            }
+          }
+        },
+        {
+          "name": "meta.directive.csv.skip.hledger",
+          "match": "^(skip)\\s+(\\d+)$",
+          "captures": {
+            "1": {
+              "name": "keyword.directive.csv.hledger"
+            },
+            "2": {
+              "name": "constant.numeric.integer.hledger"
+            }
+          }
+        },
+        {
+          "name": "meta.directive.csv.date-format.hledger",
+          "match": "^(date-format)\\s+(.*)$",
+          "captures": {
+            "1": {
+              "name": "keyword.directive.csv.hledger"
+            },
+            "2": {
+              "name": "string.unquoted.date-format.hledger"
+            }
+          }
+        },
+        {
+          "name": "meta.directive.csv.timezone.hledger",
+          "match": "^(timezone)\\s+(.*)$",
+          "captures": {
+            "1": {
+              "name": "keyword.directive.csv.hledger"
+            },
+            "2": {
+              "name": "string.unquoted.timezone.hledger"
+            }
+          }
+        },
+        {
+          "name": "meta.directive.csv.fields.hledger",
+          "begin": "^(fields)\\s+(.*)$",
+          "beginCaptures": {
+            "1": {
+              "name": "keyword.directive.csv.hledger"
+            },
+            "2": {
+              "name": "string.unquoted.fields.hledger"
+            }
+          },
+          "end": "^(?=\\S)|^$",
+          "patterns": [
+            {
+              "include": "#comment"
+            }
+          ]
+        },
+        {
+          "name": "meta.directive.csv.if-block.hledger",
+          "begin": "^(if)\\s+(.*)$",
+          "beginCaptures": {
+            "1": {
+              "name": "keyword.directive.csv.hledger"
+            },
+            "2": {
+              "name": "string.unquoted.condition.hledger"
+            }
+          },
+          "end": "^(?=\\S)|^$",
+          "patterns": [
+            {
+              "include": "#comment"
+            }
+          ]
         }
       ]
     },
@@ -349,7 +538,7 @@
               ]
             },
             "3": {
-              "name": "comment.line.semicolon.hledger",
+              "name": "comment.line.semicolon.inline.hledger",
               "patterns": [
                 {
                   "include": "#comment-content"
@@ -384,7 +573,7 @@
               ]
             },
             "3": {
-              "name": "comment.line.semicolon.hledger",
+              "name": "comment.line.semicolon.inline.hledger",
               "patterns": [
                 {
                   "include": "#comment-content"
@@ -405,7 +594,7 @@
               ]
             },
             "2": {
-              "name": "comment.line.semicolon.hledger",
+              "name": "comment.line.semicolon.inline.hledger",
               "patterns": [
                 {
                   "include": "#comment-content"
@@ -635,14 +824,27 @@
               ]
             }
           }
+        },
+        {
+          "name": "comment.inline.semicolon.hledger",
+          "match": "\\s*;+\\s*(.*)$",
+          "captures": {
+            "1": {
+              "patterns": [
+                {
+                  "include": "#comment-content"
+                }
+              ]
+            }
+          }
         }
       ]
     },
     "comment-content": {
       "patterns": [
         {
-          "name": "meta.tag.hledger",
-          "match": "([a-zA-Z\\u0400-\\u04FF][a-zA-Z\\u0400-\\u04FF0-9_]*)(:)([^\\s,;]+)",
+          "name": "meta.tag.basic.hledger",
+          "match": "([a-zA-Z][a-zA-Z0-9_]*)(:)([^\\s,;]*)",
           "captures": {
             "1": {
               "name": "entity.name.tag.hledger"
@@ -654,25 +856,84 @@
               "name": "string.unquoted.tag-value.hledger"
             }
           }
-        },
+        }
+      ]
+    },
+    "timeclock": {
+      "patterns": [
         {
-          "name": "meta.tag.date.hledger",
-          "match": "\\b(date)(:)(\\d{4}[-/.]\\d{1,2}[-/.]\\d{1,2}|\\d{1,2}[-/.]\\d{1,2})",
+          "name": "meta.timeclock.clock-in.hledger",
+          "match": "^(i)\\s+(\\d{4}[-/.]\\d{1,2}[-/.]\\d{1,2}\\s+\\d{1,2}:\\d{2}(?::\\d{2})?)\\s+(.*)$",
           "captures": {
             "1": {
-              "name": "entity.name.tag.hledger"
+              "name": "keyword.operator.timeclock.in.hledger"
             },
             "2": {
-              "name": "punctuation.separator.key-value.hledger"
+              "name": "constant.numeric.date-time.hledger"
             },
             "3": {
-              "name": "constant.numeric.date.hledger"
+              "name": "string.unquoted.description.hledger"
             }
           }
         },
         {
-          "name": "comment.block.content.hledger",
-          "match": ".*"
+          "name": "meta.timeclock.clock-out.hledger",
+          "match": "^(o)\\s+(\\d{4}[-/.]\\d{1,2}[-/.]\\d{1,2}\\s+\\d{1,2}:\\d{2}(?::\\d{2})?)\\s+(.*)$",
+          "captures": {
+            "1": {
+              "name": "keyword.operator.timeclock.out.hledger"
+            },
+            "2": {
+              "name": "constant.numeric.date-time.hledger"
+            },
+            "3": {
+              "name": "string.unquoted.description.hledger"
+            }
+          }
+        },
+        {
+          "name": "meta.timeclock.clock-summary.hledger",
+          "match": "^(h)\\s+(\\d{4}[-/.]\\d{1,2}[-/.]\\d{1,2})\\s+(\\d+(?:\\.\\d+)?)\\s+(.*)$",
+          "captures": {
+            "1": {
+              "name": "keyword.operator.timeclock.summary.hledger"
+            },
+            "2": {
+              "name": "constant.numeric.date.hledger"
+            },
+            "3": {
+              "name": "constant.numeric.hours.hledger"
+            },
+            "4": {
+              "name": "string.unquoted.description.hledger"
+            }
+          }
+        }
+      ]
+    },
+    "timedot": {
+      "patterns": [
+        {
+          "name": "meta.timedot.entry.hledger",
+          "match": "^(\\d{4}[-/.]\\d{1,2}[-/.]\\d{1,2})\\s+(.*?)\\s+(\\d+(?:\\.\\d+)?)\\s*(;.*)?$",
+          "captures": {
+            "1": {
+              "name": "constant.numeric.date.hledger"
+            },
+            "2": {
+              "name": "string.unquoted.description.hledger"
+            },
+            "3": {
+              "name": "constant.numeric.hours.hledger"
+            },
+            "4": {
+              "patterns": [
+                {
+                  "include": "#comment-tags"
+                }
+              ]
+            }
+          }
         }
       ]
     }
