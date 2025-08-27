@@ -237,14 +237,16 @@ export class HLedgerConfig {
     getCompletionContext(document: vscode.TextDocument, position: vscode.Position): CompletionContext {
         const line = document.lineAt(position).text;
         const beforeCursor = line.substring(0, position.character);
-        const wordRange = document.getWordRangeAtPosition(position);
-        const word = wordRange ? document.getText(wordRange) : '';
+        
+        // Custom query extraction for hierarchical account names
+        // Use Unicode-aware regex to extract full account paths like "Assets:Cash"
+        const query = this.extractHierarchicalQuery(beforeCursor);
 
         // Check if we're in a comment
         if (beforeCursor.includes(';') || beforeCursor.includes('#')) {
             // Look for tag patterns in comments
             if (HLedgerConfig.PATTERNS.TAG_IN_COMMENT.test(beforeCursor)) {
-                return { type: 'tag', query: word };
+                return { type: 'tag', query };
             }
             return { type: 'tag', query: '' };
         }
@@ -257,43 +259,72 @@ export class HLedgerConfig {
 
         // Check for payee context BEFORE commodity (after date in transaction line)
         if (this.isPayeePosition(line, position.character)) {
-            return { type: 'payee', query: word };
+            return { type: 'payee', query };
         }
 
         // Check for hledger keywords at beginning of line (but not if it looks like a date)
         if (HLedgerConfig.PATTERNS.KEYWORD_CONTEXT.test(beforeCursor) && 
             position.character < 20 && 
             !HLedgerConfig.PATTERNS.NUMERIC_START.test(lineStart)) {
-            return { type: 'keyword', query: word };
+            return { type: 'keyword', query };
         }
 
         // Check for account context (indented lines or after account keyword)
         if (HLedgerConfig.PATTERNS.INDENTED_LINE.test(beforeCursor) && !this.isInAmountPosition(line, position.character)) {
-            return { type: 'account', query: word };
+            return { type: 'account', query };
         }
 
         // Check for explicit commodity context (after commodity keyword)
         if (beforeCursor.includes('commodity ')) {
-            return { type: 'commodity', query: word };
+            return { type: 'commodity', query };
         }
 
         // Check for commodity context ONLY in posting lines (after numbers/amounts)
         if (this.isInAmountPosition(line, position.character)) {
-            return { type: 'commodity', query: word };
+            return { type: 'commodity', query };
         }
 
         // Check for account directive context
         if (beforeCursor.includes('account ')) {
-            return { type: 'account', query: word };
+            return { type: 'account', query };
         }
 
         // Default to account completion for indented lines
         if (HLedgerConfig.PATTERNS.INDENTED_LINE.test(beforeCursor)) {
-            return { type: 'account', query: word };
+            return { type: 'account', query };
         }
 
         // Default to keyword completion for line start
-        return { type: 'keyword', query: word };
+        return { type: 'keyword', query };
+    }
+
+    /**
+     * Extract hierarchical query for account names and other completion contexts.
+     * Uses Unicode-aware regex to properly handle account paths like "Assets:Cash".
+     * This replaces VS Code's getWordRangeAtPosition which splits on colons.
+     */
+    private extractHierarchicalQuery(beforeCursor: string): string {
+        // Unicode-aware regex pattern to extract hierarchical account names
+        // \p{L} matches any Unicode letter, \p{N} matches any Unicode number
+        // This supports international characters in account names
+        const hierarchicalPattern = /[\p{L}][\p{L}\p{N}:_-]*$/u;
+        
+        // Try to extract a hierarchical name (like "Assets:Cash")
+        const hierarchicalMatch = beforeCursor.match(hierarchicalPattern);
+        if (hierarchicalMatch) {
+            return hierarchicalMatch[0];
+        }
+        
+        // Fallback to a simpler pattern for other cases
+        // This handles basic words, tags, and commodity codes
+        const simplePattern = /[\p{L}\p{N}_-]+$/u;
+        const simpleMatch = beforeCursor.match(simplePattern);
+        if (simpleMatch) {
+            return simpleMatch[0];
+        }
+        
+        // If no match found, return empty string
+        return '';
     }
 
     private isDateContext(lineStart: string, positionInTrimmed: number): boolean {

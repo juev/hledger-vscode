@@ -72,8 +72,8 @@ export class CompletionSuppressor {
                 return type === 'commodity';
                 
             case LineContext.AfterDate:
-                // NOT USED in new algorithm
-                return false;
+                // Only payee completions allowed after date + space
+                return type === 'payee';
                 
             case LineContext.Forbidden:
                 // Nothing allowed in forbidden zones

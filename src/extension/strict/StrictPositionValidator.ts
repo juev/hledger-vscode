@@ -21,7 +21,7 @@ export class StrictPositionValidator implements PositionValidator {
         // Accounts ONLY on indented lines (expense/income categories)
         if (line.startsWith(' ') || line.startsWith('\t')) {
             // Check that we are at beginning of account name or its part
-            return /^\s+[A-Za-z]?[A-Za-z0-9:_-]*$/.test(beforeCursor);
+            return /^\s+[\p{L}]?[\p{L}\p{N}:_-]*$/u.test(beforeCursor);
         }
         
         return false;
@@ -31,9 +31,9 @@ export class StrictPositionValidator implements PositionValidator {
         const beforeCursor = line.substring(0, character);
         
         // Payee after date + space(s)
-        if (/^\d{4}[-/]\d{1,2}[-/]\d{1,2}\s+.*$/.test(beforeCursor) ||
-            /^\d{1,2}[-/]\d{1,2}\s+.*$/.test(beforeCursor) ||
-            /^\d{1,2}[-/]\d{1,2}[-/]\d{4}\s+.*$/.test(beforeCursor)) {
+        if (/^\d{4}[-/]\d{1,2}[-/]\d{1,2}\s+.*$/u.test(beforeCursor) ||
+            /^\d{1,2}[-/]\d{1,2}\s+.*$/u.test(beforeCursor) ||
+            /^\d{1,2}[-/]\d{1,2}[-/]\d{4}\s+.*$/u.test(beforeCursor)) {
             return true;
         }
         
@@ -44,7 +44,7 @@ export class StrictPositionValidator implements PositionValidator {
         const beforeCursor = line.substring(0, character);
         
         // STRICT: Only after amount + single space
-        return /^\s*.*\d+(\.\d+)?\s[A-Z]*$/.test(beforeCursor);
+        return /^\s*.*\d+(\.\d+)?\s[\p{Lu}]*$/u.test(beforeCursor);
     }
     
     isForbiddenPosition(line: string, character: number): boolean {
@@ -96,8 +96,8 @@ export class StrictPositionValidator implements PositionValidator {
         const afterChar = character < line.length - 1 ? line[character + 1] : '';
         
         // If we are between letters/digits - this is middle of text
-        const beforeIsAlnum = /[A-Za-z0-9]/.test(beforeChar);
-        const afterIsAlnum = /[A-Za-z0-9]/.test(currentChar) || /[A-Za-z0-9]/.test(afterChar);
+        const beforeIsAlnum = /[\p{L}\p{N}]/u.test(beforeChar);
+        const afterIsAlnum = /[\p{L}\p{N}]/u.test(currentChar) || /[\p{L}\p{N}]/u.test(afterChar);
         
         return beforeIsAlnum && afterIsAlnum;
     }

@@ -162,8 +162,12 @@ export class StrictCompletionProvider implements vscode.CompletionItemProvider {
                        this.validator.isDatePosition(context.position.lineText, context.position.character);
                        
             case 'account':
-                return (context.lineContext === 'in_posting' || context.lineContext === 'after_date') &&
+                return context.lineContext === 'in_posting' &&
                        this.validator.isAccountPosition(context.position.lineText, context.position.character);
+                       
+            case 'payee':
+                return context.lineContext === 'after_date' &&
+                       this.validator.isPayeePosition(context.position.lineText, context.position.character);
                        
             case 'commodity':
                 return context.lineContext === 'after_amount' &&

@@ -25,28 +25,34 @@ export interface StrictCompletionContext {
 
 export class StrictPositionAnalyzer {
     private static readonly STRICT_PATTERNS = {
-        // Strict date pattern - only at line beginning
-        DATE_LINE_START: /^(\d{4}[-/]\d{1,2}[-/]\d{1,2}|\d{1,2}[-/]\d{1,2})$/,
+        // Strict date patterns - only at line beginning
+        DATE_LINE_START: /^(\d{4}[-/]\d{1,2}[-/]\d{1,2}|\d{1,2}[-/]\d{1,2})$/u,
         
-        // Date with status marker
-        DATE_WITH_STATUS: /^(\d{4}[-/]\d{1,2}[-/]\d{1,2}|\d{1,2}[-/]\d{1,2})\s*[*!]?\s*$/,
+        // Date with optional status marker (*!) - without payee
+        DATE_WITH_STATUS: /^(\d{4}[-/]\d{1,2}[-/]\d{1,2}|\d{1,2}[-/]\d{1,2})\s*[*!]?\s*$/u,
         
-        // SPECIAL PATTERNS FOR DIGIT "0"
-        ZERO_START: /^0$/,                                    // Just "0"
-        ZERO_MONTH: /^0[1-9]$/,                              // "01" through "09"
-        ZERO_PARTIAL_DATE: /^0[1-9][-/]?\d{0,2}$/,          // "01-", "01-15"
+        // After date with payee - includes status markers and Unicode support
+        AFTER_DATE_PATTERN: /^(\d{4}[-/]\d{1,2}[-/]\d{1,2}|\d{1,2}[-/]\d{1,2})\s*[*!]?\s+[\p{L}\p{N}\s\p{P}]*$/u,
         
-        // Account on indented line  
-        ACCOUNT_INDENTED: /^\s{2,}([A-Za-z][A-Za-z0-9:_-]*)$/,
+        // Date with status and space (ready for payee input)
+        DATE_WITH_STATUS_AND_SPACE: /^(\d{4}[-/]\d{1,2}[-/]\d{1,2}|\d{1,2}[-/]\d{1,2})\s*[*!]?\s+$/u,
+        
+        // SPECIAL PATTERNS FOR DIGIT "0" with Unicode support
+        ZERO_START: /^0$/u,                                    // Just "0"
+        ZERO_MONTH: /^0[1-9]$/u,                              // "01" through "09"
+        ZERO_PARTIAL_DATE: /^0[1-9][-/]?\d{0,2}$/u,          // "01-", "01-15"
+        
+        // Account on indented line with Unicode support
+        ACCOUNT_INDENTED: /^\s{2,}([\p{L}][\p{L}\p{N}:_-]*)$/u,
         
         // Amount pattern (digits + minimum two spaces)
-        AMOUNT_PATTERN: /^\d+(\.\d{2})?\s{2,}$/,
+        AMOUNT_PATTERN: /^\d+(\.\d{2})?\s{2,}$/u,
         
-        // Currency after amount with single space
-        CURRENCY_AFTER_AMOUNT: /^\d+(\.\d{2})?\s([A-Z]{3}|[$€£¥₽])$/,
+        // Currency after amount with single space - Unicode currency symbols
+        CURRENCY_AFTER_AMOUNT: /^\d+(\.\d{2})?\s([\p{Lu}]{3}|[\p{Sc}$€£¥₽])$/u,
         
-        // Forbidden zone: after amount + two spaces
-        FORBIDDEN_AFTER_AMOUNT: /^\d+(\.\d{2})?\s{2,}.*$/
+        // Forbidden zone: after amount + two or more spaces
+        FORBIDDEN_AFTER_AMOUNT: /^\d+(\.\d{2})?\s{2,}.*$/u
     };
     
     analyzePosition(document: vscode.TextDocument, position: vscode.Position): StrictCompletionContext {
@@ -68,35 +74,48 @@ export class StrictPositionAnalyzer {
     private determineLineContext(lineText: string, cursorPos: number): LineContext {
         const beforeCursor = lineText.substring(0, cursorPos);
         
-        // Check forbidden zone - after amount + two or more spaces
+        // Priority 1: Check forbidden zone - after amount + two or more spaces
         if (/\d+(\.\d+)?\s{2,}/.test(beforeCursor)) {
             return LineContext.Forbidden;
         }
         
-        // Check currency position (after amount + single space)
-        if (/\d+(\.\d+)?\s[A-Z]*$/.test(beforeCursor) || 
-            /\d+(\.\d+)?\s[$€£¥₽]*$/.test(beforeCursor)) {
+        // Priority 2: Check currency position (after amount + single space)
+        // Only match if we have posting indentation + account + amount + space + currency
+        // Pattern: "  Account  123.45 USD" but NOT date patterns like "2024-01-15 Amazon"
+        if (/^\s+[\p{L}\p{N}:_-]+\s+\d+(\.\d+)?\s+[\p{Lu}\p{Sc}$€£¥₽]*$/u.test(beforeCursor)) {
             return LineContext.AfterAmount;
         }
         
-        // Check indented line for accounts
+        // Priority 3: Check indented line for accounts
         if (lineText.startsWith(' ') || lineText.startsWith('\t')) {
             return LineContext.InPosting;
         }
         
-        // Check line beginning for dates - ANY digit at line start triggers date completion
-        if (cursorPos > 0 && /^\d/.test(beforeCursor)) {
-            return LineContext.LineStart;
-        }
-        
-        // After date (with or without status) + space - for payee/description
-        if (/^\d{4}[-/]\d{1,2}[-/]\d{1,2}\s+/.test(beforeCursor) ||
-            /^\d{1,2}[-/]\d{1,2}\s+/.test(beforeCursor) ||
-            /^\d{1,2}[-/]\d{1,2}[-/]\d{4}\s+/.test(beforeCursor)) {
+        // Priority 4: CRITICAL FIX - Check after date + space BEFORE line start detection
+        // This ensures proper payee completion after date + space
+        if (this.isAfterDateWithSpace(beforeCursor)) {
             return LineContext.AfterDate;
         }
         
+        // Priority 5: Check line beginning for dates - ANY digit at line start triggers date completion
+        // This comes AFTER after-date detection to prevent conflicts
+        if (cursorPos > 0 && this.isDateContext(lineText, cursorPos)) {
+            return LineContext.LineStart;
+        }
+        
+        // Default: Forbidden zone for unrecognized contexts
         return LineContext.Forbidden;
+    }
+    
+    /**
+     * Determines if cursor is positioned after a complete date with space (ready for payee input)
+     * Supports Unicode characters in payee names
+     */
+    private isAfterDateWithSpace(beforeCursor: string): boolean {
+        // Pattern: Date + optional status marker + space + optional payee characters
+        // Examples: "2024-01-15 ", "2024-01-15 * ", "01/15 Amazon", "2024-12-31 ! Банк"
+        return StrictPositionAnalyzer.STRICT_PATTERNS.AFTER_DATE_PATTERN.test(beforeCursor) ||
+               StrictPositionAnalyzer.STRICT_PATTERNS.DATE_WITH_STATUS_AND_SPACE.test(beforeCursor);
     }
     
     private applyStrictRules(
@@ -145,9 +164,15 @@ export class StrictPositionAnalyzer {
     
     /**
      * Special handling for digit "0" at line beginning
+     * Supports Unicode patterns for international date formats
      */
     private isZeroDateContext(lineText: string, cursorPos: number): boolean {
         const beforeCursor = lineText.substring(0, cursorPos);
+        
+        // Ensure we're not in an after-date context
+        if (this.isAfterDateWithSpace(beforeCursor)) {
+            return false;
+        }
         
         // "0" by itself - valid date beginning
         if (StrictPositionAnalyzer.STRICT_PATTERNS.ZERO_START.test(beforeCursor)) {
@@ -175,8 +200,15 @@ export class StrictPositionAnalyzer {
         
         const beforeCursor = lineText.substring(0, cursorPos);
         
-        // Check regular dates
+        // Check if this is a date-only context (no payee after space yet)
+        // This prevents date completion when cursor is after date + space
+        if (this.isAfterDateWithSpace(beforeCursor)) {
+            return false;
+        }
+        
+        // Check regular date patterns with Unicode support
         return StrictPositionAnalyzer.STRICT_PATTERNS.DATE_LINE_START.test(beforeCursor) ||
-               /^\d{1,4}([-/]\d{0,2}([-/]\d{0,2})?)?$/.test(beforeCursor);
+               StrictPositionAnalyzer.STRICT_PATTERNS.DATE_WITH_STATUS.test(beforeCursor) ||
+               /^\d{1,4}([-/]\d{0,2}([-/]\d{0,2})?)?$/u.test(beforeCursor);
     }
 }
