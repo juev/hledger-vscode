@@ -113,6 +113,7 @@ npm run lint
 The extension uses explicit triggers for VS Code completion activation:
 
 **Required Triggers** (registered in `main.ts`):
+
 - **'0'-'9'** - Activates date completion at line start
 - **' ' (space)** - Activates payee/account/commodity completions based on context
 - **':'** - Activates account hierarchy completion (e.g., `Assets:Cash`)
@@ -125,7 +126,7 @@ The strict position-based algorithm (`StrictPositionAnalyzer`) determines comple
 
 1. **Date Completion**
    - **Position**: Beginning of line when typing any digit
-   - **Pattern**: `/^\d/` 
+   - **Pattern**: `/^\d/`
    - **Example**: `2024-01-15` or `01/15`
 
 2. **Payee Completion**
@@ -133,10 +134,10 @@ The strict position-based algorithm (`StrictPositionAnalyzer`) determines comple
    - **Pattern**: `/^\d{4}[-/]\d{1,2}[-/]\d{1,2}\s+/` and variants
    - **Example**: `2024-01-15 Amazon`
 
-3. **Account Completion** 
+3. **Account Completion**
    - **Position**: Indented lines (expense/income categories)
    - **Pattern**: `/^\s+/` (line starts with spaces/tabs)
-   - **Example**: `  Assets:Checking`
+   - **Example**: `Assets:Checking`
 
 4. **Commodity/Currency Completion**
    - **Position**: After amount + single space
@@ -445,6 +446,148 @@ The current architecture provides these benefits:
 5. **Modularity**: Clear separation between completion types
 6. **Extensibility**: Easy to add new completion providers
 7. **Testability**: Simple structure allows focused testing
+
+## **CRITICAL: Completion System Integrity Requirements**
+
+**WARNING**: The completion system underwent major fixes for Unicode support and strict position-based logic. These requirements prevent critical regressions that break international user experience.
+
+### **MANDATORY: Unicode Support Requirements**
+
+**NEVER break Unicode support - this causes international user regressions**
+
+#### Required Unicode Patterns
+
+- **MANDATORY**: Use `\p{L}` instead of `[A-Za-z]` for all letter matching
+- **MANDATORY**: Use `toLocaleLowerCase()` instead of `toLowerCase()` for international characters  
+- **MANDATORY**: Use `localeCompare()` instead of basic string comparison
+- **MANDATORY**: Test with Cyrillic, Arabic, Chinese characters before any regex changes
+- **MANDATORY**: Include `/u` flag in all regex patterns that match text
+
+#### Forbidden Patterns (Cause Unicode Regressions)
+
+- **FORBIDDEN**: `[A-Za-z]` patterns (use `[\p{L}]` with `/u` flag)
+- **FORBIDDEN**: `toLowerCase()` (use `toLocaleLowerCase()`)
+- **FORBIDDEN**: `a > b` string comparison (use `localeCompare()`)
+- **FORBIDDEN**: Splitting account names on `:` character (breaks hierarchical names)
+
+#### Unicode Validation Requirements
+
+- **ALL regex patterns** must be tested with `testdata/test.journal` (contains Cyrillic)
+- **ALL string operations** must support Unicode normalization
+- **ALL fuzzy matching** must handle international characters correctly
+- **Expert Usage**: Use `typescript-expert` for all regex pattern changes
+
+### **CRITICAL: Completion System Architecture Constraints**
+
+#### Position-Based Completion Rules (NEVER violate)
+
+**These rules were fixed in major completion system overhaul - breaking them causes completion failures:**
+
+1. **Date Completion**: ONLY at line start when typing digits
+2. **Payee Completion**: ONLY after date + space(s) - context `AfterDate` must exist
+3. **Account Completion**: ONLY on indented lines or after `:` trigger  
+4. **Commodity Completion**: ONLY after amount + single space
+5. **Forbidden Zone**: NO completions after amount + two or more spaces
+
+#### Required Context Types (NEVER modify enum)
+
+```typescript
+enum LineContext {
+    LineStart = 'line_start',     // Required: Date completion only
+    AfterDate = 'after_date',     // CRITICAL: Must exist for payee completion
+    InPosting = 'in_posting',     // Required: Account completion in postings  
+    AfterAmount = 'after_amount', // Required: Commodity completion only
+    Forbidden = 'forbidden'       // Required: Block all completions
+}
+```
+
+#### Critical Context Detection Rules
+
+- **AfterDate context**: Must match `/^\d{4}[-\/]\d{1,2}[-\/]\d{1,2}\s+(?:[*!]\s+)?[\p{L}]*$/u`
+- **Account names**: Must support hierarchical extraction (`Assets:Cash:Checking`)
+- **Query extraction**: NEVER split on `:` for account names - extract full hierarchical paths
+- **Unicode patterns**: All context detection must use `\p{L}` for international characters
+
+#### Expert Requirements for Architecture Changes
+
+- **MANDATORY**: Use `backend-architect` for any architecture changes
+- **MANDATORY**: Use `typescript-expert` for context detection logic
+- **MANDATORY**: All changes must pass strict position validation tests
+
+### **CRITICAL: Completion System Testing Requirements**
+
+#### Pre-Commit Testing Checklist (MANDATORY)
+
+**BEFORE any completion system changes:**
+
+1. **Run all existing tests**: `npm test` must pass 100%
+2. **Test Unicode scenarios**: Open `testdata/test.journal` and verify:
+   - Russian account names complete correctly
+   - Cyrillic payee names work after dates  
+   - International characters in commodity names
+3. **Test position scenarios**: Verify each completion type works only in correct positions
+4. **Test forbidden zones**: Ensure NO completions after amount + 2+ spaces
+
+#### Required Test Scenarios (Prevent Critical Regressions)
+
+```typescript
+// These test patterns are MANDATORY for any completion changes:
+describe('Critical Unicode Support', () => {
+  it('handles Cyrillic account names without splitting', () => { /* ... */ });
+  it('handles Russian payee names after dates', () => { /* ... */ });
+  it('preserves hierarchical account structure with Unicode', () => { /* ... */ });
+});
+
+describe('Position Validation (Prevents Completion Failures)', () => {
+  it('prevents completions in forbidden zones', () => { /* ... */ });
+  it('only allows date completion at line start', () => { /* ... */ });
+  it('only allows payee completion after date + space', () => { /* ... */ });
+});
+```
+
+#### Expert Usage for Testing
+
+- **MANDATORY**: Use `test-automator` for creating regression prevention tests
+- **MANDATORY**: Use `debugger` for investigating Unicode-related test failures
+- **MANDATORY**: All changes require code review with `code-reviewer`
+
+### **CRITICAL: Code Review Requirements for Completion System**
+
+#### Pre-Commit Validation Checklist (Enforceable)
+
+**Code reviewer must verify these items:**
+
+##### Unicode Compliance (Prevents International User Regressions)
+
+- [ ] No `[A-Za-z]` patterns (must use `[\p{L}]` with `/u` flag)
+- [ ] No `toLowerCase()` calls (must use `toLocaleLowerCase()`)  
+- [ ] No basic string comparison (must use `localeCompare()`)
+- [ ] Tested with Cyrillic characters in `testdata/test.journal`
+
+##### Architectural Integrity (Prevents Completion Failures)
+
+- [ ] `LineContext.AfterDate` exists and handled correctly
+- [ ] Position validation maintains strict rules
+- [ ] No completions allowed in forbidden zones
+- [ ] Hierarchical account names preserved (no splitting on `:`)
+
+##### Testing Coverage (Prevents Regressions)
+
+- [ ] All existing tests pass: `npm test`
+- [ ] New Unicode tests created for any regex changes
+- [ ] Position validation tests updated if logic changed
+- [ ] Manual testing completed with `testdata/*.journal` files
+
+#### Automatic Rejection Criteria
+
+**Automatically reject any PR that:**
+
+1. Changes regex without Unicode support (`[A-Za-z]` patterns)
+2. Modifies context detection without `backend-architect` consultation  
+3. Alters position validation without comprehensive testing
+4. Removes or modifies `LineContext.AfterDate` support
+5. Breaks hierarchical account name handling
+6. Fails existing Unicode tests
 
 ### Development Notes
 
