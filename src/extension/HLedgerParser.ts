@@ -6,8 +6,8 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as vscode from 'vscode';
 import {
-    AccountName, PayeeName, TagName, CommodityCode, UsageCount,
-    createAccountName, createPayeeName, createTagName, createCommodityCode, createUsageCount
+    AccountName, PayeeName, TagName, TagValue, CommodityCode, UsageCount,
+    createAccountName, createPayeeName, createTagName, createTagValue, createCommodityCode, createUsageCount
 } from './types';
 
 /**
@@ -21,6 +21,10 @@ interface MutableParsedHLedgerData {
     tags: Set<TagName>;
     commodities: Set<CommodityCode>;
     aliases: Map<AccountName, AccountName>;
+
+    // Tag value mappings and usage tracking
+    tagValues: Map<TagName, Set<TagValue>>;
+    tagValueUsage: Map<string, UsageCount>;
 
     // Usage tracking with branded types for frequency-based prioritization
     accountUsage: Map<AccountName, UsageCount>;
@@ -44,6 +48,10 @@ export interface ParsedHLedgerData {
     readonly tags: ReadonlySet<TagName>;
     readonly commodities: ReadonlySet<CommodityCode>;
     readonly aliases: ReadonlyMap<AccountName, AccountName>;
+
+    // Tag value mappings and usage tracking
+    readonly tagValues: ReadonlyMap<TagName, ReadonlySet<TagValue>>;
+    readonly tagValueUsage: ReadonlyMap<string, UsageCount>;
 
     // Usage tracking with branded types for frequency-based prioritization
     readonly accountUsage: ReadonlyMap<AccountName, UsageCount>;
@@ -327,23 +335,43 @@ export class HLedgerParser {
 
         const commentText = commentMatch[1];
 
-        // Match tag:value patterns within comments only
-        // This prevents matching account names like "Expenses:Food"
-        // Note: Removed \b word boundaries because they don't work with Unicode characters like Cyrillic
-        const tagMatches = commentText.match(/([\p{L}\p{N}_]+):\s*([\p{L}\p{N}_]+)/gu);
-        if (tagMatches) {
-            for (const match of tagMatches) {
-                const colonIndex = match.indexOf(':');
-                if (colonIndex !== -1) {
-                    const tagPart = match.substring(0, colonIndex).trim();
-                    const valuePart = match.substring(colonIndex + 1).trim();
-                    if (tagPart && valuePart) {
-                        // Special handling: if tag is "tag", use the value as tag name
-                        // This supports patterns like "tag:fastfood" where "fastfood" is the tag
-                        const tagName = createTagName(tagPart === 'tag' ? valuePart : tagPart);
-                        data.tags.add(tagName);
-                        this.incrementUsage(data.tagUsage, tagName);
+        // Enhanced pattern to extract tag:value pairs with support for:
+        // - Unicode letters and numbers in tag names
+        // - Spaces and special characters in values
+        // - Multiple tags separated by commas
+        // Pattern matches: tagname:value where value can contain spaces until next comma or end
+        const tagPattern = /([\p{L}\p{N}_]+):\s*([^,;#]*?)(?=\s*(?:,|$))/gu;
+        const tagMatches = commentText.matchAll(tagPattern);
+        
+        for (const match of tagMatches) {
+            const tagName = match[1].trim();
+            const tagValue = match[2].trim();
+            
+            if (tagName && tagValue) {
+                // Handle special case: "tag:value" pattern where "tag" is literal
+                if (tagName === 'tag') {
+                    // Store as tag name for backward compatibility
+                    const tag = createTagName(tagValue);
+                    data.tags.add(tag);
+                    this.incrementUsage(data.tagUsage, tag);
+                } else {
+                    // Store regular tag:value pair
+                    const tag = createTagName(tagName);
+                    const value = createTagValue(tagValue);
+                    
+                    // Add tag to tags set
+                    data.tags.add(tag);
+                    this.incrementUsage(data.tagUsage, tag);
+                    
+                    // Add value to tag's value set
+                    if (!data.tagValues.has(tag)) {
+                        data.tagValues.set(tag, new Set<TagValue>());
                     }
+                    data.tagValues.get(tag)!.add(value);
+                    
+                    // Track usage of this specific tag:value pair
+                    const pairKey = `${tagName}:${tagValue}`;
+                    this.incrementUsage(data.tagValueUsage, pairKey as any);
                 }
             }
         }
@@ -382,6 +410,14 @@ export class HLedgerParser {
 
         // Merge maps
         source.aliases.forEach((value, key) => target.aliases.set(key, value));
+        
+        // Merge tag values
+        source.tagValues.forEach((values, tag) => {
+            if (!target.tagValues.has(tag)) {
+                target.tagValues.set(tag, new Set<TagValue>());
+            }
+            values.forEach(value => target.tagValues.get(tag)!.add(value));
+        });
 
         // Merge usage maps
         source.accountUsage.forEach((count, key) => {
@@ -402,6 +438,12 @@ export class HLedgerParser {
         source.commodityUsage.forEach((count, key) => {
             const existing = target.commodityUsage.get(key) || createUsageCount(0);
             target.commodityUsage.set(key, createUsageCount(existing + count));
+        });
+        
+        // Merge tag value usage
+        source.tagValueUsage.forEach((count, key) => {
+            const existing = target.tagValueUsage.get(key as any) || createUsageCount(0);
+            target.tagValueUsage.set(key as any, createUsageCount(existing + count));
         });
 
         // Update last date if newer
@@ -424,6 +466,8 @@ export class HLedgerParser {
             tags: new Set<TagName>(),
             commodities: new Set<CommodityCode>(),
             aliases: new Map<AccountName, AccountName>(),
+            tagValues: new Map<TagName, Set<TagValue>>(),
+            tagValueUsage: new Map<string, UsageCount>(),
             accountUsage: new Map<AccountName, UsageCount>(),
             payeeUsage: new Map<PayeeName, UsageCount>(),
             tagUsage: new Map<TagName, UsageCount>(),
