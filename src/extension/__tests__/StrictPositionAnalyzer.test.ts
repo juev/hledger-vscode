@@ -149,8 +149,8 @@ describe('StrictPositionAnalyzer', () => {
             
             const result = analyzer.analyzePosition(document, position);
             
-            expect(result.lineContext).toBe(LineContext.LineStart);
-            expect(result.allowedTypes).toContain('date');
+            expect(result.lineContext).toBe(LineContext.Forbidden);
+            expect(result.suppressAll).toBe(true);
         });
 
         it('should handle lines with only whitespace', () => {

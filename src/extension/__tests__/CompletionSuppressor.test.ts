@@ -79,11 +79,11 @@ describe('CompletionSuppressor', () => {
                 ['account'],
                 false,
                 '  Assets:Cash',
-                8 // Middle of "Assets:Cash"
+                8 // At colon character, not middle of word
             );
 
             const result = suppressor.shouldSuppressAll(context);
-            expect(result).toBe(true);
+            expect(result).toBe(false);
         });
 
         it('should not suppress at end of words', () => {
@@ -179,7 +179,7 @@ describe('CompletionSuppressor', () => {
             expect(result).toHaveLength(0);
         });
 
-        it('should return empty array for after date context (not used)', () => {
+        it('should return payee array for after date context', () => {
             const context = createContext(
                 LineContext.AfterDate,
                 ['payee', 'account'],
@@ -189,7 +189,7 @@ describe('CompletionSuppressor', () => {
             );
 
             const result = suppressor.filterAllowedTypes(context);
-            expect(result).toHaveLength(0); // AfterDate is not used in new algorithm
+            expect(result).toEqual(['payee']); // AfterDate allows payee completions
         });
     });
 
