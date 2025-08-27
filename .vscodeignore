@@ -17,7 +17,6 @@ out/**/__tests__/**
 **/*.test.js
 **/*.test.ts
 testdata/**
-syntax-test.journal
 
 # Build and development configuration
 .gitignore

@@ -1,0 +1,48 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    // Relax exactOptionalPropertyTypes for tests to allow VSCode mock compatibility
+    "exactOptionalPropertyTypes": false,
+    
+    // Relax strict null checks for tests to handle regex match results
+    "strictNullChecks": false,
+    
+    // Allow unchecked indexed access for test environment
+    "noUncheckedIndexedAccess": false,
+    
+    // Allow implicit any for test environment
+    "noImplicitAny": false,
+    
+    // Allow implicit returns for test mocks
+    "noImplicitReturns": false,
+    
+    // Enable types needed for Jest
+    "types": ["jest", "node"],
+    
+    // Allow importing JSON files for test data
+    "resolveJsonModule": true,
+    
+    // Ensure proper module resolution for test environment
+    "moduleResolution": "node",
+    
+    // Allow synthetic default imports for Jest compatibility
+    "allowSyntheticDefaultImports": true,
+    
+    // Disable noUnusedLocals and noUnusedParameters for test files
+    // as tests often have setup code that may appear unused
+    "noUnusedLocals": false,
+    "noUnusedParameters": false
+  },
+  "include": [
+    "src/**/*.test.ts",
+    "src/**/__tests__/**/*.ts",
+    "src/__mocks__/**/*.ts",
+    // Include production source files for tests to compile properly
+    "src/**/*.ts"
+  ],
+  "exclude": [
+    "node_modules",
+    ".vscode-test",
+    "out"
+  ]
+}

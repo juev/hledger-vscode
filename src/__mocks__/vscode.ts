@@ -34,6 +34,21 @@ export enum CompletionTriggerKind {
     TriggerForIncompleteCompletions = 2
 }
 
+export enum EndOfLine {
+    LF = 1,
+    CRLF = 2
+}
+
+export interface CompletionContext {
+    triggerKind: CompletionTriggerKind;
+    triggerCharacter?: string;
+}
+
+export interface CancellationToken {
+    isCancellationRequested: boolean;
+    onCancellationRequested: any;
+}
+
 export class CompletionItem {
     label: string;
     kind?: CompletionItemKind;
@@ -46,7 +61,9 @@ export class CompletionItem {
 
     constructor(label: string, kind?: CompletionItemKind) {
         this.label = label;
-        this.kind = kind;
+        if (kind !== undefined) {
+            this.kind = kind;
+        }
     }
 }
 
@@ -56,13 +73,13 @@ export class Range {
 
     constructor(startLine: number, startCharacter: number, endLine: number, endCharacter: number);
     constructor(start: Position, end: Position);
-    constructor(startOrStartLine: any, startCharacterOrEnd?: any, endLine?: number, endCharacter?: number) {
+    constructor(startOrStartLine: Position | number, startCharacterOrEnd?: Position | number, endLine?: number, endCharacter?: number) {
         if (typeof startOrStartLine === 'number') {
-            this.start = new Position(startOrStartLine, startCharacterOrEnd);
+            this.start = new Position(startOrStartLine, startCharacterOrEnd as number);
             this.end = new Position(endLine!, endCharacter!);
         } else {
             this.start = startOrStartLine;
-            this.end = startCharacterOrEnd;
+            this.end = startCharacterOrEnd as Position;
         }
     }
 }
@@ -77,19 +94,31 @@ export class Position {
     }
 }
 
+/**
+ * Mock TextDocument interface for VS Code API compatibility.
+ * Provides type-safe document operations for testing.
+ */
 export interface TextDocument {
-    uri: Uri;
-    fileName: string;
-    languageId: string;
-    version: number;
-    isDirty: boolean;
-    isClosed: boolean;
-    isUntitled: boolean;
-    lineCount: number;
+    readonly uri: Uri;
+    readonly fileName: string;
+    readonly languageId: string;
+    readonly version: number;
+    readonly isDirty: boolean;
+    readonly isClosed: boolean;
+    readonly isUntitled: boolean;
+    readonly lineCount: number;
+    readonly eol: EndOfLine;
+    readonly encoding: string;
+    save(): Thenable<boolean>;
     getText(): string;
     getText(range: Range): string;
     lineAt(line: number): TextLine;
     lineAt(position: Position): TextLine;
+    offsetAt(position: Position): number;
+    positionAt(offset: number): Position;
+    getWordRangeAtPosition(position: Position, regex?: RegExp): Range | undefined;
+    validateRange(range: Range): Range;
+    validatePosition(position: Position): Position;
 }
 
 export interface TextLine {
@@ -110,7 +139,7 @@ export interface Uri {
     fsPath: string;
     with(change: { scheme?: string; authority?: string; path?: string; query?: string; fragment?: string }): Uri;
     toString(skipEncoding?: boolean): string;
-    toJSON(): any;
+    toJSON(): Record<string, unknown>;
 }
 
 export interface WorkspaceFolder {
@@ -123,14 +152,71 @@ export interface Disposable {
     dispose(): void;
 }
 
+export class Disposable {
+    constructor(private disposeFunction?: () => void) {}
+    
+    dispose(): void {
+        if (this.disposeFunction) {
+            this.disposeFunction();
+        }
+    }
+}
+
+/**
+ * Storage interface for workspace/global state.
+ */
+interface ExtensionStorage {
+    get<T>(key: string): T | undefined;
+    get<T>(key: string, defaultValue: T): T;
+    update(key: string, value: unknown): Thenable<void>;
+    keys(): readonly string[];
+}
+
+/**
+ * Environment variable collection interface.
+ */
+interface EnvironmentVariableCollection {
+    replace(variable: string, value: string): void;
+    append(variable: string, value: string): void;
+    prepend(variable: string, value: string): void;
+}
+
+/**
+ * Extension secrets interface.
+ */
+interface ExtensionSecrets {
+    get(key: string): Thenable<string | undefined>;
+    store(key: string, value: string): Thenable<void>;
+    delete(key: string): Thenable<void>;
+}
+
+/**
+ * Language model access information interface.
+ */
+interface LanguageModelAccessInformation {
+    canSendRequest(): boolean;
+}
+
+/**
+ * Extension information interface.
+ */
+interface ExtensionInfo {
+    readonly id: string;
+    readonly packageJSON: Record<string, unknown>;
+}
+
+/**
+ * Mock ExtensionContext interface for VS Code API compatibility.
+ * Provides type-safe extension context operations for testing.
+ */
 export interface ExtensionContext {
     subscriptions: Disposable[];
-    workspaceState: any;
-    globalState: any;
-    secrets: any;
+    workspaceState: ExtensionStorage;
+    globalState: ExtensionStorage;
+    secrets: ExtensionSecrets;
     extensionUri: Uri;
     extensionPath: string;
-    environmentVariableCollection: any;
+    environmentVariableCollection: EnvironmentVariableCollection;
     storagePath?: string;
     globalStoragePath: string;
     logPath: string;
@@ -138,16 +224,16 @@ export interface ExtensionContext {
     storageUri?: Uri;
     globalStorageUri: Uri;
     asAbsolutePath(relativePath: string): string;
-    extension: any;
-    extensionMode: any;
-    languageModelAccessInformation: any;
+    extension: ExtensionInfo;
+    extensionMode: number; // ExtensionMode enum
+    languageModelAccessInformation: LanguageModelAccessInformation;
 }
 
 // Mock ExtensionContext implementation for tests
 export const createMockExtensionContext = (overrides: Partial<ExtensionContext> = {}): ExtensionContext => ({
     subscriptions: [],
-    workspaceState: { get: jest.fn(), update: jest.fn() },
-    globalState: { get: jest.fn(), update: jest.fn() },
+    workspaceState: { get: jest.fn(), update: jest.fn(), keys: jest.fn(() => []) },
+    globalState: { get: jest.fn(), update: jest.fn(), keys: jest.fn(() => []) },
     secrets: { get: jest.fn(), store: jest.fn(), delete: jest.fn() },
     extensionUri: Uri.file('/test/extension'),
     extensionPath: '/test/extension',
@@ -159,7 +245,7 @@ export const createMockExtensionContext = (overrides: Partial<ExtensionContext> 
     storageUri: Uri.file('/test/storage'),
     globalStorageUri: Uri.file('/test/global-storage'),
     asAbsolutePath: (relativePath: string) => `/test/extension/${relativePath}`,
-    extension: { id: 'test.extension' },
+    extension: { id: 'test.extension', packageJSON: {} },
     extensionMode: 1, // Normal extension mode
     languageModelAccessInformation: { canSendRequest: jest.fn() },
     ...overrides
@@ -169,7 +255,7 @@ export const workspace = {
     getWorkspaceFolder: jest.fn(),
     onDidOpenTextDocument: jest.fn(() => ({ dispose: jest.fn() })),
     onDidSaveTextDocument: jest.fn(() => ({ dispose: jest.fn() })),
-    workspaceFolders: [],
+    workspaceFolders: [] as WorkspaceFolder[],
     fs: {
         readFile: jest.fn(),
         writeFile: jest.fn(),
@@ -201,6 +287,35 @@ export class SemanticTokensLegend {
     }
 }
 
+export class MarkdownString {
+    value: string;
+    isTrusted?: boolean;
+    supportThemeIcons?: boolean;
+    uris?: { [id: string]: Uri };
+
+    constructor(value?: string, supportThemeIcons?: boolean) {
+        this.value = value || '';
+        if (supportThemeIcons !== undefined) {
+            this.supportThemeIcons = supportThemeIcons;
+        }
+    }
+
+    appendText(value: string): MarkdownString {
+        this.value += value;
+        return this;
+    }
+
+    appendMarkdown(value: string): MarkdownString {
+        this.value += value;
+        return this;
+    }
+
+    appendCodeblock(value: string, language?: string): MarkdownString {
+        this.value += '```' + (language || '') + '\n' + value + '\n```\n';
+        return this;
+    }
+}
+
 export const Uri = {
     file: (path: string) => ({
         scheme: 'file',
@@ -215,3 +330,168 @@ export const Uri = {
     }),
     parse: jest.fn()
 };
+
+/**
+ * Mock TextDocument implementation for testing.
+ * Provides full compatibility with VS Code TextDocument interface.
+ */
+export class MockTextDocument implements TextDocument {
+    readonly uri: Uri;
+    readonly fileName: string;
+    readonly languageId: string;
+    readonly version: number;
+    readonly isDirty: boolean;
+    readonly isClosed: boolean;
+    readonly isUntitled: boolean;
+    readonly lineCount: number;
+    readonly eol: EndOfLine;
+    readonly encoding: string;
+    
+    constructor(
+        private lines: string[],
+        options: Partial<{
+            uri: Uri;
+            fileName: string;
+            languageId: string;
+            version: number;
+            isDirty: boolean;
+            isClosed: boolean;
+            isUntitled: boolean;
+            eol: EndOfLine;
+            encoding: string;
+        }> = {}
+    ) {
+        this.uri = options.uri || Uri.file('/test/document.txt');
+        this.fileName = options.fileName || '/test/document.txt';
+        this.languageId = options.languageId || 'hledger';
+        this.version = options.version || 1;
+        this.isDirty = options.isDirty || false;
+        this.isClosed = options.isClosed || false;
+        this.isUntitled = options.isUntitled || false;
+        this.lineCount = this.lines.length;
+        this.eol = options.eol || EndOfLine.LF;
+        this.encoding = options.encoding || 'utf8';
+    }
+    
+    save(): Thenable<boolean> {
+        return Promise.resolve(true);
+    }
+    
+    getText(): string;
+    getText(range: Range): string;
+    getText(range?: Range): string {
+        if (!range) {
+            return this.lines.join('\n');
+        }
+        
+        const startLine = Math.max(0, Math.min(range.start.line, this.lines.length - 1));
+        const endLine = Math.max(0, Math.min(range.end.line, this.lines.length - 1));
+        
+        if (startLine === endLine) {
+            const line = this.lines[startLine] || '';
+            const startChar = Math.max(0, Math.min(range.start.character, line.length));
+            const endChar = Math.max(startChar, Math.min(range.end.character, line.length));
+            return line.substring(startChar, endChar);
+        }
+        
+        const result: string[] = [];
+        for (let i = startLine; i <= endLine; i++) {
+            const line = this.lines[i] || '';
+            if (i === startLine) {
+                const startChar = Math.max(0, Math.min(range.start.character, line.length));
+                result.push(line.substring(startChar));
+            } else if (i === endLine) {
+                const endChar = Math.max(0, Math.min(range.end.character, line.length));
+                result.push(line.substring(0, endChar));
+            } else {
+                result.push(line);
+            }
+        }
+        
+        return result.join('\n');
+    }
+    
+    lineAt(line: number): TextLine;
+    lineAt(position: Position): TextLine;
+    lineAt(lineOrPosition: number | Position): TextLine {
+        const lineNumber = typeof lineOrPosition === 'number' ? lineOrPosition : lineOrPosition.line;
+        const lineText = this.lines[lineNumber] || '';
+        
+        return {
+            lineNumber,
+            text: lineText,
+            range: new Range(lineNumber, 0, lineNumber, lineText.length),
+            rangeIncludingLineBreak: new Range(lineNumber, 0, lineNumber + 1, 0),
+            firstNonWhitespaceCharacterIndex: lineText.search(/\S/),
+            isEmptyOrWhitespace: lineText.trim() === ''
+        };
+    }
+    
+    offsetAt(position: Position): number {
+        let offset = 0;
+        for (let i = 0; i < Math.min(position.line, this.lines.length); i++) {
+            offset += (this.lines[i] || '').length + 1; // +1 for line break
+        }
+        if (position.line < this.lines.length) {
+            const line = this.lines[position.line] || '';
+            offset += Math.min(position.character, line.length);
+        }
+        return offset;
+    }
+    
+    positionAt(offset: number): Position {
+        let currentOffset = 0;
+        for (let line = 0; line < this.lines.length; line++) {
+            const lineText = this.lines[line] || '';
+            if (currentOffset + lineText.length >= offset) {
+                return new Position(line, offset - currentOffset);
+            }
+            currentOffset += lineText.length + 1; // +1 for line break
+        }
+        // If offset is beyond document, return end position
+        const lastLine = Math.max(0, this.lines.length - 1);
+        const lastLineText = this.lines[lastLine] || '';
+        return new Position(lastLine, lastLineText.length);
+    }
+    
+    getWordRangeAtPosition(position: Position, regex?: RegExp): Range | undefined {
+        const line = this.lines[position.line];
+        if (!line) return undefined;
+        
+        const wordRegex = regex || /[-?\.:a-zA-Z0-9_\s]+/;
+        const matches = Array.from(line.matchAll(new RegExp(wordRegex, 'g')));
+        
+        for (const match of matches) {
+            if (match.index !== undefined) {
+                const start = match.index;
+                const end = start + match[0].length;
+                if (position.character >= start && position.character <= end) {
+                    return new Range(position.line, start, position.line, end);
+                }
+            }
+        }
+        
+        return undefined;
+    }
+    
+    validateRange(range: Range): Range {
+        const startLine = Math.max(0, Math.min(range.start.line, this.lines.length - 1));
+        const endLine = Math.max(startLine, Math.min(range.end.line, this.lines.length - 1));
+        
+        const startLineText = this.lines[startLine] || '';
+        const endLineText = this.lines[endLine] || '';
+        
+        const startChar = Math.max(0, Math.min(range.start.character, startLineText.length));
+        const endChar = Math.max(0, Math.min(range.end.character, endLineText.length));
+        
+        return new Range(startLine, startChar, endLine, endChar);
+    }
+    
+    validatePosition(position: Position): Position {
+        const line = Math.max(0, Math.min(position.line, this.lines.length - 1));
+        const lineText = this.lines[line] || '';
+        const character = Math.max(0, Math.min(position.character, lineText.length));
+        
+        return new Position(line, character);
+    }
+}

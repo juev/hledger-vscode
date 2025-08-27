@@ -1,0 +1,141 @@
+; strict-positioning.journal - Test cases for strict completion positioning
+; This file contains examples for manual testing of the strict completion system
+
+; === DATE COMPLETION TESTS ===
+; Dates should only complete at line beginning
+
+; Test 1: Basic date patterns (cursor position tests)
+2024-01-15 * Transaction with full date
+01-15 Transaction with short date  
+0
+
+; Test 2: Special zero handling
+01
+02-28
+09-15
+
+; Test 3: Partial dates
+2024
+2024-01
+2024-01-
+
+; === ACCOUNT COMPLETION TESTS ===
+; Accounts should only complete on indented lines
+
+; Test 4: Transaction with proper indentation
+2024-01-15 * Grocery shopping
+  Assets:Checking         -50.00 USD
+  Expenses:Food:Groceries  50.00 USD
+
+; Test 5: Various indentation styles
+2024-01-15 * Multiple account types
+  Assets:Cash
+  Assets:Bank:Savings
+  Liabilities:CreditCard
+  Income:Salary
+  Expenses:Food
+	Assets:Investment	; tab-indented account
+
+; Test 6: Account hierarchy with colons (: trigger should work)
+2024-01-15 * Account with deep hierarchy
+  Assets:Bank:Checking:Primary
+  Expenses:Transportation:Gas:Vehicle1
+
+; === COMMODITY COMPLETION TESTS ===
+; Commodities should only complete after amount + single space
+
+; Test 7: Currency completion after amounts
+2024-01-15 * Currency testing
+  Assets:Cash  100.00 USD
+  Assets:Savings  1000.00 EUR
+  Assets:Investment  50 BTC
+  Expenses:Food  25.50 
+
+; Test 8: Commodity symbols (@ trigger should work)
+2024-01-15 * Investment purchase
+  Assets:Investment  10 AAPL @@ 1500.00 USD
+  Assets:Cash
+
+; === FORBIDDEN ZONES TESTS ===
+; No completions should appear in these areas
+
+; Test 9: After amounts with two or more spaces (forbidden)
+2024-01-15 * Forbidden completion zones
+  Assets:Cash  100.00  ; This comment area should have no completions
+  Expenses:Food  25.50   USD  ; This USD area should be forbidden
+
+; Test 10: Middle of existing text (forbidden)
+2024-01-15 * ExistingDescription  ; Cursor in middle of words should be forbidden
+  Assets:ExistingAccount  ; Middle of account names forbidden
+  Expenses:Food  100.00 ExistingCurrency  ; Middle of currency forbidden
+
+; === COMPLEX SCENARIOS ===
+
+; Test 11: Mixed transaction types
+2024-01-15 * Complex transaction
+  Assets:Checking  -100.00 USD
+  Assets:Savings  -200.00 EUR
+  Liabilities:Credit  300.00 USD
+  ; Test comment line - should allow date completion at start: 
+
+; Test 12: Multiple currencies and commodities
+2024-01-15 * Multi-currency transaction
+  Assets:Cash:USD  50.00 USD
+  Assets:Cash:EUR  40.00 EUR
+  Assets:Investment  5 AAPL
+  Income:Freelance  -95.00 USD
+
+; Test 13: Edge cases
+; Empty line test - should allow date completion:
+
+  ; Indented comment - should allow account completion after spaces: 
+
+; Test 14: Special characters in accounts
+2024-01-15 * Special characters
+  Assets:Bank_Account-1  100.00 USD
+  Expenses:Food_Delivery  50.00 USD
+
+; === PERFORMANCE TESTS ===
+; Test 15: Large transaction for performance testing
+2024-01-15 * Performance test transaction
+  Assets:Account1  10.00 USD
+  Assets:Account2  20.00 USD
+  Assets:Account3  30.00 USD
+  Assets:Account4  40.00 USD
+  Assets:Account5  50.00 USD
+  Expenses:Category1  -10.00 USD
+  Expenses:Category2  -20.00 USD
+  Expenses:Category3  -30.00 USD
+  Expenses:Category4  -40.00 USD
+  Expenses:Category5  -50.00 USD
+
+; === MANUAL TESTING GUIDELINES ===
+;
+; To test the strict completion system manually:
+;
+; 1. DATE COMPLETION:
+;    - Place cursor at beginning of any line and type digits
+;    - Should get date suggestions via 24x7 IntelliSense
+;    - Try typing "0" at line start - should get zero-based month suggestions
+;    - Try Ctrl+Alt+D (manual date completion command)
+;
+; 2. ACCOUNT COMPLETION:
+;    - Place cursor on indented lines and type letters
+;    - Should get account suggestions via 24x7 IntelliSense
+;    - Type ":" after account name - should trigger account hierarchy completion
+;    - Try Ctrl+Alt+A (manual account completion command)
+;
+; 3. COMMODITY COMPLETION:
+;    - Place cursor after amount + single space and type letters
+;    - Should get commodity suggestions via 24x7 IntelliSense
+;    - Type "@" for commodity trading syntax - should trigger commodity completion
+;
+; 4. FORBIDDEN ZONES:
+;    - Try typing after amounts + two spaces - should get NO completions
+;    - Try typing in middle of existing words - should get NO completions
+;    - Try Ctrl+Space in forbidden areas - should still work (manual override)
+;
+; 5. TRIGGER VERIFICATION:
+;    - Only ":", "@", ";" should be registered as explicit triggers
+;    - All other completions should come from 24x7 IntelliSense
+;    - Verify ~80% reduction in false trigger events compared to old system

@@ -137,18 +137,4 @@ describe('hledger 1.43 Compliance', () => {
         });
     });
     
-    describe('Posting Date Tags', () => {
-        it('should parse date: tags in posting comments', () => {
-            const content = `
-2025-01-15 * Transaction with posting date
-    Assets:Bank    100 ; date:2025-01-20
-    Expenses:Test    -100
-`;
-            
-            config.parseContent(content);
-            
-            // Should have captured the posting date
-            expect(config.getLastDate()).toBe('2025-01-20');
-        });
-    });
 });

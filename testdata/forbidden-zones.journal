@@ -1,0 +1,136 @@
+; forbidden-zones.journal - Test cases for completion suppression in forbidden zones
+; This file specifically tests areas where NO completions should appear
+
+; === FORBIDDEN AFTER AMOUNTS + TWO SPACES ===
+
+; Test 1: Simple forbidden zones after amounts
+2024-01-15 * Basic forbidden zones
+  Assets:Cash  100.00  ; NO completions should appear here
+  Expenses:Food  25.50   ; Or here with 3 spaces
+  Income:Salary  -1000.00    ; Or here with 4 spaces
+
+; Test 2: Forbidden zones with comments
+2024-01-15 * Zones with comments  
+  Assets:Checking  -50.00  ; This entire comment area is forbidden
+  Expenses:Groceries  50.00   USD ; Even with currency, still forbidden after 2+ spaces
+
+; Test 3: Forbidden zones with various amount formats
+2024-01-15 * Different amount formats
+  Assets:Savings  1000  ; Integer amounts with 2+ spaces forbidden
+  Assets:Investment  50.50  ; Decimal amounts with 2+ spaces forbidden  
+  Assets:Cash  999.99  ; All text after 2+ spaces is forbidden
+
+; === FORBIDDEN IN MIDDLE OF EXISTING TEXT ===
+
+; Test 4: Middle of descriptions (cursor position tests)
+2024-01-15 * ExistingTransactionDescription ; Cursor anywhere in middle = forbidden
+2024-01-15 * AnotherDescription ; Same rule applies
+
+; Test 5: Middle of account names
+2024-01-15 * Middle of accounts test
+  Assets:CheckingAccount ; Cursor in "Chec|kingAccount" = forbidden  
+  Expenses:FoodAndDining ; Cursor in "Food|AndDining" = forbidden
+  Liabilities:CreditCard ; Cursor in "Credit|Card" = forbidden
+
+; Test 6: Middle of currency codes
+2024-01-15 * Middle of currencies
+  Assets:Cash  100.00 USD ; Cursor in "U|SD" = forbidden
+  Assets:Euro  50.00 EUR ; Cursor in "E|UR" = forbidden
+  Assets:Crypto  0.001 BTC ; Cursor in "B|TC" = forbidden
+
+; Test 7: Middle of amounts (numbers)
+2024-01-15 * Middle of amounts
+  Assets:Cash  100.00 USD ; Cursor in "10|0.00" = forbidden
+  Expenses:Food  25.50 USD ; Cursor in "25|.50" = forbidden
+
+; === COMPLEX FORBIDDEN SCENARIOS ===
+
+; Test 8: Mixed forbidden and allowed zones on same line
+2024-01-15 * Mixed zones
+  Assets:Cash  100.00 USD  ; Forbidden zone after USD + spaces
+  Expenses:Food  25.50 ; Allowed zone (single space before potential currency)
+
+; Test 9: Nested forbidden areas
+2024-01-15 * Nested scenarios  
+  Assets:LongAccountName  999.99  ; Multiple forbidden: middle of name, after amount
+  Expenses:Category  123.45   USD  ; Multiple forbidden: after amount, middle of USD
+
+; Test 10: Tabbed forbidden zones
+2024-01-15 * Tab-separated forbidden zones
+	Assets:Cash	100.00		; Forbidden after tabs + spaces
+	Expenses:Food	25.50			; Even more forbidden
+
+; === EDGE CASES FOR FORBIDDEN ZONES ===
+
+; Test 11: Boundary testing
+2024-01-15 * Boundary cases
+  Assets:Cash  100.00 ; ALLOWED (exactly 1 space)
+  Assets:Savings  100.00  ; FORBIDDEN (exactly 2 spaces)
+  Assets:Investment  100.00   ; FORBIDDEN (3 spaces)
+
+; Test 12: Unicode and special characters in forbidden zones
+2024-01-15 * Special characters
+  Assets:Cash  100.00  € ; Forbidden zone with Unicode currency
+  Assets:Account  50.00  ₽ ; Forbidden zone with Ruble symbol
+  Expenses:Café  25.00  USD ; Forbidden zone with accented characters
+
+; Test 13: Very long forbidden zones
+2024-01-15 * Long forbidden areas
+  Assets:Cash  100.00  This is a very long comment that should be entirely forbidden for completions because it comes after an amount with two spaces
+  Expenses:Food  50.00   Another long forbidden area with detailed description
+
+; === PERFORMANCE TESTS FOR FORBIDDEN ZONES ===
+
+; Test 14: Many forbidden zones for performance testing
+2024-01-15 * Performance test
+  Account1  100.00  ; Forbidden comment 1
+  Account2  200.00  ; Forbidden comment 2  
+  Account3  300.00  ; Forbidden comment 3
+  Account4  400.00  ; Forbidden comment 4
+  Account5  500.00  ; Forbidden comment 5
+  Account6  600.00  ; Forbidden comment 6
+  Account7  700.00  ; Forbidden comment 7
+  Account8  800.00  ; Forbidden comment 8
+  Account9  900.00  ; Forbidden comment 9
+  Account10  1000.00  ; Forbidden comment 10
+
+; === CONFIRMATION OF ALLOWED ZONES ===
+; These should NOT be forbidden - they should allow completions
+
+; Test 15: Confirmed allowed zones
+; Start of line - should allow date completion:
+
+  ; Indented line start - should allow account completion: 
+  Assets:Cash  100.00 ; Single space - should allow commodity completion
+
+; Test 16: End of lines - should be allowed
+2024-01-15 * Transaction ; End of line should allow completions
+  Assets:Cash ; End of account line should allow completions
+  Expenses:Food  100.00 ; End after amount should allow currency
+
+; === MANUAL TESTING INSTRUCTIONS ===
+;
+; To verify forbidden zones are working:
+;
+; 1. AFTER AMOUNTS + TWO SPACES:
+;    - Place cursor anywhere after "100.00  " (note: 2+ spaces)
+;    - Type any character or press Ctrl+Space
+;    - Should get NO completion suggestions
+;    - VS Code should show "No suggestions" or remain silent
+;
+; 2. MIDDLE OF EXISTING TEXT:
+;    - Place cursor in middle of "Assets" (between "Ass" and "ets")
+;    - Type any character or press Ctrl+Space  
+;    - Should get NO completion suggestions
+;
+; 3. VERIFY BOUNDARIES:
+;    - Place cursor after "100.00 " (note: exactly 1 space)
+;    - Should allow currency completions
+;    - Move cursor to after "100.00  " (note: 2 spaces)
+;    - Should forbid all completions
+;
+; 4. PERFORMANCE:
+;    - Open this file and scroll through it
+;    - Type in various forbidden zones
+;    - Should not experience lag or delays
+;    - Forbidden zone detection should be immediate

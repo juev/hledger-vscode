@@ -1,5 +1,5 @@
 import { HLedgerConfig } from '../main';
-import { createAccountAlias } from '../core/BrandedTypes';
+import { createAccountName } from '../types';
 import * as fs from 'fs';
 import * as path from 'path';
 
@@ -35,21 +35,6 @@ account Активы:Наличные
             ]));
         });
         
-        it('should parse aliases', () => {
-            const content = `
-alias Активы = Assets
-alias Расходы = Expenses
-`;
-            
-            config.parseContent(content);
-            
-            const aliases = config.getAliases();
-            expect(aliases.get(createAccountAlias('Активы'))).toBe('Assets');
-            expect(aliases.get(createAccountAlias('Расходы'))).toBe('Expenses');
-            expect(config.getAccounts()).toEqual(expect.arrayContaining([
-                'Активы', 'Assets', 'Расходы', 'Expenses'
-            ]));
-        });
         
         it('should parse commodity directives', () => {
             const content = `

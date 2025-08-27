@@ -1,0 +1,52 @@
+; Test file for usage counting verification
+; This file contains known quantities of each entity type
+
+; Account definitions
+account Assets:Bank
+account Assets:Cash
+account Expenses:Food
+account Expenses:Transport
+
+; Commodity definitions
+commodity USD
+commodity EUR
+commodity RUB
+
+; Test transactions with known usage counts
+2025-01-01 Amazon
+    Expenses:Food    100.00 USD
+    Assets:Bank
+
+2025-01-02 Amazon  
+    Expenses:Food    50.00 USD
+    Assets:Bank
+
+2025-01-03 Amazon
+    Expenses:Transport    25.00 USD
+    Assets:Cash
+
+2025-01-04 Walmart
+    Expenses:Food    75.00 EUR
+    Assets:Bank
+
+2025-01-05 Walmart
+    Expenses:Transport    30.00 EUR
+    Assets:Cash
+
+2025-01-06 McDonald  ; tag:fastfood
+    Expenses:Food    15.00 RUB
+    Assets:Cash
+
+2025-01-07 Uber  ; tag:transport
+    Expenses:Transport    45.00 RUB
+    Assets:Bank
+
+2025-01-08 KFC  ; tag:fastfood
+    Expenses:Food    20.00 USD  ; tag:lunch
+    Assets:Bank
+
+; Expected usage counts:
+; Payees: Amazon=3, Walmart=2, McDonald=1, Uber=1, KFC=1
+; Accounts: Expenses:Food=5, Assets:Bank=5, Expenses:Transport=3, Assets:Cash=3
+; Commodities: USD=4, EUR=2, RUB=2
+; Tags: fastfood=2, transport=1, lunch=1
