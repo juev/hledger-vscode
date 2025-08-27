@@ -91,9 +91,9 @@ export class StrictPositionValidator implements PositionValidator {
     private isInMiddleOfExistingText(line: string, character: number): boolean {
         if (character >= line.length) return false;
         
-        const beforeChar = character > 0 ? line[character - 1] : '';
-        const currentChar = line[character] || '';
-        const afterChar = character < line.length - 1 ? line[character + 1] : '';
+        const beforeChar = character > 0 ? line[character - 1] ?? '' : '';
+        const currentChar = line[character] ?? '';
+        const afterChar = character < line.length - 1 ? line[character + 1] ?? '' : '';
         
         // If we are between letters/digits - this is middle of text
         const beforeIsAlnum = /[\p{L}\p{N}]/u.test(beforeChar);

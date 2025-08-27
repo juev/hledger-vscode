@@ -53,7 +53,12 @@ export class StrictCompletionProvider implements vscode.CompletionItemProvider {
         }
         
         // 5. Route to single completion type (strict rule: only one type per position)
-        return this.provideSingleTypeCompletion(strictContext, allowedTypes[0]);
+        const primaryType = allowedTypes[0];
+        if (!primaryType) {
+            return [];
+        }
+        
+        return this.provideSingleTypeCompletion(strictContext, primaryType);
     }
     
     private provideSingleTypeCompletion(
