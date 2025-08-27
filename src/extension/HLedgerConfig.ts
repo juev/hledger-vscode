@@ -6,7 +6,7 @@ import * as vscode from 'vscode';
 import * as path from 'path';
 import { HLedgerParser, ParsedHLedgerData } from './HLedgerParser';
 import { SimpleProjectCache } from './SimpleProjectCache';
-import { CompletionContext, AccountName, PayeeName, TagName, CommodityCode, UsageCount, createUsageCount, createCacheKey } from './types';
+import { CompletionContext, AccountName, PayeeName, TagName, TagValue, CommodityCode, UsageCount, createUsageCount, createCacheKey } from './types';
 
 // CompletionContext is now imported from types.ts
 export { CompletionContext } from './types';
@@ -414,6 +414,35 @@ export class HLedgerConfig {
 
     get commodityUsage(): ReadonlyMap<CommodityCode, UsageCount> {
         return this.data?.commodityUsage || new Map();
+    }
+
+    // Tag value methods with enhanced type safety
+    getTagValuesFor(tagName: TagName): TagValue[] {
+        if (!this.data?.tagValues) return [];
+        const values = this.data.tagValues.get(tagName);
+        return values ? Array.from(values) : [];
+    }
+
+    getTagValuesByUsageFor(tagName: TagName): TagValue[] {
+        const values = this.getTagValuesFor(tagName);
+        if (!this.data?.tagValueUsage) return values;
+        
+        return values.sort((a, b) => {
+            const keyA = `${tagName}:${a}`;
+            const keyB = `${tagName}:${b}`;
+            const aUsage = this.data!.tagValueUsage.get(keyA) || 0;
+            const bUsage = this.data!.tagValueUsage.get(keyB) || 0;
+            
+            if (aUsage !== bUsage) {
+                return bUsage - aUsage;
+            }
+            
+            return a.localeCompare(b);
+        });
+    }
+
+    get tagValueUsage(): ReadonlyMap<string, UsageCount> {
+        return this.data?.tagValueUsage || new Map();
     }
 
     // Backward compatibility methods for tests
