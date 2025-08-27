@@ -18,6 +18,8 @@ interface ParsedHLedgerData {
     readonly payeeUsage: ReadonlyMap<PayeeName, UsageCount>;
     readonly tagUsage: ReadonlyMap<TagName, UsageCount>;
     readonly commodityUsage: ReadonlyMap<CommodityCode, UsageCount>;
+    readonly tagValues: ReadonlyMap<TagName, ReadonlySet<TagValue>>;
+    readonly tagValueUsage: ReadonlyMap<string, UsageCount>;
     readonly defaultCommodity: CommodityCode | null;
     readonly lastDate: string | null;
 }
@@ -35,6 +37,9 @@ export type PayeeName = string & { readonly __brand: 'PayeeName' };
 
 /** Branded type for hledger tag names (e.g., 'category', 'project') */
 export type TagName = string & { readonly __brand: 'TagName' };
+
+/** Branded type for hledger tag values (e.g., 'work', 'personal', 'urgent') */
+export type TagValue = string & { readonly __brand: 'TagValue' };
 
 /** Branded type for commodity codes (e.g., 'USD', 'EUR', '$') */
 export type CommodityCode = string & { readonly __brand: 'CommodityCode' };
@@ -68,6 +73,15 @@ export type Tag = TagName;
 /** @deprecated Use CommodityCode instead for better type safety */
 export type Commodity = CommodityCode;
 
+/**
+ * Interface for tag:value pairs used in hledger comments.
+ * Represents the relationship between tag names and their associated values.
+ */
+export interface TagValuePair {
+    readonly tag: TagName;
+    readonly value: TagValue;
+}
+
 // Enhanced completion context interface with type safety
 export interface CompletionContext {
     readonly type: CompletionType;
@@ -84,6 +98,7 @@ export type CompletionType =
     | 'account'
     | 'payee' 
     | 'tag'
+    | 'tag_value'
     | 'commodity'
     | 'date'
     | 'none'
@@ -93,7 +108,7 @@ export type CompletionType =
  * Type guard for CompletionType validation.
  */
 export const isCompletionType = (value: string): value is CompletionType => {
-    return ['account', 'payee', 'tag', 'commodity', 'date', 'keyword'].includes(value);
+    return ['account', 'payee', 'tag', 'tag_value', 'commodity', 'date', 'keyword'].includes(value);
 };
 
 /**
@@ -126,6 +141,7 @@ export type CacheValue =
     | Set<AccountName>
     | Set<PayeeName>
     | Set<TagName>
+    | Set<TagValue>
     | Set<CommodityCode>
     | Map<string, UsageCount>
     | ReadonlyArray<string>
@@ -204,6 +220,10 @@ export const isTagName = (value: string): value is TagName => {
     return typeof value === 'string' && value.length > 0;
 };
 
+export const isTagValue = (value: string): value is TagValue => {
+    return typeof value === 'string' && value.length > 0;
+};
+
 export const isCommodityCode = (value: string): value is CommodityCode => {
     if (typeof value !== 'string' || value.length === 0) {
         return false;
@@ -269,6 +289,10 @@ export const createTagName = (value: string): TagName => {
     return value as TagName;
 };
 
+export const createTagValue = (value: string): TagValue => {
+    return value as TagValue;
+};
+
 export const createCommodityCode = (value: string): CommodityCode => {
     return value as CommodityCode;
 };
@@ -312,6 +336,10 @@ export const coercePayeeNames = (values: string[]): PayeeName[] => {
 
 export const coerceTagNames = (values: string[]): TagName[] => {
     return values as TagName[];
+};
+
+export const coerceTagValues = (values: string[]): TagValue[] => {
+    return values as TagValue[];
 };
 
 export const coerceCommodityCodes = (values: string[]): CommodityCode[] => {

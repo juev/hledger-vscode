@@ -6,8 +6,17 @@ export enum LineContext {
     AfterDate = 'after_date',           // After date - payee/description  
     InPosting = 'in_posting',           // Indented line - accounts (expense/income categories)
     AfterAmount = 'after_amount',       // After amount - only currency allowed
+    InComment = 'in_comment',           // Cursor is in a comment (after ; or #)
+    InTagValue = 'in_tag_value',        // Cursor is after a tag name and colon
     Forbidden = 'forbidden'             // Forbidden zone - no completions allowed
 }
+
+/**
+ * Type guard for LineContext validation.
+ */
+export const isLineContext = (value: string): value is LineContext => {
+    return Object.values(LineContext).includes(value as LineContext);
+};
 
 export interface PositionInfo {
     lineText: string;
