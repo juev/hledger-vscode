@@ -65,7 +65,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-This is a Visual Studio Code extension for hledger journal files (plain text accounting). It provides syntax highlighting, IntelliSense features (account/date/commodity completion), and language support for `.journal`, `.hledger`, and `.ledger` files.
+This is a Visual Studio Code extension for hledger journal files (plain text accounting). It provides syntax highlighting, IntelliSense features (account/date/commodity/tag value completion), and language support for `.journal`, `.hledger`, and `.ledger` files.
 
 **Current Version**: 0.2.1 (basic, functional implementation)
 
@@ -185,7 +185,7 @@ This is a straightforward, functional VS Code extension with a modular but simpl
   - `PayeeCompleter.ts` - Transaction payee/description completion
   - `CommodityCompleter.ts` - Currency/commodity symbol completion
   - `DateCompleter.ts` - Smart date suggestions
-  - `TagCompleter.ts` - Tag/category completion from comments
+  - `TagCompleter.ts` - Tag value completion for comment tags (e.g., after "category:" suggests "groceries", "dining")
 - **Fuzzy Matching**: `SimpleFuzzyMatcher.ts` - Basic fuzzy search with Unicode support
 
 #### 4. Type Safety & Domain Modeling
@@ -262,12 +262,14 @@ The `HLedgerParser` class handles parsing of hledger files to extract:
 - **Transaction dates** for date completion
 - **Payees/merchants** from transaction descriptions with usage frequency tracking
 - **Tags/categories** from comments (`tag:value` format) with usage frequency tracking
+- **Tag value pairs** (mapping tag names to their used values) for tag value completion
 
 **Frequency Intelligence**:
 
-- **Usage counters**: Maintains `Map<string, number>` for accounts, payees, tags, and commodities
-- **Frequency-based methods**: `getAccountsByUsage()`, `getPayeesByUsage()`, `getTagsByUsage()`, `getCommoditiesByUsage()`
+- **Usage counters**: Maintains `Map<string, number>` for accounts, payees, tags, commodities, and tag values
+- **Frequency-based methods**: `getAccountsByUsage()`, `getPayeesByUsage()`, `getTagsByUsage()`, `getCommoditiesByUsage()`, `getTagValuesByUsageFor()`
 - **Smart prioritization**: Most frequently used items appear first in completion lists
+- **Tag value mapping**: Stores `Map<TagName, Set<TagValue>>` for efficient tag value lookups
 
 ## Testing
 
@@ -339,6 +341,11 @@ The `testdata/` directory contains realistic hledger journal files used exclusiv
 5. **`test_frequency.journal`** - Frequency-based completion testing
    - **Purpose**: Test usage tracking and frequency-based prioritization
    - **Features**: Repeated payees (Amazon: 3x, Walmart: 2x) for frequency sorting validation
+
+6. **`test-tags.journal`** - Tag value completion testing
+   - **Purpose**: Test tag value completion functionality with Unicode support
+   - **Features**: Tag:value pairs in comments, Unicode tags (категория:подарки), spaces in values (project:web development)
+   - **Usage**: Validate tag value completion, frequency-based tag value sorting
 
 #### Test File Requirements & Guidelines
 
@@ -488,6 +495,7 @@ The current architecture provides these benefits:
 3. **Account Completion**: ONLY on indented lines or after `:` trigger  
 4. **Commodity Completion**: ONLY after amount + single space
 5. **Forbidden Zone**: NO completions after amount + two or more spaces
+6. **Tag Value Completion**: ONLY after tag name and colon in comments (e.g., "category:") - context `InTagValue`
 
 #### Required Context Types (NEVER modify enum)
 
@@ -497,6 +505,8 @@ enum LineContext {
     AfterDate = 'after_date',     // CRITICAL: Must exist for payee completion
     InPosting = 'in_posting',     // Required: Account completion in postings  
     AfterAmount = 'after_amount', // Required: Commodity completion only
+    InComment = 'in_comment',     // Required: General comment context
+    InTagValue = 'in_tag_value',  // Required: Tag value completion after "tag:"
     Forbidden = 'forbidden'       // Required: Block all completions
 }
 ```

@@ -1,6 +1,6 @@
-// TagCompleter.ts - Dual-phase tag completion system
-// Enhanced to support both tag name completion and tag value completion
-// ~150 lines to support advanced functionality
+// TagCompleter.ts - Tag value completion system
+// Specialized for tag value completion after tag names
+// ~100 lines focused on tag value functionality
 
 import * as vscode from 'vscode';
 import { HLedgerConfig } from '../HLedgerConfig';
@@ -8,9 +8,10 @@ import { CompletionContext, TagName, TagValue, UsageCount, createTagName, create
 import { SimpleFuzzyMatcher, FuzzyMatch } from '../SimpleFuzzyMatcher';
 
 /**
- * Enhanced TagCompleter supporting dual-phase completion:
- * 1. Tag name completion (e.g., "category:")
- * 2. Tag value completion after tag name (e.g., "category:work")
+ * Specialized TagCompleter for both tag name and tag value completion.
+ * Handles two completion modes:
+ * 1. Tag name completion (type: 'tag') - suggests "category", "project", etc.
+ * 2. Tag value completion (type: 'tag_value') - suggests values after "category:"
  */
 export class TagCompleter {
     private fuzzyMatcher: SimpleFuzzyMatcher;
@@ -23,20 +24,27 @@ export class TagCompleter {
     }
 
     /**
-     * Main completion method supporting dual-phase completion.
-     * Determines whether to complete tag names or tag values based on context.
+     * Main completion method for both tag names and tag values.
+     * Routes to appropriate completion method based on context type.
      */
     complete(context: CompletionContext): vscode.CompletionItem[] {
-        // Extract tag name if cursor is positioned after "tagname:"
-        const tagName = this.extractTagNameFromContext(context);
-        
-        if (tagName) {
-            // Phase 2: Complete tag values for the extracted tag name
-            return this.completeTagValues(context, tagName);
-        } else {
-            // Phase 1: Complete tag names
-            return this.completeTagNames(context);
+        if (context.type === 'tag') {
+            // Complete tag names
+            const items = this.completeTagNames(context);
+            return items;
+        } else if (context.type === 'tag_value') {
+            // Extract tag name if cursor is positioned after "tagname:"
+            const tagName = this.extractTagNameFromContext(context);
+            
+            if (tagName) {
+                // Complete tag values for the extracted tag name
+                const items = this.completeTagValues(context, tagName);
+                return items;
+            }
         }
+        
+        // If no valid context or tag name found, return empty array
+        return [];
     }
 
     /**
@@ -53,25 +61,22 @@ export class TagCompleter {
         return createTagName(tagName);
     }
 
-    /**
-     * Complete tag names with ":" suffix (Phase 1).
-     * Current behavior for backward compatibility.
-     */
-    private completeTagNames(context: CompletionContext): vscode.CompletionItem[] {
-        const tags = this.config.getTagsByUsage();
-        const matches = this.fuzzyMatcher.match(context.query, tags, {
-            usageCounts: this.config.tagUsage,
-            maxResults: 25
-        });
-
-        return matches.map(match => this.createTagNameCompletionItem(match));
-    }
 
     /**
      * Complete tag values for a specific tag name (Phase 2).
      * Provides values that have been used with the specified tag.
      */
     private completeTagValues(context: CompletionContext, tagName: TagName): vscode.CompletionItem[] {
+        // ESSENTIAL FIX: Refresh config for current document before getting tag values
+        // This ensures TagCompleter gets fresh data instead of stale cached data
+        if (context.document) {
+            // Get VS Code TextDocument through workspace
+            const vsDocument = vscode.workspace.textDocuments.find(doc => doc.uri.path === context.document!.uri);
+            if (vsDocument) {
+                this.config.getConfigForDocument(vsDocument);
+            }
+        }
+        
         const tagValues = this.config.getTagValuesByUsageFor(tagName);
         
         if (tagValues.length === 0) {
@@ -79,43 +84,22 @@ export class TagCompleter {
         }
 
         // Extract the value part of the query (after "tagname:")
-        const valueQuery = context.query.replace(TagCompleter.TAG_NAME_PATTERN, '');
+        // Query format: "; tag:" or "; tag:partial_value"
+        // We need to extract everything after the tag name and colon
+        const tagStart = context.query.indexOf(`${tagName}:`);
+        const valueStart = tagStart + tagName.length + 1; // +1 for the colon
+        const valueQuery = context.query.substring(valueStart).trim();
         
         const matches = this.fuzzyMatcher.match(valueQuery, tagValues, {
             usageCounts: this.getTagValueUsageMap(tagName) as ReadonlyMap<string, UsageCount>,
             maxResults: 20
         });
-
-        return matches.map(match => this.createTagValueCompletionItem(match, tagName));
+        
+        const items = matches.map(match => this.createTagValueCompletionItem(match, tagName));
+        
+        return items;
     }
 
-    /**
-     * Create completion item for tag name with ":" suffix.
-     * Includes command to trigger suggestions for tag values after insertion if values exist.
-     */
-    private createTagNameCompletionItem(match: FuzzyMatch): vscode.CompletionItem {
-        const tagName = match.item as TagName;
-        const item = new vscode.CompletionItem(tagName, vscode.CompletionItemKind.Property);
-        item.detail = 'Tag';
-        item.sortText = this.getSortText(match);
-        item.insertText = `${tagName}:`;
-        
-        // Add command to trigger suggestion for tag values only if values exist for this tag
-        const tagValues = this.config.getTagValuesByUsageFor(tagName);
-        if (tagValues.length > 0) {
-            item.command = {
-                command: 'editor.action.triggerSuggest',
-                title: 'Trigger tag value suggestions'
-            };
-        }
-        
-        const usageCount = this.config.tagUsage.get(tagName) || 0;
-        if (usageCount > 1) {
-            item.documentation = new vscode.MarkdownString(`Tag used ${usageCount} times`);
-        }
-
-        return item;
-    }
 
     /**
      * Create completion item for tag value.
@@ -154,6 +138,56 @@ export class TagCompleter {
         });
         
         return usageMap;
+    }
+
+    /**
+     * Complete tag names (Phase 1).
+     * Provides tag names like "category", "project", "type".
+     */
+    private completeTagNames(context: CompletionContext): vscode.CompletionItem[] {
+        const tagNames = this.config.getTagsByUsage();
+        
+        if (tagNames.length === 0) {
+            return [];
+        }
+
+        const matches = this.fuzzyMatcher.match(context.query, tagNames, {
+            usageCounts: this.config.tagUsage as ReadonlyMap<string, UsageCount>,
+            maxResults: 20
+        });
+
+        return matches.map(match => this.createTagNameCompletionItem(match));
+    }
+
+    /**
+     * Create completion item for tag name.
+     * Adds colon and trigger for tag value completion if values exist.
+     */
+    private createTagNameCompletionItem(match: FuzzyMatch): vscode.CompletionItem {
+        const tagName = match.item as TagName;
+        const item = new vscode.CompletionItem(tagName, vscode.CompletionItemKind.Property);
+        item.detail = `Tag name`;
+        item.sortText = this.getSortText(match);
+        item.insertText = `${tagName}:`;
+        
+        const usageCount = this.config.tagUsage.get(tagName) || 0;
+        if (usageCount > 1) {
+            item.documentation = new vscode.MarkdownString(
+                `Tag \`${tagName}\` used ${usageCount} times`
+            );
+        }
+
+        // Check if this tag has values - if so, trigger value completion after insertion
+        const tagValues = this.config.getTagValuesByUsageFor(tagName);
+        if (tagValues.length > 0) {
+            // Add command to trigger suggestions after the colon is inserted
+            item.command = {
+                command: 'editor.action.triggerSuggest',
+                title: 'Trigger tag value suggestions'
+            };
+        }
+
+        return item;
     }
 
     /**

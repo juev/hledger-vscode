@@ -331,7 +331,9 @@ export class HLedgerParser {
         // Extract tags only from comments (after ; or #)
         // Tags are in the format tag:value within comments
         const commentMatch = line.match(/[;#](.*)$/);
-        if (!commentMatch || !commentMatch[1]) return;
+        if (!commentMatch || !commentMatch[1]) {
+            return;
+        }
 
         const commentText = commentMatch[1];
 
@@ -348,31 +350,23 @@ export class HLedgerParser {
             const tagValue = match[2].trim();
             
             if (tagName && tagValue) {
-                // Handle special case: "tag:value" pattern where "tag" is literal
-                if (tagName === 'tag') {
-                    // Store as tag name for backward compatibility
-                    const tag = createTagName(tagValue);
-                    data.tags.add(tag);
-                    this.incrementUsage(data.tagUsage, tag);
-                } else {
-                    // Store regular tag:value pair
-                    const tag = createTagName(tagName);
-                    const value = createTagValue(tagValue);
-                    
-                    // Add tag to tags set
-                    data.tags.add(tag);
-                    this.incrementUsage(data.tagUsage, tag);
-                    
-                    // Add value to tag's value set
-                    if (!data.tagValues.has(tag)) {
-                        data.tagValues.set(tag, new Set<TagValue>());
-                    }
-                    data.tagValues.get(tag)!.add(value);
-                    
-                    // Track usage of this specific tag:value pair
-                    const pairKey = `${tagName}:${tagValue}`;
-                    this.incrementUsage(data.tagValueUsage, pairKey as any);
+                // Store regular tag:value pair (treat "tag" like any other tag name)
+                const tag = createTagName(tagName);
+                const value = createTagValue(tagValue);
+                
+                // Add tag to tags set
+                data.tags.add(tag);
+                this.incrementUsage(data.tagUsage, tag);
+                
+                // Add value to tag's value set
+                if (!data.tagValues.has(tag)) {
+                    data.tagValues.set(tag, new Set<TagValue>());
                 }
+                data.tagValues.get(tag)!.add(value);
+                
+                // Track usage of this specific tag:value pair
+                const pairKey = `${tagName}:${tagValue}`;
+                this.incrementUsage(data.tagValueUsage, pairKey as any);
             }
         }
     }

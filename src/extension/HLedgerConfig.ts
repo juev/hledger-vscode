@@ -425,6 +425,7 @@ export class HLedgerConfig {
 
     getTagValuesByUsageFor(tagName: TagName): TagValue[] {
         const values = this.getTagValuesFor(tagName);
+        
         if (!this.data?.tagValueUsage) return values;
         
         return values.sort((a, b) => {

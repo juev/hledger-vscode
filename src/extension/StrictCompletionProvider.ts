@@ -44,6 +44,7 @@ export class StrictCompletionProvider implements vscode.CompletionItemProvider {
         // 2. Analyze position with strict rules
         const strictContext = this.positionAnalyzer.analyzePosition(document, position);
         
+        
         // 3. Apply suppression rules
         if (this.suppressor.shouldSuppressAll(strictContext)) {
             return [];
@@ -145,7 +146,8 @@ export class StrictCompletionProvider implements vscode.CompletionItemProvider {
         
         // Convert StrictCompletionContext to legacy CompletionContext for existing TagCompleter
         const legacyContext = this.convertToLegacyContext(context, 'tag');
-        return this.tagCompleter.complete(legacyContext);
+        const items = this.tagCompleter.complete(legacyContext);
+        return items;
     }
     
     private provideTagValueCompletion(context: StrictCompletionContext): vscode.CompletionItem[] {
@@ -156,7 +158,8 @@ export class StrictCompletionProvider implements vscode.CompletionItemProvider {
         
         // Convert StrictCompletionContext to legacy CompletionContext for existing TagCompleter
         const legacyContext = this.convertToLegacyContext(context, 'tag_value');
-        return this.tagCompleter.complete(legacyContext);
+        const items = this.tagCompleter.complete(legacyContext);
+        return items;
     }
     
     /**
@@ -179,11 +182,30 @@ export class StrictCompletionProvider implements vscode.CompletionItemProvider {
     
     /**
      * Extract completion query from position context
+     * Different extraction logic for different completion types
      */
     private extractQueryFromPosition(context: StrictCompletionContext): string {
         const { beforeCursor } = context.position;
         
-        // Extract the word being typed at cursor position
+        // For tag value completion, extract the full tag:value pattern
+        if (context.lineContext === 'in_tag_value') {
+            // Extract from after comment marker to cursor
+            const commentMatch = beforeCursor.match(/[;#]\s*(.*)$/);
+            if (commentMatch) {
+                return commentMatch[1];
+            }
+        }
+        
+        // For tag name completion in comments, extract just the tag name
+        if (context.lineContext === 'in_comment') {
+            // Extract from after comment marker to cursor, stop at colon
+            const commentMatch = beforeCursor.match(/[;#]\s*([\p{L}\p{N}_-]*)$/u);
+            if (commentMatch) {
+                return commentMatch[1];
+            }
+        }
+        
+        // For other completion types, extract the word being typed at cursor position
         const match = beforeCursor.match(/[\w:.-]*$/);
         return match ? match[0] : '';
     }
