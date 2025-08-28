@@ -223,7 +223,17 @@ export class NumberFormatService {
             return failure(new Error(`Invalid commodity format template: "${template}"`));
         }
 
-        const [, prefixSymbol, numberPart, suffixSymbol] = match;
+        // Safe destructuring with null checks for regex capture groups
+        const matchGroups = match.slice(1); // Skip the full match at index 0
+        const prefixSymbol = matchGroups[0] || undefined;
+        const numberPart = matchGroups[1];
+        const suffixSymbol = matchGroups[2] || undefined;
+        
+        // Ensure we have a valid number part
+        if (!numberPart) {
+            return failure(new Error(`No number part found in template: "${template}"`));
+        }
+        
         const symbol = prefixSymbol || suffixSymbol || '';
         
         if (!symbol) {
@@ -347,18 +357,26 @@ export class NumberFormatService {
                 return failure(new Error(`Cannot convert to valid number: ${cleanInput}`));
             }
 
-            // Extract parts
+            // Extract parts with safe array access
             const parts = input.split(decimalMark);
             const integerPart = parts[0];
+            if (!integerPart) {
+                return failure(new Error(`Invalid number format: no integer part found in "${input}"`));
+            }
             const decimalPart = parts.length > 1 ? parts[1] : undefined;
 
+            // Create ParsedAmount with proper handling of optional properties for exactOptionalPropertyTypes
             const parsedAmount: ParsedAmount = {
                 value: numericValue,
                 integerPart,
-                decimalPart,
                 format,
                 original: input
             };
+            
+            // Only add decimalPart if it exists to comply with exactOptionalPropertyTypes
+            if (decimalPart !== undefined) {
+                (parsedAmount as any).decimalPart = decimalPart;
+            }
 
             return success(parsedAmount);
 
