@@ -1,15 +1,21 @@
 // StrictPositionAnalyzer.test.ts - Tests for strict position analysis
 import * as vscode from 'vscode';
 import { StrictPositionAnalyzer, LineContext, StrictCompletionContext } from '../strict/StrictPositionAnalyzer';
+import { HLedgerConfig } from '../HLedgerConfig';
+import { NumberFormatService, createNumberFormatService } from '../services/NumberFormatService';
 
 // Import MockTextDocument from the mock
 const { MockTextDocument } = vscode as any;
 
 describe('StrictPositionAnalyzer', () => {
     let analyzer: StrictPositionAnalyzer;
+    let config: HLedgerConfig;
+    let numberFormatService: NumberFormatService;
 
     beforeEach(() => {
-        analyzer = new StrictPositionAnalyzer();
+        config = new HLedgerConfig();
+        numberFormatService = createNumberFormatService();
+        analyzer = new StrictPositionAnalyzer(numberFormatService, config);
     });
 
     describe('Date completion at line beginning', () => {
@@ -98,7 +104,7 @@ describe('StrictPositionAnalyzer', () => {
     });
 
     describe('Currency completion after amounts', () => {
-        it('should detect currency context after amount with single space', () => {
+        it('should detect currency context after decimal amount with existing currency', () => {
             const document = new MockTextDocument(['  Assets:Cash  100.00 USD']);
             const position = new vscode.Position(0, 25);
             
@@ -108,7 +114,7 @@ describe('StrictPositionAnalyzer', () => {
             expect(result.allowedTypes).toContain('commodity');
         });
 
-        it('should detect currency context for partial currency', () => {
+        it('should detect currency context for partial currency after decimal', () => {
             const document = new MockTextDocument(['  Assets:Cash  100.00 U']);
             const position = new vscode.Position(0, 23);
             
@@ -116,6 +122,65 @@ describe('StrictPositionAnalyzer', () => {
             
             expect(result.lineContext).toBe(LineContext.AfterAmount);
             expect(result.allowedTypes).toContain('commodity');
+        });
+
+        it('should detect currency context after whole number amount', () => {
+            const document = new MockTextDocument(['  Assets:Cash  111 ']);
+            const position = new vscode.Position(0, 19);
+            
+            const result = analyzer.analyzePosition(document, position);
+            
+            expect(result.lineContext).toBe(LineContext.AfterAmount);
+            expect(result.allowedTypes).toContain('commodity');
+        });
+
+        it('should detect currency context after whole number with existing currency', () => {
+            const document = new MockTextDocument(['  Assets:Cash  111 USD']);
+            const position = new vscode.Position(0, 22);
+            
+            const result = analyzer.analyzePosition(document, position);
+            
+            expect(result.lineContext).toBe(LineContext.AfterAmount);
+            expect(result.allowedTypes).toContain('commodity');
+        });
+
+        it('should detect currency context after decimal amount with space', () => {
+            const document = new MockTextDocument(['  Assets:Cash  111.50 ']);
+            const position = new vscode.Position(0, 22);
+            
+            const result = analyzer.analyzePosition(document, position);
+            
+            expect(result.lineContext).toBe(LineContext.AfterAmount);
+            expect(result.allowedTypes).toContain('commodity');
+        });
+
+        it('should support currency symbols like €, £, ¥', () => {
+            const document = new MockTextDocument(['  Assets:Cash  50.00 €']);
+            const position = new vscode.Position(0, 22);
+            
+            const result = analyzer.analyzePosition(document, position);
+            
+            expect(result.lineContext).toBe(LineContext.AfterAmount);
+            expect(result.allowedTypes).toContain('commodity');
+        });
+
+        it('should handle various decimal precision patterns', () => {
+            // Test with different decimal places
+            const testCases = [
+                '  Assets:Cash  123.5 EUR',
+                '  Assets:Cash  123.50 GBP', 
+                '  Assets:Cash  123.456 BTC'
+            ];
+
+            testCases.forEach(testCase => {
+                const document = new MockTextDocument([testCase]);
+                const position = new vscode.Position(0, testCase.length);
+                
+                const result = analyzer.analyzePosition(document, position);
+                
+                expect(result.lineContext).toBe(LineContext.AfterAmount);
+                expect(result.allowedTypes).toContain('commodity');
+            });
         });
     });
 
@@ -319,6 +384,87 @@ describe('StrictPositionAnalyzer', () => {
             
             // Should complete 1000 analyses in under 100ms
             expect(duration).toBeLessThan(100);
+        });
+    });
+
+    describe('International Number Format Support', () => {
+        it('should detect currency completion after comma decimal amount', () => {
+            // European format: 111,50 EUR
+            const document = new MockTextDocument(['  Assets:Checking  111,50 ']);
+            const position = new vscode.Position(0, 26); // After space following comma decimal
+            
+            const result = analyzer.analyzePosition(document, position);
+            
+            expect(result.lineContext).toBe(LineContext.AfterAmount);
+            expect(result.allowedTypes).toContain('commodity');
+            expect(result.suppressAll).toBe(false);
+        });
+
+        it('should detect currency completion after period decimal amount', () => {
+            // US format: 111.50 USD
+            const document = new MockTextDocument(['  Assets:Checking  111.50 ']);
+            const position = new vscode.Position(0, 26); // After space following period decimal
+            
+            const result = analyzer.analyzePosition(document, position);
+            
+            expect(result.lineContext).toBe(LineContext.AfterAmount);
+            expect(result.allowedTypes).toContain('commodity');
+            expect(result.suppressAll).toBe(false);
+        });
+
+        it('should detect forbidden zone after comma decimal + two spaces', () => {
+            // European format: 111,50 + two spaces = forbidden zone
+            const document = new MockTextDocument(['  Assets:Checking  111,50  text']);
+            const position = new vscode.Position(0, 28); // After two spaces following comma decimal
+            
+            const result = analyzer.analyzePosition(document, position);
+            
+            expect(result.lineContext).toBe(LineContext.Forbidden);
+            expect(result.suppressAll).toBe(true);
+        });
+
+        it('should detect forbidden zone after period decimal + two spaces', () => {
+            // US format: 111.50 + two spaces = forbidden zone
+            const document = new MockTextDocument(['  Assets:Checking  111.50  text']);
+            const position = new vscode.Position(0, 28); // After two spaces following period decimal
+            
+            const result = analyzer.analyzePosition(document, position);
+            
+            expect(result.lineContext).toBe(LineContext.Forbidden);
+            expect(result.suppressAll).toBe(true);
+        });
+
+        it('should handle grouped numbers with comma decimal (European)', () => {
+            // European format: 1 234,56 EUR
+            const document = new MockTextDocument(['  Assets:Bank  1 234,56 ']);
+            const position = new vscode.Position(0, 24); // After space following grouped comma decimal
+            
+            const result = analyzer.analyzePosition(document, position);
+            
+            expect(result.lineContext).toBe(LineContext.AfterAmount);
+            expect(result.allowedTypes).toContain('commodity');
+        });
+
+        it('should handle whole numbers without decimals', () => {
+            // Whole number format: 150 EUR
+            const document = new MockTextDocument(['  Assets:Cash  150 ']);
+            const position = new vscode.Position(0, 19); // After space following whole number
+            
+            const result = analyzer.analyzePosition(document, position);
+            
+            expect(result.lineContext).toBe(LineContext.AfterAmount);
+            expect(result.allowedTypes).toContain('commodity');
+        });
+
+        it('should handle crypto amounts with many decimal places', () => {
+            // Crypto format: 0,00123456 BTC (comma decimal, many places)
+            const document = new MockTextDocument(['  Assets:Bitcoin  0,00123456 ']);
+            const position = new vscode.Position(0, 30); // After space following crypto amount
+            
+            const result = analyzer.analyzePosition(document, position);
+            
+            expect(result.lineContext).toBe(LineContext.AfterAmount);
+            expect(result.allowedTypes).toContain('commodity');
         });
     });
 });

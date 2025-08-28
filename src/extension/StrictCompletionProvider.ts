@@ -9,9 +9,11 @@ import { CommodityCompleter } from './completion/CommodityCompleter';
 import { DateCompleter } from './completion/DateCompleter';
 import { PayeeCompleter } from './completion/PayeeCompleter';
 import { TagCompleter } from './completion/TagCompleter';
+import { NumberFormatService, createNumberFormatService } from './services/NumberFormatService';
 
 export class StrictCompletionProvider implements vscode.CompletionItemProvider {
-    private positionAnalyzer = new StrictPositionAnalyzer();
+    private numberFormatService: NumberFormatService;
+    private positionAnalyzer: StrictPositionAnalyzer;
     private suppressor = new CompletionSuppressor();
     private validator = new StrictPositionValidator();
 
@@ -23,6 +25,12 @@ export class StrictCompletionProvider implements vscode.CompletionItemProvider {
     private tagCompleter: TagCompleter;
 
     constructor(private config: HLedgerConfig) {
+        // Initialize NumberFormatService
+        this.numberFormatService = createNumberFormatService();
+        
+        // Initialize position analyzer with required dependencies
+        this.positionAnalyzer = new StrictPositionAnalyzer(this.numberFormatService, config);
+        
         // Initialize completers with config
         this.dateCompleter = new DateCompleter(config);
         this.accountCompleter = new AccountCompleter(config);

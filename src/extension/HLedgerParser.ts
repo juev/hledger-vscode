@@ -9,6 +9,7 @@ import {
     AccountName, PayeeName, TagName, TagValue, CommodityCode, UsageCount,
     createAccountName, createPayeeName, createTagName, createTagValue, createCommodityCode, createUsageCount
 } from './types';
+import { NumberFormatService, CommodityFormat } from './services/NumberFormatService';
 
 /**
  * Internal mutable interface for building parsed data during parsing.
@@ -31,6 +32,10 @@ interface MutableParsedHLedgerData {
     payeeUsage: Map<PayeeName, UsageCount>;
     tagUsage: Map<TagName, UsageCount>;
     commodityUsage: Map<CommodityCode, UsageCount>;
+
+    // Format information for number formatting and commodity display
+    commodityFormats: Map<CommodityCode, CommodityFormat>;
+    decimalMark: '.' | ',' | null;
 
     defaultCommodity: CommodityCode | null;
     lastDate: string | null;
@@ -59,6 +64,10 @@ export interface ParsedHLedgerData {
     readonly tagUsage: ReadonlyMap<TagName, UsageCount>;
     readonly commodityUsage: ReadonlyMap<CommodityCode, UsageCount>;
 
+    // Format information for number formatting and commodity display
+    readonly commodityFormats: ReadonlyMap<CommodityCode, CommodityFormat>;
+    readonly decimalMark: '.' | ',' | null;
+
     readonly defaultCommodity: CommodityCode | null;
     readonly lastDate: string | null;
 }
@@ -78,6 +87,15 @@ export interface ParsedHLedgerData {
  * hledger 1.43 specification for maximum compatibility.
  */
 export class HLedgerParser {
+    private readonly numberFormatService: NumberFormatService;
+    private pendingFormatDirective: {
+        commodity: CommodityCode;
+        expectingFormat: boolean;
+    } | null = null;
+
+    constructor() {
+        this.numberFormatService = new NumberFormatService();
+    }
 
     parseFile(filePath: string): ParsedHLedgerData {
         try {
@@ -117,6 +135,9 @@ export class HLedgerParser {
         const data = this.createEmptyData();
         const lines = content.split('\n');
 
+        // Reset pending format directive state for each content parse
+        this.pendingFormatDirective = null;
+
         let inTransaction = false;
         let transactionPayee = '';
 
@@ -143,6 +164,9 @@ export class HLedgerParser {
     private async parseContentAsync(content: string, basePath?: string): Promise<ParsedHLedgerData> {
         const data = this.createEmptyData();
         const lines = content.split('\n');
+
+        // Reset pending format directive state for each content parse
+        this.pendingFormatDirective = null;
 
         let inTransaction = false;
         let transactionPayee = '';
@@ -203,24 +227,27 @@ export class HLedgerParser {
             return;
         }
 
-        // Commodity directive
+        // Commodity directive (enhanced to handle format templates)
         if (trimmedLine.startsWith('commodity ')) {
-            const commodityName = createCommodityCode(trimmedLine.substring(10).trim());
-            if (commodityName) {
-                data.commodities.add(commodityName);
-                // Don't increment usage for commodity definitions - only count actual usage
-            }
+            this.handleCommodityDirective(trimmedLine, data);
             return;
         }
 
-        // Default commodity
+        // Format directive (for multi-line commodity format specification)
+        if (trimmedLine.startsWith('format ')) {
+            this.handleFormatDirective(trimmedLine, data);
+            return;
+        }
+
+        // Decimal-mark directive
+        if (trimmedLine.startsWith('decimal-mark ')) {
+            this.handleDecimalMarkDirective(trimmedLine, data);
+            return;
+        }
+
+        // Default commodity (enhanced to handle format templates)
         if (trimmedLine.startsWith('D ')) {
-            const commodityName = createCommodityCode(trimmedLine.substring(2).trim());
-            if (commodityName) {
-                data.defaultCommodity = commodityName;
-                data.commodities.add(commodityName);
-                // Don't increment usage for default commodity definition - only count actual usage
-            }
+            this.handleDefaultCommodityDirective(trimmedLine, data);
             return;
         }
 
@@ -262,6 +289,251 @@ export class HLedgerParser {
             const alias = createAccountName(aliasMatch[1].trim());
             const account = createAccountName(aliasMatch[2].trim());
             data.aliases.set(alias, account);
+        }
+    }
+
+    /**
+     * Handles commodity directives, including format templates.
+     * Supports:
+     * - Basic commodity definition: "commodity EUR"
+     * - Inline format template: "commodity 1 000,00 EUR"
+     */
+    private handleCommodityDirective(line: string, data: MutableParsedHLedgerData): void {
+        const commodityPart = line.substring(10).trim(); // Remove 'commodity '
+        
+        // Remove inline comments
+        const commentIndex = commodityPart.indexOf(';');
+        const cleanCommodityPart = commentIndex !== -1 
+            ? commodityPart.substring(0, commentIndex).trim()
+            : commodityPart;
+
+        if (!cleanCommodityPart) {
+            return;
+        }
+
+        // Check if this is a format template (contains numbers)
+        const hasNumbers = /\p{N}/.test(cleanCommodityPart);
+        
+        if (hasNumbers) {
+            // This is a format template like "1 000,00 EUR"
+            const formatResult = this.numberFormatService.parseFormatTemplate(cleanCommodityPart);
+            if (formatResult.success) {
+                const format = formatResult.data;
+                const commodityCode = createCommodityCode(format.symbol);
+                if (commodityCode) {
+                    data.commodities.add(commodityCode);
+                    data.commodityFormats.set(commodityCode, format);
+                }
+            } else {
+                // Fallback: try to extract just the commodity symbol from the end
+                const commodityMatch = cleanCommodityPart.match(/([\p{L}\p{Sc}]+)\s*$/u);
+                if (commodityMatch && commodityMatch[1]) {
+                    const commodityCode = createCommodityCode(commodityMatch[1]);
+                    if (commodityCode) {
+                        data.commodities.add(commodityCode);
+                        // Try to create a basic format from the number pattern
+                        const numberPattern = cleanCommodityPart.replace(/[\p{L}\p{Sc}]+\s*$/u, '').trim();
+                        if (numberPattern) {
+                            const basicFormat = this.createBasicCommodityFormat(numberPattern, commodityMatch[1]);
+                            if (basicFormat) {
+                                data.commodityFormats.set(commodityCode, basicFormat);
+                            }
+                        }
+                    }
+                }
+            }
+        } else {
+            // Simple commodity definition like "commodity EUR"
+            const commodityCode = createCommodityCode(cleanCommodityPart);
+            if (commodityCode) {
+                data.commodities.add(commodityCode);
+                // Set up pending format directive expectation for multi-line format
+                this.pendingFormatDirective = {
+                    commodity: commodityCode,
+                    expectingFormat: true
+                };
+            }
+        }
+    }
+
+    /**
+     * Handles format directives for multi-line commodity format specification.
+     * Example: "format EUR 1 000,00"
+     */
+    private handleFormatDirective(line: string, data: MutableParsedHLedgerData): void {
+        const formatPart = line.substring(7).trim(); // Remove 'format '
+        
+        // Remove inline comments
+        const commentIndex = formatPart.indexOf(';');
+        const cleanFormatPart = commentIndex !== -1 
+            ? formatPart.substring(0, commentIndex).trim()
+            : formatPart;
+
+        if (!cleanFormatPart) {
+            return;
+        }
+
+        // Parse the format template
+        const formatResult = this.numberFormatService.parseFormatTemplate(cleanFormatPart);
+        if (formatResult.success) {
+            const format = formatResult.data;
+            const commodityCode = createCommodityCode(format.symbol);
+            if (commodityCode) {
+                data.commodities.add(commodityCode);
+                data.commodityFormats.set(commodityCode, format);
+                
+                // Clear pending format directive
+                if (this.pendingFormatDirective && this.pendingFormatDirective.commodity === commodityCode) {
+                    this.pendingFormatDirective = null;
+                }
+            }
+        }
+    }
+
+    /**
+     * Handles decimal-mark directives.
+     * Example: "decimal-mark ," or "decimal-mark ."
+     */
+    private handleDecimalMarkDirective(line: string, data: MutableParsedHLedgerData): void {
+        const decimalMarkPart = line.substring(13).trim(); // Remove 'decimal-mark '
+        
+        // Remove inline comments
+        const commentIndex = decimalMarkPart.indexOf(';');
+        const cleanDecimalMarkPart = commentIndex !== -1 
+            ? decimalMarkPart.substring(0, commentIndex).trim()
+            : decimalMarkPart;
+
+        if (cleanDecimalMarkPart === '.' || cleanDecimalMarkPart === ',') {
+            data.decimalMark = cleanDecimalMarkPart;
+        }
+    }
+
+    /**
+     * Handles default commodity directives, including format templates.
+     * Supports:
+     * - Basic default commodity: "D RUB"
+     * - Format template: "D 1000,00 RUB"
+     */
+    private handleDefaultCommodityDirective(line: string, data: MutableParsedHLedgerData): void {
+        const defaultPart = line.substring(2).trim(); // Remove 'D '
+        
+        // Remove inline comments
+        const commentIndex = defaultPart.indexOf(';');
+        const cleanDefaultPart = commentIndex !== -1 
+            ? defaultPart.substring(0, commentIndex).trim()
+            : defaultPart;
+
+        if (!cleanDefaultPart) {
+            return;
+        }
+
+        // Check if this is a format template (contains numbers)
+        const hasNumbers = /\p{N}/.test(cleanDefaultPart);
+        
+        if (hasNumbers) {
+            // This is a format template like "1000,00 RUB"
+            const formatResult = this.numberFormatService.parseFormatTemplate(cleanDefaultPart);
+            if (formatResult.success) {
+                const format = formatResult.data;
+                const commodityCode = createCommodityCode(format.symbol);
+                if (commodityCode) {
+                    data.defaultCommodity = commodityCode;
+                    data.commodities.add(commodityCode);
+                    data.commodityFormats.set(commodityCode, format);
+                }
+            } else {
+                // Fallback: try to extract just the commodity symbol from the end
+                const commodityMatch = cleanDefaultPart.match(/([\p{L}\p{Sc}]+)\s*$/u);
+                if (commodityMatch && commodityMatch[1]) {
+                    const commodityCode = createCommodityCode(commodityMatch[1]);
+                    if (commodityCode) {
+                        data.defaultCommodity = commodityCode;
+                        data.commodities.add(commodityCode);
+                        // Try to create a basic format from the number pattern
+                        const numberPattern = cleanDefaultPart.replace(/[\p{L}\p{Sc}]+\s*$/u, '').trim();
+                        if (numberPattern) {
+                            const basicFormat = this.createBasicCommodityFormat(numberPattern, commodityMatch[1]);
+                            if (basicFormat) {
+                                data.commodityFormats.set(commodityCode, basicFormat);
+                            }
+                        }
+                    }
+                }
+            }
+        } else {
+            // Simple default commodity like "D RUB"
+            const commodityCode = createCommodityCode(cleanDefaultPart);
+            if (commodityCode) {
+                data.defaultCommodity = commodityCode;
+                data.commodities.add(commodityCode);
+            }
+        }
+    }
+
+    /**
+     * Creates a basic CommodityFormat from a number pattern and symbol.
+     * Used as fallback when NumberFormatService.parseFormatTemplate fails.
+     * 
+     * @param numberPattern The numeric pattern (e.g., "1 000,00", "1,234.56")
+     * @param symbol The commodity symbol (e.g., "EUR", "USD")
+     * @returns CommodityFormat or null if parsing fails
+     */
+    private createBasicCommodityFormat(numberPattern: string, symbol: string): CommodityFormat | null {
+        try {
+            // Detect decimal mark by looking for the last comma or period followed by 1-4 digits
+            const decimalMatch = numberPattern.match(/(.*?)([,.])([0-9]{1,4})$/);
+            
+            let decimalMark: '.' | ',' = '.';
+            let groupSeparator: ' ' | ',' | '.' | '' = '';
+            let decimalPlaces = 2;
+            let useGrouping = false;
+
+            if (decimalMatch) {
+                const [, integerPart, decimalChar, decimalDigits] = decimalMatch;
+                decimalMark = decimalChar as '.' | ',';
+                decimalPlaces = decimalDigits.length;
+                
+                // Check for grouping in the integer part
+                if (integerPart.includes(' ')) {
+                    groupSeparator = ' ';
+                    useGrouping = true;
+                } else if (decimalMark === ',' && integerPart.includes('.')) {
+                    groupSeparator = '.';
+                    useGrouping = true;
+                } else if (decimalMark === '.' && integerPart.includes(',')) {
+                    groupSeparator = ',';
+                    useGrouping = true;
+                }
+            } else {
+                // No decimal point, check for grouping
+                if (numberPattern.includes(' ')) {
+                    groupSeparator = ' ';
+                    useGrouping = true;
+                    decimalMark = ',';
+                } else if (numberPattern.includes(',')) {
+                    groupSeparator = ',';
+                    useGrouping = true;
+                    decimalMark = '.';
+                }
+            }
+
+            const format: CommodityFormat = {
+                format: {
+                    decimalMark,
+                    groupSeparator,
+                    decimalPlaces,
+                    useGrouping
+                },
+                symbol,
+                symbolBefore: false, // Assume symbol comes after number in basic format
+                symbolSpacing: true,
+                template: `${numberPattern} ${symbol}`
+            };
+
+            return format;
+        } catch (error) {
+            // Return null on any parsing error
+            return null;
         }
     }
 
@@ -440,6 +712,16 @@ export class HLedgerParser {
             target.tagValueUsage.set(key as any, createUsageCount(existing + count));
         });
 
+        // Merge commodity formats
+        source.commodityFormats.forEach((format, commodity) => {
+            target.commodityFormats.set(commodity, format);
+        });
+
+        // Update decimal mark (prefer the most recently parsed one)
+        if (source.decimalMark) {
+            target.decimalMark = source.decimalMark;
+        }
+
         // Update last date if newer
         if (source.lastDate && (!target.lastDate || source.lastDate > target.lastDate)) {
             target.lastDate = source.lastDate;
@@ -466,6 +748,8 @@ export class HLedgerParser {
             payeeUsage: new Map<PayeeName, UsageCount>(),
             tagUsage: new Map<TagName, UsageCount>(),
             commodityUsage: new Map<CommodityCode, UsageCount>(),
+            commodityFormats: new Map<CommodityCode, CommodityFormat>(),
+            decimalMark: null,
             defaultCommodity: null,
             lastDate: null
         };

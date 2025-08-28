@@ -1,5 +1,7 @@
 import * as vscode from 'vscode';
 import { CompletionType } from '../types';
+import { NumberFormatService, NumberFormat } from '../services/NumberFormatService';
+import { HLedgerConfig } from '../HLedgerConfig';
 
 export enum LineContext {
     LineStart = 'line_start',           // Beginning of line - only dates allowed
@@ -33,6 +35,10 @@ export interface StrictCompletionContext {
 }
 
 export class StrictPositionAnalyzer {
+    private readonly numberFormatService: NumberFormatService;
+    private readonly config: HLedgerConfig;
+    private readonly patternCache = new Map<string, RegExp>();
+    
     private static readonly STRICT_PATTERNS = {
         // Strict date patterns - only at line beginning
         DATE_LINE_START: /^(\d{4}[-/]\d{1,2}[-/]\d{1,2}|\d{1,2}[-/]\d{1,2})$/u,
@@ -54,15 +60,116 @@ export class StrictPositionAnalyzer {
         // Account on indented line with Unicode support
         ACCOUNT_INDENTED: /^\s{2,}([\p{L}][\p{L}\p{N}:_-]*)$/u,
         
-        // Amount pattern (digits + minimum two spaces)
-        AMOUNT_PATTERN: /^\d+(\.\d{2})?\s{2,}$/u,
-        
-        // Currency after amount with single space - Unicode currency symbols
-        CURRENCY_AFTER_AMOUNT: /^\d+(\.\d{2})?\s([\p{Lu}]{3}|[\p{Sc}$€£¥₽])$/u,
-        
-        // Forbidden zone: after amount + two or more spaces
-        FORBIDDEN_AFTER_AMOUNT: /^\d+(\.\d{2})?\s{2,}.*$/u
+        // NOTE: Amount patterns are now dynamically generated based on detected formats
+        // The following patterns will be replaced by format-aware equivalents:
+        // AMOUNT_PATTERN - replaced by createForbiddenZonePattern()
+        // CURRENCY_AFTER_AMOUNT - replaced by createCurrencyTriggerPattern() 
+        // FORBIDDEN_AFTER_AMOUNT - replaced by createForbiddenZonePattern()
     };
+    
+    constructor(numberFormatService: NumberFormatService, config: HLedgerConfig) {
+        this.numberFormatService = numberFormatService;
+        this.config = config;
+    }
+    
+    /**
+     * Creates format-aware amount patterns based on detected or configured decimal formats.
+     * Returns patterns for different contexts: forbidden zone, currency trigger, etc.
+     */
+    private createAmountPatterns(): {
+        forbiddenZone: RegExp;
+        currencyTrigger: RegExp;
+        afterAmountTwoSpaces: RegExp;
+        afterAmountSingleSpace: RegExp;
+    } {
+        const cacheKey = 'amount-patterns';
+        const cached = this.patternCache.get(cacheKey);
+        if (cached) {
+            // Return cached patterns object
+            return cached as any;
+        }
+
+        // Get supported formats from the NumberFormatService
+        const formats = this.numberFormatService.getSupportedFormats();
+        
+        // Create pattern variants for different decimal marks
+        const createAmountPatternForFormat = (format: NumberFormat): string => {
+            const { decimalMark, groupSeparator, useGrouping } = format;
+            
+            // Escape special regex characters
+            const escapeRegex = (char: string): string => {
+                return char.replace(/[.*+?^${}()|[\\]\\]/g, '\\$&');
+            };
+
+            const escapedDecimalMark = escapeRegex(decimalMark);
+            
+            if (useGrouping && groupSeparator) {
+                const escapedGroupSeparator = escapeRegex(groupSeparator);
+                // Pattern for grouped numbers: 1,234.56 or 1 234,56
+                return `\\p{N}{1,3}(?:${escapedGroupSeparator}\\p{N}{3})*(?:${escapedDecimalMark}\\p{N}{1,4})?`;
+            } else {
+                // Pattern for simple numbers: 1234.56 or 1234,56
+                return `\\p{N}+(?:${escapedDecimalMark}\\p{N}{1,4})?`;
+            }
+        };
+
+        // Generate patterns for all supported formats
+        const amountPatternVariants = formats.map(createAmountPatternForFormat);
+        const amountPattern = `(?:${amountPatternVariants.join('|')})`;
+
+        // Create specific patterns for different contexts
+        const patterns = {
+            // Forbidden zone: after amount + two or more spaces
+            forbiddenZone: new RegExp(`^${amountPattern}\\s{2,}.*$`, 'u'),
+            
+            // Currency trigger: after amount + single space (+ optional currency)
+            currencyTrigger: new RegExp(`^${amountPattern}\\s([\\p{Lu}\\p{Sc}$€£¥₽]*)?$`, 'u'),
+            
+            // After amount with two or more spaces (for detection)
+            afterAmountTwoSpaces: new RegExp(`^${amountPattern}\\s{2,}$`, 'u'),
+            
+            // After amount with single space (for detection)
+            afterAmountSingleSpace: new RegExp(`^${amountPattern}\\s$`, 'u')
+        };
+
+        // Cache the patterns directly
+        this.patternCache.set(cacheKey, patterns as any);
+        
+        return patterns;
+    }
+
+    /**
+     * Creates a universal amount pattern that matches amounts in any supported format.
+     * Used for general amount detection in posting contexts.
+     */
+    private createUniversalAmountPattern(): RegExp {
+        const cacheKey = 'universal-amount';
+        const cached = this.patternCache.get(cacheKey);
+        if (cached) {
+            return cached;
+        }
+
+        const pattern = this.numberFormatService.createUniversalAmountPattern();
+        this.patternCache.set(cacheKey, pattern);
+        return pattern;
+    }
+
+    /**
+     * Detects if a string contains an amount in any supported format.
+     * More robust than hardcoded patterns, supports international formats.
+     */
+    private containsAmount(text: string): boolean {
+        const universalPattern = this.createUniversalAmountPattern();
+        
+        // Look for amount patterns in the text
+        // This matches standalone amounts or amounts followed by spaces/currency
+        const amountInContextPattern = new RegExp(
+            `(^|\\s)(${universalPattern.source.replace(/^\^|\$$/g, '')})(\\s|$)`,
+            'u'
+        );
+        
+        return amountInContextPattern.test(text);
+    }
     
     analyzePosition(document: vscode.TextDocument, position: vscode.Position): StrictCompletionContext {
         const lineText = document.lineAt(position.line).text;
@@ -93,31 +200,44 @@ export class StrictPositionAnalyzer {
             return LineContext.InComment;
         }
         
-        // Priority 2: Check forbidden zone - after amount + two or more spaces
-        // Only applies if not in a comment
-        if (/\d+(\.\d+)?\s{2,}/.test(beforeCursor)) {
-            return LineContext.Forbidden;
-        }
-        
-        // Priority 3: Check currency position (after amount + single space)
-        // Only match if we have posting indentation + account + amount + space + currency
-        // Pattern: "  Account  123.45 USD" but NOT date patterns like "2024-01-15 Amazon"
-        if (/^\s+[\p{L}\p{N}:_-]+\s+\d+(\.\d+)?\s+[\p{Lu}\p{Sc}$€£¥₽]*$/u.test(beforeCursor)) {
-            return LineContext.AfterAmount;
-        }
-        
-        // Priority 4: Check indented line for accounts
+        // Priority 2: Check for indented line (posting context)
         if (lineText.startsWith(' ') || lineText.startsWith('\t')) {
+            // For indented lines, we need to check if we're in specific amount-related contexts
+            
+            // Priority 2a: Check forbidden zone - after amount + two or more spaces
+            // This is the most restrictive check within posting context
+            if (this.isForbiddenZoneContext(beforeCursor)) {
+                return LineContext.Forbidden;
+            }
+            
+            // Priority 2b: Check currency position (after amount + single space + optional currency)
+            // Match patterns with format-aware amount detection:
+            // 1. "  Account  123.45 " or "  Account  123,45 " (cursor right after space)
+            // 2. "  Account  123.45 USD" or "  Account  123,45 EUR" (cursor after existing currency)
+            // 3. "  Account  123.45 U" (cursor after partial currency)
+            // 4. "  Account  123 " (whole numbers)
+            // 5. "  Account  123.456 BTC" or "  Account  123,456 BTC" (varying decimal precision)
+            // Pattern: indentation + account + amount + space + optional currency symbols
+            const universalAmountPattern = this.createUniversalAmountPattern();
+            const accountAmountCurrencyPattern = new RegExp(
+                `^\\s+[\\p{L}\\p{N}:_-]+\\s+(${universalAmountPattern.source.replace(/^\^|\$$/g, '')})\\s([\\p{Lu}\\p{Sc}$€£¥₽]*)?$`,
+                'u'
+            );
+            if (accountAmountCurrencyPattern.test(beforeCursor)) {
+                return LineContext.AfterAmount;
+            }
+            
+            // Priority 2c: Default to account completion for other indented contexts
             return LineContext.InPosting;
         }
         
-        // Priority 5: CRITICAL FIX - Check after date + space BEFORE line start detection
+        // Priority 3: CRITICAL FIX - Check after date + space BEFORE line start detection
         // This ensures proper payee completion after date + space
         if (this.isAfterDateWithSpace(beforeCursor)) {
             return LineContext.AfterDate;
         }
         
-        // Priority 6: Check line beginning for dates - ANY digit at line start triggers date completion
+        // Priority 4: Check line beginning for dates - ANY digit at line start triggers date completion
         // This comes AFTER after-date detection to prevent conflicts
         if (cursorPos > 0 && this.isDateContext(lineText, cursorPos)) {
             return LineContext.LineStart;
@@ -157,6 +277,35 @@ export class StrictPositionAnalyzer {
         return false;
     }
     
+    /**
+     * Determines if cursor is in a forbidden zone - after amount + two or more spaces
+     * Uses a simpler approach that checks for amount patterns followed by multiple spaces
+     */
+    private isForbiddenZoneContext(beforeCursor: string): boolean {
+        // Simple patterns for common amount formats followed by two or more spaces
+        const forbiddenPatterns = [
+            // US format: 123.45 + two or more spaces (including crypto with many decimals)
+            /\d+\.\d+\s{2,}/u,
+            // European format: 123,45 + two or more spaces (including crypto with many decimals)
+            /\d+,\d+\s{2,}/u,
+            // Whole numbers: 123 + two or more spaces
+            /\d+\s{2,}/u,
+            // Grouped US format: 1,234.56 + two or more spaces
+            /\d{1,3}(?:,\d{3})*\.\d+\s{2,}/u,
+            // Grouped European format: 1.234,56 + two or more spaces or 1 234,56
+            /\d{1,3}(?:[.\s]\d{3})*,\d+\s{2,}/u,
+        ];
+        
+        // Test each pattern
+        for (const pattern of forbiddenPatterns) {
+            if (pattern.test(beforeCursor)) {
+                return true;
+            }
+        }
+        
+        return false;
+    }
+
     /**
      * Determines if cursor is after a tag name and colon (ready for tag value input)
      */
