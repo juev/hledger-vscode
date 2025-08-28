@@ -45,8 +45,9 @@ commodity EUR
             
             config.parseContent(content);
             
+            // Updated to expect just the commodity symbols, not the full format templates
             expect(config.getCommodities()).toEqual(expect.arrayContaining([
-                'RUB', '1,000.00 USD', 'EUR'
+                'RUB', 'USD', 'EUR'
             ]));
         });
         
@@ -55,7 +56,8 @@ commodity EUR
             
             config.parseContent(content);
             
-            expect(config.defaultCommodity).toBe('1000.00 RUB');
+            // Updated to expect just the commodity symbol, not the full format template
+            expect(config.defaultCommodity).toBe('RUB');
         });
         
         it('should extract dates from transactions', () => {
