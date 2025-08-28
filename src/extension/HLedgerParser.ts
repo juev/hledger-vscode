@@ -300,10 +300,10 @@ export class HLedgerParser {
      */
     private handleCommodityDirective(line: string, data: MutableParsedHLedgerData): void {
         const commodityPart = line.substring(10).trim(); // Remove 'commodity '
-        
+
         // Remove inline comments
         const commentIndex = commodityPart.indexOf(';');
-        const cleanCommodityPart = commentIndex !== -1 
+        const cleanCommodityPart = commentIndex !== -1
             ? commodityPart.substring(0, commentIndex).trim()
             : commodityPart;
 
@@ -312,8 +312,8 @@ export class HLedgerParser {
         }
 
         // Check if this is a format template (contains numbers)
-        const hasNumbers = /\p{N}/.test(cleanCommodityPart);
-        
+        const hasNumbers = /\p{N}/u.test(cleanCommodityPart);
+
         if (hasNumbers) {
             // This is a format template like "1 000,00 EUR"
             const formatResult = this.numberFormatService.parseFormatTemplate(cleanCommodityPart);
@@ -362,10 +362,10 @@ export class HLedgerParser {
      */
     private handleFormatDirective(line: string, data: MutableParsedHLedgerData): void {
         const formatPart = line.substring(7).trim(); // Remove 'format '
-        
+
         // Remove inline comments
         const commentIndex = formatPart.indexOf(';');
-        const cleanFormatPart = commentIndex !== -1 
+        const cleanFormatPart = commentIndex !== -1
             ? formatPart.substring(0, commentIndex).trim()
             : formatPart;
 
@@ -381,7 +381,7 @@ export class HLedgerParser {
             if (commodityCode) {
                 data.commodities.add(commodityCode);
                 data.commodityFormats.set(commodityCode, format);
-                
+
                 // Clear pending format directive
                 if (this.pendingFormatDirective && this.pendingFormatDirective.commodity === commodityCode) {
                     this.pendingFormatDirective = null;
@@ -396,10 +396,10 @@ export class HLedgerParser {
      */
     private handleDecimalMarkDirective(line: string, data: MutableParsedHLedgerData): void {
         const decimalMarkPart = line.substring(13).trim(); // Remove 'decimal-mark '
-        
+
         // Remove inline comments
         const commentIndex = decimalMarkPart.indexOf(';');
-        const cleanDecimalMarkPart = commentIndex !== -1 
+        const cleanDecimalMarkPart = commentIndex !== -1
             ? decimalMarkPart.substring(0, commentIndex).trim()
             : decimalMarkPart;
 
@@ -416,10 +416,10 @@ export class HLedgerParser {
      */
     private handleDefaultCommodityDirective(line: string, data: MutableParsedHLedgerData): void {
         const defaultPart = line.substring(2).trim(); // Remove 'D '
-        
+
         // Remove inline comments
         const commentIndex = defaultPart.indexOf(';');
-        const cleanDefaultPart = commentIndex !== -1 
+        const cleanDefaultPart = commentIndex !== -1
             ? defaultPart.substring(0, commentIndex).trim()
             : defaultPart;
 
@@ -428,8 +428,8 @@ export class HLedgerParser {
         }
 
         // Check if this is a format template (contains numbers)
-        const hasNumbers = /\p{N}/.test(cleanDefaultPart);
-        
+        const hasNumbers = /\p{N}/u.test(cleanDefaultPart);
+
         if (hasNumbers) {
             // This is a format template like "1000,00 RUB"
             const formatResult = this.numberFormatService.parseFormatTemplate(cleanDefaultPart);
@@ -482,17 +482,19 @@ export class HLedgerParser {
         try {
             // Detect decimal mark by looking for the last comma or period followed by 1-4 digits
             const decimalMatch = numberPattern.match(/(.*?)([,.])([0-9]{1,4})$/);
-            
+
             let decimalMark: '.' | ',' = '.';
             let groupSeparator: ' ' | ',' | '.' | '' = '';
             let decimalPlaces = 2;
             let useGrouping = false;
 
             if (decimalMatch) {
-                const [, integerPart, decimalChar, decimalDigits] = decimalMatch;
-                decimalMark = decimalChar as '.' | ',';
+                const integerPart = decimalMatch[1]!;
+                const decimalChar = decimalMatch[2]! as '.' | ',';
+                const decimalDigits = decimalMatch[3]!;
+                decimalMark = decimalChar;
                 decimalPlaces = decimalDigits.length;
-                
+
                 // Check for grouping in the integer part
                 if (integerPart.includes(' ')) {
                     groupSeparator = ' ';
