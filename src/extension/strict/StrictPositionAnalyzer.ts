@@ -83,18 +83,19 @@ export class StrictPositionAnalyzer {
     private determineLineContext(lineText: string, cursorPos: number): LineContext {
         const beforeCursor = lineText.substring(0, cursorPos);
         
-        // Priority 1: Check if we are in a comment (highest priority for tags)
+        // Priority 1: Check forbidden zone - after amount + two or more spaces (highest priority)
+        // This must come first to override any other context detection
+        if (/\d+(\.\d+)?\s{2,}/.test(beforeCursor)) {
+            return LineContext.Forbidden;
+        }
+        
+        // Priority 2: Check if we are in a comment (after forbidden zone check)
         if (this.isInCommentContext(lineText, cursorPos)) {
             // Check if we are after a tag name and colon
             if (this.isInTagValueContext(lineText, cursorPos)) {
                 return LineContext.InTagValue;
             }
             return LineContext.InComment;
-        }
-        
-        // Priority 2: Check forbidden zone - after amount + two or more spaces
-        if (/\d+(\.\d+)?\s{2,}/.test(beforeCursor)) {
-            return LineContext.Forbidden;
         }
         
         // Priority 3: Check currency position (after amount + single space)
