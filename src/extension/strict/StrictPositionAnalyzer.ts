@@ -83,19 +83,20 @@ export class StrictPositionAnalyzer {
     private determineLineContext(lineText: string, cursorPos: number): LineContext {
         const beforeCursor = lineText.substring(0, cursorPos);
         
-        // Priority 1: Check forbidden zone - after amount + two or more spaces (highest priority)
-        // This must come first to override any other context detection
-        if (/\d+(\.\d+)?\s{2,}/.test(beforeCursor)) {
-            return LineContext.Forbidden;
-        }
-        
-        // Priority 2: Check if we are in a comment (after forbidden zone check)
+        // Priority 1: Check if we are in a comment (highest priority for tags)
+        // Comments have highest priority because they can appear after amounts
         if (this.isInCommentContext(lineText, cursorPos)) {
             // Check if we are after a tag name and colon
             if (this.isInTagValueContext(lineText, cursorPos)) {
                 return LineContext.InTagValue;
             }
             return LineContext.InComment;
+        }
+        
+        // Priority 2: Check forbidden zone - after amount + two or more spaces
+        // Only applies if not in a comment
+        if (/\d+(\.\d+)?\s{2,}/.test(beforeCursor)) {
+            return LineContext.Forbidden;
         }
         
         // Priority 3: Check currency position (after amount + single space)
@@ -171,13 +172,37 @@ export class StrictPositionAnalyzer {
             return false;
         }
         
-        // Get text after comment marker
+        // Get text after comment marker up to cursor position
         const afterComment = beforeCursor.substring(commentStart + 1);
         
-        // Check if we have a tag name followed by colon
-        // Pattern: optional whitespace, tag name (letters/numbers/underscore), colon, optional whitespace
-        const tagValuePattern = /^\s*[\p{L}\p{N}_]+:\s*[\p{L}\p{N}\s]*$/u;
-        return tagValuePattern.test(afterComment);
+        // Look for the last tag pattern in the comment text
+        // Pattern matches: " category:food, type:" where cursor is after the last colon
+        // We need to find if there's a tag name followed by colon that extends to cursor position
+        
+        // Split by comma/semicolon to handle multiple tags, then check the last segment
+        const segments = afterComment.split(/[,;]/);
+        const lastSegment = segments[segments.length - 1];
+        
+        if (!lastSegment) {
+            return false;
+        }
+        
+        // Check if the last segment contains a tag name followed by colon
+        // Pattern: optional whitespace, tag name (Unicode letters/numbers/underscore/hyphen/SPACE), colon, optional tag value
+        const tagValuePattern = /^\s*([\p{L}\p{N}_\s-]+):\s*([^,;]*)$/u;
+        const result = tagValuePattern.test(lastSegment);
+        
+        // DEBUG: Add logging to understand why tag context detection fails
+        console.log('isInTagValueContext DEBUG:', {
+            afterComment,
+            segments,
+            lastSegment,
+            tagValuePattern: tagValuePattern.toString(),
+            patternMatch: result,
+            cursorPos
+        });
+        
+        return result;
     }
     
     private applyStrictRules(

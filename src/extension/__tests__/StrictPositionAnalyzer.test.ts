@@ -132,13 +132,25 @@ describe('StrictPositionAnalyzer', () => {
         });
 
         it('should suppress completions after amount with text following two spaces', () => {
-            const document = new MockTextDocument(['  Assets:Cash  100.00  ; some comment']);
-            const position = new vscode.Position(0, 30);
+            // Test forbidden zone without comment
+            const document = new MockTextDocument(['  Assets:Cash  100.00  text']);
+            const position = new vscode.Position(0, 24); // Position right after two spaces
             
             const result = analyzer.analyzePosition(document, position);
             
             expect(result.lineContext).toBe(LineContext.Forbidden);
             expect(result.suppressAll).toBe(true);
+        });
+
+        it('should allow tag completion in comments even after amounts', () => {
+            // Comments have priority over forbidden zone
+            const document = new MockTextDocument(['  Assets:Cash  100.00  ; category:']);
+            const position = new vscode.Position(0, 36); // After "category:"
+            
+            const result = analyzer.analyzePosition(document, position);
+            
+            expect(result.lineContext).toBe(LineContext.InTagValue);
+            expect(result.allowedTypes).toContain('tag_value');
         });
     });
 
@@ -184,6 +196,109 @@ describe('StrictPositionAnalyzer', () => {
             expect(result.position.character).toBe(10);
             expect(result.position.beforeCursor).toBe('2024-01-15');
             expect(result.position.afterCursor).toBe(' Test');
+        });
+    });
+
+    describe('Comment and tag completion contexts', () => {
+        it('should detect comment context after semicolon', () => {
+            const document = new MockTextDocument(['  Assets:Cash  100.00 USD ; this is a comment']);
+            const position = new vscode.Position(0, 35);
+            
+            const result = analyzer.analyzePosition(document, position);
+            
+            expect(result.lineContext).toBe(LineContext.InComment);
+            expect(result.allowedTypes).toContain('tag');
+        });
+
+        it('should detect comment context after hash', () => {
+            const document = new MockTextDocument(['  Assets:Cash  100.00 USD # this is a comment']);
+            const position = new vscode.Position(0, 35);
+            
+            const result = analyzer.analyzePosition(document, position);
+            
+            expect(result.lineContext).toBe(LineContext.InComment);
+            expect(result.allowedTypes).toContain('tag');
+        });
+
+        it('should detect tag value context after tag name and colon', () => {
+            const document = new MockTextDocument(['  Assets:Cash  100.00 USD ; category:']);
+            const position = new vscode.Position(0, 37);
+            
+            const result = analyzer.analyzePosition(document, position);
+            
+            expect(result.lineContext).toBe(LineContext.InTagValue);
+            expect(result.allowedTypes).toContain('tag_value');
+        });
+
+        it('should detect tag value context with partial value', () => {
+            const document = new MockTextDocument(['  Assets:Cash  100.00 USD ; category:groc']);
+            const position = new vscode.Position(0, 41);
+            
+            const result = analyzer.analyzePosition(document, position);
+            
+            expect(result.lineContext).toBe(LineContext.InTagValue);
+            expect(result.allowedTypes).toContain('tag_value');
+        });
+
+        it('should support Unicode tag names (Cyrillic)', () => {
+            const document = new MockTextDocument(['  Assets:Cash  100.00 USD ; категория:подарки']);
+            const position = new vscode.Position(0, 44);
+            
+            const result = analyzer.analyzePosition(document, position);
+            
+            expect(result.lineContext).toBe(LineContext.InTagValue);
+            expect(result.allowedTypes).toContain('tag_value');
+        });
+
+        it('should support tag values with spaces', () => {
+            const document = new MockTextDocument(['  Assets:Cash  100.00 USD ; project:web development']);
+            const position = new vscode.Position(0, 50);
+            
+            const result = analyzer.analyzePosition(document, position);
+            
+            expect(result.lineContext).toBe(LineContext.InTagValue);
+            expect(result.allowedTypes).toContain('tag_value');
+        });
+
+        it('should support tag names with hyphens and underscores', () => {
+            const document = new MockTextDocument(['  Assets:Cash  100.00 USD ; tag_name:value']);
+            const position = new vscode.Position(0, 42);
+            
+            const result = analyzer.analyzePosition(document, position);
+            
+            expect(result.lineContext).toBe(LineContext.InTagValue);
+            expect(result.allowedTypes).toContain('tag_value');
+        });
+
+        it('should detect comment context without tag value when no colon', () => {
+            const document = new MockTextDocument(['  Assets:Cash  100.00 USD ; regular comment']);
+            const position = new vscode.Position(0, 40);
+            
+            const result = analyzer.analyzePosition(document, position);
+            
+            expect(result.lineContext).toBe(LineContext.InComment);
+            expect(result.allowedTypes).toContain('tag');
+            expect(result.allowedTypes).not.toContain('tag_value');
+        });
+
+        it('should handle multiple tags with comma separation', () => {
+            const document = new MockTextDocument(['  Assets:Cash  100.00 USD ; category:food, type:grocery']);
+            const position = new vscode.Position(0, 55); // Position after "type:grocer"
+            
+            const result = analyzer.analyzePosition(document, position);
+            
+            expect(result.lineContext).toBe(LineContext.InTagValue);
+            expect(result.allowedTypes).toContain('tag_value');
+        });
+
+        it('should handle tag value context at semicolon position', () => {
+            const document = new MockTextDocument(['  Assets:Cash  100.00 USD ; category:food; type:fuel']);
+            const position = new vscode.Position(0, 52);
+            
+            const result = analyzer.analyzePosition(document, position);
+            
+            expect(result.lineContext).toBe(LineContext.InTagValue);
+            expect(result.allowedTypes).toContain('tag_value');
         });
     });
 
