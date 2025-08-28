@@ -321,7 +321,7 @@ export class HLedgerParser {
         // Split only by ; to separate payee from comment, but preserve pipe characters
         const parts = cleaned.split(/[;]/);
         const payee = parts[0] ? parts[0].trim() : '';
-        
+
         // Normalize Unicode characters for consistent matching (NFC normalization)
         // This ensures characters like Cyrillic are handled consistently
         return payee ? payee.normalize('NFC') : '';
@@ -344,26 +344,26 @@ export class HLedgerParser {
         // Pattern matches: tagname:value where value can contain spaces until next comma or end
         const tagPattern = /([\p{L}\p{N}_]+):\s*([^,;#]*?)(?=\s*(?:,|$))/gu;
         const tagMatches = commentText.matchAll(tagPattern);
-        
+
         for (const match of tagMatches) {
-            const tagName = match[1].trim();
-            const tagValue = match[2].trim();
-            
+            const tagName = match[1]?.trim();
+            const tagValue = match[2]?.trim();
+
             if (tagName && tagValue) {
                 // Store regular tag:value pair (treat "tag" like any other tag name)
                 const tag = createTagName(tagName);
                 const value = createTagValue(tagValue);
-                
+
                 // Add tag to tags set
                 data.tags.add(tag);
                 this.incrementUsage(data.tagUsage, tag);
-                
+
                 // Add value to tag's value set
                 if (!data.tagValues.has(tag)) {
                     data.tagValues.set(tag, new Set<TagValue>());
                 }
                 data.tagValues.get(tag)!.add(value);
-                
+
                 // Track usage of this specific tag:value pair
                 const pairKey = `${tagName}:${tagValue}`;
                 this.incrementUsage(data.tagValueUsage, pairKey as any);
@@ -404,7 +404,7 @@ export class HLedgerParser {
 
         // Merge maps
         source.aliases.forEach((value, key) => target.aliases.set(key, value));
-        
+
         // Merge tag values
         source.tagValues.forEach((values, tag) => {
             if (!target.tagValues.has(tag)) {
@@ -433,7 +433,7 @@ export class HLedgerParser {
             const existing = target.commodityUsage.get(key) || createUsageCount(0);
             target.commodityUsage.set(key, createUsageCount(existing + count));
         });
-        
+
         // Merge tag value usage
         source.tagValueUsage.forEach((count, key) => {
             const existing = target.tagValueUsage.get(key as any) || createUsageCount(0);
