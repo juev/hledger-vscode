@@ -70,102 +70,103 @@ export class StrictCompletionProvider implements vscode.CompletionItemProvider {
             return [];
         }
 
-        return this.provideSingleTypeCompletion(strictContext, primaryType);
+        return this.provideSingleTypeCompletion(strictContext, primaryType, document);
     }
 
     private provideSingleTypeCompletion(
         context: StrictCompletionContext,
-        completionType: CompletionType
+        completionType: CompletionType,
+        vscodeDocument: vscode.TextDocument
     ): vscode.CompletionItem[] {
 
         switch (completionType) {
             case 'date':
-                return this.provideDateCompletion(context);
+                return this.provideDateCompletion(context, vscodeDocument);
 
             case 'account':
-                return this.provideAccountCompletion(context);
+                return this.provideAccountCompletion(context, vscodeDocument);
 
             case 'commodity':
-                return this.provideCommodityCompletion(context);
+                return this.provideCommodityCompletion(context, vscodeDocument);
 
             case 'payee':
-                return this.providePayeeCompletion(context);
+                return this.providePayeeCompletion(context, vscodeDocument);
 
             case 'tag':
-                return this.provideTagCompletion(context);
+                return this.provideTagCompletion(context, vscodeDocument);
 
             case 'tag_value':
-                return this.provideTagValueCompletion(context);
+                return this.provideTagValueCompletion(context, vscodeDocument);
 
             default:
                 return [];
         }
     }
 
-    private provideDateCompletion(context: StrictCompletionContext): vscode.CompletionItem[] {
+    private provideDateCompletion(context: StrictCompletionContext, vscodeDocument: vscode.TextDocument): vscode.CompletionItem[] {
         // Additional strict validation
         if (!this.validator.isDatePosition(context.position.lineText, context.position.character)) {
             return [];
         }
 
         // Convert StrictCompletionContext to legacy CompletionContext for existing DateCompleter
-        const legacyContext = this.convertToLegacyContext(context, 'date');
+        const legacyContext = this.convertToLegacyContext(context, 'date', vscodeDocument);
         return this.dateCompleter.complete(legacyContext);
     }
 
-    private provideAccountCompletion(context: StrictCompletionContext): vscode.CompletionItem[] {
+    private provideAccountCompletion(context: StrictCompletionContext, vscodeDocument: vscode.TextDocument): vscode.CompletionItem[] {
         // Additional strict validation
         if (!this.validator.isAccountPosition(context.position.lineText, context.position.character)) {
             return [];
         }
 
         // Convert StrictCompletionContext to legacy CompletionContext for existing AccountCompleter
-        const legacyContext = this.convertToLegacyContext(context, 'account');
+        const legacyContext = this.convertToLegacyContext(context, 'account', vscodeDocument);
         return this.accountCompleter.complete(legacyContext);
     }
 
-    private provideCommodityCompletion(context: StrictCompletionContext): vscode.CompletionItem[] {
+    private provideCommodityCompletion(context: StrictCompletionContext, vscodeDocument: vscode.TextDocument): vscode.CompletionItem[] {
         // Additional strict validation
         if (!this.validator.isCommodityPosition(context.position.lineText, context.position.character)) {
             return [];
         }
 
         // Convert StrictCompletionContext to legacy CompletionContext for existing CommodityCompleter
-        const legacyContext = this.convertToLegacyContext(context, 'commodity');
+        const legacyContext = this.convertToLegacyContext(context, 'commodity', vscodeDocument);
         return this.commodityCompleter.complete(legacyContext);
     }
 
-    private providePayeeCompletion(context: StrictCompletionContext): vscode.CompletionItem[] {
+    private providePayeeCompletion(context: StrictCompletionContext, vscodeDocument: vscode.TextDocument): vscode.CompletionItem[] {
         // Additional strict validation
         if (!this.validator.isPayeePosition(context.position.lineText, context.position.character)) {
             return [];
         }
 
         // Convert StrictCompletionContext to legacy CompletionContext for existing PayeeCompleter
-        const legacyContext = this.convertToLegacyContext(context, 'payee');
+        const legacyContext = this.convertToLegacyContext(context, 'payee', vscodeDocument);
         return this.payeeCompleter.complete(legacyContext);
     }
 
-    private provideTagCompletion(context: StrictCompletionContext): vscode.CompletionItem[] {
+    private provideTagCompletion(context: StrictCompletionContext, vscodeDocument: vscode.TextDocument): vscode.CompletionItem[] {
         // Additional strict validation for tag position
         if (!this.validator.isTagPosition(context.position.lineText, context.position.character)) {
             return [];
         }
 
         // Convert StrictCompletionContext to legacy CompletionContext for existing TagCompleter
-        const legacyContext = this.convertToLegacyContext(context, 'tag');
+        const legacyContext = this.convertToLegacyContext(context, 'tag', vscodeDocument);
         const items = this.tagCompleter.complete(legacyContext);
         return items;
     }
 
-    private provideTagValueCompletion(context: StrictCompletionContext): vscode.CompletionItem[] {
+    private provideTagValueCompletion(context: StrictCompletionContext, vscodeDocument: vscode.TextDocument): vscode.CompletionItem[] {
         // Additional strict validation for tag value position
         if (!this.validator.isTagValuePosition(context.position.lineText, context.position.character)) {
             return [];
         }
 
         // Convert StrictCompletionContext to legacy CompletionContext for existing TagCompleter
-        const legacyContext = this.convertToLegacyContext(context, 'tag_value');
+        const legacyContext = this.convertToLegacyContext(context, 'tag_value', vscodeDocument);
         const items = this.tagCompleter.complete(legacyContext);
         return items;
     }
@@ -174,9 +175,19 @@ export class StrictCompletionProvider implements vscode.CompletionItemProvider {
      * Convert new StrictCompletionContext to legacy CompletionContext format
      * This enables reuse of existing completers while maintaining strict rules
      */
-    private convertToLegacyContext(context: StrictCompletionContext, type: CompletionType): CompletionContext {
+    private convertToLegacyContext(context: StrictCompletionContext, type: CompletionType, vscodeDocument?: vscode.TextDocument): CompletionContext {
         // Extract query from position
         const query = this.extractQueryFromPosition(context);
+
+        // Create DocumentReference if document is provided
+        let documentRef: any = undefined;
+        if (vscodeDocument) {
+            documentRef = {
+                uri: vscodeDocument.uri.fsPath,
+                languageId: vscodeDocument.languageId,
+                version: vscodeDocument.version
+            };
+        }
 
         return {
             type: type,
@@ -184,7 +195,8 @@ export class StrictCompletionProvider implements vscode.CompletionItemProvider {
             position: {
                 line: 0 as any, // Legacy compatibility - not actually used by completers
                 character: context.position.character as any
-            }
+            },
+            document: documentRef // Pass document context for TagCompleter config refresh
         };
     }
 
@@ -195,11 +207,13 @@ export class StrictCompletionProvider implements vscode.CompletionItemProvider {
     private extractQueryFromPosition(context: StrictCompletionContext): string {
         const { beforeCursor } = context.position;
 
-        // For tag value completion, extract the full tag:value pattern
+        // For tag value completion, extract the full tag:value pattern needed by TagCompleter
         if (context.lineContext === 'in_tag_value') {
-            // Extract from after comment marker to cursor
+            // Extract from after comment marker to cursor - TagCompleter expects full tag:value format
             const commentMatch = beforeCursor.match(/[;#]\s*(.*)$/);
             if (commentMatch && commentMatch[1]) {
+                // TagCompleter needs the full comment content to extract tag name and value
+                // It uses pattern: /([\p{L}\p{N}_-]+):\s*[\p{L}\p{N}_-]*$/u to extract tag name
                 return commentMatch[1];
             }
         }
