@@ -192,15 +192,6 @@ export class StrictPositionAnalyzer {
         const tagValuePattern = /^\s*([\p{L}\p{N}_\s-]+):\s*([^,;]*)$/u;
         const result = tagValuePattern.test(lastSegment);
         
-        // DEBUG: Add logging to understand why tag context detection fails
-        console.log('isInTagValueContext DEBUG:', {
-            afterComment,
-            segments,
-            lastSegment,
-            tagValuePattern: tagValuePattern.toString(),
-            patternMatch: result,
-            cursorPos
-        });
         
         return result;
     }

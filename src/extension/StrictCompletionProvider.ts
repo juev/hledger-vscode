@@ -44,17 +44,6 @@ export class StrictCompletionProvider implements vscode.CompletionItemProvider {
         // 2. Analyze position with strict rules
         const strictContext = this.positionAnalyzer.analyzePosition(document, position);
 
-        // DEBUG: Log context for tag completion debugging
-        const lineText = document.lineAt(position.line).text;
-        if (lineText.includes(';') || lineText.includes('#')) {
-            console.log('StrictCompletionProvider DEBUG:', {
-                lineText,
-                position: position.character,
-                context: strictContext.lineContext,
-                allowedTypes: strictContext.allowedTypes,
-                suppressAll: strictContext.suppressAll
-            });
-        }
 
         // 3. Apply suppression rules
         if (this.suppressor.shouldSuppressAll(strictContext)) {
