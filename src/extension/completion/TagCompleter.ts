@@ -53,7 +53,7 @@ export class TagCompleter {
      */
     private extractTagNameFromContext(context: CompletionContext): TagName | null {
         const match = TagCompleter.TAG_NAME_PATTERN.exec(context.query);
-        if (!match) {
+        if (!match || !match[1]) {
             return null;
         }
         
