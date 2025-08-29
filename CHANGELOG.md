@@ -1,5 +1,74 @@
 # Change Log
 
+## [0.3.0] - 2025-08-29
+
+### Added
+- feat: enhance international number format support in CLAUDE.md
+- feat: enhance HLedgerParser and StrictCompletionProvider with number formatting support
+- feat: enhance StrictCompletionProvider and StrictPositionAnalyzer for improved tag context detection
+- feat: implement tag value completion and enhance related components
+- feat: add tag completion support in StrictCompletionProvider and related components
+- feat: implement dual-phase tag completion system with enhanced type safety
+- feat: enhance HLedgerParser with tag value support and improved extraction logic
+- feat: enhance StrictPositionAnalyzer with comment and tag value context detection
+- feat: extend hledger types and completion context with tag values
+- feat: enhance hledger syntax highlighting with new directives and comment patterns
+- docs: update README.md to streamline feature descriptions and enhance clarity
+- feat: introduce MockTextDocument for testing and enhance vscode mock interfaces
+- feat: enhance HLedgerParser and SimpleFuzzyMatcher for Unicode support
+- feat: enhance completion logic with hierarchical query extraction
+- feat: enhance strict completion system with detailed position-based logic
+- feat: implement strict completion provider and enhance completion logic
+- feat: enhance date and completion logic in HLedgerConfig
+- feat: enhance Jest configuration and add test-specific TypeScript settings
+- feat: add TODO
+- feat: achieve 100% test pass rate with parser fixes
+- feat: implement branded types system for domain safety
+
+### Changed
+- refactor: remove HLedgerCompletionProvider and streamline completion logic
+- refactor: improve error handling and safe destructuring in NumberFormatService
+- test: update expectations for commodity symbols in HLedgerConfig tests
+- refactor: clean up whitespace and improve code consistency in HLedgerParser
+- refactor: remove debug logging from StrictCompletionProvider and StrictPositionAnalyzer
+- refactor: update line context detection in StrictPositionAnalyzer
+- refactor: clean up whitespace and improve code readability in HLedgerParser and StrictCompletionProvider
+- refactor: streamline hledger syntax highlighting and remove deprecated patterns
+- docs: update CLAUDE.md with critical completion system requirements
+- refactor: clean up whitespace and improve code formatting in HLedgerParser
+- refactor: update main.ts architecture and improve path handling
+- refactor: improve data merging and usage counting logic
+- refactor: enhance type safety and performance optimizations
+- chore: update project structure and clean up files
+- refactor: modularize completion logic and enhance type safety
+- docs: update architecture documentation with all v0.3.0 improvements
+- refactor: complete architecture improvements - all tasks implemented
+- refactor: split main.ts into service-based architecture
+- refactor: replace global state with proper singleton pattern
+- refactor: replace all 'any' types with proper TypeScript interfaces
+
+### Fixed
+- fix: enhance tag extraction logic in HLedgerParser
+- fix: update regex patterns in NumberFormatService for Unicode support
+- fix: resolve critical tag completion issue in comment contexts
+- fix: resolve tag completion regression showing inappropriate suggestions
+- fix: update regex patterns for hledger syntax highlighting
+- fix: improve tag name extraction logic in TagCompleter
+- fix: update tests for CompletionSuppressor and StrictPositionAnalyzer
+- fix: improve strict completion logic and validation checks
+- fix: improve comment extraction logic in HLedgerParser
+- fix: improve conditional checks for parsing logic
+- fix(syntax): correct comment syntax highlighting
+- fix: resolve all TypeScript errors and achieve 96.9% test pass rate
+- fix: resolve typescript compilation errors and test issues
+
+### Removed
+- chore: remove deprecated files and benchmark data
+
+### Other
+- chore(deps-dev): bump tmp from 0.2.3 to 0.2.4
+
+
 ## [0.2.1] - 2025-08-25
 
 ### Fixed
