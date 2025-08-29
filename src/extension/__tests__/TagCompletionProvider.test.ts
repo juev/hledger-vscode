@@ -25,7 +25,7 @@ describe('Tag Completion (Legacy Test)', () => {
         expect(completions.length).toBe(0);
     });
 
-    it('should add triggerSuggest command to tag name completion items when tag values exist', () => {
+    it('should show available tag values in documentation (no auto-trigger command after fix)', () => {
         // Mock config to return tag names and tag values
         const mockTagUsage = new Map([
             [createTagName('category'), createUsageCount(3)], 
@@ -60,9 +60,16 @@ describe('Tag Completion (Legacy Test)', () => {
         const categoryItem = completions.find(item => item.label === 'category');
         expect(categoryItem).toBeDefined();
         expect(categoryItem?.insertText).toBe('category:');
-        expect(categoryItem?.command).toBeDefined();
-        expect(categoryItem?.command?.command).toBe('editor.action.triggerSuggest');
-        expect(categoryItem?.command?.title).toBe('Trigger tag value suggestions');
+        
+        // FIXED: Should NOT have command (prevents double completion)
+        expect(categoryItem?.command).toBeUndefined();
+        
+        // Should show available values in documentation instead
+        expect(categoryItem?.documentation).toBeDefined();
+        const docText = (categoryItem?.documentation as any)?.value || '';
+        expect(docText).toContain('Available values:');
+        expect(docText).toContain('groceries');
+        expect(docText).toContain('travel');
     });
 
     it('should not add triggerSuggest command when no tag values exist', () => {

@@ -30,16 +30,14 @@ export class TagCompleter {
     complete(context: CompletionContext): vscode.CompletionItem[] {
         if (context.type === 'tag') {
             // Complete tag names
-            const items = this.completeTagNames(context);
-            return items;
+            return this.completeTagNames(context);
         } else if (context.type === 'tag_value') {
             // Extract tag name if cursor is positioned after "tagname:"
             const tagName = this.extractTagNameFromContext(context);
             
             if (tagName) {
                 // Complete tag values for the extracted tag name
-                const items = this.completeTagValues(context, tagName);
-                return items;
+                return this.completeTagValues(context, tagName);
             }
         }
         
@@ -177,14 +175,15 @@ export class TagCompleter {
             );
         }
 
-        // Check if this tag has values - if so, trigger value completion after insertion
+        // Check if this tag has values - show in documentation
+        // Note: VS Code will automatically trigger completion after colon due to ":" trigger character
         const tagValues = this.config.getTagValuesByUsageFor(tagName);
         if (tagValues.length > 0) {
-            // Add command to trigger suggestions after the colon is inserted
-            item.command = {
-                command: 'editor.action.triggerSuggest',
-                title: 'Trigger tag value suggestions'
-            };
+            const existingDoc = item.documentation as vscode.MarkdownString || new vscode.MarkdownString('');
+            const docText = existingDoc.value || `Tag \`${tagName}\` used ${usageCount} times`;
+            item.documentation = new vscode.MarkdownString(
+                `${docText}\n\n**Available values:** ${tagValues.slice(0, 5).join(', ')}${tagValues.length > 5 ? '...' : ''}`
+            );
         }
 
         return item;

@@ -14,7 +14,7 @@ import { NumberFormatService, createNumberFormatService } from './services/Numbe
 export class StrictCompletionProvider implements vscode.CompletionItemProvider {
     private numberFormatService: NumberFormatService;
     private positionAnalyzer: StrictPositionAnalyzer;
-    private suppressor = new CompletionSuppressor();
+    private suppressor: CompletionSuppressor;
     private validator = new StrictPositionValidator();
 
     // Completers (adapted for strict mode)
@@ -30,6 +30,9 @@ export class StrictCompletionProvider implements vscode.CompletionItemProvider {
         
         // Initialize position analyzer with required dependencies
         this.positionAnalyzer = new StrictPositionAnalyzer(this.numberFormatService, config);
+        
+        // Initialize suppressor with NumberFormatService for international number format support
+        this.suppressor = new CompletionSuppressor(this.numberFormatService);
         
         // Initialize completers with config
         this.dateCompleter = new DateCompleter(config);
@@ -52,7 +55,6 @@ export class StrictCompletionProvider implements vscode.CompletionItemProvider {
         // 2. Analyze position with strict rules
         const strictContext = this.positionAnalyzer.analyzePosition(document, position);
 
-
         // 3. Apply suppression rules
         if (this.suppressor.shouldSuppressAll(strictContext)) {
             return [];
@@ -70,7 +72,8 @@ export class StrictCompletionProvider implements vscode.CompletionItemProvider {
             return [];
         }
 
-        return this.provideSingleTypeCompletion(strictContext, primaryType, document);
+        const result = this.provideSingleTypeCompletion(strictContext, primaryType, document);
+        return result;
     }
 
     private provideSingleTypeCompletion(
