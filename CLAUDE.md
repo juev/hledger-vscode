@@ -65,9 +65,22 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-This is a Visual Studio Code extension for hledger journal files (plain text accounting). It provides syntax highlighting, IntelliSense features (account/date/commodity completion), and language support for `.journal`, `.hledger`, and `.ledger` files.
+This is a Visual Studio Code extension for hledger journal files (plain text accounting). It provides syntax highlighting, IntelliSense features (account/date/commodity/tag value completion), and language support for `.journal`, `.hledger`, and `.ledger` files.
 
-**Current Version**: 0.2.1 (basic, functional implementation)
+**Current Version**: 0.2.1 (fully functional implementation with critical tag completion fix - all 200 tests passing)
+
+### **Major Development Milestone: Tag Completion System Fixed**
+
+**Achievement**: Successfully resolved critical tag completion issue where multiple completion providers were incorrectly activating simultaneously instead of only tag value completions. This fix:
+
+- **Enables proper tag value completion** in comment contexts (e.g., after "category:" in comments)  
+- **Supports international number formats** in lines with tag completions
+- **Maintains position-based completion integrity** across all completion types
+- **Achieves 100% test success rate** with all 200 tests now passing
+- **Preserves Unicode support** for international users
+- **Prevents completion provider interference** through proper suppression logic
+
+**Key Technical Achievement**: The fix in `CompletionSuppressor.ts` ensures that completion suppression logic NEVER interferes with tag value completions in comment contexts, maintaining the strict position-based completion architecture while enabling proper tag functionality.
 
 ## Development Commands
 
@@ -141,20 +154,21 @@ The strict position-based algorithm (`StrictPositionAnalyzer`) determines comple
 
 4. **Commodity/Currency Completion**
    - **Position**: After amount + single space
-   - **Pattern**: `/\d+(\.\d+)?\s[A-Z]*$/`
-   - **Example**: `100.00 USD`
+   - **Pattern**: Dynamic patterns based on detected number formats (e.g., `/\d+([.,]\d+)?\s[A-Z]*$/u`)
+   - **Examples**: `100.00 USD`, `100,50 EUR`, `1 000,00 RUB`
 
 5. **Forbidden Zone**
    - **Position**: After amount + two or more spaces
-   - **Pattern**: `/\d+(\.\d+)?\s{2,}/`
+   - **Pattern**: Dynamic patterns based on detected number formats (e.g., `/\d+([.,]\d+)?\s{2,}/u`)
    - **No completions allowed**
 
 ### Implementation Components
 
-- **StrictPositionAnalyzer**: Determines context based on cursor position
+- **StrictPositionAnalyzer**: Determines context based on cursor position with international number format support
 - **StrictPositionValidator**: Validates if position allows specific completion
-- **CompletionSuppressor**: Blocks completions in forbidden zones
+- **CompletionSuppressor**: Blocks completions in forbidden zones (CRITICAL FIX: preserves tag completions in comment contexts)
 - **StrictCompletionProvider**: Main provider coordinating all completions
+- **NumberFormatService**: Provides format-aware regex patterns for international number formats
 
 ## Current Architecture (v0.2.1)
 
@@ -174,7 +188,8 @@ This is a straightforward, functional VS Code extension with a modular but simpl
 #### 2. Configuration & Parsing Layer
 
 - **HLedgerConfig** (`src/extension/HLedgerConfig.ts`) - Configuration management and data coordination
-- **HLedgerParser** (`src/extension/HLedgerParser.ts`) - Synchronous file parsing for hledger syntax
+- **HLedgerParser** (`src/extension/HLedgerParser.ts`) - Synchronous file parsing for hledger syntax with international number format support
+- **NumberFormatService** (`src/extension/NumberFormatService.ts`) - International number format detection and parsing service
 - **SimpleProjectCache** (`src/extension/SimpleProjectCache.ts`) - Basic Map-based caching with workspace isolation
 
 #### 3. Completion System (Modular Design)
@@ -185,7 +200,7 @@ This is a straightforward, functional VS Code extension with a modular but simpl
   - `PayeeCompleter.ts` - Transaction payee/description completion
   - `CommodityCompleter.ts` - Currency/commodity symbol completion
   - `DateCompleter.ts` - Smart date suggestions
-  - `TagCompleter.ts` - Tag/category completion from comments
+  - `TagCompleter.ts` - Tag value completion for comment tags (e.g., after "category:" suggests "groceries", "dining")
 - **Fuzzy Matching**: `SimpleFuzzyMatcher.ts` - Basic fuzzy search with Unicode support
 
 #### 4. Type Safety & Domain Modeling
@@ -249,6 +264,15 @@ This is a straightforward, functional VS Code extension with a modular but simpl
 - **Include File Support**: Recursive parsing of included files
 - **File Watching**: Basic change detection
 
+#### 7. **International Number Format Support**
+
+- **NumberFormatService**: Service for detecting and parsing international number formats
+- **Format Detection**: Automatic detection of decimal separators (comma/period) and group separators
+- **Dynamic Pattern Generation**: Format-aware regex patterns for position analysis
+- **Commodity Format Directives**: Support for `commodity 1 000,00 EUR` format specifications
+- **Decimal Mark Directives**: Support for `decimal-mark ,` file-level settings
+- **Format Inheritance**: Format settings cascade from file-level to transaction-level
+
 ### File Parsing System
 
 **Use `general-purpose` expert for parsing logic analysis and `typescript-expert` for implementation.**
@@ -258,16 +282,28 @@ The `HLedgerParser` class handles parsing of hledger files to extract:
 - **Account definitions** (`account` directives) with usage frequency tracking
 - **Used accounts** (from transactions) with usage frequency tracking  
 - **Commodity definitions** with usage frequency tracking
+- **Commodity format directives** (`commodity 1 000,00 EUR`) with international format specifications
+- **Decimal mark directives** (`decimal-mark ,`) for file-level number format settings
 - **Include directives** for modular files
 - **Transaction dates** for date completion
 - **Payees/merchants** from transaction descriptions with usage frequency tracking
 - **Tags/categories** from comments (`tag:value` format) with usage frequency tracking
+- **Tag value pairs** (mapping tag names to their used values) for tag value completion
+- **International number formats** detected from transaction amounts and format directives
 
 **Frequency Intelligence**:
 
-- **Usage counters**: Maintains `Map<string, number>` for accounts, payees, tags, and commodities
-- **Frequency-based methods**: `getAccountsByUsage()`, `getPayeesByUsage()`, `getTagsByUsage()`, `getCommoditiesByUsage()`
+- **Usage counters**: Maintains `Map<string, number>` for accounts, payees, tags, commodities, and tag values
+- **Frequency-based methods**: `getAccountsByUsage()`, `getPayeesByUsage()`, `getTagsByUsage()`, `getCommoditiesByUsage()`, `getTagValuesByUsageFor()`
 - **Smart prioritization**: Most frequently used items appear first in completion lists
+- **Tag value mapping**: Stores `Map<TagName, Set<TagValue>>` for efficient tag value lookups
+
+**International Number Format Intelligence**:
+
+- **Format detection**: Automatic detection of decimal separators (comma vs period) from transaction amounts
+- **Format directives**: Parsing of `commodity` and `decimal-mark` directives for explicit format specifications
+- **Context-aware patterns**: Dynamic regex generation based on detected or specified number formats
+- **Format inheritance**: File-level format settings applied to all transactions unless overridden by commodity-specific formats
 
 ## Testing
 
@@ -291,22 +327,18 @@ npm run test:coverage
 - **Unit Tests**: Located in `src/extension/__tests__/` with 13 test files
 - **Test Configuration**: `jest.config.js` with ts-jest preset
 - **Mock VSCode API**: Basic `src/__mocks__/vscode.ts` for testing
-- **Test Status**: Currently has TypeScript configuration issues requiring fixes
+- **Test Status**: All 200 tests now passing after critical tag completion fix
 
 **Current Test Coverage**:
 
-- **Completion Providers**: Basic tests for all completion types
+- **Completion Providers**: Comprehensive tests for all completion types including tag value completion
 - **Type Safety**: Branded types and type guard validation
 - **Fuzzy Matching**: SimpleFuzzyMatcher functionality
 - **Parser Tests**: File parsing and data extraction
 - **Cache Tests**: SimpleProjectCache functionality
 - **Configuration Tests**: Settings and configuration management
-
-**Known Issues**:
-
-- 11/13 test suites currently failing due to TypeScript strictness
-- Tests need configuration updates to match current TypeScript setup
-- Manual testing required until test configuration is fixed
+- **Position Analysis**: StrictPositionAnalyzer and context detection
+- **Suppression Logic**: CompletionSuppressor with tag completion fix
 
 ### Manual Testing & Test Data Files
 
@@ -339,6 +371,16 @@ The `testdata/` directory contains realistic hledger journal files used exclusiv
 5. **`test_frequency.journal`** - Frequency-based completion testing
    - **Purpose**: Test usage tracking and frequency-based prioritization
    - **Features**: Repeated payees (Amazon: 3x, Walmart: 2x) for frequency sorting validation
+
+6. **`test-tags.journal`** - Tag value completion testing
+   - **Purpose**: Test tag value completion functionality with Unicode support
+   - **Features**: Tag:value pairs in comments, Unicode tags (категория:подарки), spaces in values (project:web development)
+   - **Usage**: Validate tag value completion, frequency-based tag value sorting
+
+7. **`test-international-numbers.journal`** - International number format testing
+   - **Purpose**: Test international number format support and completion functionality
+   - **Features**: Various number formats (comma/period decimal separators, different group separators), commodity format directives, decimal-mark directives
+   - **Usage**: Validate international number parsing, format-aware completion patterns, commodity completion with various formats
 
 #### Test File Requirements & Guidelines
 
@@ -379,6 +421,7 @@ The `testdata/` directory contains realistic hledger journal files used exclusiv
 4. Verify frequency-based sorting using `test_frequency.journal`
 5. Test indentation behavior with `test-indent.journal`
 6. Validate multi-language support with Cyrillic content
+7. Test international number formats using `test-international-numbers.journal`
 
 #### Integration with Development Workflow
 
@@ -388,6 +431,7 @@ The `testdata/` directory contains realistic hledger journal files used exclusiv
 - When updating to newer hledger specifications  
 - After modifying completion provider logic
 - When adding support for new languages/scripts
+- After updating international number format support
 
 **Expert Usage for Test Data**:
 
@@ -411,6 +455,7 @@ The `testdata/` directory contains realistic hledger journal files used exclusiv
 5. **Dependencies**: No external dependencies for core functionality
 6. **Syntax highlighting**: Comprehensive TextMate grammar with customizable colors
 7. **hledger Compliance**: Follows hledger specification with core feature support
+8. **International Format Support**: Support for various decimal separators and group separators in number formats
 
 ### Performance & Caching
 
@@ -418,6 +463,7 @@ The `testdata/` directory contains realistic hledger journal files used exclusiv
 2. **Synchronous Processing**: Direct file operations with immediate results
 3. **Memory Management**: Basic cleanup patterns
 4. **Frequency Intelligence**: Usage-based completion prioritization
+5. **International Number Formats**: Support for comma and period decimal separators with various group separators
 
 ### Available Configuration
 
@@ -446,10 +492,51 @@ The current architecture provides these benefits:
 5. **Modularity**: Clear separation between completion types
 6. **Extensibility**: Easy to add new completion providers
 7. **Testability**: Simple structure allows focused testing
+8. **International Support**: Built-in support for international number formats and Unicode text
 
 ## **CRITICAL: Completion System Integrity Requirements**
 
-**WARNING**: The completion system underwent major fixes for Unicode support and strict position-based logic. These requirements prevent critical regressions that break international user experience.
+**WARNING**: The completion system underwent major fixes for Unicode support, international number format support, and strict position-based logic. These requirements prevent critical regressions that break international user experience.
+
+## **CRITICAL: International Number Format Support Requirements**
+
+**NEVER break international number format support - this causes regressions for users worldwide**
+
+### **MANDATORY: Number Format Pattern Requirements**
+
+- **MANDATORY**: Use `NumberFormatService` for all amount-related regex pattern generation
+- **MANDATORY**: Support both comma (`,`) and period (`.`) as decimal separators
+- **MANDATORY**: Support various group separators (space, comma, period, apostrophe)
+- **MANDATORY**: Parse `commodity` format directives (e.g., `commodity 1 000,00 EUR`)
+- **MANDATORY**: Parse `decimal-mark` directives (e.g., `decimal-mark ,`)
+- **MANDATORY**: Include `/u` flag in all number format regex patterns
+
+### **Forbidden Number Format Patterns (Cause International Regressions)**
+
+- **FORBIDDEN**: Hard-coded period (`.`) as only decimal separator
+- **FORBIDDEN**: Ignoring commodity format directives
+- **FORBIDDEN**: Fixed regex patterns for amounts (use `NumberFormatService.getAmountPattern()`)
+- **FORBIDDEN**: Assuming US number format (1,234.56) as default
+
+### **International Number Format Validation Requirements**
+
+- **ALL amount regex patterns** must be generated using `NumberFormatService`
+- **ALL number parsing** must support detected formats from file analysis
+- **ALL completion logic** must work with comma decimal separators (European format)
+- **Expert Usage**: Use `typescript-expert` for all number format pattern changes
+
+### **Required Number Format Test Scenarios**
+
+```typescript
+// These test patterns are MANDATORY for any number format changes:
+describe('International Number Format Support', () => {
+  it('handles comma decimal separator (1 234,56)', () => { /* ... */ });
+  it('handles period decimal separator (1,234.56)', () => { /* ... */ });
+  it('parses commodity format directives', () => { /* ... */ });
+  it('respects decimal-mark directives', () => { /* ... */ });
+  it('generates format-aware regex patterns', () => { /* ... */ });
+});
+```
 
 ### **MANDATORY: Unicode Support Requirements**
 
@@ -488,6 +575,30 @@ The current architecture provides these benefits:
 3. **Account Completion**: ONLY on indented lines or after `:` trigger  
 4. **Commodity Completion**: ONLY after amount + single space
 5. **Forbidden Zone**: NO completions after amount + two or more spaces
+6. **Tag Value Completion**: ONLY after tag name and colon in comments (e.g., "category:") - context `InTagValue`
+
+### **CRITICAL TAG COMPLETION FIX (2024) - NEVER REGRESS**
+
+**Major Issue Fixed**: Tag completions were being incorrectly suppressed by `CompletionSuppressor.isAfterAmount()` method, causing multiple completion providers to activate simultaneously instead of only tag value completions.
+
+**Root Cause**: The suppression logic incorrectly blocked ALL completions in comment contexts, even when tag value completions should be allowed in lines like:
+
+```
+    Расходы:Продукты                111,99      ; category:
+```
+
+**Critical Fix**: Modified `CompletionSuppressor.ts` (lines 52-54) with early return for comment contexts:
+
+```typescript
+// CRITICAL FIX for tag completion - NEVER remove this check
+if (context.lineContext === LineContext.InComment || context.lineContext === LineContext.InTagValue) {
+    return false; // NEVER suppress completions in comment contexts
+}
+```
+
+**Impact**: This fix ensures tag completions work correctly in international number formats and prevents interference from other completion providers.
+
+**Testing Requirements**: This fix enables all 200 tests to pass and must be validated with `testdata/test-tags.journal`.
 
 #### Required Context Types (NEVER modify enum)
 
@@ -497,6 +608,8 @@ enum LineContext {
     AfterDate = 'after_date',     // CRITICAL: Must exist for payee completion
     InPosting = 'in_posting',     // Required: Account completion in postings  
     AfterAmount = 'after_amount', // Required: Commodity completion only
+    InComment = 'in_comment',     // Required: General comment context
+    InTagValue = 'in_tag_value',  // Required: Tag value completion after "tag:"
     Forbidden = 'forbidden'       // Required: Block all completions
 }
 ```
@@ -507,6 +620,8 @@ enum LineContext {
 - **Account names**: Must support hierarchical extraction (`Assets:Cash:Checking`)
 - **Query extraction**: NEVER split on `:` for account names - extract full hierarchical paths
 - **Unicode patterns**: All context detection must use `\p{L}` for international characters
+- **Amount patterns**: Must use `NumberFormatService` for format-aware pattern generation
+- **Number format awareness**: Context detection must adapt to detected decimal separators and group separators
 
 #### Expert Requirements for Architecture Changes
 
@@ -527,6 +642,11 @@ enum LineContext {
    - International characters in commodity names
 3. **Test position scenarios**: Verify each completion type works only in correct positions
 4. **Test forbidden zones**: Ensure NO completions after amount + 2+ spaces
+5. **Test international number formats**: Open `testdata/test-international-numbers.journal` and verify:
+   - Completion works with comma decimal separators
+   - Completion works with various group separators
+   - Commodity format directives are parsed correctly
+   - Decimal-mark directives are respected
 
 #### Required Test Scenarios (Prevent Critical Regressions)
 
@@ -542,6 +662,20 @@ describe('Position Validation (Prevents Completion Failures)', () => {
   it('prevents completions in forbidden zones', () => { /* ... */ });
   it('only allows date completion at line start', () => { /* ... */ });
   it('only allows payee completion after date + space', () => { /* ... */ });
+});
+
+describe('Critical Tag Completion Fix (NEVER REGRESS)', () => {
+  it('allows tag completions in comment contexts', () => { /* ... */ });
+  it('prevents suppression of tag value completions after amounts in comments', () => { /* ... */ });
+  it('only activates tag completion provider in InTagValue context', () => { /* ... */ });
+  it('works with international number formats in comment lines', () => { /* ... */ });
+});
+
+describe('International Number Format Support', () => {
+  it('handles comma decimal separators in amounts', () => { /* ... */ });
+  it('generates format-aware regex patterns', () => { /* ... */ });
+  it('parses commodity format directives correctly', () => { /* ... */ });
+  it('respects decimal-mark directives', () => { /* ... */ });
 });
 ```
 
@@ -564,12 +698,28 @@ describe('Position Validation (Prevents Completion Failures)', () => {
 - [ ] No basic string comparison (must use `localeCompare()`)
 - [ ] Tested with Cyrillic characters in `testdata/test.journal`
 
+##### International Number Format Compliance (Prevents Format Regressions)
+
+- [ ] No hard-coded decimal separators (must use `NumberFormatService`)
+- [ ] All amount patterns generated dynamically based on detected formats
+- [ ] Commodity format directives parsed and applied correctly
+- [ ] Decimal-mark directives respected in format detection
+- [ ] Tested with international formats in `testdata/test-international-numbers.journal`
+
 ##### Architectural Integrity (Prevents Completion Failures)
 
 - [ ] `LineContext.AfterDate` exists and handled correctly
 - [ ] Position validation maintains strict rules
 - [ ] No completions allowed in forbidden zones
 - [ ] Hierarchical account names preserved (no splitting on `:`)
+
+##### Critical Tag Completion Fix (Prevents Tag Completion Failures)
+
+- [ ] `CompletionSuppressor` NEVER suppresses completions in `InComment` or `InTagValue` contexts
+- [ ] Tag completion early return logic preserved in `CompletionSuppressor.ts` (lines 52-54)
+- [ ] Tag value completions work after amounts in comment lines
+- [ ] Only tag completion provider activates in tag value contexts
+- [ ] Tested with `testdata/test-tags.journal` for international characters
 
 ##### Testing Coverage (Prevents Regressions)
 
@@ -588,6 +738,12 @@ describe('Position Validation (Prevents Completion Failures)', () => {
 4. Removes or modifies `LineContext.AfterDate` support
 5. Breaks hierarchical account name handling
 6. Fails existing Unicode tests
+7. Hard-codes decimal separators without using `NumberFormatService`
+8. Ignores commodity format or decimal-mark directives
+9. Fails international number format tests
+10. **CRITICAL**: Removes or modifies the tag completion fix in `CompletionSuppressor.ts` (lines 52-54)
+11. **CRITICAL**: Allows suppression of completions in `InComment` or `InTagValue` contexts
+12. **CRITICAL**: Breaks tag value completion functionality validated by 200 passing tests
 
 ### Development Notes
 

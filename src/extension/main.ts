@@ -59,7 +59,7 @@ export function activate(context: vscode.ExtensionContext): void {
             })
         );
         
-        console.log('HLedger extension activated with strict completion architecture (STRICT)');
+        // Extension activation complete
         
     } catch (error) {
         console.error('HLedger extension activation failed:', error);
@@ -71,7 +71,7 @@ export function deactivate(): void {
         if (globalConfig) {
             globalConfig.clearCache();
         }
-        console.log('HLedger extension deactivated');
+        // Extension deactivation complete
     } catch (error) {
         console.error('HLedger extension deactivation error:', error);
     }

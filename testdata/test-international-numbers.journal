@@ -1,0 +1,31 @@
+; Test file for international number format support
+; This file tests both period and comma decimal formats
+; Used for manual testing of StrictPositionAnalyzer international format support
+
+2024-01-15 European Style Transaction
+    Assets:Checking         111,50 EUR    ; Comma decimal format
+    Expenses:Groceries     -111,50 EUR    ; Test completion after this amount
+
+2024-01-16 US Style Transaction  
+    Assets:Checking         123.45 USD    ; Period decimal format
+    Expenses:Dining        -123.45 USD    ; Test completion after this amount
+
+2024-01-17 Mixed Format Transaction
+    Assets:Checking       1 234,56 EUR    ; Space thousands, comma decimal
+    Assets:Savings          987.65 USD    ; Period decimal
+    Expenses:Shopping    -2 222,21 EUR    ; More comma decimals
+
+2024-01-18 Test Forbidden Zones
+    Assets:Bank            555,55 EUR    ; After this amount + 2 spaces = forbidden zone
+    Expenses:Test         -555,55 EUR    ; After this amount + 1 space = currency completion
+
+; Test various decimal places
+2024-01-19 Crypto Transaction
+    Assets:Bitcoin           0,00123456 BTC  ; Many decimal places with comma
+    Assets:Ethereum        123,4567 ETH      ; Different precision
+    Assets:Cash           -100,00 USD        ; Standard currency format
+
+; Test whole numbers (no decimals)
+2024-01-20 Whole Number Transaction
+    Assets:Cash             150 EUR         ; Whole number, space, currency
+    Expenses:Transport     -150 EUR         ; Should trigger currency completion

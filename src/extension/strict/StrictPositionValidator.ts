@@ -4,6 +4,8 @@ export interface PositionValidator {
     isPayeePosition(line: string, character: number): boolean;
     isCommodityPosition(line: string, character: number): boolean;
     isForbiddenPosition(line: string, character: number): boolean;
+    isTagPosition(line: string, character: number): boolean;
+    isTagValuePosition(line: string, character: number): boolean;
 }
 
 export class StrictPositionValidator implements PositionValidator {
@@ -63,6 +65,34 @@ export class StrictPositionValidator implements PositionValidator {
         return false;
     }
     
+    isTagPosition(line: string, character: number): boolean {
+        const beforeCursor = line.substring(0, character);
+        
+        // Must be in comment context (after ; or #)
+        const commentMatch = beforeCursor.match(/[;#]\s*/);
+        if (!commentMatch) {
+            return false;
+        }
+        
+        // Check if we are at the beginning of a tag name or typing a tag name
+        const afterComment = beforeCursor.substring(commentMatch.index! + commentMatch[0].length);
+        return /^[\p{L}\p{N}_-]*$/u.test(afterComment);
+    }
+    
+    isTagValuePosition(line: string, character: number): boolean {
+        const beforeCursor = line.substring(0, character);
+        
+        // Must be in comment context (after ; or #)
+        const commentMatch = beforeCursor.match(/[;#]\s*/);
+        if (!commentMatch) {
+            return false;
+        }
+        
+        // Must be after a tag name followed by colon
+        const afterComment = beforeCursor.substring(commentMatch.index! + commentMatch[0].length);
+        return /([\p{L}\p{N}_-]+):\s*[\p{L}\p{N}_-]*$/u.test(afterComment);
+    }
+    
     /**
      * Special check for digit "0" at line beginning
      */
@@ -114,6 +144,8 @@ export class StrictPositionValidator implements PositionValidator {
         // Check that position makes sense for some completion type
         return this.isDatePosition(line, character) ||
                this.isAccountPosition(line, character) ||
-               this.isCommodityPosition(line, character);
+               this.isCommodityPosition(line, character) ||
+               this.isTagPosition(line, character) ||
+               this.isTagValuePosition(line, character);
     }
 }

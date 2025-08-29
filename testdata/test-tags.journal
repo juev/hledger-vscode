@@ -1,0 +1,50 @@
+; Test data for tag value completion functionality
+; Contains various tag formats for comprehensive testing
+
+2024-01-15 Grocery Store
+    Expenses:Food    $50.00  ; category:groceries, type:food
+    Assets:Checking
+
+2024-01-16 Coffee Shop
+    Expenses:Food    $4.50   ; category:dining, location:downtown
+    Assets:Cash
+
+2024-01-17 Office Supplies
+    Expenses:Office  $25.00  ; project:web development, type:supplies
+    Assets:Checking
+
+2024-01-18 Amazon
+    Expenses:Books   $29.99  ; category:education, project:learning
+    Assets:Checking
+
+2024-01-19 Gas Station
+    Expenses:Transport $45.00 ; type:fuel, location:highway
+    Assets:Checking
+
+2024-01-20 Walmart
+    Expenses:Household $67.50 ; category:groceries, type:household
+    Assets:Checking
+
+2024-01-21 Restaurant
+    Expenses:Food    $32.00  ; category:dining, location:downtown, type:food
+    Assets:Checking
+
+2024-01-22 Online Course
+    Expenses:Education $99.00 ; project:learning, category:education
+    Assets:Checking
+
+2024-01-23 Мамин подарок
+    Expenses:Gifts   $150.00 ; категория:подарки, тип:семья
+    Assets:Checking
+
+2024-01-24 Metro Station
+    Expenses:Transport $3.50  ; type:transport, location:metro station
+    Assets:Checking
+
+2024-01-25 Hardware Store  
+    Expenses:Home    $87.25  ; project:home improvement, type:supplies
+    Assets:Checking
+
+2024-01-26 Bookstore
+    Expenses:Books   $45.00  ; category:education, project:web development
+    Assets:Checking
