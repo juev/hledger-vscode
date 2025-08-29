@@ -395,8 +395,8 @@ export class NumberFormatService {
      */
     private extractFormatFromNumber(numberStr: string): Result<NumberFormat> {
         // Determine decimal mark and group separator from the number
-        const hasCommaDecimal = /\p{N},\p{N}{1,2}$/.test(numberStr);
-        const hasPeriodDecimal = /\p{N}\.\p{N}{1,2}$/.test(numberStr);
+        const hasCommaDecimal = /\p{N},\p{N}{1,2}$/u.test(numberStr);
+        const hasPeriodDecimal = /\p{N}\.\p{N}{1,2}$/u.test(numberStr);
         
         let decimalMark: '.' | ',';
         let groupSeparator: ' ' | ',' | '.' | '';
