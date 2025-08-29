@@ -200,7 +200,14 @@ export class HLedgerParser {
 
     private parseLine(line: string, data: MutableParsedHLedgerData, basePath?: string, inTransaction = false, transactionPayee = ''): void {
         const trimmedLine = line.trim();
-        if (!trimmedLine || trimmedLine.startsWith(';') || trimmedLine.startsWith('#')) {
+        
+        // Handle comment lines - extract tags from them
+        if (trimmedLine.startsWith(';') || trimmedLine.startsWith('#')) {
+            this.extractTags(trimmedLine, data);
+            return;
+        }
+        
+        if (!trimmedLine) {
             return;
         }
 
@@ -603,7 +610,7 @@ export class HLedgerParser {
 
     private extractTags(line: string, data: MutableParsedHLedgerData): void {
         // Extract tags only from comments (after ; or #)
-        // Tags are in the format tag:value within comments
+        // Tags are in the format tag: or tag:value within comments
         const commentMatch = line.match(/[;#](.*)$/);
         if (!commentMatch || !commentMatch[1]) {
             return;
@@ -612,35 +619,46 @@ export class HLedgerParser {
         const commentText = commentMatch[1];
 
         // Enhanced pattern to extract tag:value pairs with support for:
-        // - Unicode letters and numbers in tag names
+        // - Unicode letters and numbers in tag names (no spaces allowed in tag name)
+        // - Optional values after colon (tag: is valid)
         // - Spaces and special characters in values
         // - Multiple tags separated by commas
-        // Pattern matches: tagname:value where value can contain spaces until next comma or end
+        // Pattern matches: tagname: or tagname:value where value can contain spaces until next comma or end
         const tagPattern = /([\p{L}\p{N}_]+):\s*([^,;#]*?)(?=\s*(?:,|$))/gu;
         const tagMatches = commentText.matchAll(tagPattern);
 
         for (const match of tagMatches) {
             const tagName = match[1]?.trim();
-            const tagValue = match[2]?.trim();
+            const tagValue = match[2]?.trim(); // May be empty string for tags without values
 
-            if (tagName && tagValue) {
-                // Store regular tag:value pair (treat "tag" like any other tag name)
+            if (tagName) {
+                // Store tag name (with or without value)
                 const tag = createTagName(tagName);
-                const value = createTagValue(tagValue);
 
                 // Add tag to tags set
                 data.tags.add(tag);
                 this.incrementUsage(data.tagUsage, tag);
 
-                // Add value to tag's value set
-                if (!data.tagValues.has(tag)) {
-                    data.tagValues.set(tag, new Set<TagValue>());
-                }
-                data.tagValues.get(tag)!.add(value);
+                // If tag has a value, store it
+                if (tagValue) {
+                    const value = createTagValue(tagValue);
+                    
+                    // Add value to tag's value set
+                    if (!data.tagValues.has(tag)) {
+                        data.tagValues.set(tag, new Set<TagValue>());
+                    }
+                    data.tagValues.get(tag)!.add(value);
 
-                // Track usage of this specific tag:value pair
-                const pairKey = `${tagName}:${tagValue}`;
-                this.incrementUsage(data.tagValueUsage, pairKey as any);
+                    // Track usage of this specific tag:value pair
+                    const pairKey = `${tagName}:${tagValue}`;
+                    this.incrementUsage(data.tagValueUsage, pairKey as any);
+                } else {
+                    // Tag without value - just ensure the tag exists in tagValues map
+                    // This allows completion to work even for tags that appear without values
+                    if (!data.tagValues.has(tag)) {
+                        data.tagValues.set(tag, new Set<TagValue>());
+                    }
+                }
             }
         }
     }
