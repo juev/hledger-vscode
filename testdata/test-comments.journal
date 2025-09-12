@@ -1,0 +1,26 @@
+# a comment line
+; another commentline
+comment
+A multi-line comment block,
+continuing until "end comment" directive
+or the end of the current file.
+end comment
+
+# comment with https://example.org/page url
+; comment
+2025-01-02 * Amazon
+    Expenses:Household                                    8.85 EUR
+    ; VARTA Batteries AAA Pack of 12, Longlife Power, Alkaline, 1.5 V, Ideal for
+    ; Toys, Wireless Mouse, Torches, Made in Germany
+    ; comment with https://example.org/page url
+    Expenses:Household                                    4.58 EUR
+    ; Varta High Energy Batteries AA Alkaline 1.5 Volt 1x4 pack
+    Expenses:Wardrobe                                     4.98 EUR
+    ; 4 Sheets Down Jacket Repair Patches, Various Sizes and Shapes Clothing
+    ; Patch, Self-Adhesive Repair Patch for Jacket, Tent, Sleeping Bags, Ski
+    ; Trousers, Bag, Umbrella (Black)
+    Expenses:Household                                    3.95 EUR
+    ; tesa tesapack Paper Standard - Environmentally Friendly Paper Parcel Tape
+    ; 56% Bio-Based Material - Efficient and Recycling-Friendly - Brown - 50 m x
+    ; 50
+    Assets:Mastercard                                   -22.36 EUR

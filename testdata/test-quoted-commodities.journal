@@ -1,0 +1,22 @@
+; Test file for quoted commodity highlighting validation
+; This file tests the fix for quoted commodities like "oz gold" and "oz silver"
+
+2025-01-20 * Precious Metals Investment
+    Assets:Precious:Gold          10 "oz gold" @ 2000 USD
+    Assets:Precious:Silver        100 "oz silver" @ 25 USD
+    Assets:Cash                   -220500 USD
+
+2025-01-21 * Various Quoted Commodities  
+    Assets:Stocks                 25 "Apple Inc"
+    Assets:Crypto                 0.5 "Ethereum Classic"
+    Assets:Cash                   -500.00 "US Dollar"
+    Assets:Bonds                  50.75 "Government Bond"
+    Expenses:Investment
+
+2025-01-22 * Mixed Commodity Types
+    Assets:Cash                   100.00 USD
+    Assets:Bitcoin                0.01 BTC  
+    Assets:Stocks                 10 AAPL
+    Assets:Gold                   5 "oz gold"
+    Assets:Special                42 "Special-Currency_2025"
+    Expenses:Testing

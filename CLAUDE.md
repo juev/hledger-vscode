@@ -67,9 +67,42 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 This is a Visual Studio Code extension for hledger journal files (plain text accounting). It provides syntax highlighting, IntelliSense features (account/date/commodity/tag value completion), and language support for `.journal`, `.hledger`, and `.ledger` files.
 
-**Current Version**: 0.2.1 (fully functional implementation with critical tag completion fix - all 200 tests passing)
+**Current Version**: 0.3.0 (enhanced syntax highlighting with URL support, timeclock entries, and improved comment processing - all tests passing)
 
-### **Major Development Milestone: Tag Completion System Fixed**
+### **hledger Syntax Reference**
+
+**Primary source of truth for hledger syntax**: <https://hledger.org/1.50/hledger.html>
+
+When questions arise about correct behavior or syntax implementation, always refer to the official hledger documentation at the above URL to ensure compliance with the specification. This documentation is the authoritative reference for:
+
+- Journal syntax rules
+- Directive specifications  
+- Transaction format requirements
+- Account naming conventions
+- Commodity and number format specifications
+- Comment and tag syntax
+- All other hledger language features
+
+### **Major Development Milestones**
+
+#### **Latest Achievement (v0.3.0): Enhanced Syntax Processing System**
+
+**New Syntax Highlighting Features**:
+
+- **URL Recognition**: Automatic detection and highlighting of HTTP/HTTPS/FTP URLs in comments
+- **Timeclock Entry Support**: Full syntax support for hledger timeclock entries (`i`, `o`, `h` commands)
+- **CSV Directive Support**: Recognition of CSV import directives (`source`, `separator`, `skip`, etc.)
+- **Improved Comment Processing**: Enhanced comment block and inline comment handling with pattern matching
+- **Link Highlighting**: URLs in comments are properly highlighted as clickable links
+
+**Technical Improvements**:
+
+- **Enhanced TextMate Grammar**: Updated `hledger.tmLanguage.json` with comprehensive pattern recognition
+- **URL Pattern Matching**: Robust regex pattern `\b(?:https?|ftp)://[^\s,;]+` for URL detection
+- **Extended Directive Support**: Added support for timeclock and CSV processing directives
+- **Comprehensive Test Coverage**: New `test-comments.journal` file validates URL and comment handling
+
+#### **Previous Achievement (v0.2.1): Tag Completion System Fixed**
 
 **Achievement**: Successfully resolved critical tag completion issue where multiple completion providers were incorrectly activating simultaneously instead of only tag value completions. This fix:
 
@@ -212,9 +245,10 @@ This is a straightforward, functional VS Code extension with a modular but simpl
 
 #### 5. Supporting Infrastructure
 
-- **Syntax Highlighting**: `syntaxes/hledger.tmLanguage.json` - Comprehensive TextMate grammar
+- **Syntax Highlighting**: `syntaxes/hledger.tmLanguage.json` - Comprehensive TextMate grammar with URL recognition, timeclock support, and CSV directive handling
 - **Smart Indentation**: `HLedgerEnterCommand.ts` and related providers
 - **Color Configuration**: Extensive customization via VS Code settings
+- **Advanced Comment Processing**: Support for URL highlighting in comments and multi-line comment blocks
 
 ### Current Design Patterns (v0.2.1)
 
@@ -382,6 +416,11 @@ The `testdata/` directory contains realistic hledger journal files used exclusiv
    - **Features**: Various number formats (comma/period decimal separators, different group separators), commodity format directives, decimal-mark directives
    - **Usage**: Validate international number parsing, format-aware completion patterns, commodity completion with various formats
 
+8. **`test-comments.journal`** - Comment and URL handling testing (NEW in v0.3.0)
+   - **Purpose**: Test enhanced comment processing and URL recognition
+   - **Features**: Multi-line comment blocks, inline comments with URLs, various comment styles (`;`, `#`, `*`)
+   - **Usage**: Validate URL highlighting in comments, comment syntax highlighting, multi-line comment block processing
+
 #### Test File Requirements & Guidelines
 
 **CRITICAL RULES**:
@@ -394,7 +433,7 @@ The `testdata/` directory contains realistic hledger journal files used exclusiv
 **File Naming Conventions**:
 
 - `test.journal` - Main comprehensive test file
-- `test-[feature].journal` - Feature-specific test files (e.g., `test-indent.journal`)
+- `test-[feature].journal` - Feature-specific test files (e.g., `test-indent.journal`, `test-comments.journal`)
 - `[feature]-demo.journal` - Demonstration/showcase files (e.g., `syntax-demo.journal`)
 
 **Maintenance Requirements**:
@@ -422,6 +461,7 @@ The `testdata/` directory contains realistic hledger journal files used exclusiv
 5. Test indentation behavior with `test-indent.journal`
 6. Validate multi-language support with Cyrillic content
 7. Test international number formats using `test-international-numbers.journal`
+8. Test comment processing and URL recognition using `test-comments.journal`
 
 #### Integration with Development Workflow
 
@@ -432,6 +472,8 @@ The `testdata/` directory contains realistic hledger journal files used exclusiv
 - After modifying completion provider logic
 - When adding support for new languages/scripts
 - After updating international number format support
+- After modifying syntax highlighting patterns or TextMate grammar
+- When adding new comment processing features or URL recognition
 
 **Expert Usage for Test Data**:
 
@@ -453,9 +495,10 @@ The `testdata/` directory contains realistic hledger journal files used exclusiv
 3. **Activation event**: `onLanguage:hledger`
 4. **File associations**: `.journal`, `.hledger`, `.ledger`
 5. **Dependencies**: No external dependencies for core functionality
-6. **Syntax highlighting**: Comprehensive TextMate grammar with customizable colors
-7. **hledger Compliance**: Follows hledger specification with core feature support
+6. **Syntax highlighting**: Comprehensive TextMate grammar with customizable colors, URL recognition, and extended directive support
+7. **hledger Compliance**: Follows hledger specification with core feature support plus timeclock and CSV extensions
 8. **International Format Support**: Support for various decimal separators and group separators in number formats
+9. **Enhanced Comment Processing**: Advanced comment handling with URL recognition and multi-line comment block support
 
 ### Performance & Caching
 
@@ -493,6 +536,50 @@ The current architecture provides these benefits:
 6. **Extensibility**: Easy to add new completion providers
 7. **Testability**: Simple structure allows focused testing
 8. **International Support**: Built-in support for international number formats and Unicode text
+9. **Extended Syntax Support**: Comprehensive handling of hledger extensions including timeclock entries, CSV directives, and URL recognition
+
+## **CRITICAL: System Integrity Requirements**
+
+**WARNING**: The system has undergone major enhancements including completion system fixes, syntax highlighting improvements, and URL recognition features. These requirements prevent critical regressions that break user experience.
+
+### **CRITICAL: Syntax Highlighting System Requirements (v0.3.0)**
+
+**NEVER break enhanced syntax highlighting - this affects core user experience**
+
+#### **MANDATORY: TextMate Grammar Requirements**
+
+- **MANDATORY**: Preserve URL pattern recognition in comments (`\b(?:https?|ftp)://[^\s,;]+`)
+- **MANDATORY**: Maintain timeclock entry support (`^[ioh]\s+` patterns)
+- **MANDATORY**: Keep CSV directive recognition (`source|separator|skip|date-format|timezone|newest-first|decimal-mark|fields|if`)
+- **MANDATORY**: Preserve multi-line comment block handling (`comment` ... `end comment`)
+- **MANDATORY**: Maintain all existing comment patterns (`;`, `#`, `*`)
+
+#### **Forbidden Syntax Pattern Changes (Cause User Experience Regressions)**
+
+- **FORBIDDEN**: Removing URL pattern matching from comments
+- **FORBIDDEN**: Breaking timeclock entry recognition
+- **FORBIDDEN**: Removing CSV directive support
+- **FORBIDDEN**: Modifying multi-line comment block patterns without testing
+- **FORBIDDEN**: Breaking existing tag pattern matching in comments
+
+#### **Syntax Highlighting Validation Requirements**
+
+- **ALL syntax changes** must be tested with `testdata/test-comments.journal`
+- **ALL URL patterns** must properly highlight in comment contexts
+- **ALL timeclock entries** must be recognized and highlighted correctly
+- **Expert Usage**: Use `general-purpose` expert for syntax pattern analysis
+
+#### **Required Syntax Test Scenarios**
+
+```json
+// These test patterns are MANDATORY for any syntax changes:
+{
+  "url_in_comments": "https://example.org/page",
+  "timeclock_entries": "i 2025-01-15 08:00:00 project:development",
+  "csv_directives": "source file.csv\nseparator ,\nskip 1",
+  "multiline_comments": "comment\nThis is a comment\nend comment"
+}
+```
 
 ## **CRITICAL: Completion System Integrity Requirements**
 
