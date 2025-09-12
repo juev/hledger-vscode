@@ -1,5 +1,24 @@
 # Change Log
 
+## [0.3.1] - 2025-09-12
+
+### Added
+- feat: streamline hledger syntax by removing redundant patterns and enhancing structure
+- feat: enhance hledger syntax with new lot and price assignment patterns, and refine existing matches
+- feat: remove common patterns from hledger syntax and refine tag and balance assertion matches
+- feat: enhance hledger syntax for quoted commodities with new test journal
+- feat: add comprehensive test journal for grammar improvements and edge cases
+- feat: update CLAUDE.md for version 0.3.0 with enhanced syntax highlighting, URL support, and improved comment processing
+- feat: add URL pattern to hledger syntax for improved link handling
+- feat: add additional comment examples with URLs in test comments journal file
+- feat: enhance hledger syntax with additional patterns for timeclock and csv, and improve comment handling
+- feat: add test comments journal file for example usage
+- Add hledger syntax reference section with official documentation link
+
+### Changed
+- refactor: simplify hledger syntax patterns and enhance comment handling
+
+
 ## [0.3.0] - 2025-08-29
 
 ### Added
