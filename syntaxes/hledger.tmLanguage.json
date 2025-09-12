@@ -40,6 +40,9 @@
           },
           "patterns": [
             {
+              "include": "#url"
+            },
+            {
               "include": "#tag"
             }
           ]
@@ -50,6 +53,9 @@
           "captures": {
             "0": {
               "patterns": [
+                {
+                  "include": "#url"
+                },
                 {
                   "include": "#tag"
                 }
@@ -64,6 +70,9 @@
             "0": {
               "patterns": [
                 {
+                  "include": "#url"
+                },
+                {
                   "include": "#tag"
                 }
               ]
@@ -76,9 +85,13 @@
         }
       ]
     },
+    "url": {
+      "name": "markup.underline.link.hledger",
+      "match": "\\b(?:https?|ftp)://[^\\s,;]+"
+    },
     "tag": {
       "name": "meta.tag.hledger",
-      "match": "([\\p{L}][\\p{L}\\p{N}_-]*)(:)([^,;\\n\\r]*?)(?=\\s*[,;]|$)",
+      "match": "(?<!https?)\\b([\\p{L}][\\p{L}\\p{N}_-]*)(:)([^,;\\n\\r]*?)(?=\\s*[,;]|$)",
       "captures": {
         "1": {
           "name": "entity.name.tag.hledger"
