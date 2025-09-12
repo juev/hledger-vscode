@@ -69,6 +69,20 @@ This is a Visual Studio Code extension for hledger journal files (plain text acc
 
 **Current Version**: 0.2.1 (fully functional implementation with critical tag completion fix - all 200 tests passing)
 
+### **hledger Syntax Reference**
+
+**Primary source of truth for hledger syntax**: https://hledger.org/1.50/hledger.html
+
+When questions arise about correct behavior or syntax implementation, always refer to the official hledger documentation at the above URL to ensure compliance with the specification. This documentation is the authoritative reference for:
+
+- Journal syntax rules
+- Directive specifications  
+- Transaction format requirements
+- Account naming conventions
+- Commodity and number format specifications
+- Comment and tag syntax
+- All other hledger language features
+
 ### **Major Development Milestone: Tag Completion System Fixed**
 
 **Achievement**: Successfully resolved critical tag completion issue where multiple completion providers were incorrectly activating simultaneously instead of only tag value completions. This fix:
