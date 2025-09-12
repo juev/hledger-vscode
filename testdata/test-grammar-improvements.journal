@@ -1,0 +1,71 @@
+; Test file to validate grammar improvements for GitHub PR #8
+; This file tests the improvements made to handle Copilot feedback
+
+; Test mixed case and lowercase commodities (previously restricted to uppercase)
+2025-01-15 Test commodity improvements
+    Assets:Cash                100.00 usd
+    Assets:Bitcoin             0.01 btc
+    Assets:Stocks              25 aapl
+    Assets:Bonds               50.75 "Government Bond"
+    Expenses:Various
+
+; Test quoted commodity names with spaces
+2025-01-16 Quoted commodities
+    Assets:Cash                500.00 "US Dollar"
+    Assets:Metals              10 "Gold Ounce"
+    Assets:Crypto              0.5 "Ethereum Classic"
+    Expenses:Investment
+
+; Test tag patterns without negative lookbehind issues
+; Previously this could cause issues with URL matching
+2025-01-17 URL and tag testing
+    Expenses:Research          25.00 USD ; project:web development, url:https://example.org/research
+    ; This comment has a URL: https://github.com/juev/hledger-vscode
+    ; And tags: category:development, type:research
+    Assets:Cash
+
+; Test numbers with commodity symbols including punctuation
+2025-01-18 Symbol commodities  
+    Assets:Crypto              1000.00 ₿
+    Assets:Euro                500,50 €
+    Assets:Yen                 10000 ¥
+    Assets:Ruble               50000,00 ₽
+    Expenses:Exchange
+
+; Test commodity patterns in various contexts
+; Prefix notation (commodity before amount)
+2025-01-19 Prefix commodity notation
+    Assets:Cash                USD 100.00
+    Assets:Euro                € 75,25
+    Assets:Bitcoin             BTC 0.001
+    Expenses:Exchange
+
+; Test complex tags with URLs in same line
+2025-01-20 Complex tag and URL combinations
+    Expenses:Books             29.99 USD ; category:education, reference:https://docs.hledger.org/manual, project:learning
+    ; Comment with multiple URLs: https://example.com and https://github.com
+    ; Tags after URLs: type:purchase, priority:high
+    Assets:Credit
+
+; Test lowercase and mixed case in different posting patterns  
+2025-01-21 Mixed case validation
+    Assets:Checking            100 cad  
+    Assets:Savings             50.25 gbp
+    Assets:Investment          25.00 "Stock ABC"
+    Expenses:Fees              5 processing_fee
+    Income:Interest           -10.50 compound_interest
+
+; Test edge cases that might have been problematic before
+2025-01-22 Edge case testing
+    Assets:Testing             0.001 micro_coin
+    Assets:Testing2            1000000 macro_token  
+    Assets:Special             42 "Special-Currency_2025"
+    Expenses:Testing
+
+; Multi-line comment block with URLs and tags
+comment  
+This is a multi-line comment block that can contain
+URLs like https://hledger.org and https://github.com/juev/hledger-vscode
+as well as tag-like patterns: category:testing, type:validation
+The grammar should handle all of these correctly.
+end comment
