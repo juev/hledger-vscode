@@ -1,5 +1,11 @@
 # Change Log
 
+## [0.3.3] - 2025-09-14
+
+### Fixed
+- fix: update .gitignore to include test.sh and improve hledger tag matching regex
+
+
 ## [0.3.2] - 2025-09-14
 
 ### Added
