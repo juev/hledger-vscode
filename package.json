@@ -114,55 +114,55 @@
           {
             "scope": "entity.name.type.account.hledger",
             "settings": {
-              "foreground": "#059669"
+              "foreground": "#0EA5E9"
             }
           },
           {
             "scope": "constant.numeric.amount.hledger",
             "settings": {
-              "foreground": "#DC2626"
+              "foreground": "#F59E0B"
             }
           },
           {
             "scope": "entity.name.type.commodity.hledger",
             "settings": {
-              "foreground": "#7C3AED"
+              "foreground": "#A855F7"
             }
           },
           {
             "scope": "entity.name.function.payee.hledger",
             "settings": {
-              "foreground": "#EA580C"
+              "foreground": "#EF4444"
             }
           },
           {
             "scope": "comment.line.semicolon.hledger",
             "settings": {
-              "foreground": "#4B5563"
+              "foreground": "#9CA3AF"
             }
           },
           {
             "scope": "comment.line.number-sign.hledger",
             "settings": {
-              "foreground": "#4B5563"
+              "foreground": "#9CA3AF"
             }
           },
           {
             "scope": "comment.block.hledger",
             "settings": {
-              "foreground": "#4B5563"
+              "foreground": "#9CA3AF"
             }
           },
           {
             "scope": "entity.name.tag.hledger",
             "settings": {
-              "foreground": "#DB2777"
+              "foreground": "#EC4899"
             }
           },
           {
             "scope": "keyword.directive.hledger",
             "settings": {
-              "foreground": "#059669"
+              "foreground": "#0EA5E9"
             }
           },
           {
@@ -174,7 +174,7 @@
           {
             "scope": "string.other.code.hledger",
             "settings": {
-              "foreground": "#7C3AED"
+              "foreground": "#A855F7"
             }
           },
           {
