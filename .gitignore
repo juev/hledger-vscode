@@ -7,3 +7,6 @@ show-changelog.js
 
 /.idea
 .DS_Store
+
+
+test.sh
