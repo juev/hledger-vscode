@@ -1,5 +1,11 @@
 # Change Log
 
+## [0.3.4] - 2025-09-14
+
+### Added
+- feat: enhance completion logic with context-aware range handling for various completers
+
+
 ## [0.3.3] - 2025-09-14
 
 ### Fixed
