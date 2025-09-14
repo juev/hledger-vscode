@@ -8,7 +8,6 @@ import { HLedgerConfig } from './HLedgerConfig';
 import { SimpleProjectCache } from './SimpleProjectCache';
 import { StrictCompletionProvider } from './StrictCompletionProvider';
 import { HLedgerEnterCommand } from './HLedgerEnterCommand';
-import { registerColorConfiguration } from './ColorConfiguration';
 import { SimpleFuzzyMatcher } from './SimpleFuzzyMatcher';
 import { createCacheKey } from './types';
 
@@ -42,23 +41,21 @@ export function activate(context: vscode.ExtensionContext): void {
         // Register Enter key handler for smart indentation
         const enterCommand = new HLedgerEnterCommand();
         context.subscriptions.push(enterCommand);
-        
-        // Register color configuration commands
-        registerColorConfiguration(context);
-        
+
+
         // Register manual completion commands
         context.subscriptions.push(
             vscode.commands.registerCommand('hledger.triggerDateCompletion', () => {
                 vscode.commands.executeCommand('editor.action.triggerSuggest');
             })
         );
-        
+
         context.subscriptions.push(
             vscode.commands.registerCommand('hledger.triggerAccountCompletion', () => {
                 vscode.commands.executeCommand('editor.action.triggerSuggest');
             })
         );
-        
+
         // Extension activation complete
         
     } catch (error) {
