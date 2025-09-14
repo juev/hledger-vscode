@@ -26,13 +26,21 @@ export class AccountCompleter {
             prefixMatchBonus: 100
         });
 
-        return matches.map(match => this.createCompletionItem(match));
+        return matches.map(match => this.createCompletionItem(match, context));
     }
 
-    private createCompletionItem(match: FuzzyMatch<AccountName>): vscode.CompletionItem {
+    private createCompletionItem(match: FuzzyMatch<AccountName>, context: CompletionContext): vscode.CompletionItem {
         const item = new vscode.CompletionItem(match.item, vscode.CompletionItemKind.Class);
         item.detail = 'Account';
         item.sortText = this.getSortText(match);
+        
+        // Set replacement range if available
+        if (context.range && context.position) {
+            item.range = new vscode.Range(
+                new vscode.Position(context.range.start.line, context.range.start.character),
+                new vscode.Position(context.range.end.line, context.range.end.character)
+            );
+        }
         
         // Enhanced documentation with usage information
         const usageCount = this.config.accountUsage.get(match.item) || 0;

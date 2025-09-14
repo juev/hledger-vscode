@@ -93,7 +93,7 @@ export class TagCompleter {
             maxResults: 20
         });
         
-        const items = matches.map(match => this.createTagValueCompletionItem(match, tagName));
+        const items = matches.map(match => this.createTagValueCompletionItem(match, tagName, context));
         
         return items;
     }
@@ -102,12 +102,20 @@ export class TagCompleter {
     /**
      * Create completion item for tag value.
      */
-    private createTagValueCompletionItem(match: FuzzyMatch, tagName: TagName): vscode.CompletionItem {
+    private createTagValueCompletionItem(match: FuzzyMatch, tagName: TagName, context: CompletionContext): vscode.CompletionItem {
         const tagValue = match.item as TagValue;
         const item = new vscode.CompletionItem(tagValue, vscode.CompletionItemKind.EnumMember);
         item.detail = `Value for ${tagName}`;
         item.sortText = this.getSortText(match);
         item.insertText = tagValue;
+        
+        // Set replacement range if available
+        if (context.range && context.position) {
+            item.range = new vscode.Range(
+                new vscode.Position(context.range.start.line, context.range.start.character),
+                new vscode.Position(context.range.end.line, context.range.end.character)
+            );
+        }
         
         const pairKey = `${tagName}:${tagValue}`;
         const usageCount = this.config.tagValueUsage.get(pairKey) || 0;
@@ -154,19 +162,27 @@ export class TagCompleter {
             maxResults: 20
         });
 
-        return matches.map(match => this.createTagNameCompletionItem(match));
+        return matches.map(match => this.createTagNameCompletionItem(match, context));
     }
 
     /**
      * Create completion item for tag name.
      * Adds colon and trigger for tag value completion if values exist.
      */
-    private createTagNameCompletionItem(match: FuzzyMatch): vscode.CompletionItem {
+    private createTagNameCompletionItem(match: FuzzyMatch, context: CompletionContext): vscode.CompletionItem {
         const tagName = match.item as TagName;
         const item = new vscode.CompletionItem(tagName, vscode.CompletionItemKind.Property);
         item.detail = `Tag name`;
         item.sortText = this.getSortText(match);
         item.insertText = `${tagName}:`;
+        
+        // Set replacement range if available
+        if (context.range && context.position) {
+            item.range = new vscode.Range(
+                new vscode.Position(context.range.start.line, context.range.start.character),
+                new vscode.Position(context.range.end.line, context.range.end.character)
+            );
+        }
         
         const usageCount = this.config.tagUsage.get(tagName) || 0;
         if (usageCount > 1) {

@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 import { HLedgerConfig } from './HLedgerConfig';
-import { CompletionType, CompletionContext } from './types';
+import { CompletionType, CompletionContext, createLineNumber, createCharacterPosition } from './types';
 import { StrictPositionAnalyzer, StrictCompletionContext } from './strict/StrictPositionAnalyzer';
 import { CompletionSuppressor } from './strict/CompletionSuppressor';
 import { StrictPositionValidator } from './strict/StrictPositionValidator';
@@ -72,104 +72,105 @@ export class StrictCompletionProvider implements vscode.CompletionItemProvider {
             return [];
         }
 
-        const result = this.provideSingleTypeCompletion(strictContext, primaryType, document);
+        const result = this.provideSingleTypeCompletion(strictContext, primaryType, document, position);
         return result;
     }
 
     private provideSingleTypeCompletion(
         context: StrictCompletionContext,
         completionType: CompletionType,
-        vscodeDocument: vscode.TextDocument
+        vscodeDocument: vscode.TextDocument,
+        vscodePosition: vscode.Position
     ): vscode.CompletionItem[] {
 
         switch (completionType) {
             case 'date':
-                return this.provideDateCompletion(context, vscodeDocument);
+                return this.provideDateCompletion(context, vscodeDocument, vscodePosition);
 
             case 'account':
-                return this.provideAccountCompletion(context, vscodeDocument);
+                return this.provideAccountCompletion(context, vscodeDocument, vscodePosition);
 
             case 'commodity':
-                return this.provideCommodityCompletion(context, vscodeDocument);
+                return this.provideCommodityCompletion(context, vscodeDocument, vscodePosition);
 
             case 'payee':
-                return this.providePayeeCompletion(context, vscodeDocument);
+                return this.providePayeeCompletion(context, vscodeDocument, vscodePosition);
 
             case 'tag':
-                return this.provideTagCompletion(context, vscodeDocument);
+                return this.provideTagCompletion(context, vscodeDocument, vscodePosition);
 
             case 'tag_value':
-                return this.provideTagValueCompletion(context, vscodeDocument);
+                return this.provideTagValueCompletion(context, vscodeDocument, vscodePosition);
 
             default:
                 return [];
         }
     }
 
-    private provideDateCompletion(context: StrictCompletionContext, vscodeDocument: vscode.TextDocument): vscode.CompletionItem[] {
+    private provideDateCompletion(context: StrictCompletionContext, vscodeDocument: vscode.TextDocument, vscodePosition: vscode.Position): vscode.CompletionItem[] {
         // Additional strict validation
         if (!this.validator.isDatePosition(context.position.lineText, context.position.character)) {
             return [];
         }
 
         // Convert StrictCompletionContext to legacy CompletionContext for existing DateCompleter
-        const legacyContext = this.convertToLegacyContext(context, 'date', vscodeDocument);
+        const legacyContext = this.convertToLegacyContext(context, 'date', vscodeDocument, vscodePosition);
         return this.dateCompleter.complete(legacyContext);
     }
 
-    private provideAccountCompletion(context: StrictCompletionContext, vscodeDocument: vscode.TextDocument): vscode.CompletionItem[] {
+    private provideAccountCompletion(context: StrictCompletionContext, vscodeDocument: vscode.TextDocument, vscodePosition: vscode.Position): vscode.CompletionItem[] {
         // Additional strict validation
         if (!this.validator.isAccountPosition(context.position.lineText, context.position.character)) {
             return [];
         }
 
         // Convert StrictCompletionContext to legacy CompletionContext for existing AccountCompleter
-        const legacyContext = this.convertToLegacyContext(context, 'account', vscodeDocument);
+        const legacyContext = this.convertToLegacyContext(context, 'account', vscodeDocument, vscodePosition);
         return this.accountCompleter.complete(legacyContext);
     }
 
-    private provideCommodityCompletion(context: StrictCompletionContext, vscodeDocument: vscode.TextDocument): vscode.CompletionItem[] {
+    private provideCommodityCompletion(context: StrictCompletionContext, vscodeDocument: vscode.TextDocument, vscodePosition: vscode.Position): vscode.CompletionItem[] {
         // Additional strict validation
         if (!this.validator.isCommodityPosition(context.position.lineText, context.position.character)) {
             return [];
         }
 
         // Convert StrictCompletionContext to legacy CompletionContext for existing CommodityCompleter
-        const legacyContext = this.convertToLegacyContext(context, 'commodity', vscodeDocument);
+        const legacyContext = this.convertToLegacyContext(context, 'commodity', vscodeDocument, vscodePosition);
         return this.commodityCompleter.complete(legacyContext);
     }
 
-    private providePayeeCompletion(context: StrictCompletionContext, vscodeDocument: vscode.TextDocument): vscode.CompletionItem[] {
+    private providePayeeCompletion(context: StrictCompletionContext, vscodeDocument: vscode.TextDocument, vscodePosition: vscode.Position): vscode.CompletionItem[] {
         // Additional strict validation
         if (!this.validator.isPayeePosition(context.position.lineText, context.position.character)) {
             return [];
         }
 
         // Convert StrictCompletionContext to legacy CompletionContext for existing PayeeCompleter
-        const legacyContext = this.convertToLegacyContext(context, 'payee', vscodeDocument);
+        const legacyContext = this.convertToLegacyContext(context, 'payee', vscodeDocument, vscodePosition);
         return this.payeeCompleter.complete(legacyContext);
     }
 
-    private provideTagCompletion(context: StrictCompletionContext, vscodeDocument: vscode.TextDocument): vscode.CompletionItem[] {
+    private provideTagCompletion(context: StrictCompletionContext, vscodeDocument: vscode.TextDocument, vscodePosition: vscode.Position): vscode.CompletionItem[] {
         // Additional strict validation for tag position
         if (!this.validator.isTagPosition(context.position.lineText, context.position.character)) {
             return [];
         }
 
         // Convert StrictCompletionContext to legacy CompletionContext for existing TagCompleter
-        const legacyContext = this.convertToLegacyContext(context, 'tag', vscodeDocument);
+        const legacyContext = this.convertToLegacyContext(context, 'tag', vscodeDocument, vscodePosition);
         const items = this.tagCompleter.complete(legacyContext);
         return items;
     }
 
-    private provideTagValueCompletion(context: StrictCompletionContext, vscodeDocument: vscode.TextDocument): vscode.CompletionItem[] {
+    private provideTagValueCompletion(context: StrictCompletionContext, vscodeDocument: vscode.TextDocument, vscodePosition: vscode.Position): vscode.CompletionItem[] {
         // Additional strict validation for tag value position
         if (!this.validator.isTagValuePosition(context.position.lineText, context.position.character)) {
             return [];
         }
 
         // Convert StrictCompletionContext to legacy CompletionContext for existing TagCompleter
-        const legacyContext = this.convertToLegacyContext(context, 'tag_value', vscodeDocument);
+        const legacyContext = this.convertToLegacyContext(context, 'tag_value', vscodeDocument, vscodePosition);
         const items = this.tagCompleter.complete(legacyContext);
         return items;
     }
@@ -178,9 +179,25 @@ export class StrictCompletionProvider implements vscode.CompletionItemProvider {
      * Convert new StrictCompletionContext to legacy CompletionContext format
      * This enables reuse of existing completers while maintaining strict rules
      */
-    private convertToLegacyContext(context: StrictCompletionContext, type: CompletionType, vscodeDocument?: vscode.TextDocument): CompletionContext {
+    private convertToLegacyContext(context: StrictCompletionContext, type: CompletionType, vscodeDocument?: vscode.TextDocument, vscodePosition?: vscode.Position): CompletionContext {
         // Extract query from position
         const query = this.extractQueryFromPosition(context);
+
+        // Calculate replacement range based on query length
+        const currentPosition = {
+            line: createLineNumber(vscodePosition ? vscodePosition.line : 0),
+            character: createCharacterPosition(context.position.character)
+        };
+        
+        const startPosition = {
+            line: currentPosition.line,
+            character: createCharacterPosition(context.position.character - query.length)
+        };
+
+        const range = {
+            start: startPosition,
+            end: currentPosition
+        };
 
         // Create DocumentReference if document is provided
         let documentRef: any = undefined;
@@ -195,11 +212,9 @@ export class StrictCompletionProvider implements vscode.CompletionItemProvider {
         return {
             type: type,
             query: query,
-            position: {
-                line: 0 as any, // Legacy compatibility - not actually used by completers
-                character: context.position.character as any
-            },
-            document: documentRef // Pass document context for TagCompleter config refresh
+            position: currentPosition,
+            document: documentRef,
+            range: range
         };
     }
 

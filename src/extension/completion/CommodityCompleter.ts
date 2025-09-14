@@ -20,13 +20,21 @@ export class CommodityCompleter {
             maxResults: 20
         });
 
-        return matches.map(match => this.createCompletionItem(match));
+        return matches.map(match => this.createCompletionItem(match, context));
     }
 
-    private createCompletionItem(match: FuzzyMatch): vscode.CompletionItem {
+    private createCompletionItem(match: FuzzyMatch, context: CompletionContext): vscode.CompletionItem {
         const item = new vscode.CompletionItem(match.item, vscode.CompletionItemKind.Unit);
         item.detail = 'Commodity';
         item.sortText = this.getSortText(match);
+        
+        // Set replacement range if available
+        if (context.range && context.position) {
+            item.range = new vscode.Range(
+                new vscode.Position(context.range.start.line, context.range.start.character),
+                new vscode.Position(context.range.end.line, context.range.end.character)
+            );
+        }
         
         // Mark default commodity
         const defaultCommodity = this.config.getDefaultCommodity();
