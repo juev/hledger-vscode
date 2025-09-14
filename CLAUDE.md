@@ -263,7 +263,6 @@ This is a straightforward, functional VS Code extension with a modular but simpl
 
 - **Syntax Highlighting**: `syntaxes/hledger.tmLanguage.json` - Comprehensive TextMate grammar with URL recognition, timeclock support, and CSV directive handling
 - **Smart Indentation**: `HLedgerEnterCommand.ts` and related providers
-- **Color Configuration**: Extensive customization via VS Code settings
 - **Advanced Comment Processing**: Support for URL highlighting in comments and multi-line comment blocks
 
 ### Current Design Patterns (v0.2.1)
@@ -511,7 +510,7 @@ The `testdata/` directory contains realistic hledger journal files used exclusiv
 3. **Activation event**: `onLanguage:hledger`
 4. **File associations**: `.journal`, `.hledger`, `.ledger`
 5. **Dependencies**: No external dependencies for core functionality
-6. **Syntax highlighting**: Comprehensive TextMate grammar with customizable colors, URL recognition, and extended directive support
+6. **Syntax highlighting**: Comprehensive TextMate grammar with URL recognition and extended directive support
 7. **hledger Compliance**: Follows hledger specification with core feature support plus timeclock and CSV extensions
 8. **International Format Support**: Support for various decimal separators and group separators in number formats
 9. **Enhanced Comment Processing**: Advanced comment handling with URL recognition and multi-line comment block support
@@ -532,7 +531,6 @@ The `testdata/` directory contains realistic hledger journal files used exclusiv
 - `hledger.autoCompletion.maxResults` - Limit completion results
 - `hledger.autoCompletion.maxAccountResults` - Limit account completions
 - `hledger.smartIndent.enabled` - Smart indentation on Enter key
-- `hledger.colors.*` - 9 color customization settings
 
 ### Available Commands
 

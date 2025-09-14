@@ -19,7 +19,6 @@ Visual Studio Code extension providing syntax highlighting, intelligent code com
 - **Smart Indentation**: Automatic indentation for transactions and postings with Enter key
 - **Context-Aware Completion**: Strict position analysis for accurate suggestions
 - **Multi-language Support**: Full Unicode support including Cyrillic characters
-- **Color Customization**: Extensive customization options through VS Code settings
 - **Project-Based Caching**: Efficient workspace parsing and caching
 
 ## Supported File Extensions
@@ -63,25 +62,6 @@ The extension provides context-aware completion based on your cursor position:
 - **Automatic Indent**: Pressing Enter after a transaction date automatically indents for posting entries
 - **Preserve Indent**: Maintains proper indentation when continuing posting entries
 - **Smart Context**: Handles different line types appropriately
-
-### Color Customization
-
-Customize syntax highlighting colors through VS Code settings:
-
-```json
-{
-    "hledger.colors.date": "#2563EB",
-    "hledger.colors.account": "#059669",
-    "hledger.colors.amount": "#DC2626",
-    "hledger.colors.commodity": "#7C3AED",
-    "hledger.colors.payee": "#EA580C",
-    "hledger.colors.comment": "#6B7280",
-    "hledger.colors.tag": "#DB2777",
-    "hledger.colors.directive": "#059669",
-    "hledger.colors.accountDefined": "#0891B2",
-    "hledger.colors.accountVirtual": "#6B7280"
-}
-```
 
 ## Configuration
 
