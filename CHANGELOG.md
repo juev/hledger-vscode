@@ -1,5 +1,11 @@
 # Change Log
 
+## [0.3.2] - 2025-09-14
+
+### Added
+- feat: update hledger syntax highlighting rules to use standard TextMate scope names and enhance validation requirements
+
+
 ## [0.3.1] - 2025-09-12
 
 ### Added
