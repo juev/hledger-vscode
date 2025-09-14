@@ -50,25 +50,25 @@ export class DateCompleter {
 
         // Today's date
         const today = new Date();
-        completions.push(this.createDateItem(today, DateCompletionType.Today, useShortFormat));
+        completions.push(this.createDateItem(today, DateCompletionType.Today, useShortFormat, context));
 
         // Yesterday
         const yesterday = new Date(today);
         yesterday.setDate(yesterday.getDate() - 1);
-        completions.push(this.createDateItem(yesterday, DateCompletionType.Yesterday, useShortFormat));
+        completions.push(this.createDateItem(yesterday, DateCompletionType.Yesterday, useShortFormat, context));
 
         // Last week (7 days ago)
         const lastWeek = new Date(today);
         lastWeek.setDate(lastWeek.getDate() - 7);
-        completions.push(this.createDateItem(lastWeek, DateCompletionType.LastWeek, useShortFormat));
+        completions.push(this.createDateItem(lastWeek, DateCompletionType.LastWeek, useShortFormat, context));
 
         // Start of this month
         const monthStart = new Date(today.getFullYear(), today.getMonth(), 1);
-        completions.push(this.createDateItem(monthStart, DateCompletionType.MonthStart, useShortFormat));
+        completions.push(this.createDateItem(monthStart, DateCompletionType.MonthStart, useShortFormat, context));
 
         // Last month start
         const lastMonthStart = new Date(today.getFullYear(), today.getMonth() - 1, 1);
-        completions.push(this.createDateItem(lastMonthStart, DateCompletionType.LastMonthStart, useShortFormat));
+        completions.push(this.createDateItem(lastMonthStart, DateCompletionType.LastMonthStart, useShortFormat, context));
 
         // Use last date from ledger if available
         const lastDate = this.config.getLastDate();
@@ -78,6 +78,15 @@ export class DateCompleter {
             const item = new vscode.CompletionItem(formattedLastDate, vscode.CompletionItemKind.Reference);
             item.detail = DateCompletionType.LastUsed;
             item.sortText = '0000_last';
+            
+            // Set replacement range if available
+            if (context.range && context.position) {
+                item.range = new vscode.Range(
+                    new vscode.Position(context.range.start.line, context.range.start.character),
+                    new vscode.Position(context.range.end.line, context.range.end.character)
+                );
+            }
+            
             completions.push(item);
         }
 
@@ -107,12 +116,20 @@ export class DateCompleter {
         return DatePatterns.SHORT_FORMAT_QUERY.test(query) || DatePatterns.NUMERIC_QUERY.test(query);
     }
 
-    private createDateItem(date: Date, description: DateCompletionType, useShortFormat = false): vscode.CompletionItem {
+    private createDateItem(date: Date, description: DateCompletionType, useShortFormat = false, context?: CompletionContext): vscode.CompletionItem {
         const dateStr = useShortFormat ? this.formatShortDate(date) : this.formatDate(date);
         const item = new vscode.CompletionItem(dateStr, vscode.CompletionItemKind.Constant);
         item.detail = description;
         item.documentation = new vscode.MarkdownString(`${description}: ${dateStr}`);
         item.sortText = `${this.getSortPrefix(description)}_${dateStr}`;
+        
+        // Set replacement range if available
+        if (context && context.range && context.position) {
+            item.range = new vscode.Range(
+                new vscode.Position(context.range.start.line, context.range.start.character),
+                new vscode.Position(context.range.end.line, context.range.end.character)
+            );
+        }
         
         return item;
     }

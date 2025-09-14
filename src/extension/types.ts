@@ -88,6 +88,16 @@ export interface CompletionContext {
     readonly query: string;
     readonly position?: CompletionPosition;
     readonly document?: DocumentReference;
+    readonly range?: CompletionRange;
+}
+
+/**
+ * Range interface for text replacement in completions.
+ * Defines the span of text that should be replaced by the completion.
+ */
+export interface CompletionRange {
+    readonly start: CompletionPosition;
+    readonly end: CompletionPosition;
 }
 
 /**

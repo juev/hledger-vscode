@@ -20,13 +20,21 @@ export class PayeeCompleter {
             maxResults: 30
         });
 
-        return matches.map(match => this.createCompletionItem(match));
+        return matches.map(match => this.createCompletionItem(match, context));
     }
 
-    private createCompletionItem(match: FuzzyMatch): vscode.CompletionItem {
+    private createCompletionItem(match: FuzzyMatch, context: CompletionContext): vscode.CompletionItem {
         const item = new vscode.CompletionItem(match.item, vscode.CompletionItemKind.Text);
         item.detail = 'Payee';
         item.sortText = this.getSortText(match);
+        
+        // Set replacement range if available
+        if (context.range && context.position) {
+            item.range = new vscode.Range(
+                new vscode.Position(context.range.start.line, context.range.start.character),
+                new vscode.Position(context.range.end.line, context.range.end.character)
+            );
+        }
         
         const usageCount = this.config.payeeUsage.get(match.item as PayeeName) || 0;
         if (usageCount > 1) {
