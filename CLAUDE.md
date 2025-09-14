@@ -2,6 +2,22 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## **🚨 CRITICAL SYNTAX HIGHLIGHTING RULE**
+
+**NEVER use custom scope names like `hledger.date` or `hledger.payee` - they break in production!**
+
+**ALWAYS use standard TextMate scope names:**
+
+- Dates: `constant.numeric.date.hledger`
+- Payees: `entity.name.function.payee.hledger`
+- Accounts: `entity.name.type.account.hledger`
+
+**ALWAYS test with production package before release:**
+
+```bash
+npm run package && code --install-extension hledger-*.vsix --force
+```
+
 ## **MANDATORY: Expert Usage Requirements**
 
 **CRITICAL**: For ALL tasks in this repository, you MUST use specialized Task tool agents. Never work directly without expert consultation.
@@ -541,6 +557,63 @@ The current architecture provides these benefits:
 ## **CRITICAL: System Integrity Requirements**
 
 **WARNING**: The system has undergone major enhancements including completion system fixes, syntax highlighting improvements, and URL recognition features. These requirements prevent critical regressions that break user experience.
+
+### **CRITICAL: TextMate Grammar and Syntax Highlighting Requirements (v0.2.1+)**
+
+**NEVER break syntax highlighting - this affects core user experience across all platforms**
+
+#### **MANDATORY: Standard Scope Naming Requirements**
+
+- **MANDATORY**: All scope names MUST follow TextMate standard naming conventions
+- **MANDATORY**: Use standard scope prefixes: `constant.`, `entity.`, `keyword.`, `string.`, `comment.`
+- **MANDATORY**: Never use custom scope names like `hledger.date` or `hledger.payee`
+- **MANDATORY**: Test syntax highlighting in both development and production modes
+
+#### **Standard Scope Name Mapping (NEVER CHANGE)**
+
+```json
+// CORRECT scope names (standardized in v0.2.1):
+{
+  "dates": "constant.numeric.date.hledger",
+  "payees": "entity.name.function.payee.hledger", 
+  "accounts": "entity.name.type.account.hledger",
+  "amounts": "constant.numeric.amount.hledger",
+  "commodities": "entity.name.type.commodity.hledger",
+  "status": "keyword.operator.status.hledger",
+  "codes": "string.other.code.hledger",
+  "notes": "string.unquoted.note.hledger",
+  "directives": "keyword.directive.hledger"
+}
+```
+
+#### **Forbidden Scope Patterns (Cause Syntax Highlighting Failures)**
+
+- **FORBIDDEN**: `hledger.date`, `hledger.payee`, `hledger.account` - these don't work in production
+- **FORBIDDEN**: Custom scope names without standard prefixes
+- **FORBIDDEN**: Modifying scope names without updating `configurationDefaults` in package.json
+
+#### **Syntax Highlighting Validation Requirements**
+
+- **ALL syntax changes** must be tested with production package (`npm run package`)
+- **ALL scope names** must be validated with standard TextMate naming conventions
+- **BOTH development and production modes** must be tested before release
+- **Expert Usage**: Use `general-purpose` expert for syntax pattern analysis
+
+#### **Required Testing Workflow**
+
+```bash
+# MANDATORY before any syntax highlighting changes:
+npm run package
+code --install-extension hledger-*.vsix --force
+code testdata/test.journal
+# Verify: dates (blue), payees (orange), accounts (green), amounts (red)
+```
+
+#### **Root Cause Analysis (Fixed in v0.2.1)**
+
+**Problem**: Custom scope names like `hledger.date` worked in development mode but failed in production because VS Code's TextMate engine only applies colors to standard scope names in production builds.
+
+**Solution**: Replaced all custom scope names with standard TextMate naming conventions and updated color configuration accordingly.
 
 ### **CRITICAL: Syntax Highlighting System Requirements (v0.3.0)**
 
