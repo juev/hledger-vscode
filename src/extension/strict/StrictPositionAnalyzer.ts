@@ -275,31 +275,36 @@ export class StrictPositionAnalyzer {
     
     /**
      * Determines if cursor is in a forbidden zone - after amount + two or more spaces
-     * Uses a simpler approach that checks for amount patterns followed by multiple spaces
+     * Uses NumberFormatService for proper international number format support
      */
     private isForbiddenZoneContext(beforeCursor: string): boolean {
-        // Simple patterns for common amount formats followed by two or more spaces
-        const forbiddenPatterns = [
-            // US format: 123.45 + two or more spaces (including crypto with many decimals)
-            /\d+\.\d+\s{2,}/u,
-            // European format: 123,45 + two or more spaces (including crypto with many decimals)
-            /\d+,\d+\s{2,}/u,
-            // Whole numbers: 123 + two or more spaces
-            /\d+\s{2,}/u,
-            // Grouped US format: 1,234.56 + two or more spaces
-            /\d{1,3}(?:,\d{3})*\.\d+\s{2,}/u,
-            // Grouped European format: 1.234,56 + two or more spaces or 1 234,56
-            /\d{1,3}(?:[.\s]\d{3})*,\d+\s{2,}/u,
-        ];
-        
-        // Test each pattern
-        for (const pattern of forbiddenPatterns) {
-            if (pattern.test(beforeCursor)) {
-                return true;
+        // Create individual amount patterns for each format and combine them for context matching
+        // We need to match amounts within text, not as standalone strings
+        const formatPatterns = this.numberFormatService.getSupportedFormats().map(format => {
+            const { decimalMark, groupSeparator, useGrouping } = format;
+            
+            const escapedDecimalMark = escapeRegex(decimalMark);
+            const escapedGroupSeparator = useGrouping && groupSeparator 
+                ? escapeRegex(groupSeparator) 
+                : '';
+            
+            // Create pattern for amounts in context (not anchored to start/end of string)
+            if (useGrouping && groupSeparator) {
+                // Pattern for grouped numbers: 1,234.56 or 1 234,56
+                return `\\p{N}{1,3}(?:${escapedGroupSeparator}\\p{N}{3})*(?:${escapedDecimalMark}\\p{N}{1,12})?`;
+            } else {
+                // Pattern for simple numbers: 1234.56 or 1234,56
+                return `\\p{N}+(?:${escapedDecimalMark}\\p{N}{1,12})?`;
             }
-        }
+        });
         
-        return false;
+        // Combine all format patterns
+        const combinedAmountPattern = `(?:${formatPatterns.join('|')})`;
+        
+        // Standard forbidden zone pattern: amount + 2+ spaces
+        const forbiddenZonePattern = new RegExp(`${combinedAmountPattern}\\s{2,}`, 'u');
+        
+        return forbiddenZonePattern.test(beforeCursor);
     }
 
     /**
