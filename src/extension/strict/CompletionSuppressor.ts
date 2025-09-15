@@ -1,6 +1,7 @@
 import { StrictCompletionContext, LineContext } from './StrictPositionAnalyzer';
 import { CompletionType } from '../types';
 import { NumberFormatService } from '../services/NumberFormatService';
+import { escapeRegex } from '../utils';
 
 export class CompletionSuppressor {
     private readonly numberFormatService: NumberFormatService;
@@ -69,10 +70,9 @@ export class CompletionSuppressor {
         const formatPatterns = this.numberFormatService.getSupportedFormats().map(format => {
             const { decimalMark, groupSeparator, useGrouping } = format;
             
-            // Escape regex characters
-            const escapedDecimalMark = decimalMark.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+            const escapedDecimalMark = escapeRegex(decimalMark);
             const escapedGroupSeparator = useGrouping && groupSeparator 
-                ? groupSeparator.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') 
+                ? escapeRegex(groupSeparator) 
                 : '';
             
             // Create pattern for amounts in context (not anchored to start/end of string)

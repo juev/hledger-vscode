@@ -2,6 +2,7 @@ import * as vscode from 'vscode';
 import { CompletionType } from '../types';
 import { NumberFormatService, NumberFormat } from '../services/NumberFormatService';
 import { HLedgerConfig } from '../HLedgerConfig';
+import { escapeRegex } from '../utils';
 
 export enum LineContext {
     LineStart = 'line_start',           // Beginning of line - only dates allowed
@@ -96,11 +97,6 @@ export class StrictPositionAnalyzer {
         const createAmountPatternForFormat = (format: NumberFormat): string => {
             const { decimalMark, groupSeparator, useGrouping } = format;
             
-            // Escape special regex characters
-            const escapeRegex = (char: string): string => {
-                return char.replace(/[.*+?^${}()|[\\]\\]/g, '\\$&');
-            };
-
             const escapedDecimalMark = escapeRegex(decimalMark);
             
             if (useGrouping && groupSeparator) {

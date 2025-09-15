@@ -3,6 +3,7 @@
 // Supports decimal marks (period, comma) and group separators (space, comma, period)
 
 import { Result, ValidationResult, success, failure, validationSuccess, validationFailure, isFailure } from '../types';
+import { escapeRegex } from '../utils';
 
 /**
  * Interface defining the structure of a number format.
@@ -156,11 +157,6 @@ export class NumberFormatService {
 
         const { decimalMark, groupSeparator, useGrouping } = format;
         
-        // Escape special regex characters
-        const escapeRegex = (char: string): string => {
-            return char.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-        };
-
         const escapedDecimalMark = escapeRegex(decimalMark);
         const escapedGroupSeparator = useGrouping && groupSeparator ? escapeRegex(groupSeparator) : '';
 
@@ -342,7 +338,7 @@ export class NumberFormatService {
             let cleanInput = input;
             if (useGrouping && groupSeparator) {
                 // Use a more precise regex to remove group separators
-                const groupSepRegex = new RegExp(this.escapeRegexChar(groupSeparator), 'g');
+                const groupSepRegex = new RegExp(escapeRegex(groupSeparator), 'g');
                 cleanInput = cleanInput.replace(groupSepRegex, '');
             }
 
@@ -476,17 +472,6 @@ export class NumberFormatService {
      */
     private getFormatCacheKey(format: NumberFormat): string {
         return `${format.decimalMark}_${format.groupSeparator}_${format.useGrouping}_${format.decimalPlaces}`;
-    }
-
-    /**
-     * Escapes a character for use in a regular expression.
-     * 
-     * @private
-     * @param char The character to escape
-     * @returns Escaped character string
-     */
-    private escapeRegexChar(char: string): string {
-        return char.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     }
 }
 
