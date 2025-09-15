@@ -21,11 +21,11 @@ export class HLedgerConfig {
         CURRENCY_CONTEXT: /[\d$€£¥₽]\s*$/,
         POSTING_WITH_AMOUNTS: /^\s+.*\d+/,
         ACCOUNT_END: /^\s+[^0-9]*\s+/,
-        // Improved date patterns for progressive typing
-        NUMERIC_START: /^\d{1,4}$/,  // Just digits at line start (for typing year)
-        PARTIAL_DATE: /^\d{1,4}[-\/]?\d{0,2}[-\/]?\d{0,2}$/,  // Flexible partial date
-        FULL_DATE: /^\d{4}[-\/]\d{1,2}[-\/]\d{1,2}$/,  // Complete date format
-        SHORT_DATE: /^(0?[1-9]|1[0-2])[-\/](0?[1-9]|[12]\d|3[01])$/,  // MM/DD or M/D format
+        // Pattern for checking if line start looks like a date (digits only)
+        NUMERIC_START: /^\d{1,4}$/,
+        // Simplified date pattern that covers all date formats
+        // Matches: YYYY-MM-DD, YYYY/MM/DD, MM-DD, MM/DD, YYYY, etc.
+        DATE_PATTERN: /^\d{1,4}[-\/]?\d{0,2}[-\/]?\d{0,2}$/,
         // Fixed: Support both full dates (YYYY-MM-DD) and short dates (MM-DD) in transactions
         DATE_IN_TRANSACTION: /^\s*(?:\d{4}[-\/]\d{1,2}[-\/]\d{1,2}|\d{1,2}[-\/]\d{1,2})\s*[*!]?\s*/
     } as const;
@@ -331,18 +331,8 @@ export class HLedgerConfig {
         // Check if we're at the beginning of a line typing a date
         // Be very permissive - any digits at line start could be a date
         
-        // First check: any numeric input at line start (for progressive typing)
-        const isNumericStart = HLedgerConfig.PATTERNS.NUMERIC_START.test(lineStart);
-        
-        // Second check: partial date patterns
-        const isPartialDate = HLedgerConfig.PATTERNS.PARTIAL_DATE.test(lineStart);
-        
-        // Third check: complete date formats
-        const isFullDate = HLedgerConfig.PATTERNS.FULL_DATE.test(lineStart);
-        const isShortDate = HLedgerConfig.PATTERNS.SHORT_DATE.test(lineStart);
-        
-        // Accept any of these patterns
-        const isValidPattern = isNumericStart || isPartialDate || isFullDate || isShortDate;
+        // Use the unified date pattern that covers all cases
+        const isValidPattern = HLedgerConfig.PATTERNS.DATE_PATTERN.test(lineStart);
         
         // Be generous with position - allow up to 12 characters for date entry
         return isValidPattern && positionInTrimmed <= 12;
