@@ -34,7 +34,7 @@ export interface FuzzyMatchOptions<T extends string = string> {
  */
 export class SimpleFuzzyMatcher {
     /**
-     * Match query against items using simple substring filtering.
+     * Match query against items using simple prefix and component filtering.
      * Enhanced with type safety and better performance.
      * 
      * @template T - String type extending base string, typically a branded type
@@ -59,30 +59,48 @@ export class SimpleFuzzyMatcher {
         return items
             .filter(item => {
                 if (caseSensitive) {
-                    // For case-sensitive matching, check if item starts with query (prefix matching)
-                    return item.startsWith(query);
+                    // For case-sensitive matching, check for prefix match or component match
+                    return item.startsWith(query) || item.includes(':' + query);
                 } else {
-                    // For case-insensitive matching, check if item starts with query (prefix matching)
-                    return item.toLocaleLowerCase().startsWith(lowerQuery);
+                    // For case-insensitive matching, check for prefix match or component match
+                    const lowerItem = item.toLocaleLowerCase();
+                    return lowerItem.startsWith(lowerQuery) || lowerItem.includes(':' + lowerQuery);
                 }
             })
             .sort((a, b) => {
-                // Enhanced sorting: exact match first, then prefix match, then usage
-                let aExact, bExact;
+                // Enhanced sorting: exact match first, then prefix match, then component match, then usage
+                let aExact, bExact, aStarts, bStarts, aComponent, bComponent;
                 
                 if (caseSensitive) {
                     aExact = a === query;
                     bExact = b === query;
+                    aStarts = a.startsWith(query);
+                    bStarts = b.startsWith(query);
+                    aComponent = a.includes(':' + query);
+                    bComponent = b.includes(':' + query);
                 } else {
                     const aLower = a.toLocaleLowerCase();
                     const bLower = b.toLocaleLowerCase();
-                    aExact = aLower === lowerQuery;
-                    bExact = bLower === lowerQuery;
+                    const queryLower = lowerQuery;
+                    aExact = aLower === queryLower;
+                    bExact = bLower === queryLower;
+                    aStarts = aLower.startsWith(queryLower);
+                    bStarts = bLower.startsWith(queryLower);
+                    aComponent = aLower.includes(':' + queryLower);
+                    bComponent = bLower.includes(':' + queryLower);
                 }
                 
                 // Exact matches first
                 if (aExact && !bExact) return -1;
                 if (!aExact && bExact) return 1;
+                
+                // Then prefix matches
+                if (aStarts && !bStarts) return -1;
+                if (!aStarts && bStarts) return 1;
+                
+                // Then component matches (accounts where query appears after a colon)
+                if (aComponent && !bComponent) return -1;
+                if (!aComponent && bComponent) return 1;
                 
                 // Then by usage count if available
                 if (options.usageCounts) {
@@ -127,9 +145,13 @@ export class SimpleFuzzyMatcher {
         if (itemToCompare === queryToCompare) {
             score += options.exactMatchBonus || 200;
         }
-        // Prefix match gets high score (this is now the primary matching criteria)
+        // Prefix match gets high score
         else if (itemToCompare.startsWith(queryToCompare)) {
             score += options.prefixMatchBonus || 100;
+        }
+        // Component match (contains :query) gets medium score
+        else if (itemToCompare.includes(':' + queryToCompare)) {
+            score += 50;
         }
         
         // Add usage count bonus
