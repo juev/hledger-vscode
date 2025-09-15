@@ -90,7 +90,8 @@ export class TagCompleter {
         
         const matches = this.fuzzyMatcher.match(valueQuery, tagValues, {
             usageCounts: this.getTagValueUsageMap(tagName) as ReadonlyMap<string, UsageCount>,
-            maxResults: 20
+            maxResults: 20,
+            caseSensitive: context.isCaseSensitive ?? false
         });
         
         const items = matches.map(match => this.createTagValueCompletionItem(match, tagName, context));
@@ -159,7 +160,8 @@ export class TagCompleter {
 
         const matches = this.fuzzyMatcher.match(context.query, tagNames, {
             usageCounts: this.config.tagUsage as ReadonlyMap<string, UsageCount>,
-            maxResults: 20
+            maxResults: 20,
+            caseSensitive: context.isCaseSensitive ?? false
         });
 
         return matches.map(match => this.createTagNameCompletionItem(match, context));

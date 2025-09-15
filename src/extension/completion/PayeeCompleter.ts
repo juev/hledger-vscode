@@ -17,7 +17,8 @@ export class PayeeCompleter {
         const payees = this.config.getPayeesByUsage();
         const matches = this.fuzzyMatcher.match(context.query, payees, {
             usageCounts: this.config.payeeUsage,
-            maxResults: 30
+            maxResults: 30,
+            caseSensitive: context.isCaseSensitive ?? false
         });
 
         return matches.map(match => this.createCompletionItem(match, context));

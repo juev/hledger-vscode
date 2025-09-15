@@ -23,7 +23,8 @@ export class AccountCompleter {
             usageCounts: this.config.accountUsage,
             maxResults: 50,
             exactMatchBonus: 200,
-            prefixMatchBonus: 100
+            prefixMatchBonus: 100,
+            caseSensitive: context.isCaseSensitive ?? false
         });
 
         return matches.map(match => this.createCompletionItem(match, context));

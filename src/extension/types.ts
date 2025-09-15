@@ -89,6 +89,7 @@ export interface CompletionContext {
     readonly position?: CompletionPosition;
     readonly document?: DocumentReference;
     readonly range?: CompletionRange;
+    readonly isCaseSensitive?: boolean;
 }
 
 /**

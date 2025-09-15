@@ -46,6 +46,7 @@ export class SimpleFuzzyMatcher {
     match<T extends string>(query: string, items: readonly T[], options: FuzzyMatchOptions<T> = {}): FuzzyMatch<T>[] {
         const lowerQuery = query.toLocaleLowerCase();
         const maxResults = options.maxResults || 100;
+        const caseSensitive = options.caseSensitive || false;
         
         // Handle empty query
         if (!query) {
@@ -56,15 +57,32 @@ export class SimpleFuzzyMatcher {
         }
         
         return items
-            .filter(item => options.caseSensitive ? item.includes(query) : item.toLocaleLowerCase().includes(lowerQuery))
+            .filter(item => {
+                if (caseSensitive) {
+                    // For case-sensitive matching, we still use substring matching as that's the expected behavior
+                    // The user might want to find items containing their exact query (e.g., "Ass" in "Assets")
+                    return item.includes(query);
+                } else {
+                    return item.toLocaleLowerCase().includes(lowerQuery);
+                }
+            })
             .sort((a, b) => {
                 // Enhanced sorting: exact match first, then prefix match, then usage
-                const aLower = a.toLocaleLowerCase();
-                const bLower = b.toLocaleLowerCase();
-                const aExact = aLower === lowerQuery;
-                const bExact = bLower === lowerQuery;
-                const aStarts = aLower.startsWith(lowerQuery);
-                const bStarts = bLower.startsWith(lowerQuery);
+                let aExact, bExact, aStarts, bStarts;
+                
+                if (caseSensitive) {
+                    aExact = a === query;
+                    bExact = b === query;
+                    aStarts = a.startsWith(query);
+                    bStarts = b.startsWith(query);
+                } else {
+                    const aLower = a.toLocaleLowerCase();
+                    const bLower = b.toLocaleLowerCase();
+                    aExact = aLower === lowerQuery;
+                    bExact = bLower === lowerQuery;
+                    aStarts = aLower.startsWith(lowerQuery);
+                    bStarts = bLower.startsWith(lowerQuery);
+                }
                 
                 // Exact matches first
                 if (aExact && !bExact) return -1;
@@ -87,7 +105,7 @@ export class SimpleFuzzyMatcher {
             .slice(0, maxResults)
             .map(item => ({
                 item,
-                score: this.calculateScore(item, lowerQuery, options)
+                score: this.calculateScore(item, query, options, caseSensitive)
             }));
     }
     
@@ -96,25 +114,33 @@ export class SimpleFuzzyMatcher {
      * 
      * @template T - String type extending base string, typically a branded type
      * @param item - Item to score
-     * @param query - Normalized query string (lowercase)
+     * @param query - Query string (preserved case)
      * @param options - Matching options with usage counts and bonuses
+     * @param caseSensitive - Whether to perform case-sensitive matching
      * @returns Branded CompletionScore with validation
      */
-    private calculateScore<T extends string>(item: T, query: string, options: FuzzyMatchOptions<T>): CompletionScore {
+    private calculateScore<T extends string>(item: T, query: string, options: FuzzyMatchOptions<T>, caseSensitive: boolean): CompletionScore {
         let score = 0;
-        const itemLower = item.toLocaleLowerCase();
-        const queryLower = query.toLocaleLowerCase();
+        let itemToCompare, queryToCompare;
+        
+        if (caseSensitive) {
+            itemToCompare = item;
+            queryToCompare = query;
+        } else {
+            itemToCompare = item.toLocaleLowerCase();
+            queryToCompare = query.toLocaleLowerCase();
+        }
         
         // Exact match gets highest score
-        if (itemLower === queryLower) {
+        if (itemToCompare === queryToCompare) {
             score += options.exactMatchBonus || 200;
         }
         // Prefix match gets high score
-        else if (itemLower.startsWith(queryLower)) {
+        else if (itemToCompare.startsWith(queryToCompare)) {
             score += options.prefixMatchBonus || 100;
         }
         // Substring match gets medium score
-        else if (itemLower.includes(queryLower)) {
+        else if (itemToCompare.includes(queryToCompare)) {
             score += 50;
         }
         
