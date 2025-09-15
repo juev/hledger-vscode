@@ -338,10 +338,10 @@ export class StrictPositionAnalyzer {
         }
         
         // Check if the last segment contains a tag name followed by colon
-        // Pattern: optional whitespace, tag name (Unicode letters/numbers/underscore/hyphen/SPACE), colon, optional tag value
-        const tagValuePattern = /^\s*([\p{L}\p{N}_\s-]+):\s*([^,;]*)$/u;
+        // Pattern: optional whitespace, tag name (Unicode letters/numbers/underscore/hyphen, but no trailing spaces), colon, optional tag value
+        // More precise pattern that doesn't allow trailing spaces in tag names
+        const tagValuePattern = /^\s*([\p{L}\p{N}][\p{L}\p{N}_\-]*):([\p{L}\p{N}_\-\s]*)?$/u;
         const result = tagValuePattern.test(lastSegment);
-        
         
         return result;
     }
