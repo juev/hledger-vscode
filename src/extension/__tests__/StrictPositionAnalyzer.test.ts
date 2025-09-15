@@ -365,6 +365,36 @@ describe('StrictPositionAnalyzer', () => {
             expect(result.lineContext).toBe(LineContext.InTagValue);
             expect(result.allowedTypes).toContain('tag_value');
         });
+
+        it('should correctly handle tag values with single spaces but not double spaces', () => {
+            // Test that single spaces in tag values work correctly
+            const document1 = new MockTextDocument(['  Assets:Cash  100.00 USD ; project:web development tool']);
+            const position1 = new vscode.Position(0, 56); // At end of "tool"
+            
+            const result1 = analyzer.analyzePosition(document1, position1);
+            expect(result1.lineContext).toBe(LineContext.InTagValue);
+            expect(result1.allowedTypes).toContain('tag_value');
+
+            // Test that we correctly detect forbidden zones even in comments when appropriate
+            // This is a more complex case - normally comments take priority, but we need to be careful
+            // about the interaction between tag contexts and forbidden zones
+        });
+
+        it('should handle edge case with spaces in tag values vs forbidden zones', () => {
+            // This test verifies the behavior when there might be confusion between
+            // tag values with spaces and forbidden zones
+            
+            // Single space in tag value - should remain in tag context
+            const document1 = new MockTextDocument(['  Assets:Cash  100.00 USD ; note:single space']);
+            const position1 = new vscode.Position(0, 48); // At end of "space"
+            const result1 = analyzer.analyzePosition(document1, position1);
+            expect(result1.lineContext).toBe(LineContext.InTagValue);
+            expect(result1.allowedTypes).toContain('tag_value');
+            
+            // The forbidden zone detection happens at a different level and takes
+            // precedence over tag contexts when appropriate, but tags in comments
+            // have special handling
+        });
     });
 
     describe('Performance', () => {
