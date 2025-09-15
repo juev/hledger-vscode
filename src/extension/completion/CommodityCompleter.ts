@@ -17,7 +17,8 @@ export class CommodityCompleter {
         const commodities = this.config.getCommoditiesByUsage();
         const matches = this.fuzzyMatcher.match(context.query, commodities, {
             usageCounts: this.config.commodityUsage,
-            maxResults: 20
+            maxResults: 20,
+            caseSensitive: context.isCaseSensitive ?? false
         });
 
         return matches.map(match => this.createCompletionItem(match, context));

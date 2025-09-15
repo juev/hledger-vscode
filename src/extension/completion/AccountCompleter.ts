@@ -23,16 +23,27 @@ export class AccountCompleter {
             usageCounts: this.config.accountUsage,
             maxResults: 50,
             exactMatchBonus: 200,
-            prefixMatchBonus: 100
+            prefixMatchBonus: 100,
+            caseSensitive: context.isCaseSensitive ?? false
         });
 
         return matches.map(match => this.createCompletionItem(match, context));
     }
 
     private createCompletionItem(match: FuzzyMatch<AccountName>, context: CompletionContext): vscode.CompletionItem {
-        const item = new vscode.CompletionItem(match.item, vscode.CompletionItemKind.Class);
+        const fullAccountName = match.item;
+        
+        // Create completion item with explicit control over display
+        const item = new vscode.CompletionItem(
+            fullAccountName,  // Use full account name as the label
+            vscode.CompletionItemKind.Class
+        );
+        
         item.detail = 'Account';
         item.sortText = this.getSortText(match);
+        
+        // Explicitly set insertText to ensure full account path is inserted
+        item.insertText = fullAccountName;
         
         // Set replacement range if available
         if (context.range && context.position) {
@@ -43,12 +54,13 @@ export class AccountCompleter {
         }
         
         // Enhanced documentation with usage information
-        const usageCount = this.config.accountUsage.get(match.item) || 0;
+        const usageCount = this.config.accountUsage.get(fullAccountName) || 0;
         const documentation = new vscode.MarkdownString();
         
-        if (match.item.includes(':')) {
-            const parts = match.item.split(':');
-            documentation.appendMarkdown(`**Account hierarchy:** ${parts.join(' → ')}\n\n`);
+        if (fullAccountName.includes(':')) {
+            const parts = fullAccountName.split(':');
+            documentation.appendMarkdown(`**Account hierarchy:** ${parts.join(' → ')}
+`);
         }
         
         documentation.appendMarkdown(`**Usage count:** ${usageCount}`);

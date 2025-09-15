@@ -20,17 +20,17 @@ describe('Fuzzy Matching', () => {
         expect(results[0].item).toBe('Grocery Store');
     });
 
-    test('should match substring (not fuzzy)', () => {
-        // SimpleFuzzyMatcher uses substring matching, not fuzzy
-        const results = fuzzyMatch('as', payees);
+    test('should match prefix (not substring)', () => {
+        // SimpleFuzzyMatcher uses prefix matching, not substring matching
+        const results = fuzzyMatch('Gas', payees);
         expect(results.length).toBeGreaterThan(0);
-        // Should match "Gas Station" (contains "as")
+        // Should match "Gas Station" (starts with "Gas")
         const items = results.map(r => r.item);
         expect(items).toContain('Gas Station');
     });
 
-    test('should match partial substring', () => {
-        const results = fuzzyMatch('cDon', payees);
+    test('should match exact prefix with partial match', () => {
+        const results = fuzzyMatch('McD', payees);
         expect(results.length).toBeGreaterThan(0);
         expect(results[0].item).toBe('McDonald\'s');
     });
@@ -59,10 +59,10 @@ describe('Fuzzy Matching', () => {
         expect(results[0].item).toBe('Amazon'); // Should be first due to exact prefix match
     });
 
-    test('should match substring patterns', () => {
-        const results = fuzzyMatch('gle', payees);
+    test('should match prefix patterns', () => {
+        const results = fuzzyMatch('Goog', payees);
         expect(results.length).toBeGreaterThan(0); 
-        // Should match "Google Play" (contains "gle")
+        // Should match "Google Play" (starts with "Goog")
         const items = results.map(r => r.item);
         expect(items).toContain('Google Play');
     });
@@ -73,28 +73,28 @@ describe('Fuzzy Matching', () => {
         expect(results[0].item).toBe('Amazon');
     });
 
-    test('should support substring matching', () => {
-        const results = fuzzyMatch('zin', ['Grocery Store', 'Magazine', 'Amazing Store']);
+    test('should support prefix matching', () => {
+        const results = fuzzyMatch('Mag', ['Grocery Store', 'Magazine', 'Amazing Store']);
         expect(results.length).toBeGreaterThan(0);
         const items = results.map(r => r.item);
-        expect(items).toContain('Magazine'); // Should match "ма**ga**zin**e"
-        expect(items).toContain('Amazing Store'); // Should match "ama**zin**g"
+        expect(items).toContain('Magazine'); // Should match "Mag**azine**"
+        expect(items).not.toContain('Amazing Store'); // Should NOT match because it doesn't start with "Mag"
     });
 
-    test('should handle cyrillic substring matching', () => {
+    test('should handle cyrillic prefix matching', () => {
         const cyrillicPayees = ['Магазин', 'Супермагазин', 'Мегамолл'];
-        const results = fuzzyMatch('зин', cyrillicPayees);
+        const results = fuzzyMatch('Маг', cyrillicPayees);
         expect(results.length).toBeGreaterThan(0);
         const items = results.map(r => r.item);
-        expect(items).toContain('Магазин'); // Should match "мага**зин**"
-        expect(items).toContain('Супермагазин'); // Should match "супермага**зин**"
+        expect(items).toContain('Магазин'); // Should match "**Маг**азин"
+        expect(items).not.toContain('Супермагазин'); // Should NOT match because it doesn't start with "Маг"
     });
 
-    test('should prioritize prefix matches over substring matches', () => {
+    test('should prioritize exact matches over prefix matches', () => {
         const testItems = ['Amazing', 'Magazine', 'Amazonia'];
-        const results = fuzzyMatch('ama', testItems);
+        const results = fuzzyMatch('Amazing', testItems);
         expect(results.length).toBeGreaterThan(0);
-        // Prefix matches should score higher than substring matches
-        expect(results[0].item).toBe('Amazing'); // Starts with "ama"
+        // Exact matches should score higher than prefix matches
+        expect(results[0].item).toBe('Amazing'); // Exact match
     });
 });

@@ -182,6 +182,9 @@ export class StrictCompletionProvider implements vscode.CompletionItemProvider {
     private convertToLegacyContext(context: StrictCompletionContext, type: CompletionType, vscodeDocument?: vscode.TextDocument, vscodePosition?: vscode.Position): CompletionContext {
         // Extract query from position
         const query = this.extractQueryFromPosition(context);
+        
+        // Determine case sensitivity
+        const isCaseSensitive = this.isQueryCaseSensitive(query);
 
         // Calculate replacement range based on query length
         const currentPosition = {
@@ -214,7 +217,8 @@ export class StrictCompletionProvider implements vscode.CompletionItemProvider {
             query: query,
             position: currentPosition,
             document: documentRef,
-            range: range
+            range: range,
+            isCaseSensitive: isCaseSensitive
         };
     }
 
@@ -246,8 +250,17 @@ export class StrictCompletionProvider implements vscode.CompletionItemProvider {
         }
 
         // For other completion types, extract the word being typed at cursor position
-        const match = beforeCursor.match(/[\w:.-]*$/);
+        // Use Unicode-aware pattern to support international characters
+        const match = beforeCursor.match(/[\p{L}\p{N}:_.-]*$/u);
         return match ? match[0] : '';
+    }
+
+    /**
+     * Determine if the query should be case-sensitive based on character casing
+     * If query contains uppercase letters, use case-sensitive matching
+     */
+    private isQueryCaseSensitive(query: string): boolean {
+        return /[A-Z]/.test(query);
     }
 
     /**
