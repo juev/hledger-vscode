@@ -1,5 +1,21 @@
 # Change Log
 
+## [0.3.5] - 2025-09-15
+
+### Added
+- feat: enhance fuzzy matching to support component matching and improve sorting logic
+- feat: add case sensitivity option to fuzzy matching and completion providers
+
+### Changed
+- test: update case-sensitive matching tests to reflect correct expected results
+- refactor: update fuzzy matching logic to prioritize prefix matching over substring matching
+- refactor: remove color customization references from documentation
+- refactor: remove color synchronization and semantic token provider for hledger extension
+
+### Fixed
+- fix: update color settings for hledger syntax highlighting
+
+
 ## [0.3.4] - 2025-09-14
 
 ### Added
