@@ -46,24 +46,25 @@ describe('SimpleFuzzyMatcher', () => {
         const items = ['Assets:Cash', 'assets:checking', 'Expenses:Food'];
         const results = matcher.match('Ass', items, { caseSensitive: true });
         
-        // Should match items that contain 'Ass' exactly (case-sensitive)
-        // 'Assets:Cash' contains 'Ass' as a substring, so it should match
+        // Should match items that START with 'Ass' exactly (case-sensitive)
+        // 'Assets:Cash' starts with 'Ass', so it should match
         expect(results.length).toBe(1);
         expect(results[0].item).toBe('Assets:Cash');
         
         const results2 = matcher.match('Assets', items, { caseSensitive: true });
-        // Should match 'Assets:Cash' as it contains 'Assets' exactly
+        // Should match 'Assets:Cash' as it starts with 'Assets' exactly
         expect(results2.length).toBe(1);
         expect(results2[0].item).toBe('Assets:Cash');
         
         const results3 = matcher.match('assets', items, { caseSensitive: true });
-        // Should match 'assets:checking' as it contains 'assets' exactly
+        // Should match 'assets:checking' as it starts with 'assets' exactly
         expect(results3.length).toBe(1);
         expect(results3[0].item).toBe('assets:checking');
         
         // Test that it doesn't match wrong case
         const results4 = matcher.match('ass', items, { caseSensitive: true });
-        // Should only match 'assets:checking', not 'Assets:Cash'
+        // Should only match items that START with 'ass' exactly
+        // Only 'assets:checking' starts with 'ass', so should return 1 item
         expect(results4.length).toBe(1);
         expect(results4[0].item).toBe('assets:checking');
     });
@@ -72,7 +73,8 @@ describe('SimpleFuzzyMatcher', () => {
         const items = ['Assets:Cash', 'assets:checking', 'Expenses:Food'];
         const results = matcher.match('ass', items, { caseSensitive: false });
         
-        // Should match both 'Assets:Cash' and 'assets:checking'
+        // Should match items that START with 'ass' (case-insensitive)
+        // Both 'Assets:Cash' and 'assets:checking' start with 'ass' when compared case-insensitively
         expect(results.length).toBe(2);
         expect(results.some(r => r.item === 'Assets:Cash')).toBe(true);
         expect(results.some(r => r.item === 'assets:checking')).toBe(true);
@@ -80,5 +82,10 @@ describe('SimpleFuzzyMatcher', () => {
         // Default behavior should also be case-insensitive
         const results2 = matcher.match('ass', items);
         expect(results2.length).toBe(2);
+        
+        // Test with a more specific prefix
+        const results3 = matcher.match('assets:', items);
+        expect(results3.length).toBe(1);
+        expect(results3[0].item).toBe('assets:checking');
     });
 });

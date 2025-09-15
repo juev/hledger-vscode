@@ -31,6 +31,7 @@ MIGRATION.md
 OPTIMIZATION-INTEGRATION.md
 PERFORMANCE_REPORT.md
 SYNTAX_HIGHLIGHTING.md
+QWEN.md
 
 # Performance and benchmark data
 benchmark-results/**

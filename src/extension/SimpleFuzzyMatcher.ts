@@ -59,38 +59,30 @@ export class SimpleFuzzyMatcher {
         return items
             .filter(item => {
                 if (caseSensitive) {
-                    // For case-sensitive matching, we still use substring matching as that's the expected behavior
-                    // The user might want to find items containing their exact query (e.g., "Ass" in "Assets")
-                    return item.includes(query);
+                    // For case-sensitive matching, check if item starts with query (prefix matching)
+                    return item.startsWith(query);
                 } else {
-                    return item.toLocaleLowerCase().includes(lowerQuery);
+                    // For case-insensitive matching, check if item starts with query (prefix matching)
+                    return item.toLocaleLowerCase().startsWith(lowerQuery);
                 }
             })
             .sort((a, b) => {
                 // Enhanced sorting: exact match first, then prefix match, then usage
-                let aExact, bExact, aStarts, bStarts;
+                let aExact, bExact;
                 
                 if (caseSensitive) {
                     aExact = a === query;
                     bExact = b === query;
-                    aStarts = a.startsWith(query);
-                    bStarts = b.startsWith(query);
                 } else {
                     const aLower = a.toLocaleLowerCase();
                     const bLower = b.toLocaleLowerCase();
                     aExact = aLower === lowerQuery;
                     bExact = bLower === lowerQuery;
-                    aStarts = aLower.startsWith(lowerQuery);
-                    bStarts = bLower.startsWith(lowerQuery);
                 }
                 
                 // Exact matches first
                 if (aExact && !bExact) return -1;
                 if (!aExact && bExact) return 1;
-                
-                // Then prefix matches
-                if (aStarts && !bStarts) return -1;
-                if (!aStarts && bStarts) return 1;
                 
                 // Then by usage count if available
                 if (options.usageCounts) {
@@ -135,13 +127,9 @@ export class SimpleFuzzyMatcher {
         if (itemToCompare === queryToCompare) {
             score += options.exactMatchBonus || 200;
         }
-        // Prefix match gets high score
+        // Prefix match gets high score (this is now the primary matching criteria)
         else if (itemToCompare.startsWith(queryToCompare)) {
             score += options.prefixMatchBonus || 100;
-        }
-        // Substring match gets medium score
-        else if (itemToCompare.includes(queryToCompare)) {
-            score += 50;
         }
         
         // Add usage count bonus

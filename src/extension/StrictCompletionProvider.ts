@@ -250,7 +250,8 @@ export class StrictCompletionProvider implements vscode.CompletionItemProvider {
         }
 
         // For other completion types, extract the word being typed at cursor position
-        const match = beforeCursor.match(/[\w:.-]*$/);
+        // Use Unicode-aware pattern to support international characters
+        const match = beforeCursor.match(/[\p{L}\p{N}:_.-]*$/u);
         return match ? match[0] : '';
     }
 
