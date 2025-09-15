@@ -48,13 +48,18 @@ describe('SimpleFuzzyMatcher', () => {
         
         // Should match items that START with 'Ass' or contain ':Ass' (case-sensitive)
         // 'Assets:Cash' starts with 'Ass', so it should match
-        expect(results.length).toBe(1);
-        expect(results[0].item).toBe('Assets:Cash');
+        // 'Income:Assets:Investment' contains ':Ass', so it should also match
+        expect(results.length).toBe(2);
+        expect(results.some(r => r.item === 'Assets:Cash')).toBe(true);
+        expect(results.some(r => r.item === 'Income:Assets:Investment')).toBe(true);
         
         const results2 = matcher.match('Assets', items, { caseSensitive: true });
-        // Should match 'Assets:Cash' as it starts with 'Assets' exactly
-        expect(results2.length).toBe(1);
-        expect(results2[0].item).toBe('Assets:Cash');
+        // Should match items that START with 'Assets' or contain ':Assets' (case-sensitive)
+        // 'Assets:Cash' starts with 'Assets', so it should match
+        // 'Income:Assets:Investment' contains ':Assets', so it should also match
+        expect(results2.length).toBe(2);
+        expect(results2.some(r => r.item === 'Assets:Cash')).toBe(true);
+        expect(results2.some(r => r.item === 'Income:Assets:Investment')).toBe(true);
         
         const results3 = matcher.match('assets', items, { caseSensitive: true });
         // Should match 'assets:checking' as it starts with 'assets' exactly
@@ -100,7 +105,13 @@ describe('SimpleFuzzyMatcher', () => {
         
         // Test with a more specific prefix
         const results4 = matcher.match('assets:', items);
-        expect(results4.length).toBe(1);
-        expect(results4[0].item).toBe('assets:checking');
+        // Should match items that START with 'assets:' or contain ':assets:' (case-insensitive)
+        // 'Assets:Cash' starts with 'assets:' (case-insensitive)
+        // 'assets:checking' starts with 'assets:' (case-insensitive)
+        // 'Income:Assets:Investment' contains ':assets:' (case-insensitive)
+        expect(results4.length).toBe(3);
+        expect(results4.some(r => r.item === 'Assets:Cash')).toBe(true);
+        expect(results4.some(r => r.item === 'assets:checking')).toBe(true);
+        expect(results4.some(r => r.item === 'Income:Assets:Investment')).toBe(true);
     });
 });
