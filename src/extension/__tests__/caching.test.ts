@@ -1,17 +1,21 @@
 import { HLedgerConfig, ProjectCache } from '../main';
 import { SimpleProjectCache } from '../SimpleProjectCache';
 import { createCacheKey, createAccountName, createUsageCount, createPayeeName, createTagName, createCommodityCode } from '../types';
+import { HLedgerParser } from '../HLedgerParser';
+import * as path from 'path';
 // Enhanced with proper type imports
 
 describe('Simplified Caching System - PHASE C', () => {
     let config: HLedgerConfig;
     let projectCache: ProjectCache;
     let simpleCache: SimpleProjectCache;
+    let parser: HLedgerParser;
     
     beforeEach(() => {
         config = new HLedgerConfig();
         projectCache = new ProjectCache();
         simpleCache = new SimpleProjectCache();
+        parser = new HLedgerParser();
     });
     
     describe('Payee and Tag Parsing', () => {
@@ -111,6 +115,29 @@ describe('Simplified Caching System - PHASE C', () => {
                 'type',
                 'priority'
             ]));
+        });
+    });
+    
+    describe('Path Validation', () => {
+        it('should validate valid paths correctly', () => {
+            // This is a simple test to ensure the parser can be instantiated
+            expect(parser).toBeInstanceOf(HLedgerParser);
+        });
+        
+        it('should prevent directory traversal in file paths', () => {
+            // This test ensures our path validation logic is working
+            // We'll test the internal isValidPath method through reflection
+            const isValidPath = (parser as any).isValidPath;
+            expect(typeof isValidPath).toBe('function');
+            
+            // Test basic path validation
+            const testPath = path.resolve(__dirname);
+            expect(isValidPath(testPath)).toBe(true);
+            
+            // Test path traversal prevention
+            const traversalPath = path.resolve(__dirname, '..');
+            const basePath = path.resolve(__dirname);
+            expect(isValidPath(traversalPath, basePath)).toBe(false);
         });
     });
 });

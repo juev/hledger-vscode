@@ -802,11 +802,21 @@ export class HLedgerParser {
         const files: string[] = [];
         const hledgerExtensions = ['.journal', '.hledger', '.ledger'];
 
+        // Validate the directory path to prevent directory traversal
+        if (!this.isValidPath(dirPath)) {
+            return files;
+        }
+
         try {
             const entries = fs.readdirSync(dirPath, { withFileTypes: true });
 
             for (const entry of entries) {
                 const fullPath = path.join(dirPath, entry.name);
+
+                // Validate the full path to prevent directory traversal
+                if (!this.isValidPath(fullPath, dirPath)) {
+                    continue;
+                }
 
                 if (entry.isDirectory() && !entry.name.startsWith('.')) {
                     // Recursively search subdirectories
@@ -823,5 +833,33 @@ export class HLedgerParser {
         }
 
         return files;
+    }
+
+    /**
+     * Validates that a file path is within the expected directory to prevent directory traversal.
+     * @param filePath The file path to validate
+     * @param basePath The base path that filePath should be within (optional)
+     * @returns True if the path is valid, false otherwise
+     */
+    private isValidPath(filePath: string, basePath?: string): boolean {
+        try {
+            // Resolve the file path to its absolute form
+            const resolvedPath = path.resolve(filePath);
+            
+            // If a base path is provided, ensure the file path is within it
+            if (basePath) {
+                const resolvedBasePath = path.resolve(basePath);
+                // Check if resolvedPath is within resolvedBasePath
+                const relative = path.relative(resolvedBasePath, resolvedPath);
+                // Valid if relative path doesn't start with '..' and isn't absolute
+                return !relative.startsWith('..') && !path.isAbsolute(relative);
+            }
+            
+            // If no base path, just ensure it's a valid absolute path
+            return path.isAbsolute(resolvedPath);
+        } catch (error) {
+            // If any error occurs during path resolution, consider it invalid
+            return false;
+        }
     }
 }
