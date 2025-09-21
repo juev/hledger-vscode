@@ -1,0 +1,102 @@
+# Test file for account name syntax highlighting
+# This file tests various account name patterns to verify syntax highlighting works correctly
+
+; Simple account names without spaces
+2025-01-15 * Test Transaction
+    Assets:Cash              100 USD
+    Expenses:Food            -50 USD
+
+; Account names with single spaces (should work correctly)
+2025-01-16 * Test Transaction with Spaces
+    Assets:Bank Account      200 USD
+    Expenses:Grocery Store   -75 USD
+    Income:Salary            -125 USD
+
+; Account names with multiple single spaces (should work)
+2025-01-17 * Test Multiple Spaces
+    Assets:Bank Checking Account    300 USD
+    Expenses:Food and Dining        -150 USD
+    Liabilities:Credit Card Visa    -150 USD
+
+; Virtual accounts with parentheses and brackets
+2025-01-18 * Test Virtual Accounts
+    (Assets:Virtual Cash)           50 USD
+    [Assets:Reserved Funds]         25 USD
+    Expenses:Virtual Food           -75 USD
+
+; Account names with numbers
+2025-01-19 * Test Numbers in Accounts
+    Assets:Bank Account 123         400 USD
+    Expenses:Food 2024             -200 USD
+    Income:Salary 2025             -200 USD
+
+; Account names with symbols
+2025-01-20 * Test Symbols in Accounts
+    Assets:Bank-Checking            500 USD
+    Expenses:Food&Dining           -250 USD
+    Income:Salary_Main             -250 USD
+
+; Mixed language account names
+2025-01-21 * Test Mixed Language
+    Assets:Банковский Счет          600 USD
+    Expenses:Продукты Питания       -300 USD
+    Income:Зарплата Основная       -300 USD
+
+; Account names with colons (hierarchical)
+2025-01-22 * Test Hierarchical Accounts
+    Assets:Bank:Checking:Main       700 USD
+    Expenses:Food:Groceries:Fruits   -350 USD
+    Income:Salary:Monthly:Base      -350 USD
+
+; Edge cases with spaces near amounts
+2025-01-23 * Test Space Separation
+    Assets:Cash Account             800  USD   ; Single space before amount should fail
+    Expenses:Food Items             -400 USD   ; Two spaces before amount should work
+    Assets:Savings                  -400 USD   ; No spaces in account name
+
+; Account-only postings (no amounts)
+2025-01-24 * Test Account Only Postings
+    Assets:Cash Account
+    Expenses:Food Items
+
+; Posting with assertions
+2025-01-25 * Test Balance Assertions
+    Assets:Checking Account         900 USD = 1000 USD
+    Expenses:Food                  -450 USD
+    Assets:Savings                 -450 USD
+
+; Posting with costs
+2025-01-26 * Test Cost Assignments
+    Assets:Stocks                  10 AAPL @ 150.00 USD
+    Expenses:Brokerage             150.00 USD
+    Assets:Cash                   -1650.00 USD
+
+; Very long account names with multiple spaces
+2025-01-27 * Test Long Account Names
+    Assets:Bank Checking Account Primary Location        1000 USD
+    Expenses:Food and Dining Out Restaurant Expenses     -500 USD
+    Income:Salary Annual Base Payment Monthly Amount     -500 USD
+
+; Account names ending with spaces (should not be valid)
+2025-01-28 * Test Trailing Spaces
+    Assets:Bank Account            1100 USD
+    Expenses:Food Items           -550 USD
+    Assets:Savings Account        -550 USD
+
+; Account names with special Unicode characters
+2025-01-29 * Test Unicode Characters
+    Assets:Банковский_Счет         1200 USD
+    Expenses:Продукты_Питания      -600 USD
+    Income:Зарплата_Основная      -600 USD
+
+; Mixed case account names
+2025-01-30 * Test Mixed Case
+    Assets:BANK:CHECKING           1300 USD
+    Expenses:FOOD:dining           -650 USD
+    Income:SALARY:base            -650 USD
+
+; Account names with quotes (should be handled properly)
+2025-01-31 * Test Quoted Account Names
+    Assets:"Bank Account"          1400 USD
+    Expenses:"Food & Dining"       -700 USD
+    Income:"Salary Main"           -700 USD

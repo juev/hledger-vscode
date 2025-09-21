@@ -1,0 +1,29 @@
+; Test file to verify Unicode fix for Cyrillic account names
+; This file should properly highlight all account names with the correct scopes
+
+2024-01-15 Amazon
+    Расходы:Связь                100.00 USD
+    Активы:Наличные             -100.00 USD
+
+2024-01-16 Walmart
+    Расходы:Еда                   50.00 USD
+    Активы:Наличные              -50.00 USD
+
+2024-01-17 Salary
+    Доходы:Зарплата             2000.00 USD
+    Активы:Наличные             2000.00 USD
+
+2024-01-18 Rent
+    Расходы:Жилье                500.00 USD
+    Активы:Наличные             -500.00 USD
+
+2024-01-19 Internet
+    Расходы:Связь                 30.00 USD
+    Активы:Наличные              -30.00 USD
+
+; Test all account types
+account Активы:Банк
+account Расходы:Транспорт
+account Доходы:Инвестиции
+account Пассивы:Кредиты
+account Собственные:Капитал
