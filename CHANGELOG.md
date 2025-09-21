@@ -1,5 +1,15 @@
 # Change Log
 
+## [0.3.6] - 2025-09-21
+
+### Added
+- feat: add comprehensive syntax highlighting tests for account names and update hledger grammar
+- feat: create AGENTS.md
+
+### Fixed
+- fix: correct regex pattern for account matching in hledger syntax
+
+
 ## [0.3.5] - 2025-09-15
 
 ### Added
