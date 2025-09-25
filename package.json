@@ -212,7 +212,8 @@
     "build": "npm run compile:prod",
     "prepackage": "npm run clean",
     "package": "npm run compile:prod && vsce package",
-    "publish": "vsce publish"
+    "publish": "vsce publish",
+    "publish:ovsx": "ovsx publish"
   },
   "devDependencies": {
     "@types/jest": "^30.0.0",
@@ -220,6 +221,7 @@
     "@types/vscode": "^1.74.0",
     "@vscode/test-electron": "^2.5.2",
     "@vscode/vsce": "^2.22.0",
+    "ovsx": "^0.8.4",
     "jest": "^30.0.5",
     "rimraf": "^6.0.1",
     "ts-jest": "^29.4.0",
