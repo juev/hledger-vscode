@@ -6,6 +6,10 @@ Visual Studio Code extension providing syntax highlighting, intelligent code com
 [![Installs](https://img.shields.io/visual-studio-marketplace/i/evsyukov.hledger)](https://marketplace.visualstudio.com/items?itemName=evsyukov.hledger&ssr=false#overview)
 [![Rating](https://img.shields.io/visual-studio-marketplace/r/evsyukov.hledger)](https://marketplace.visualstudio.com/items?itemName=evsyukov.hledger&ssr=false#overview)
 
+[![Open VSX Version](https://img.shields.io/open-vsx/v/evsyukov/hledger)](https://open-vsx.org/extension/evsyukov/hledger)
+[![Open VSX Downloads](https://img.shields.io/open-vsx/d/evsyukov/hledger)](https://open-vsx.org/extension/evsyukov/hledger)
+[![Open VSX Rating](https://img.shields.io/open-vsx/rating/evsyukov/hledger)](https://open-vsx.org/extension/evsyukov/hledger)
+
 ## Features
 
 - **Syntax Highlighting**: Advanced highlighting for dates, accounts, amounts, commodities, payees, comments, tags, and directives
@@ -40,7 +44,7 @@ Visual Studio Code extension providing syntax highlighting, intelligent code com
 4. Click Install
 5. Restart VS Code
 
-**Or install directly from [Visual Studio Marketplace](https://marketplace.visualstudio.com/items?itemName=evsyukov.hledger&ssr=false#overview)**
+**Or install directly from [Visual Studio Marketplace](https://marketplace.visualstudio.com/items?itemName=evsyukov.hledger&ssr=false#overview) or [Open VSX](https://open-vsx.org/extension/evsyukov/hledger)**
 
 ## Usage
 
