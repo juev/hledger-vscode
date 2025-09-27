@@ -1,5 +1,12 @@
 # Change Log
 
+## [0.3.7] - 2025-09-27
+
+### Added
+- feat: add ovsx dependency
+- feat: add Open VSX publishing support
+
+
 ## [0.3.6] - 2025-09-21
 
 ### Added
