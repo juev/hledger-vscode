@@ -1,0 +1,286 @@
+; Large file for performance testing
+; This file contains many transactions to test performance with large datasets
+
+; Directives
+account Assets:Bank
+account Assets:Cash
+account Assets:CreditCard
+account Assets:Investment
+account Assets:RealEstate
+account Assets:Retirement
+account Expenses:Food
+account Expenses:Transport
+account Expenses:Utilities
+account Expenses:Entertainment
+account Expenses:Healthcare
+account Expenses:Shopping
+account Expenses:Education
+account Expenses:Travel
+account Expenses:Business
+account Expenses:Personal
+account Income:Salary
+account Income:Freelance
+account Income:Investment
+account Income:Rental
+account Income:Other
+account Liabilities:Mortgage
+account Liabilities:CarLoan
+account Liabilities:CreditCard
+account Liabilities:PersonalLoan
+
+commodity USD
+commodity EUR
+commodity GBP
+commodity JPY
+commodity CNY
+
+; Transactions
+2025-01-01 * Salary Income
+    Assets:Bank            5,000.00 USD
+    Income:Salary         -5,000.00 USD
+
+2025-01-02 * Grocery Shopping
+    Assets:Bank           -150.75 USD
+    Expenses:Food         150.75 USD
+
+2025-01-03 * Gas Station
+    Assets:Bank           -65.50 USD
+    Expenses:Transport     65.50 USD
+
+2025-01-04 * Electric Bill
+    Assets:Bank          -120.00 USD
+    Expenses:Utilities     120.00 USD
+
+2025-01-05 * Restaurant
+    Assets:CreditCard     -85.25 USD
+    Expenses:Entertainment 85.25 USD
+
+2025-01-06 * Pharmacy
+    Assets:Bank           -45.50 USD
+    Expenses:Healthcare    45.50 USD
+
+2025-01-07 * Online Shopping
+    Assets:CreditCard    -235.99 USD
+    Expenses:Shopping     235.99 USD
+
+2025-01-08 * Course Payment
+    Assets:Bank          -500.00 USD
+    Expenses:Education    500.00 USD
+
+2025-01-09 * Flight Booking
+    Assets:CreditCard    -1,250.00 USD
+    Expenses:Travel       1,250.00 USD
+
+2025-01-10 * Office Supplies
+    Assets:Bank           -75.25 USD
+    Expenses:Business      75.25 USD
+
+2025-01-11 * Cash Withdrawal
+    Assets:Bank          -200.00 USD
+    Assets:Cash           200.00 USD
+
+2025-01-12 * Coffee Shop
+    Assets:Cash           -12.50 USD
+    Expenses:Personal      12.50 USD
+
+2025-01-13 * Freelance Payment
+    Assets:Bank           1,500.00 USD
+    Income:Freelance     -1,500.00 USD
+
+2025-01-14 * Investment Return
+    Assets:Investment     250.75 USD
+    Income:Investment    -250.75 USD
+
+2025-01-15 * Rental Income
+    Assets:Bank           2,000.00 USD
+    Income:Rental        -2,000.00 USD
+
+2025-01-16 * Mortgage Payment
+    Assets:Bank         -1,500.00 USD
+    Liabilities:Mortgage  1,200.00 USD
+    Expenses:Interest      300.00 USD
+
+2025-01-17 * Car Payment
+    Assets:Bank          -450.00 USD
+    Liabilities:CarLoan    450.00 USD
+
+2025-01-18 * Credit Card Payment
+    Assets:Bank          -1,000.00 USD
+    Liabilities:CreditCard 1,000.00 USD
+
+2025-01-19 * Insurance Premium
+    Assets:Bank          -180.00 USD
+    Expenses:Healthcare    180.00 USD
+
+2025-01-20 * Internet Bill
+    Assets:Bank           -60.00 USD
+    Expenses:Utilities      60.00 USD
+
+2025-01-21 * Mobile Phone
+    Assets:Bank           -85.00 USD
+    Expenses:Utilities      85.00 USD
+
+2025-01-22 * Gym Membership
+    Assets:Bank           -50.00 USD
+    Expenses:Healthcare     50.00 USD
+
+2025-01-23 * Streaming Services
+    Assets:Bank           -25.00 USD
+    Expenses:Entertainment  25.00 USD
+
+2025-01-24 * Books
+    Assets:Bank           -45.50 USD
+    Expenses:Education     45.50 USD
+
+2025-01-25 * Concert Tickets
+    Assets:CreditCard    -200.00 USD
+    Expenses:Entertainment 200.00 USD
+
+2025-01-26 * Hotel Booking
+    Assets:CreditCard    -350.00 USD
+    Expenses:Travel       350.00 USD
+
+2025-01-27 * Taxi
+    Assets:Cash           -35.75 USD
+    Expenses:Transport     35.75 USD
+
+2025-01-28 * Parking
+    Assets:Bank           -15.00 USD
+    Expenses:Transport     15.00 USD
+
+2025-01-29 * Subscription
+    Assets:CreditCard     -29.99 USD
+    Expenses:Business      29.99 USD
+
+2025-01-30 * Donation
+    Assets:Bank           -100.00 USD
+    Expenses:Personal     100.00 USD
+
+2025-01-31 * End of Month Balance Check
+    Assets:Bank            0.00 USD = 15,000.00 USD
+    Assets:Cash            0.00 USD = 2,000.00 USD
+    Assets:CreditCard      0.00 USD = -1,500.00 USD
+    Assets:Investment      0.00 USD = 50,000.00 USD
+    Liabilities:Mortgage    0.00 USD = -200,000.00 USD
+    Liabilities:CarLoan     0.00 USD = -15,000.00 USD
+    Liabilities:CreditCard  0.00 USD = -5,000.00 USD
+
+; February transactions
+2025-02-01 * Salary Income
+    Assets:Bank            5,000.00 USD
+    Income:Salary         -5,000.00 USD
+
+2025-02-02 * Grocery Shopping
+    Assets:Bank           -175.25 USD
+    Expenses:Food         175.25 USD
+
+2025-02-03 * Gas Station
+    Assets:Bank           -72.50 USD
+    Expenses:Transport     72.50 USD
+
+2025-02-04 * Electric Bill
+    Assets:Bank          -135.75 USD
+    Expenses:Utilities     135.75 USD
+
+2025-02-05 * Restaurant
+    Assets:CreditCard     -95.50 USD
+    Expenses:Entertainment 95.50 USD
+
+2025-02-06 * Pharmacy
+    Assets:Bank           -38.25 USD
+    Expenses:Healthcare    38.25 USD
+
+2025-02-07 * Online Shopping
+    Assets:CreditCard    -285.50 USD
+    Expenses:Shopping     285.50 USD
+
+2025-02-08 * Course Payment
+    Assets:Bank          -450.00 USD
+    Expenses:Education    450.00 USD
+
+2025-02-09 * Flight Booking
+    Assets:CreditCard    -875.00 USD
+    Expenses:Travel       875.00 USD
+
+2025-02-10 * Office Supplies
+    Assets:Bank           -95.75 USD
+    Expenses:Business      95.75 USD
+
+2025-02-11 * Cash Withdrawal
+    Assets:Bank          -300.00 USD
+    Assets:Cash           300.00 USD
+
+2025-02-12 * Coffee Shop
+    Assets:Cash           -18.25 USD
+    Expenses:Personal      18.25 USD
+
+2025-02-13 * Freelance Payment
+    Assets:Bank           2,250.00 USD
+    Income:Freelance     -2,250.00 USD
+
+2025-02-14 * Investment Return
+    Assets:Investment     425.50 USD
+    Income:Investment    -425.50 USD
+
+2025-02-15 * Rental Income
+    Assets:Bank           2,000.00 USD
+    Income:Rental        -2,000.00 USD
+
+2025-02-16 * Mortgage Payment
+    Assets:Bank         -1,500.00 USD
+    Liabilities:Mortgage  1,200.00 USD
+    Expenses:Interest      300.00 USD
+
+2025-02-17 * Car Payment
+    Assets:Bank          -450.00 USD
+    Liabilities:CarLoan    450.00 USD
+
+2025-02-18 * Credit Card Payment
+    Assets:Bank          -1,500.00 USD
+    Liabilities:CreditCard 1,500.00 USD
+
+2025-02-19 * Insurance Premium
+    Assets:Bank          -180.00 USD
+    Expenses:Healthcare    180.00 USD
+
+2025-02-20 * Internet Bill
+    Assets:Bank           -60.00 USD
+    Expenses:Utilities      60.00 USD
+
+2025-02-21 * Mobile Phone
+    Assets:Bank           -85.00 USD
+    Expenses:Utilities      85.00 USD
+
+2025-02-22 * Gym Membership
+    Assets:Bank           -50.00 USD
+    Expenses:Healthcare     50.00 USD
+
+2025-02-23 * Streaming Services
+    Assets:Bank           -25.00 USD
+    Expenses:Entertainment  25.00 USD
+
+2025-02-24 * Books
+    Assets:Bank           -62.75 USD
+    Expenses:Education     62.75 USD
+
+2025-02-25 * Concert Tickets
+    Assets:CreditCard    -150.00 USD
+    Expenses:Entertainment 150.00 USD
+
+2025-02-26 * Hotel Booking
+    Assets:CreditCard    -425.00 USD
+    Expenses:Travel       425.00 USD
+
+2025-02-27 * Taxi
+    Assets:Cash           -42.50 USD
+    Expenses:Transport     42.50 USD
+
+2025-02-28 * Parking
+    Assets:Bank           -18.00 USD
+    Expenses:Transport     18.00 USD
+
+2025-02-28 * End of Month Balance Check
+    Assets:Bank            0.00 USD = 18,000.00 USD
+    Assets:Cash            0.00 USD = 1,500.00 USD
+    Assets:CreditCard      0.00 USD = -2,000.00 USD
+    Assets:Investment      0.00 USD = 52,000.00 USD

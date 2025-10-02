@@ -1,0 +1,70 @@
+; Edge cases and unusual formatting scenarios
+; This file tests boundary conditions and special cases
+
+2025-01-15 * Virtual Postings
+    Assets:Bank            100.00 USD
+    [Expenses:Food]        -50.00 USD
+    (Assets:Cash)         50.00 USD
+    Expenses:Virtual       -25.00 USD
+
+2025-01-16 * Balance Assertions
+    Assets:Checking        1000.00 USD = 5000.00 USD
+    Assets:Savings         -500.00 USD == 15000.00 USD
+    Assets:Investment      200.00 USD = 200.00 USD
+
+2025-01-17 * Comments and Metadata
+    Assets:Bank            100.00 USD    ; Initial deposit
+    Expenses:Food         -50.25 USD    ; Grocery shopping
+    Expenses:Transport    -20.00 USD    ; Gas for car
+    ; This is a comment line
+    Assets:Cash           30.25 USD     ; Change
+
+2025-01-18 * Auto-balancing with Some Amounts
+    Assets:Bank            1000.00 USD
+    Assets:Cash
+    Expenses:Food         -500.00 USD
+    Expenses:Rent         -500.00 USD
+
+2025-01-19 * Different Indentation Styles
+    Assets:Bank           100.00 USD
+	Assets:Cash		 50.00 EUR
+    Assets:Savings       25.00 GBP
+        Assets:Investment  75.00 JPY
+  Assets:Credit         10.00 BTC
+
+2025-01-20 * Amounts with Special Characters
+    Assets:Bank           $1,000.00
+    Assets:Cash           €1.000,00
+    Assets:Credit         £1_000.00
+    Assets:Debit          ¥1,000
+    Assets:Crypto         0.00123456789 BTC
+
+2025-01-21 * Single Character Accounts
+    A                     100.00 USD
+    BB                    -50.00 USD
+    CCC                   25.00 USD
+    DDDD                  -75.00 USD
+
+2025-01-22 * Very Long Account Names
+    Assets:Very:Long:Account:Name:With:Many:Subaccounts:And:Categories:To:Test:Alignment    100.00 USD
+    Expenses:Short                                                                                   -50.00 USD
+    Income:Medium:Length:Account:Name                                                             25.00 USD
+
+2025-01-23 * Zero and Near-Zero Amounts
+    Assets:Bank            0.00 USD
+    Assets:Cash            0.01 USD
+    Assets:Credit         -0.01 USD
+    Assets:Debit           0.0000001 USD
+    Expenses:Rounding      0.00 USD
+
+2025-01-24 * Mathematical Expressions
+    Assets:Bank            100.00 * 1.05 USD
+    Assets:Cash            50.00 + 25.00 USD
+    Assets:Credit          75.00 - 10.00 USD
+    Expenses:Fees          -5.00 USD
+
+2025-01-25 * Bracketed Commodities
+    Assets:Bank            1000.00 {USD}
+    Assets:Cash            500.00 {EUR @ 1.05 USD}
+    Assets:Credit          250.00 {GBP}
+    Expenses:Exchange      -100.00 USD

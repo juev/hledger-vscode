@@ -1,0 +1,54 @@
+; Unicode and international characters test
+; This file tests support for non-ASCII characters in account names and amounts
+
+2025-01-15 * Транзакция на русском языке
+    Активы:Банк            10 000,50 ₽
+    Расходы:Продукты       -5 000,25 ₽
+    Расходы:Транспорт      -2 000,00 ₽
+    Активы:Наличные         2 750,25 ₽
+
+2025-01-16 * Chinese Transaction
+    资产:银行             1,234.56 CNY
+    费用:食品             -500.25 CNY
+    费用:交通             -200.00 CNY
+    资产:现金              534.31 CNY
+
+2025-01-17 * Arabic Transaction
+    الأصول:البنك         1,000.00 SAR
+    المصاريف:طعام        -500.00 SAR
+    المصاريف:نقل         -200.00 SAR
+    الأصول:نقد           300.00 SAR
+
+2025-01-18 * Mixed Unicode Accounts
+    Активы:Bank           500.00 USD
+    Assets:Банк           1,000.00 EUR
+    資產:Bank             750.00 GBP
+    資産:銀行             250.00 JPY
+    Expenses:食品         -100.00 USD
+    Расходы:Food          -150.00 EUR
+
+2025-01-19 * Unicode in Comments
+    Assets:Bank           1,000.00 USD    ; Депозит в банке
+    Expenses:Food         -500.00 USD    ; Покупка продуктов
+    Assets:Cash           500.00 USD     ; Сдача
+
+2025-01-20 * Special Unicode Characters
+    Assets:Café           25.50 EUR
+    Assets:Försäkring     1,000.00 SEK
+    Assets:Bücher         50.00 CHF
+    Assets:Résumé         100.00 CAD
+    Expenses:Español      -25.50 EUR
+    Expenses:Deutsch      -1,000.00 SEK
+
+2025-01-21 * Emoji in Account Names
+    Assets:🏦:Bank        1,000.00 USD
+    Expenses:🛒:Shopping   -200.00 USD
+    Expenses:🚗:Car       -100.00 USD
+    Assets:💰:Cash        300.00 USD
+
+2025-01-22 * Mixed Scripts
+    Активы:Bank北京      500.00 USD
+    資產:Банк莫斯科       750.00 EUR
+    Assets:القاهرة银行    250.00 GBP
+    Expenses:東京食品     -100.00 USD
+    Расходы:北京交通      -150.00 EUR

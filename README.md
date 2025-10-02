@@ -21,6 +21,7 @@ Visual Studio Code extension providing syntax highlighting, intelligent code com
   - **Tag Completion**: Tag suggestions in comments
   - **Directive Completion**: hledger directive suggestions
 - **Smart Indentation**: Automatic indentation for transactions and postings with Enter key
+- **Document Formatting**: Comprehensive formatting on save including amount alignment, comment alignment, and proper indentation
 - **Context-Aware Completion**: Strict position analysis for accurate suggestions
 - **Multi-language Support**: Full Unicode support including Cyrillic characters
 - **Project-Based Caching**: Efficient workspace parsing and caching
@@ -67,6 +68,133 @@ The extension provides context-aware completion based on your cursor position:
 - **Preserve Indent**: Maintains proper indentation when continuing posting entries
 - **Smart Context**: Handles different line types appropriately
 
+### Document Formatting
+
+The extension provides comprehensive document formatting for hledger files to improve readability and consistency:
+
+- **Amount Alignment**: Automatic alignment of amounts in transaction postings
+- **Comment Alignment**: Aligns inline comments within transactions for better readability
+- **Proper Indentation**: Applies consistent 4-space indentation for posting lines
+- **Format on Save**: Automatically formats documents when saving files (when enabled) - the only available formatting mode
+- **Smart Detection**: Only formats transaction postings, preserving directives and start-of-line comments
+- **Multi-Currency Support**: Handles different commodity symbols and currencies seamlessly
+- **International Formats**: Supports both period (.) and comma (,) decimal formats
+- **Balance Assertions**: Properly aligns balance assertions (= and ==)
+- **Virtual Postings**: Correctly handles virtual postings (enclosed in parentheses)
+- **Price Assignments**: Aligns amounts with price assignments (@ and @@)
+- **Account Names with Spaces**: Correctly preserves and aligns account names containing spaces
+- **Preservation**: Maintains the integrity of directives, metadata, and other non-transaction content
+
+#### Before/After Examples
+
+**Simple transaction:**
+
+*Before formatting:*
+```
+2025-01-15 * Coffee shop
+  Expenses:Food:Coffee    $4.50
+  Assets:Cash  -4.50
+
+2025-01-16 * Grocery shopping
+  Expenses:Food:Groceries    $125.75
+  Assets:Checking  -125.75
+```
+
+*After formatting:*
+```
+2025-01-15 * Coffee shop
+  Expenses:Food:Coffee        $4.50
+  Assets:Cash               -4.50
+
+2025-01-16 * Grocery shopping
+  Expenses:Food:Groceries  $125.75
+  Assets:Checking         -125.75
+```
+
+**Multi-currency transaction:**
+
+*Before formatting:*
+```
+2025-01-20 * Currency Exchange
+    Assets:USD              100 USD @ 95.50 RUB
+    Assets:RUB              -9550 RUB
+```
+
+*After formatting:*
+```
+2025-01-20 * Currency Exchange
+    Assets:USD          100 USD @ 95.50 RUB
+    Assets:RUB         -9550 RUB
+```
+
+**International number formats:**
+
+*Before formatting:*
+```
+2024-01-17 Mixed Format Transaction
+    Assets:Checking       1 234,56 EUR
+    Assets:Savings          987.65 USD
+    Expenses:Shopping    -2 222,21 EUR
+```
+
+*After formatting:*
+```
+2024-01-17 Mixed Format Transaction
+    Assets:Checking     1 234,56 EUR
+    Assets:Savings        987.65 USD
+    Expenses:Shopping  -2 222,21 EUR
+```
+
+**Balance assertions:**
+
+*Before formatting:*
+```
+2025-01-21 Balance Check
+    Assets:Checking         = 2500.00 RUB
+    Assets:Savings          == 10000.00 RUB
+```
+
+*After formatting:*
+```
+2025-01-21 Balance Check
+    Assets:Checking      = 2500.00 RUB
+    Assets:Savings      == 10000.00 RUB
+```
+
+**Account names with spaces and comment alignment:**
+
+*Before formatting:*
+```
+2025-01-22 Shopping with various accounts
+  Assets:My Bank Account    100 USD    ; Initial balance
+  Expenses:Food:Groceries Store    -50 USD  ; Weekly shopping
+  Expenses:Transport:Gas Station   -25 USD ; Car fuel
+  Assets:Savings Account    -25 USD     ; Transfer to savings
+```
+
+*After formatting:*
+```
+2025-01-22 Shopping with various accounts
+    Assets:My Bank Account                100 USD  ; Initial balance
+    Expenses:Food:Groceries Store        -50 USD  ; Weekly shopping
+    Expenses:Transport:Gas Station       -25 USD  ; Car fuel
+    Assets:Savings Account               -25 USD  ; Transfer to savings
+```
+
+#### Commands
+
+- **HLedger: Toggle Format on Save**: Enable/disable automatic formatting on save (accessible via Command Palette)
+
+**Note**: Manual formatting commands have been removed. The extension now only supports automatic formatting on save to keep the experience simple and focused.
+
+#### Advanced Usage Tips
+
+- **Large Files**: The formatting works efficiently with large journal files, processing line by line during save
+- **Mixed Content**: Non-transaction lines (comments, directives, metadata) are preserved and not affected by formatting
+- **Undo Support**: All formatting operations can be undone using VS Code's standard undo functionality after save
+- **Automatic Detection**: The extension automatically detects transaction boundaries and formats amounts within each transaction independently
+- **Performance**: Since formatting only occurs on save, there's no performance impact during normal editing
+
 ## Configuration
 
 ### Auto-completion Settings
@@ -86,6 +214,18 @@ The extension provides context-aware completion based on your cursor position:
     "hledger.smartIndent.enabled": true
 }
 ```
+
+### Document Formatting Settings
+
+```json
+{
+    "hledger.formatOnSave": false
+}
+```
+
+- **`hledger.formatOnSave`**: Automatically format hledger files when saving (proper indentation, amount and comment alignment) (default: `false`)
+
+**Note**: Format on save is disabled by default. You need to enable it manually in settings to use automatic formatting.
 
 ## Architecture
 
@@ -114,6 +254,50 @@ The extension uses a **strict completion architecture** that provides:
 
 1. **Large Files**: The extension handles large files efficiently with project-based caching
 2. **Clear Cache**: Use Command Palette → "Developer: Reload Window" if needed
+
+### Document Formatting Issues
+
+1. **Feature Not Working**: Ensure `hledger.formatOnSave` is set to `true` in settings
+2. **Format on Save Not Working**: Check that you're editing an hledger file and the `hledger.formatOnSave` setting is enabled
+3. **Unexpected Formatting**: The formatter affects transaction postings, comments, and indentation while preserving directives and other content
+4. **Mixed Currencies**: The extension handles different commodity symbols and currencies, aligning based on the position of amounts
+5. **Virtual Postings**: Virtual postings (enclosed in parentheses) are also aligned properly
+6. **Performance with Large Files**: If formatting is slow on very large files when saving, you can temporarily disable format on save
+7. **Non-standard Formats**: Very unusual amount formats may not be recognized. Use standard hledger amount syntax for best results
+8. **Undo Issues**: If formatting cannot be undone, check if other VS Code extensions are interfering with document editing
+9. **Account Names with Spaces**: The formatter correctly preserves account names containing spaces in the account name part
+10. **Format Not Applied**: Check that the file actually changed during save - if no formatting was needed, no changes will be applied
+
+## Compatibility
+
+### Supported Transaction Types
+
+- **Standard Transactions**: Regular hledger transactions with dates and postings
+- **Pending Transactions**: Transactions marked with `!` status
+- **Balanced Transactions**: Transactions with balance assertions (`=` and `==`)
+- **Virtual Postings**: Postings enclosed in parentheses `()` and brackets `[]`
+- **Price Assignments**: Transactions with unit prices (`@`) and total prices (`@@`)
+- **Multi-currency**: Transactions involving different commodities and currencies
+
+### Supported Amount Formats
+
+- **Standard Decimals**: `123.45`, `0.50`
+- **International Decimals**: `123,45`, `0,50` (comma as decimal separator)
+- **Thousands Separators**: `1,234.56`, `1 234,56` (space or comma as thousands separator)
+- **Whole Numbers**: `100`, `50`
+- **Commodity Symbols**: `$100`, `100 EUR`, `100.50 USD`
+- **Negative Amounts**: `-100.50`, `-1 234,56`
+
+### File Content Preservation
+
+The amount alignment feature preserves and does not modify:
+- Comments and metadata
+- hledger directives (`account`, `commodity`, `payee`, etc.)
+- Transaction descriptions and payees
+- Tags and tag values
+- URLs and links in comments
+- Blank lines and spacing between transactions
+- File encoding and special characters
 
 ## Contributing
 

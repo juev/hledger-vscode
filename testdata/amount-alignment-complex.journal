@@ -1,0 +1,49 @@
+; Complex transactions with multiple currencies and formats
+; This file tests advanced scenarios with different commodity formats
+
+2025-01-15 * Multi-currency Transaction
+    Assets:Bank:USD         $1,234.56
+    Assets:Bank:EUR         €2,345.67
+    Assets:Bank:GBP         £345.89
+    Assets:Bank:JPY         ¥50,000
+    Assets:Bank:BTC         0.01234567
+    Assets:Bank:RUB         100,000.50 ₽
+    Expenses:Exchange      -1,000.00 USD
+
+2025-01-16 * European Number Formats
+    Assets:Bank:FR         1 234,56 €
+    Assets:Bank:DE         2.345,67 €
+    Assets:Bank:IT         1.234,56 €
+    Assets:Bank:ES         1.234,567,89 €
+    Expenses:BankFees      -50,25 €
+
+2025-01-17 * Mixed Number Formats
+    Assets:Cash            $1,000.00
+    Assets:Cash            €1.000,00
+    Assets:Cash            £1,000.00
+    Assets:Cash            ¥100000
+    Assets:Cash            100.00 BTC
+    Assets:Cash            1,000.00 INR
+    Expenses:Conversion    -500.00 USD
+
+2025-01-18 * Commodity Position Variations
+    Assets:Gold            1.5 XAU
+    Assets:Silver          50 XAG
+    Assets:Oil             100 BBL @ $75.50
+    Assets:Stocks:AAPL     10 AAPL @@ $150.00
+    Assets:Crypto          0.1 ETH
+    Expenses:Brokerage     -25.00 USD
+
+2025-01-19 * Very Small and Large Numbers
+    Assets:Micro           0.00000001 BTC
+    Assets:Nano            0.000000001 ETH
+    Assets:Large           999,999,999.99 USD
+    Assets:Huge            1,000,000,000,000.00 JPY
+    Expenses:Transaction   -1,000.00 USD
+
+2025-01-20 * Negative and Positive Mixed
+    Assets:Bank           -5,000.00 USD
+    Assets:Credit          3,500.00 USD
+    Assets:Loan           1,500.00 USD
+    Expenses:Interest      -100.50 USD
+    Income:Salary          5,000.00 USD

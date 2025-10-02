@@ -1,8 +1,8 @@
 {
   "name": "hledger",
   "displayName": "hledger Language Support",
-  "description": "Full-featured hledger extension with syntax highlighting, intelligent code completion, and project-based caching for journal files",
-  "version": "0.2.1",
+  "description": "Full-featured hledger extension with syntax highlighting, intelligent code completion, amount alignment, and project-based caching for journal files",
+  "version": "0.4.0",
   "publisher": "evsyukov",
   "engines": {
     "vscode": "^1.75.0"
@@ -61,6 +61,11 @@
           "default": true,
           "description": "Enable smart indentation on Enter key for hledger files"
         },
+        "hledger.formatOnSave": {
+          "type": "boolean",
+          "default": false,
+          "description": "Automatically format hledger files when saving (tabs to spaces, proper indentation, amount and comment alignment)"
+        },
         "hledger.autoCompletion.maxResults": {
           "type": "number",
           "default": 25,
@@ -81,6 +86,19 @@
       {
         "command": "hledger.onEnter",
         "title": "HLedger: Smart Enter",
+        "category": "HLedger",
+        "when": "editorTextFocus && editorLangId == hledger"
+      },
+      {
+        "command": "hledger.onTab",
+        "title": "HLedger: Smart Tab for Amount Alignment",
+        "category": "HLedger",
+        "when": "editorTextFocus && editorLangId == hledger"
+      },
+      {
+        "command": "hledger.toggleFormatOnSave",
+        "title": "Toggle Format on Save",
+        "category": "HLedger",
         "when": "editorTextFocus && editorLangId == hledger"
       }
     ],

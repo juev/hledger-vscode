@@ -1,0 +1,114 @@
+; Error cases and malformed content for testing error handling
+; This file contains intentionally problematic content
+
+2025-01-15 * Valid Transaction
+    Assets:Bank            100.00 USD
+    Expenses:Food         -50.00 USD
+
+; Malformed transaction header
+Invalid date format * Bad transaction
+    Assets:Bank            100.00 USD
+    Expenses:Food         -50.00 USD
+
+; Missing transaction header
+    Assets:Bank            100.00 USD
+    Expenses:Food         -50.00 USD
+
+; Posting without proper indentation
+Assets:Bank            100.00 USD
+Expenses:Food         -50.00 USD
+
+; Amount with invalid characters
+2025-01-16 * Invalid Amounts
+    Assets:Bank            abc.def USD
+    Expenses:Food         -xyz USD
+    Assets:Cash           12@34.56 EUR
+
+; Missing amounts in auto-balancing
+2025-01-17 * Mixed Missing Amounts
+    Assets:Bank            100.00 USD
+    Expenses:Food
+    Assets:Cash           -50.00 USD
+    Expenses:Transport
+
+; Very long numbers that might cause overflow
+2025-01-18 * Extreme Numbers
+    Assets:Bank            999999999999999999999.99 USD
+    Expenses:Food         -999999999999999999999.99 USD
+
+; Scientific notation (not standard hledger but might appear)
+2025-01-19 * Scientific Notation
+    Assets:Bank            1.5e3 USD
+    Expenses:Food         -2.5e2 USD
+
+; Multiple amounts on single line
+2025-01-20 * Multiple Amounts
+    Assets:Bank            100.00 USD 50.00 EUR
+    Expenses:Food         -150.00 USD -75.00 EUR
+
+; Invalid commodity symbols
+2025-01-21 * Invalid Commodities
+    Assets:Bank            100.00 XYZ123
+    Expenses:Food         -50.00 @@@
+    Assets:Cash           25.00 ### USD
+
+; Mixed separators and formatting
+2025-01-22 * Mixed Formatting
+    Assets:Bank            1,000.00 USD
+    Expenses:Food         -1.000,00 USD
+    Assets:Cash           1 000.00 USD
+    Expenses:Transport    -1,000.00
+
+; Unicode numbers that might not parse
+2025-01-23 * Unicode Numbers
+    Assets:Bank            ۱۰۰.۰۰ USD
+    Expenses:Food         -٥٠.۰۰ USD
+
+; Empty transaction
+2025-01-24 * Empty Transaction
+
+; Transaction with only directives
+2025-01-25 * Directives Only
+    account Assets:Bank
+    commodity USD
+
+; Posting with only whitespace
+2025-01-26 * Whitespace Only
+    Assets:Bank            100.00 USD
+
+    Expenses:Food         -50.00 USD
+
+; Tab characters in amounts
+2025-01-27 * Tab Characters
+    Assets:Bank			100.00	USD
+    Expenses:Food		-50.00	USD
+
+; Newline characters in amounts (shouldn't happen but test anyway)
+2025-01-28 * Broken Amounts
+    Assets:Bank            100.
+USD
+    Expenses:Food         -50.00
+    USD
+
+; Currency symbols in weird positions
+2025-01-29 * Weird Currency Positions
+    Assets:Bank            100.00USD
+    Expenses:Food         USD-50.00
+    Assets:Cash           USD 25.00
+
+; Multiple decimal points
+2025-01-30 * Multiple Decimals
+    Assets:Bank            100.00.50 USD
+    Expenses:Food         -50.0.75 USD
+
+; Brackets in wrong places
+2025-01-31 * Misplaced Brackets
+    [Assets:Bank]         100.00 USD
+    (Expenses:Food)      -50.00 USD
+    Assets:{Cash}         25.00 USD
+
+; Invalid balance assertions
+2025-02-01 * Invalid Assertions
+    Assets:Bank           100.00 USD = abc USD
+    Assets:Cash           50.00 USD == xyz
+    Assets:Credit         25.00 USD = 123.abc USD

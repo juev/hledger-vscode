@@ -366,19 +366,22 @@ export class NumberFormatService {
             const decimalPart = parts.length > 1 ? parts[1] : undefined;
 
             // Create ParsedAmount with proper handling of optional properties for exactOptionalPropertyTypes
-            const parsedAmount: ParsedAmount = {
+            const baseParsedAmount: ParsedAmount = {
                 value: numericValue,
                 integerPart,
                 format,
                 original: input
             };
-            
+
             // Only add decimalPart if it exists to comply with exactOptionalPropertyTypes
             if (decimalPart !== undefined) {
-                (parsedAmount as any).decimalPart = decimalPart;
+                return success({
+                    ...baseParsedAmount,
+                    decimalPart
+                });
             }
 
-            return success(parsedAmount);
+            return success(baseParsedAmount);
 
         } catch (error) {
             return failure(new Error(`Parse error: ${error instanceof Error ? error.message : 'Unknown error'}`));
