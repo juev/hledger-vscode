@@ -296,7 +296,7 @@ export class DocumentFormatter {
     private applyTransactionFormatting(lines: string[], transactions: FormattedTransaction[]): Result<string> {
         // Calculate document-wide alignment columns
         const amountAlignmentColumn = this.calculateDocumentAmountAlignment(transactions);
-        const commentAlignmentColumn = this.calculateDocumentCommentAlignment(transactions);
+        const commentAlignmentColumn = this.calculateDocumentCommentAlignment(transactions, amountAlignmentColumn);
 
         // Apply formatting for each transaction
         for (const transaction of transactions) {
@@ -712,23 +712,63 @@ export class DocumentFormatter {
 
     /**
      * Calculates the optimal alignment column for inline comments across all transactions.
+     * Takes into account the formatted posting lines with aligned amounts.
      *
      * @param transactions Array of all transactions
+     * @param amountAlignmentColumn The alignment column for amounts
      * @returns The optimal alignment column for comments
      */
-    private calculateDocumentCommentAlignment(transactions: FormattedTransaction[]): CharacterPosition {
-        let maxCommentPosition = 0;
+    private calculateDocumentCommentAlignment(transactions: FormattedTransaction[], amountAlignmentColumn: CharacterPosition): CharacterPosition {
+        let maxContentEnd = 0;
 
         for (const transaction of transactions) {
             for (const posting of transaction.postings) {
-                if (posting.hasInlineComment && posting.commentPosition) {
-                    maxCommentPosition = Math.max(maxCommentPosition, posting.commentPosition);
+                if (!posting.isStartComment && posting.hasInlineComment) {
+                    // Parse the formatted line to find where content (before comment) ends
+                    const line = posting.formattedLine;
+                    const commentIndex = line.indexOf(';');
+
+                    if (commentIndex !== -1) {
+                        // Content before comment
+                        const beforeComment = line.substring(0, commentIndex);
+
+                        // Find the amount in the formatted line
+                        const beforeCommentTrimmed = beforeComment.trim();
+                        const postingMatch = beforeCommentTrimmed.match(/^([^\s;]+(?:\s+[^\s;]+)*?)\s{2,}([^;]+)$/);
+
+                        if (postingMatch) {
+                            const accountName = postingMatch[1]?.trim() || '';
+                            const amountExpression = postingMatch[2]?.trim() || '';
+
+                            // Calculate where the amount ends
+                            const accountStart = this.options.postingIndent;
+                            const accountEnd = accountStart + accountName.length;
+                            // Amount starts at amountAlignmentColumn
+                            const amountStart = amountAlignmentColumn;
+
+                            // Parse amount to find its actual end position
+                            let amountEnd = amountStart;
+                            if (amountExpression) {
+                                // Check for balance assertions (=, ==) and price assignments (@, @@)
+                                const balanceMatch = amountExpression.match(/^(.*?)(\s*[=]+\s*)([-+]?\d+(?:[.,]\d+)?(?:\s*[^\s]+)?)$/);
+                                if (balanceMatch) {
+                                    const amount = balanceMatch[1]?.trim() || '';
+                                    const assertion = balanceMatch[2] + (balanceMatch[3] || '');
+                                    amountEnd = createCharacterPosition(amountStart + amount.length + assertion.length);
+                                } else {
+                                    amountEnd = createCharacterPosition(amountStart + amountExpression.length);
+                                }
+                            }
+
+                            maxContentEnd = Math.max(maxContentEnd, amountEnd);
+                        }
+                    }
                 }
             }
         }
 
-        // Add some padding and ensure reasonable alignment
-        return createCharacterPosition(Math.max(maxCommentPosition + 2, 60));
+        // Add minimum spacing before comments and ensure reasonable alignment
+        return createCharacterPosition(Math.max(maxContentEnd + 2, 60));
     }
 
     /**
@@ -770,6 +810,7 @@ export class DocumentFormatter {
 
     /**
      * Aligns inline comment to the specified column.
+     * Preserves the amount alignment and adjusts comment spacing.
      *
      * @param line The line containing an inline comment
      * @param commentAlignmentColumn The target alignment column for the comment
@@ -783,13 +824,32 @@ export class DocumentFormatter {
 
         const beforeComment = line.substring(0, commentIndex);
         const comment = line.substring(commentIndex);
-        const trimmedBefore = beforeComment.trimEnd();
+
+        // Find where the content before comment actually ends
+        // We need to find the end of the amount expression
+        const trimmedBefore = beforeComment.trim();
+        const postingMatch = trimmedBefore.match(/^([^\s;]+(?:\s+[^\s;]+)*?)\s{2,}([^;]+)$/);
+
+        let contentEndPosition = beforeComment.length;
+        if (postingMatch) {
+            const accountName = postingMatch[1]?.trim() || '';
+            const amountExpression = postingMatch[2]?.trim() || '';
+
+            // Reconstruct the line to find the actual end position
+            const indent = ' '.repeat(this.options.postingIndent);
+            const accountPart = `${indent}${accountName}`;
+
+            // Find amount start position (should be aligned)
+            const amountStart = line.indexOf(amountExpression, accountPart.length);
+            if (amountStart !== -1) {
+                contentEndPosition = amountStart + amountExpression.length;
+            }
+        }
 
         // Calculate spaces needed to align comment
-        const currentLength = trimmedBefore.length;
-        const spacesNeeded = Math.max(1, commentAlignmentColumn - currentLength);
+        const spacesNeeded = Math.max(1, commentAlignmentColumn - contentEndPosition);
 
-        return trimmedBefore + ' '.repeat(spacesNeeded) + comment;
+        return beforeComment.substring(0, contentEndPosition) + ' '.repeat(spacesNeeded) + comment;
     }
 }
 
