@@ -15,6 +15,8 @@ export default [
       },
       globals: {
         console: 'readonly',
+        process: 'readonly',
+        setTimeout: 'readonly',
       },
     },
     plugins: {
@@ -29,6 +31,7 @@ export default [
       '@typescript-eslint/prefer-optional-chain': 'warn',
       '@typescript-eslint/no-floating-promises': 'error',
       '@typescript-eslint/await-thenable': 'error',
+      'no-useless-escape': 'warn',
     },
   },
   {

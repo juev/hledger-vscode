@@ -45,8 +45,8 @@ export class StrictCompletionProvider implements vscode.CompletionItemProvider {
     provideCompletionItems(
         document: vscode.TextDocument,
         position: vscode.Position,
-        token: vscode.CancellationToken,
-        context: vscode.CompletionContext
+        _token: vscode.CancellationToken,
+        _context: vscode.CompletionContext
     ): vscode.CompletionItem[] {
 
         // 1. Update configuration for current document
@@ -233,7 +233,7 @@ export class StrictCompletionProvider implements vscode.CompletionItemProvider {
         if (context.lineContext === 'in_tag_value') {
             // Extract from after comment marker to cursor - TagCompleter expects full tag:value format
             const commentMatch = beforeCursor.match(/[;#]\s*(.*)$/);
-            if (commentMatch && commentMatch[1]) {
+            if (commentMatch?.[1]) {
                 // TagCompleter needs the full comment content to extract tag name and value
                 // It uses pattern: /([\p{L}\p{N}_-]+):\s*[\p{L}\p{N}_-]*$/u to extract tag name
                 return commentMatch[1];
@@ -244,7 +244,7 @@ export class StrictCompletionProvider implements vscode.CompletionItemProvider {
         if (context.lineContext === 'in_comment') {
             // Extract from after comment marker to cursor, stop at colon
             const commentMatch = beforeCursor.match(/[;#]\s*([\p{L}\p{N}_-]*)$/u);
-            if (commentMatch && commentMatch[1]) {
+            if (commentMatch?.[1]) {
                 return commentMatch[1];
             }
         }

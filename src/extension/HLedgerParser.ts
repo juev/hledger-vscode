@@ -4,7 +4,6 @@
 
 import * as fs from 'fs';
 import * as path from 'path';
-import * as vscode from 'vscode';
 import {
     AccountName, PayeeName, TagName, TagValue, CommodityCode, UsageCount,
     createAccountName, createPayeeName, createTagName, createTagValue, createCommodityCode, createUsageCount
@@ -284,7 +283,7 @@ export class HLedgerParser {
             try {
                 const includedData = this.parseFile(fullPath);
                 this.mergeData(data, includedData);
-            } catch (error) {
+            } catch {
                 // Silently ignore include errors
             }
         }
@@ -292,7 +291,7 @@ export class HLedgerParser {
 
     private handleAliasDirective(line: string, data: MutableParsedHLedgerData): void {
         const aliasMatch = line.match(/alias\s+([^=]+)=(.+)/);
-        if (aliasMatch && aliasMatch[1] && aliasMatch[2]) {
+        if (aliasMatch?.[1] && aliasMatch[2]) {
             const alias = createAccountName(aliasMatch[1].trim());
             const account = createAccountName(aliasMatch[2].trim());
             data.aliases.set(alias, account);
@@ -334,7 +333,7 @@ export class HLedgerParser {
             } else {
                 // Fallback: try to extract just the commodity symbol from the end
                 const commodityMatch = cleanCommodityPart.match(/([\p{L}\p{Sc}]+)\s*$/u);
-                if (commodityMatch && commodityMatch[1]) {
+                if (commodityMatch?.[1]) {
                     const commodityCode = createCommodityCode(commodityMatch[1]);
                     if (commodityCode) {
                         data.commodities.add(commodityCode);
@@ -451,7 +450,7 @@ export class HLedgerParser {
             } else {
                 // Fallback: try to extract just the commodity symbol from the end
                 const commodityMatch = cleanDefaultPart.match(/([\p{L}\p{Sc}]+)\s*$/u);
-                if (commodityMatch && commodityMatch[1]) {
+                if (commodityMatch?.[1]) {
                     const commodityCode = createCommodityCode(commodityMatch[1]);
                     if (commodityCode) {
                         data.defaultCommodity = commodityCode;
@@ -540,7 +539,7 @@ export class HLedgerParser {
             };
 
             return format;
-        } catch (error) {
+        } catch {
             // Return null on any parsing error
             return null;
         }
@@ -548,7 +547,7 @@ export class HLedgerParser {
 
     private handleTransactionLine(line: string, data: MutableParsedHLedgerData): void {
         const dateMatch = line.match(/^(\d{4}[-\/\.]\d{2}[-\/\.]\d{2}|\d{2}[-\/\.]\d{2})/);
-        if (dateMatch && dateMatch[1]) {
+        if (dateMatch?.[1]) {
             data.lastDate = dateMatch[1];
         }
 
@@ -563,7 +562,7 @@ export class HLedgerParser {
         this.extractTags(line, data);
     }
 
-    private handlePostingLine(line: string, data: MutableParsedHLedgerData, transactionPayee: string): void {
+    private handlePostingLine(line: string, data: MutableParsedHLedgerData, _transactionPayee: string): void {
         const trimmedLine = line.trim();
 
         // Extract account name (everything before amount)
@@ -612,7 +611,7 @@ export class HLedgerParser {
         // Extract tags only from comments (after ; or #)
         // Tags are in the format tag: or tag:value within comments
         const commentMatch = line.match(/[;#](.*)$/);
-        if (!commentMatch || !commentMatch[1]) {
+        if (!commentMatch?.[1]) {
             return;
         }
 
@@ -668,7 +667,7 @@ export class HLedgerParser {
         // Matches international currency symbols, cryptocurrency symbols, and commodity codes
         // Supports Latin, Cyrillic, Greek, and other Unicode letter systems
         const commodityMatch = amountStr.match(/(\p{Sc}|[\p{L}]{2,}\d*|[A-Z]{2,}\d*)/u);
-        if (commodityMatch && commodityMatch[1]) {
+        if (commodityMatch?.[1]) {
             const commodity = createCommodityCode(commodityMatch[1]);
             data.commodities.add(commodity);
             this.incrementUsage(data.commodityUsage, commodity);
@@ -818,7 +817,7 @@ export class HLedgerParser {
                     }
                 }
             }
-        } catch (error) {
+        } catch {
             // Silently ignore directory access errors
         }
 

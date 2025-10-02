@@ -2,7 +2,7 @@
 // Provides full formatting functionality including indentation, amount alignment, and comment alignment
 
 import {
-    Result, success, failure, isFailure,
+    Result, success, failure,
     LineNumber, CharacterPosition,
     isLineNumber, isCharacterPosition
 } from './types';
@@ -143,7 +143,7 @@ export class DocumentFormatter {
     private static readonly NUMBER_REGEX = /[\p{N}]/u;
     private static readonly SUFFIX_COMMODITY_REGEX = /\s*[\p{Sc}$€£¥₽₩\p{L}]+$/u;
     private static readonly SIMPLE_INTEGER_REGEX = /^[-+]?\p{N}+$/u;
-    private static readonly TRANSACTION_HEADER_REGEX = /^(\d{4}[-\/\.]\d{1,2}[-\/\.]\d{1,2}|\d{1,2}[-\/\.]\d{1,2})/;
+    private static readonly TRANSACTION_HEADER_REGEX = /^(\d{4}[-/\.]\d{1,2}[-/\.]\d{1,2}|\d{1,2}[-/\.]\d{1,2})/;
     private static readonly POSTING_REGEX = /^([^\s;]+(?:\s+[^\s;]+)*?)\s{2,}([^;]+)$/;
     private static readonly POSTING_WITH_SPACES_REGEX = /^\s*([^\s;]+(?:\s+[^\s;]+)*?)\s{2,}([^;]*)/;
     private static readonly BALANCE_ASSERTION_REGEX = /^(.*?)(\s*[=]+\s*)([-+]?\d+(?:[.,]\d+)?(?:\s*[^\s]+)?)$/;
@@ -582,7 +582,7 @@ export class DocumentFormatter {
         const fullMatch = line.match(DocumentFormatter.POSTING_WITH_SPACES_REGEX);
         let amountStartPos = accountStartPos + accountName.length; // fallback value
 
-        if (fullMatch && fullMatch[2]) {
+        if (fullMatch?.[2]) {
             // Find the exact position where the amount starts in the original line
             const amountText = fullMatch[2] || '';
             const accountText = fullMatch[1] || '';
@@ -758,12 +758,9 @@ export class DocumentFormatter {
                         const postingMatch = beforeCommentTrimmed.match(/^([^\s;]+(?:\s+[^\s;]+)*?)\s{2,}([^;]+)$/);
 
                         if (postingMatch) {
-                            const accountName = postingMatch[1]?.trim() || '';
                             const amountExpression = postingMatch[2]?.trim() || '';
 
                             // Calculate where the amount ends
-                            const accountStart = this.options.postingIndent;
-                            const accountEnd = accountStart + accountName.length;
                             // Amount starts at amountAlignmentColumn
                             const amountStart = amountAlignmentColumn;
 
