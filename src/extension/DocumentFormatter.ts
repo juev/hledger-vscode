@@ -286,16 +286,25 @@ export class DocumentFormatter {
             formattedLine = ' '.repeat(this.options.postingIndent) + trimmedLine;
         }
 
-        return {
+        const baseFormattedLine: FormattedLine = {
             originalLine: line,
             formattedLine,
             lineNumber,
             isTransactionHeader: false,
             isPosting: true,
             isStartComment: false,
-            hasInlineComment,
-            commentPosition: hasInlineComment ? this.findCommentPosition(trimmedLine) : undefined
+            hasInlineComment
         };
+
+        // Only add commentPosition if there's an inline comment
+        if (hasInlineComment) {
+            return {
+                ...baseFormattedLine,
+                commentPosition: this.findCommentPosition(trimmedLine)
+            };
+        }
+
+        return baseFormattedLine;
     }
 
     /**
