@@ -1,5 +1,39 @@
 # Change Log
 
+## [0.3.8] - 2025-10-02
+
+### Added
+- feat: add eslint
+- feat: use formaters
+- feat: add debug messages
+- feat: add DocumentFormater
+- feat: remove debug messages
+- feat: tab usage
+- feat: change tab behaviour for amounts
+- feat: add autoalign sum
+- feat: update .gitignore
+- feat: change agent settings
+
+### Fixed
+- fix: linter errors
+- fix: lint errors
+- fix: remove redundant settings
+- fix: production build
+- fix: performance
+- fix: formating loop
+- fix: format comments
+- fix: format on save
+- fix: documents and align
+- fix: align postings with spaces
+- fix: tests
+- fix: tab align
+- fix: align for all files
+- fix: format all document
+
+### Other
+- chore(deps-dev): bump tar-fs from 2.1.3 to 2.1.4
+
+
 ## [0.3.7] - 2025-09-27
 
 ### Added
