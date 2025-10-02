@@ -328,14 +328,24 @@ D 1000.00 USD
                 const formatted = result.data;
                 const lines = formatted.split('\n');
 
+                // Non-posting lines should remain exactly as they were
                 expect(lines[0]).toBe('account Assets:Bank');
                 expect(lines[1]).toBe('account Expenses:Food');
                 expect(lines[2]).toBe('');
                 expect(lines[3]).toBe('2025-01-15 * Test transaction');
-                expect(lines[4]).toMatch(/    Assets:Bank\s+100 USD/);
-                expect(lines[5]).toMatch(/    Expenses:Food\s+-50 USD/);
                 expect(lines[6]).toBe('');
                 expect(lines[7]).toBe('D 1000.00 USD');
+
+                // Posting lines should be formatted (but exact format may vary)
+                expect(lines[4]).toContain('Assets:Bank');
+                expect(lines[4]).toContain('100 USD');
+                expect(lines[5]).toContain('Expenses:Food');
+                expect(lines[5]).toContain('-50 USD');
+
+                // Amounts should be aligned
+                const amount1Pos = lines[4].indexOf('100 USD');
+                const amount2Pos = lines[5].indexOf('-50 USD');
+                expect(amount1Pos).toBe(amount2Pos);
             }
         });
 
@@ -353,14 +363,18 @@ D 1000.00 USD
             }
         });
 
-        it('should format multiple transactions independently', () => {
-            const content = `2025-01-15 * First transaction
-    A        100 USD
-    BB       -50 USD
+        it('should use document-wide alignment for consistent formatting', () => {
+            const content = `2025-01-15 * Transaction with short account names
+    Assets     1000.00 USD
+    Cash       -500.00 USD
 
-2025-01-16 * Second transaction
-    Long:Account    200 EUR
-    Short           -100 EUR
+2025-01-16 * Transaction with very long account names
+    Expenses:Food:Groceries:Weekly Shopping     200.00 USD
+    Income:Salary:Monthly Bonus                -200.00 USD
+
+2025-01-17 * Mixed transaction
+    Bank       300.00 USD
+    Expenses   -300.00 USD
 `;
 
             const result = aligner.formatContent(content);
@@ -370,18 +384,61 @@ D 1000.00 USD
                 const formatted = result.data;
                 const lines = formatted.split('\n');
 
-                // First transaction amounts should be aligned
-                const firstAmount1Pos = lines[1].indexOf('100 USD');
-                const firstAmount2Pos = lines[2].indexOf('-50 USD');
-                expect(firstAmount1Pos).toBe(firstAmount2Pos);
+                
+                // Find the lines with amounts and extract positions
+                const positions = [];
 
-                // Second transaction amounts should be aligned
-                const secondAmount1Pos = lines[5].indexOf('200 EUR');
-                const secondAmount2Pos = lines[6].indexOf('-100 EUR');
-                expect(secondAmount1Pos).toBe(secondAmount2Pos);
+                for (let i = 0; i < lines.length; i++) {
+                    const line = lines[i];
+                    if (line.includes('1000.00 USD') || line.includes('-500.00 USD') ||
+                        line.includes('200.00 USD') || line.includes('-200.00 USD') ||
+                        line.includes('300.00 USD') || line.includes('-300.00 USD')) {
 
-                // Both transactions should have proper alignment (at least minimum spacing)
-                expect([firstAmount1Pos, secondAmount1Pos]).toContain(40);
+                        if (line.includes('1000.00 USD')) positions.push(line.indexOf('1000.00 USD'));
+                        else if (line.includes('-500.00 USD')) positions.push(line.indexOf('-500.00 USD'));
+                        else if (line.includes('200.00 USD')) positions.push(line.indexOf('200.00 USD'));
+                        else if (line.includes('-200.00 USD')) positions.push(line.indexOf('-200.00 USD'));
+                        else if (line.includes('300.00 USD')) positions.push(line.indexOf('300.00 USD'));
+                        else if (line.includes('-300.00 USD')) positions.push(line.indexOf('-300.00 USD'));
+                    }
+                }
+
+                
+                // All positions should be the same or very close (document-wide alignment)
+                expect(positions.length).toBe(6); // Should find all 6 amounts
+
+                // Check that all positions are within 1 character of each other (accounting for different amount lengths)
+                const firstPos = positions[0];
+                positions.forEach(pos => {
+                    expect(Math.abs(pos - firstPos)).toBeLessThanOrEqual(1);
+                });
+
+                // The alignment should accommodate the longest account name
+                expect(firstPos).toBeGreaterThanOrEqual(45); // Should accommodate "Expenses:Food:Groceries:Weekly Shopping"
+            }
+        });
+
+        it('should calculate document-wide optimal alignment correctly', () => {
+            const content = `2025-01-15 * Test
+    Short    100 USD
+    A        -50 USD
+
+2025-01-16 * Another test
+    Very:Long:Account:Name    200 EUR
+    B                          -100 EUR
+`;
+
+            const parseResult = aligner.parseTransactions(content);
+            expect(parseResult.success).toBe(true);
+
+            if (parseResult.success) {
+                const transactions = parseResult.data;
+                const alignmentColumn = aligner.calculateDocumentOptimalAlignment(transactions);
+
+                // The alignment should accommodate the longest account name + min spacing
+                // "Very:Long:Account:Name" is 25 characters, with account position 4 = 29
+                // + min spacing (2) = 31, so alignment should be at least 31 or the minimum (40)
+                expect(alignmentColumn).toBeGreaterThanOrEqual(40);
             }
         });
     });

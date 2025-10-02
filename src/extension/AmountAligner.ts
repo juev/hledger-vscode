@@ -182,9 +182,12 @@ export class AmountAligner {
             const lines = content.split('\n');
             const modifiedLines = [...lines];
 
-            // Apply formatting for each transaction
+            // Calculate document-wide alignment column
+            const documentAlignmentColumn = this.calculateDocumentOptimalAlignment(transactions);
+
+            // Apply formatting for each transaction using document-wide alignment
             for (const transaction of transactions) {
-                this.applyTransactionFormatting(modifiedLines, transaction);
+                this.applyTransactionFormatting(modifiedLines, transaction, documentAlignmentColumn);
             }
 
             return success(modifiedLines.join('\n'));
@@ -194,7 +197,39 @@ export class AmountAligner {
     }
 
     /**
+     * Calculates the optimal alignment column for the entire document.
+     * This ensures consistent alignment across all transactions.
+     *
+     * @param transactions Array of all transaction blocks to analyze
+     * @returns The optimal alignment column position for the entire document
+     */
+    calculateDocumentOptimalAlignment(transactions: TransactionBlock[]): CharacterPosition {
+        if (transactions.length === 0) {
+            return createCharacterPosition(0);
+        }
+
+        // Find the maximum account name length among all postings with amounts across all transactions
+        let maxAccountLength = 0;
+        for (const transaction of transactions) {
+            for (const posting of transaction.postings) {
+                if (posting.hasAmount) {
+                    const accountLength = posting.accountPosition + posting.accountName.length;
+                    maxAccountLength = Math.max(maxAccountLength, accountLength);
+                }
+            }
+        }
+
+        // Add minimum spacing and ensure reasonable alignment
+        const alignmentColumn = createCharacterPosition(
+            Math.max(maxAccountLength + this.options.minSpacing, 40)
+        );
+
+        return alignmentColumn;
+    }
+
+    /**
      * Calculates the optimal alignment column for a transaction's postings.
+     * This method is kept for backward compatibility but should use document-wide alignment when possible.
      *
      * @param postings Array of posting lines to analyze
      * @returns The optimal alignment column position
@@ -380,15 +415,16 @@ export class AmountAligner {
     }
 
     /**
-     * Applies formatting to a transaction's lines.
+     * Applies formatting to a transaction's lines using document-wide alignment.
      *
      * @param lines The array of all lines (will be modified)
      * @param transaction The transaction to format
+     * @param documentAlignmentColumn The document-wide alignment column to use
      */
-    private applyTransactionFormatting(lines: string[], transaction: TransactionBlock): void {
+    private applyTransactionFormatting(lines: string[], transaction: TransactionBlock, documentAlignmentColumn: CharacterPosition): void {
         for (const posting of transaction.postings) {
             if (posting.hasAmount) {
-                const formattedLine = this.formatPostingLine(posting, transaction.alignmentColumn);
+                const formattedLine = this.formatPostingLine(posting, documentAlignmentColumn);
                 // Update the line in the array (convert to 0-based index)
                 lines[posting.lineNumber - 1] = formattedLine;
             }
@@ -407,7 +443,7 @@ export class AmountAligner {
             return posting.originalLine;
         }
 
-        // Calculate the needed spacing
+        // Calculate the needed spacing to align the amount exactly at alignmentColumn
         const accountEndPos = posting.accountPosition + posting.accountName.length;
         const spacingNeeded = Math.max(this.options.minSpacing, alignmentColumn - accountEndPos);
 
