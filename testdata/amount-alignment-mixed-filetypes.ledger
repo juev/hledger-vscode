@@ -1,0 +1,88 @@
+; Mixed file types test (using .ledger extension)
+; This file tests that the extension works with ledger format as well
+
+; Account declarations
+Assets:Bank
+Assets:Cash
+Assets:Investment
+Expenses:Food
+Expenses:Transport
+Expenses:Utilities
+Income:Salary
+Income:Investment
+
+; Commodity declarations
+commodity $
+commodity €
+commodity BTC
+
+; Transactions in ledger format
+2025/01/01 * Opening Balance
+    Assets:Bank                 $5,000.00
+    Income:Salary              -$5,000.00
+
+2025/01/02 Grocery Store
+    Assets:Bank               -$125.50
+    Expenses:Food               $125.50
+
+2025/01/03 Gas Station
+    Assets:Bank               -$45.75
+    Expenses:Transport          $45.75
+
+2025/01/04 Electric Bill
+    Assets:Bank               -$120.00
+    Expenses:Utilities         $120.00
+
+2025/01/05 Investment Dividend
+    Assets:Bank                $250.00
+    Income:Investment         -$250.00
+
+2025/01/06 Cash Withdrawal
+    Assets:Bank               -$200.00
+    Assets:Cash                $200.00
+
+2025/01/07 Coffee Shop
+    Assets:Cash                -$8.50
+    Expenses:Food               $8.50
+
+2025/01/08 Online Shopping
+    Assets:Bank               -$350.00
+    Expenses:Shopping          $350.00
+
+2025/01/09 Multi-currency Transaction
+    Assets:Bank               -$1,000.00
+    Assets:Cash                €500.00
+    Expenses:Exchange          -$500.00
+
+2025/01/10 Stock Purchase
+    Assets:Investment:AAPL      10 AAPL @ $150.00
+    Assets:Bank               -$1,500.00
+
+2025/01/11 Balance Check
+    Assets:Bank                 $0.00 = $3,795.25
+    Assets:Cash                 $0.00 = $691.50
+
+2025/01/12 Complex Transaction
+    Assets:Bank               $2,000.00    ; Monthly salary
+    Income:Salary             -$2,000.00   ; Primary income
+
+    Assets:Investment         $500.00     ; Investment transfer
+    Assets:Cash               $100.00     ; Cash withdrawal
+    Expenses:BankFees         -$5.00      ; Transfer fee
+
+; Transaction with different date formats
+01/15/2025 * Alternative Date Format
+    Assets:Bank               $1,000.00
+    Income:Freelance         -$1,000.00
+
+; Transaction with European number format
+2025-01-16 * European Format
+    Assets:Bank               €1.234,56
+    Expenses:Shopping         €1.234,56
+
+; Auto-balancing transaction
+2025-01-17 * Auto-balance
+    Assets:Bank               $500.00
+    Expenses:Food
+    Expenses:Transport
+    Assets:Cash

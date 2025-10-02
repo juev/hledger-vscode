@@ -1,0 +1,118 @@
+; Mixed file types test (using .hledger extension)
+; This file tests that the extension works with different file extensions
+
+; Directives and declarations
+account Assets:Bank:Checking
+account Assets:Bank:Savings
+account Assets:Cash
+account Expenses:Food:Groceries
+account Expenses:Transport:Gas
+account Expenses:Utilities:Electric
+account Income:Salary:Primary
+account Income:Freelance:Writing
+
+commodity USD
+    format 1,000.00 USD
+commodity EUR
+    format 1.000,00 EUR
+commodity BTC
+    format 0.00000000 BTC
+
+P 2025-01-01 00:00:00 UTC
+D 1,000.00 USD
+
+; Transactions with various formats
+2025-01-01 * Opening Balance
+    Assets:Bank:Checking            5,000.00 USD
+    Income:Salary:Primary          -5,000.00 USD
+
+2025-01-02 Grocery Store ; tag:weekly, category:food
+    Assets:Bank:Checking           -125.50 USD
+    Expenses:Food:Groceries         125.50 USD
+
+2025-01-03 Gas Station ; tag:car
+    Assets:Bank:Checking            -45.75 USD
+    Expenses:Transport:Gas           45.75 USD
+
+2025-01-04 Electric Bill ; tag:monthly
+    Assets:Bank:Checking           -120.00 USD
+    Expenses:Utilities:Electric      120.00 USD
+
+2025-01-05 Freelance Payment ; tag:income
+    Assets:Bank:Checking           1,500.00 USD
+    Income:Freelance:Writing       -1,500.00 USD
+
+2025-01-06 Cash Withdrawal
+    Assets:Bank:Checking           -200.00 USD
+    Assets:Cash                     200.00 USD
+
+2025-01-07 Coffee Shop ; tag:daily
+    Assets:Cash                     -8.50 USD
+    Expenses:Food:Groceries          8.50 USD
+
+2025-01-08 Online Shopping
+    Assets:Bank:Checking           -350.00 USD
+    Expenses:Shopping:Online        350.00 USD
+
+2025-01-09 Multi-currency Transaction
+    Assets:Bank:Checking           -1,000.00 USD
+    Assets:Bank:Savings            1,000.00 USD
+    Assets:Cash                      500.00 EUR
+    Expenses:Exchange               -500.00 USD
+
+2025-01-10 Investment Purchase
+    Assets:Investment:Bitcoin        0.1 BTC @ 45,000.00 USD
+    Assets:Bank:Checking          -4,500.00 USD
+
+2025-01-11 Balance Assertions
+    Assets:Bank:Checking            0.00 USD = 3,795.25 USD
+    Assets:Cash                     0.00 USD = 691.50 USD
+    Assets:Bank:Savings             0.00 USD = 6,000.00 USD
+
+2025-01-12 Virtual Postings
+    Assets:Bank:Checking            100.00 USD
+    [Expenses:Business]             -50.00 USD
+    (Assets:Cash)                    50.00 USD
+
+2025-01-13 Auto-balancing Transaction
+    Assets:Bank:Checking            500.00 USD
+    Expenses:Food:Groceries
+    Expenses:Transport:Gas
+    Assets:Cash
+
+2025-01-14 Complex Transaction with Comments
+    Assets:Bank:Checking           2,000.00 USD    ; Monthly salary advance
+    Income:Salary:Primary          -2,000.00 USD   ; Advance payment
+
+    ; Note: This transaction includes multiple posting lines with comments
+    Assets:Bank:Savings             1,000.00 USD    ; Transfer to savings
+    Assets:Cash                      200.00 EUR    ; Foreign currency exchange
+    Expenses:Exchange               -800.00 USD    ; Exchange rate loss
+
+; Transaction with various number formats
+2025-01-15 Mixed Number Formats
+    Assets:Bank:Checking           1,234.56 USD    ; US format
+    Assets:Bank:Savings            1.234,56 EUR    ; European format
+    Assets:Cash                   1 234,56 JPY     ; Space thousand separator
+    Expenses:Conversion           -1,000.00 USD    ; Standard conversion
+
+; Transaction with very small amounts
+2025-01-16 Micro Transactions
+    Assets:Investment:Bitcoin        0.00012345 BTC
+    Assets:Investment:Ethereum       0.00123456 ETH
+    Assets:Bank:Checking            -10.00 USD
+    Expenses:Fees                    10.00 USD
+
+; Transaction with large amounts
+2025-01-17 Large Transactions
+    Assets:Bank:Checking          100,000.00 USD
+    Assets:Bank:Savings           250,000.00 USD
+    Income:Bonus                 -350,000.00 USD
+
+; End of period check
+2025-01-17 * Month End Status
+    Assets:Bank:Checking            0.00 USD = 6,000.00 USD
+    Assets:Bank:Savings             0.00 USD = 257,234.56 EUR
+    Assets:Cash                     0.00 USD = 1,691.50 USD
+    Assets:Investment:Bitcoin       0.00 BTC = 0.10012345 BTC
+    Assets:Investment:Ethereum      0.00 ETH = 0.00123456 ETH

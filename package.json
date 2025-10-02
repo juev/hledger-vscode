@@ -1,8 +1,8 @@
 {
   "name": "hledger",
   "displayName": "hledger Language Support",
-  "description": "Full-featured hledger extension with syntax highlighting, intelligent code completion, and project-based caching for journal files",
-  "version": "0.2.1",
+  "description": "Full-featured hledger extension with syntax highlighting, intelligent code completion, amount alignment, and project-based caching for journal files",
+  "version": "0.4.0",
   "publisher": "evsyukov",
   "engines": {
     "vscode": "^1.75.0"
@@ -61,6 +61,16 @@
           "default": true,
           "description": "Enable smart indentation on Enter key for hledger files"
         },
+        "hledger.amountAlignment.enabled": {
+          "type": "boolean",
+          "default": false,
+          "description": "Enable automatic alignment of amounts in transaction postings for better readability"
+        },
+        "hledger.amountAlignment.formatOnSave": {
+          "type": "boolean",
+          "default": false,
+          "description": "Automatically format amounts when saving hledger files (requires amount alignment to be enabled)"
+        },
         "hledger.autoCompletion.maxResults": {
           "type": "number",
           "default": 25,
@@ -81,6 +91,19 @@
       {
         "command": "hledger.onEnter",
         "title": "HLedger: Smart Enter",
+        "category": "HLedger",
+        "when": "editorTextFocus && editorLangId == hledger"
+      },
+      {
+        "command": "hledger.formatDocument",
+        "title": "Align Amounts",
+        "category": "HLedger",
+        "when": "editorTextFocus && editorLangId == hledger"
+      },
+      {
+        "command": "hledger.toggleFormatOnSave",
+        "title": "Toggle Format on Save",
+        "category": "HLedger",
         "when": "editorTextFocus && editorLangId == hledger"
       }
     ],
@@ -94,6 +117,18 @@
         "command": "hledger.onEnter",
         "key": "enter",
         "when": "editorTextFocus && editorLangId == hledger && !suggestWidgetVisible && !inSnippetMode && !parameterHintsVisible && config.hledger.smartIndent.enabled"
+      },
+      {
+        "command": "hledger.formatDocument",
+        "key": "ctrl+shift+a",
+        "mac": "cmd+shift+a",
+        "when": "editorTextFocus && editorLangId == hledger && config.hledger.amountAlignment.enabled"
+      },
+      {
+        "command": "editor.action.format",
+        "key": "ctrl+shift+f",
+        "mac": "cmd+shift+f",
+        "when": "editorTextFocus && editorLangId == hledger && config.hledger.amountAlignment.enabled"
       }
     ],
     "configurationDefaults": {

@@ -34,6 +34,12 @@ export enum CompletionTriggerKind {
     TriggerForIncompleteCompletions = 2
 }
 
+export enum ConfigurationTarget {
+    Global = 1,
+    Workspace = 2,
+    WorkspaceFolder = 3
+}
+
 export enum EndOfLine {
     LF = 1,
     CRLF = 2
@@ -271,6 +277,12 @@ export const window = {
     showInformationMessage: jest.fn(),
     showErrorMessage: jest.fn(),
     showWarningMessage: jest.fn(),
+    setStatusBarMessage: jest.fn(),
+    activeTextEditor: {
+        document: null,
+        edit: jest.fn(),
+    },
+    withProgress: jest.fn(),
 };
 
 export const commands = {

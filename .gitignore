@@ -63,3 +63,5 @@ recovery_*.md
 # Project specific
 show-changelog.js
 test.sh
+
+tasks.md*
