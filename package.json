@@ -9,6 +9,7 @@
   },
   "categories": [
     "Language Packs",
+    "Formatters",
     "Other"
   ],
   "keywords": [
@@ -61,10 +62,10 @@
           "default": true,
           "description": "Enable smart indentation on Enter key for hledger files"
         },
-        "hledger.formatOnSave": {
+        "hledger.formatting.enabled": {
           "type": "boolean",
-          "default": false,
-          "description": "Automatically format hledger files when saving (tabs to spaces, proper indentation, amount and comment alignment)"
+          "default": true,
+          "description": "Enable document formatting for hledger files"
         },
         "hledger.autoCompletion.maxResults": {
           "type": "number",
@@ -92,12 +93,6 @@
       {
         "command": "hledger.onTab",
         "title": "HLedger: Smart Tab for Amount Alignment",
-        "category": "HLedger",
-        "when": "editorTextFocus && editorLangId == hledger"
-      },
-      {
-        "command": "hledger.toggleFormatOnSave",
-        "title": "Toggle Format on Save",
         "category": "HLedger",
         "when": "editorTextFocus && editorLangId == hledger"
       }

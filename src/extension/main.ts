@@ -10,125 +10,11 @@ import { StrictCompletionProvider } from './StrictCompletionProvider';
 import { HLedgerEnterCommand } from './HLedgerEnterCommand';
 import { HLedgerTabCommand } from './HLedgerTabCommand';
 import { SimpleFuzzyMatcher } from './SimpleFuzzyMatcher';
-import { createCacheKey, isFailure } from './types';
-import { DocumentFormatter } from './DocumentFormatter';
+import { createCacheKey } from './types';
+import { registerFormattingProviders } from './HLedgerFormattingProvider';
 
 // Global instances for simplified architecture
 let globalConfig: HLedgerConfig;
-let documentFormatter: DocumentFormatter;
-
-// Track recently formatted documents to prevent infinite loops
-const recentlyFormattedDocuments = new Set<string>();
-const FORMAT_COOLDOWN_MS = 2000; // 2 second cooldown to prevent auto-save loops
-
-/**
- * Handles document save events and applies automatic formatting if enabled.
- * Includes proper posting indentation, amount alignment, and comment alignment.
- *
- * @param document The document that was saved
- * @returns Promise that resolves when formatting is complete
- */
-export async function handleDocumentSave(document: vscode.TextDocument): Promise<void> {
-    try {
-        // Check if this is a hledger file
-        if (document.languageId !== 'hledger') {
-            return;
-        }
-
-        // Check if this document was recently formatted to prevent infinite loops
-        const documentKey = document.uri.toString();
-        if (recentlyFormattedDocuments.has(documentKey)) {
-            console.log(`Skipping format for ${document.fileName} - in cooldown period`);
-            return;
-        }
-
-        // Get configuration
-        const config = vscode.workspace.getConfiguration('hledger');
-        const isFormatOnSaveEnabled = config.get<boolean>('formatOnSave', false);
-
-        // Only format if format on save is enabled
-        if (!isFormatOnSaveEnabled) {
-            return;
-        }
-
-        // Initialize document formatter if not already done
-        if (!documentFormatter) {
-            documentFormatter = new DocumentFormatter();
-        }
-
-        // Get the document content
-        const content = document.getText();
-
-        // Format the content using DocumentFormatter
-        const formatResult = documentFormatter.formatContent(content);
-
-        if (!formatResult.success || isFailure(formatResult)) {
-            console.error('HLedger auto-format failed:', isFailure(formatResult) ? formatResult.error : 'Unknown error');
-            return;
-        }
-
-        const formattedContent = formatResult.data;
-
-        // Check if content actually changed
-        if (formattedContent === content) {
-            // Still mark as formatted to prevent repeated checks during cooldown
-            recentlyFormattedDocuments.add(documentKey);
-            setTimeout(() => {
-                recentlyFormattedDocuments.delete(documentKey);
-            }, FORMAT_COOLDOWN_MS);
-            return;
-        }
-
-        // Apply the formatting using a text edit
-        const editor = vscode.window.activeTextEditor;
-
-        if (editor && editor.document === document) {
-            const fullRange = new vscode.Range(
-                document.positionAt(0),
-                document.positionAt(content.length)
-            );
-
-            // Mark this document as recently formatted before applying edits
-            recentlyFormattedDocuments.add(documentKey);
-
-            // Schedule removal from the tracking set after cooldown
-            setTimeout(() => {
-                recentlyFormattedDocuments.delete(documentKey);
-            }, FORMAT_COOLDOWN_MS);
-
-            // Apply the edit
-            const editSuccess = await editor.edit(editBuilder => {
-                editBuilder.replace(fullRange, formattedContent);
-            });
-
-            if (editSuccess) {
-                // Show a subtle notification that formatting was applied
-                vscode.window.setStatusBarMessage('hledger: Document formatted on save', 3000);
-
-                // Log the formatting for debugging
-                console.log(`Auto-formatted hledger document on save: ${document.fileName}`);
-            } else {
-                // Remove from tracking set if edit failed
-                recentlyFormattedDocuments.delete(documentKey);
-                console.warn(`Failed to apply auto-format to document: ${document.fileName}`);
-            }
-        }
-
-    } catch (error) {
-        // Log the error but don't block the save operation
-        console.error('Error during hledger auto-format on save:', error);
-
-        // Show error notification only if it's a significant error
-        if (error instanceof Error && error.message.includes('failed to parse')) {
-            vscode.window.showErrorMessage(`hledger auto-format failed: ${error.message}`);
-        }
-    }
-}
-
-/**
- * Document formatting functionality for hledger files using DocumentFormatter.
- * Provides comprehensive formatting including proper indentation, amount and comment alignment.
- */
 
 // Main activation function
 export function activate(context: vscode.ExtensionContext): void {
@@ -154,13 +40,10 @@ export function activate(context: vscode.ExtensionContext): void {
             )
         );
 
-        
-        // Register document save event handler for automatic formatting
-        const saveHandler = vscode.workspace.onDidSaveTextDocument(async (document) => {
-            await handleDocumentSave(document);
-        });
-        context.subscriptions.push(saveHandler);
-        
+  
+        // Register formatting providers for hledger files
+        registerFormattingProviders(context);
+
         // Register Enter key handler for smart indentation
         const enterCommand = new HLedgerEnterCommand();
         context.subscriptions.push(enterCommand);
@@ -168,7 +51,6 @@ export function activate(context: vscode.ExtensionContext): void {
         // Register Tab key handler for amount alignment positioning
         const tabCommand = new HLedgerTabCommand();
         context.subscriptions.push(tabCommand);
-
 
         // Register manual completion commands
         context.subscriptions.push(
@@ -180,22 +62,6 @@ export function activate(context: vscode.ExtensionContext): void {
         context.subscriptions.push(
             vscode.commands.registerCommand('hledger.triggerAccountCompletion', () => {
                 vscode.commands.executeCommand('editor.action.triggerSuggest');
-            })
-        );
-
-        
-        // Register toggle format on save command
-        context.subscriptions.push(
-            vscode.commands.registerCommand('hledger.toggleFormatOnSave', async () => {
-                const config = vscode.workspace.getConfiguration('hledger');
-                const isFormatOnSaveEnabled = config.get<boolean>('formatOnSave', false);
-
-                // Toggle the format on save setting
-                const newValue = !isFormatOnSaveEnabled;
-                await config.update('formatOnSave', newValue, vscode.ConfigurationTarget.WorkspaceFolder);
-
-                const status = newValue ? 'enabled' : 'disabled';
-                vscode.window.showInformationMessage(`Format on save ${status}`);
             })
         );
 
