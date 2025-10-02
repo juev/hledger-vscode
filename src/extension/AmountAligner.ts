@@ -274,8 +274,9 @@ export class AmountAligner {
      * @returns True if this is a posting line
      */
     private isPostingLine(line: string): boolean {
-        // Posting lines are indented (spaces or tabs)
-        return line.startsWith('    ') || line.startsWith('\t');
+        // Posting lines are indented (2+ spaces or tabs)
+        // Accept both 2+ spaces and tabs to be more flexible with different formatting styles
+        return line.startsWith('  ') || line.startsWith('\t');
     }
 
     /**
