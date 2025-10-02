@@ -106,16 +106,16 @@ export { HLedgerParser } from './HLedgerParser';
  */
 export class WorkspaceCache {
     private cache = new SimpleProjectCache();
-    
-    get(key: string) {
+
+    get(key: string): ParsedHLedgerData | null {
         return this.cache.get(createCacheKey(key));
     }
-    
-    set(key: string, value: ParsedHLedgerData) {
+
+    set(key: string, value: ParsedHLedgerData): void {
         return this.cache.set(createCacheKey(key), value);
     }
-    
-    clear() {
+
+    clear(): void {
         return this.cache.clear();
     }
 
@@ -132,7 +132,7 @@ export class WorkspaceCache {
         }
     }
 
-    getConfig() {
+    getConfig(): null {
         return null; // Legacy method
     }
 
@@ -156,24 +156,24 @@ export class WorkspaceCache {
  */
 export class ProjectCache {
     private cache = new SimpleProjectCache();
-    
-    get(key: string) {
+
+    get(key: string): ParsedHLedgerData | null {
         return this.cache.get(createCacheKey(key));
     }
-    
-    set(key: string, value: ParsedHLedgerData) {
+
+    set(key: string, value: ParsedHLedgerData): void {
         return this.cache.set(createCacheKey(key), value);
     }
-    
-    clear() {
+
+    clear(): void {
         return this.cache.clear();
     }
 
-    getConfig(projectPath: string) {
+    getConfig(projectPath: string): ParsedHLedgerData | null {
         return this.cache.get(createCacheKey(projectPath));
     }
 
-    initializeProject(projectPath: string) {
+    initializeProject(projectPath: string): ParsedHLedgerData | null {
         return this.cache.getOrCreateProjectConfig(projectPath);
     }
 

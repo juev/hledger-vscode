@@ -120,8 +120,8 @@ export class HLedgerRangeFormattingProvider implements vscode.DocumentRangeForma
      */
     private async provideDocumentFormattingEdits(
         document: vscode.TextDocument,
-        options: vscode.FormattingOptions,
-        token: vscode.CancellationToken
+        _options: vscode.FormattingOptions,
+        _token: vscode.CancellationToken
     ): Promise<vscode.TextEdit[]> {
         const content = document.getText();
         const formatResult = this.documentFormatter.formatContent(content);
