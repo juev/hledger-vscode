@@ -138,6 +138,18 @@ export class DocumentFormatter {
     private readonly numberFormatService: NumberFormatService;
     private readonly amountOptions: AmountFormattingOptions;
 
+    // Regex constants for performance optimization
+    private static readonly LEADING_COMMODITY_REGEX = /^[\p{Sc}$€£¥₽₩]/u;
+    private static readonly NUMBER_REGEX = /[\p{N}]/u;
+    private static readonly SUFFIX_COMMODITY_REGEX = /\s*[\p{Sc}$€£¥₽₩\p{L}]+$/u;
+    private static readonly SIMPLE_INTEGER_REGEX = /^[-+]?\p{N}+$/u;
+    private static readonly TRANSACTION_HEADER_REGEX = /^(\d{4}[-\/\.]\d{1,2}[-\/\.]\d{1,2}|\d{1,2}[-\/\.]\d{1,2})/;
+    private static readonly POSTING_REGEX = /^([^\s;]+(?:\s+[^\s;]+)*?)\s{2,}([^;]+)$/;
+    private static readonly POSTING_WITH_SPACES_REGEX = /^\s*([^\s;]+(?:\s+[^\s;]+)*?)\s{2,}([^;]*)/;
+    private static readonly BALANCE_ASSERTION_REGEX = /^(.*?)(\s*[=]+\s*)([-+]?\d+(?:[.,]\d+)?(?:\s*[^\s]+)?)$/;
+    private static readonly WHITESPACE_REGEX = /^\s*/;
+    private static readonly SPLIT_LINE_REGEX = /^(.*?)(\s+)(.+)$/;
+
     /**
      * Creates a new DocumentFormatter instance.
      *
@@ -282,7 +294,7 @@ export class DocumentFormatter {
             isPosting: true,
             isStartComment: false,
             hasInlineComment,
-            commentPosition: hasInlineComment ? this.findCommentPosition(trimmedLine) : undefined as any
+            commentPosition: hasInlineComment ? this.findCommentPosition(trimmedLine) : undefined
         };
     }
 
@@ -364,7 +376,7 @@ export class DocumentFormatter {
 
         // Pattern from syntax highlighting: account + 2+ spaces + amount complex expression
         // Account can contain spaces, amount can include balance assertions, price assignments, etc.
-        const postingMatch = trimmedBefore.match(/^([^\s;]+(?:\s+[^\s;]+)*?)\s{2,}([^;]+)$/);
+        const postingMatch = trimmedBefore.match(DocumentFormatter.POSTING_REGEX);
 
         if (!postingMatch) {
             return line; // No posting with amount found, return as-is
@@ -378,7 +390,7 @@ export class DocumentFormatter {
         }
 
         // Check if the amount expression contains numbers (indicating it's really an amount)
-        if (!/[\p{N}]/u.test(amountExpression)) {
+        if (!DocumentFormatter.NUMBER_REGEX.test(amountExpression)) {
             return line; // Doesn't contain numbers, return as-is
         }
 
@@ -388,7 +400,7 @@ export class DocumentFormatter {
         let balanceAssertion: string = '';
 
         // Check for balance assertions first
-        const balanceMatch = amountExpression.match(/^(.*?)(\s*[=]+\s*)([-+]?\d+(?:[.,]\d+)?(?:\s*[^\s]+)?)$/);
+        const balanceMatch = amountExpression.match(DocumentFormatter.BALANCE_ASSERTION_REGEX);
         if (balanceMatch) {
             amount = balanceMatch[1]?.trim() || '';
             balanceAssertion = balanceMatch[2] + (balanceMatch[3] || '');
@@ -530,7 +542,7 @@ export class DocumentFormatter {
         const hasComment = commentIndex !== -1;
 
         // Find the split point between account and amount using improved pattern from syntax highlighting
-        const postingMatch = beforeComment.match(/^([^\s;]+(?:\s+[^\s;]+)*?)\s{2,}([^;]+)$/);
+        const postingMatch = beforeComment.match(DocumentFormatter.POSTING_REGEX);
 
         if (!postingMatch) {
             // No amount found, only account name (with optional comment)
@@ -558,7 +570,7 @@ export class DocumentFormatter {
         const accountStartPos = this.findFirstNonWhitespacePosition(line);
 
         // Calculate the amount position more accurately using improved pattern
-        const fullMatch = line.match(/^\s*([^\s;]+(?:\s+[^\s;]+)*?)\s{2,}([^;]*)/);
+        const fullMatch = line.match(DocumentFormatter.POSTING_WITH_SPACES_REGEX);
         let amountStartPos = accountStartPos + accountName.length; // fallback value
 
         if (fullMatch && fullMatch[2]) {
@@ -568,7 +580,7 @@ export class DocumentFormatter {
             const tempAmountStartPos = line.indexOf(accountText) + accountText.length;
 
             // Verify this amount actually contains numbers (not just a comment)
-            if (/[\p{N}]/u.test(amountText.trim())) {
+            if (DocumentFormatter.NUMBER_REGEX.test(amountText.trim())) {
                 amountStartPos = tempAmountStartPos;
             }
         }
@@ -592,7 +604,7 @@ export class DocumentFormatter {
                 posting.parsedAmount = parseResult.data;
             } else {
                 // Fallback: try to parse simple integers manually
-                const simpleIntMatch = cleanAmount.match(/^[-+]?\p{N}+$/u);
+                const simpleIntMatch = cleanAmount.match(DocumentFormatter.SIMPLE_INTEGER_REGEX);
                 if (simpleIntMatch) {
                     const value = parseInt(cleanAmount, 10);
                     if (!isNaN(value) && isFinite(value)) {
@@ -622,7 +634,7 @@ export class DocumentFormatter {
      * @returns Position of first non-whitespace character
      */
     private findFirstNonWhitespacePosition(line: string): number {
-        const match = line.match(/^\s*/);
+        const match = line.match(DocumentFormatter.WHITESPACE_REGEX);
         return match ? match[0].length : 0;
     }
 
@@ -634,8 +646,8 @@ export class DocumentFormatter {
      */
     private isAmountString(str: string): boolean {
         // Remove any leading commodity symbols and check if remaining part looks like a number
-        const cleanStr = str.replace(/^[\p{Sc}$€£¥₽₩]/u, '').trim();
-        return /[\p{N}]/u.test(cleanStr);
+        const cleanStr = str.replace(DocumentFormatter.LEADING_COMMODITY_REGEX, '').trim();
+        return DocumentFormatter.NUMBER_REGEX.test(cleanStr);
     }
 
     /**
@@ -646,8 +658,8 @@ export class DocumentFormatter {
      */
     private cleanAmountString(amountStr: string): string {
         // Remove commodity symbols but keep numbers, decimal marks, separators, and signs
-        let cleaned = amountStr.replace(/^[\p{Sc}$€£¥₽₩]\s*/u, '').trim(); // Remove prefix symbols
-        cleaned = cleaned.replace(/\s*[\p{Sc}$€£¥₽₩\p{L}]+$/u, '').trim(); // Remove suffix commodities
+        let cleaned = amountStr.replace(DocumentFormatter.LEADING_COMMODITY_REGEX, '').trim(); // Remove prefix symbols
+        cleaned = cleaned.replace(DocumentFormatter.SUFFIX_COMMODITY_REGEX, '').trim(); // Remove suffix commodities
         return cleaned;
     }
 
@@ -686,14 +698,14 @@ export class DocumentFormatter {
                     const beforeComment = commentIndex !== -1 ? trimmedLine.substring(0, commentIndex) : trimmedLine;
 
                     // Match pattern: accountname + whitespace + amount
-                    const match = beforeComment.match(/^(.*?)(\s+)(.+)$/);
+                    const match = beforeComment.match(DocumentFormatter.SPLIT_LINE_REGEX);
 
                     if (match) {
                         const accountName = match[1]?.trim() || '';
                         const amount = match[3]?.trim() || '';
 
                         // Check if the amount part looks like an amount (contains numbers)
-                        if (/[\p{N}]/u.test(amount)) {
+                        if (DocumentFormatter.NUMBER_REGEX.test(amount)) {
                             const accountLength = this.options.postingIndent + accountName.length;
                             maxAccountLength = Math.max(maxAccountLength, accountLength);
                         }
@@ -750,7 +762,7 @@ export class DocumentFormatter {
                             let amountEnd = amountStart;
                             if (amountExpression) {
                                 // Check for balance assertions (=, ==) and price assignments (@, @@)
-                                const balanceMatch = amountExpression.match(/^(.*?)(\s*[=]+\s*)([-+]?\d+(?:[.,]\d+)?(?:\s*[^\s]+)?)$/);
+                                const balanceMatch = amountExpression.match(DocumentFormatter.BALANCE_ASSERTION_REGEX);
                                 if (balanceMatch) {
                                     const amount = balanceMatch[1]?.trim() || '';
                                     const assertion = balanceMatch[2] + (balanceMatch[3] || '');
@@ -775,7 +787,7 @@ export class DocumentFormatter {
      * Checks if a line is a transaction header.
      */
     private isTransactionHeader(trimmedLine: string): boolean {
-        return /^(\d{4}[-\/\.]\d{1,2}[-\/\.]\d{1,2}|\d{1,2}[-\/\.]\d{1,2})/.test(trimmedLine);
+        return DocumentFormatter.TRANSACTION_HEADER_REGEX.test(trimmedLine);
     }
 
     /**
@@ -828,7 +840,7 @@ export class DocumentFormatter {
         // Find where the content before comment actually ends
         // We need to find the end of the amount expression
         const trimmedBefore = beforeComment.trim();
-        const postingMatch = trimmedBefore.match(/^([^\s;]+(?:\s+[^\s;]+)*?)\s{2,}([^;]+)$/);
+        const postingMatch = trimmedBefore.match(DocumentFormatter.POSTING_REGEX);
 
         let contentEndPosition = beforeComment.length;
         if (postingMatch) {
