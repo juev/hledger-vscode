@@ -1,16 +1,16 @@
 // strict-positioning-alignment.test.ts - Test for amount alignment in strict-positioning.journal
 // This test reproduces the issue where only the first transaction gets formatted
 
-import { AmountAligner } from '../AmountAligner';
+import { DocumentFormatter } from '../DocumentFormatter';
 import * as fs from 'fs';
 import * as path from 'path';
 
-describe('AmountAligner - Strict Positioning File Tests', () => {
-    let aligner: AmountAligner;
+describe('DocumentFormatter - Strict Positioning File Tests', () => {
+    let formatter: DocumentFormatter;
     let testContent: string;
 
     beforeAll(() => {
-        aligner = new AmountAligner();
+        formatter = new DocumentFormatter();
 
         // Load the actual strict-positioning.journal file
         const testFilePath = path.join(__dirname, '../../../testdata/strict-positioning.journal');
@@ -19,7 +19,7 @@ describe('AmountAligner - Strict Positioning File Tests', () => {
 
     describe('formatContent with strict-positioning.journal', () => {
         it('should format ALL transactions in the file, not just the first one', () => {
-            const result = aligner.formatContent(testContent);
+            const result = formatter.formatContent(testContent);
 
             expect(result.success).toBe(true);
             if (!result.success) return;
@@ -92,7 +92,7 @@ describe('AmountAligner - Strict Positioning File Tests', () => {
         });
 
         it('should preserve transaction structure while formatting amounts', () => {
-            const result = aligner.formatContent(testContent);
+            const result = formatter.formatContent(testContent);
 
             expect(result.success).toBe(true);
             if (!result.success) return;
@@ -114,7 +114,7 @@ describe('AmountAligner - Strict Positioning File Tests', () => {
         });
 
         it('should handle performance test transaction correctly', () => {
-            const result = aligner.formatContent(testContent);
+            const result = formatter.formatContent(testContent);
 
             expect(result.success).toBe(true);
             if (!result.success) return;

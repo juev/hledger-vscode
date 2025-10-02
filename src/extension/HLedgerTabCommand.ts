@@ -1,6 +1,5 @@
 import * as vscode from 'vscode';
-import { AmountAligner, TransactionBlock, PostingLine } from './AmountAligner';
-import { createAmountAligner } from './AmountAligner';
+import { DocumentFormatter, TransactionBlock, PostingLine } from './DocumentFormatter';
 
 /**
  * Handles Tab key press for amount alignment positioning in hledger files.
@@ -8,10 +7,10 @@ import { createAmountAligner } from './AmountAligner';
  */
 export class HLedgerTabCommand implements vscode.Disposable {
     private disposable: vscode.Disposable;
-    private amountAligner: AmountAligner;
+    private documentFormatter: DocumentFormatter;
 
     constructor() {
-        this.amountAligner = createAmountAligner();
+        this.documentFormatter = new DocumentFormatter();
         this.disposable = vscode.commands.registerTextEditorCommand(
             'hledger.onTab',
             this.onTab,
@@ -168,7 +167,7 @@ export class HLedgerTabCommand implements vscode.Disposable {
         try {
             // Parse the document to find all transactions
             const content = document.getText();
-            const parseResult = this.amountAligner.parseTransactions(content);
+            const parseResult = this.documentFormatter.parseTransactions(content);
 
             if (!parseResult.success) {
                 return null;
@@ -182,7 +181,7 @@ export class HLedgerTabCommand implements vscode.Disposable {
             }
 
             // Calculate document-wide alignment
-            const documentAlignment = this.amountAligner.calculateDocumentOptimalAlignment(transactions);
+            const documentAlignment = this.calculateDocumentOptimalAlignment(transactions);
 
             // Get the current line content to find account name length
             const currentLine = document.lineAt(currentLineNumber);
@@ -253,6 +252,32 @@ export class HLedgerTabCommand implements vscode.Disposable {
     private findAccountPosition(lineText: string): number {
         const match = lineText.match(/^\s*/);
         return match ? match[0].length : 0;
+    }
+
+    /**
+     * Calculates the optimal alignment column for the entire document.
+     *
+     * @param transactions Array of all transaction blocks to analyze
+     * @returns The optimal alignment column position for the entire document
+     */
+    private calculateDocumentOptimalAlignment(transactions: TransactionBlock[]): number {
+        if (transactions.length === 0) {
+            return 40;
+        }
+
+        // Find the maximum account name length among all postings with amounts across all transactions
+        let maxAccountLength = 0;
+        for (const transaction of transactions) {
+            for (const posting of transaction.postings) {
+                if (posting.hasAmount) {
+                    const accountLength = posting.accountPosition + posting.accountName.length;
+                    maxAccountLength = Math.max(maxAccountLength, accountLength);
+                }
+            }
+        }
+
+        // Add minimum spacing and ensure reasonable alignment
+        return Math.max(maxAccountLength + 2, 40);
     }
 
     dispose(): void {

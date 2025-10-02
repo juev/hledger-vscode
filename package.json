@@ -61,15 +61,15 @@
           "default": true,
           "description": "Enable smart indentation on Enter key for hledger files"
         },
-        "hledger.amountAlignment.enabled": {
+        "hledger.formatting.enabled": {
           "type": "boolean",
-          "default": false,
-          "description": "Enable automatic alignment of amounts in transaction postings for better readability"
+          "default": true,
+          "description": "Enable comprehensive document formatting for hledger files (tabs to spaces, proper indentation, amount and comment alignment)"
         },
-        "hledger.amountAlignment.formatOnSave": {
+        "hledger.formatting.formatOnSave": {
           "type": "boolean",
           "default": false,
-          "description": "Automatically format amounts when saving hledger files (requires amount alignment to be enabled)"
+          "description": "Automatically format hledger files when saving (requires formatting to be enabled)"
         },
         "hledger.autoCompletion.maxResults": {
           "type": "number",

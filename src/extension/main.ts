@@ -11,18 +11,19 @@ import { HLedgerEnterCommand } from './HLedgerEnterCommand';
 import { HLedgerTabCommand } from './HLedgerTabCommand';
 import { SimpleFuzzyMatcher } from './SimpleFuzzyMatcher';
 import { createCacheKey, isFailure } from './types';
-import { AmountAligner } from './AmountAligner';
+import { DocumentFormatter } from './DocumentFormatter';
 
 // Global instances for simplified architecture
 let globalConfig: HLedgerConfig;
-let amountAligner: AmountAligner;
+let documentFormatter: DocumentFormatter;
 
 // Track recently formatted documents to prevent infinite loops
 const recentlyFormattedDocuments = new Set<string>();
 const FORMAT_COOLDOWN_MS = 1000; // 1 second cooldown
 
 /**
- * Handles document save events and applies automatic formatting if enabled.
+ * Handles document save events and applies comprehensive automatic formatting if enabled.
+ * Includes tabs to spaces conversion, proper posting indentation, amount and comment alignment.
  *
  * @param document The document that was saved
  * @returns Promise that resolves when formatting is complete
@@ -42,24 +43,24 @@ export async function handleDocumentSave(document: vscode.TextDocument): Promise
 
         // Get configuration
         const config = vscode.workspace.getConfiguration('hledger');
-        const isAmountAlignmentEnabled = config.get<boolean>('amountAlignment.enabled', false);
-        const isFormatOnSaveEnabled = config.get<boolean>('amountAlignment.formatOnSave', false);
+        const isFormattingEnabled = config.get<boolean>('formatting.enabled', true);
+        const isFormatOnSaveEnabled = config.get<boolean>('formatting.formatOnSave', false);
 
-        // Only format if both amount alignment and format on save are enabled
-        if (!isAmountAlignmentEnabled || !isFormatOnSaveEnabled) {
+        // Only format if formatting is enabled and format on save is enabled
+        if (!isFormattingEnabled || !isFormatOnSaveEnabled) {
             return;
         }
 
-        // Initialize amount aligner if not already done
-        if (!amountAligner) {
-            amountAligner = new AmountAligner();
+        // Initialize document formatter if not already done
+        if (!documentFormatter) {
+            documentFormatter = new DocumentFormatter();
         }
 
         // Get the document content
         const content = document.getText();
 
-        // Format the content using AmountAligner
-        const formatResult = amountAligner.formatContent(content);
+        // Format the content using DocumentFormatter
+        const formatResult = documentFormatter.formatContent(content);
 
         if (!formatResult.success || isFailure(formatResult)) {
             console.error('HLedger auto-format failed:', isFailure(formatResult) ? formatResult.error : 'Unknown error');
@@ -96,7 +97,7 @@ export async function handleDocumentSave(document: vscode.TextDocument): Promise
 
             if (editSuccess) {
                 // Show a subtle notification that formatting was applied
-                vscode.window.setStatusBarMessage('hledger: Amounts aligned on save', 3000);
+                vscode.window.setStatusBarMessage('hledger: Document formatted on save', 3000);
 
                 // Log the formatting for debugging
                 console.log(`Auto-formatted hledger document on save: ${document.fileName}`);
@@ -119,8 +120,8 @@ export async function handleDocumentSave(document: vscode.TextDocument): Promise
 }
 
 /**
- * Document formatting provider for hledger files using AmountAligner.
- * Provides automatic alignment of amounts in transaction postings.
+ * Document formatting provider for hledger files using DocumentFormatter.
+ * Provides comprehensive formatting including tabs to spaces, proper indentation, amount and comment alignment.
  */
 class HLedgerDocumentFormattingEditProvider implements vscode.DocumentFormattingEditProvider {
     /**
@@ -137,11 +138,11 @@ class HLedgerDocumentFormattingEditProvider implements vscode.DocumentFormatting
         token: vscode.CancellationToken
     ): Promise<vscode.TextEdit[] | null> {
         try {
-            // Check if amount alignment is enabled in configuration
+            // Check if formatting is enabled in configuration
             const config = vscode.workspace.getConfiguration('hledger');
-            const isAlignmentEnabled = config.get<boolean>('amountAlignment.enabled', false);
+            const isFormattingEnabled = config.get<boolean>('formatting.enabled', true);
 
-            if (!isAlignmentEnabled) {
+            if (!isFormattingEnabled) {
                 return null;
             }
 
@@ -155,16 +156,16 @@ class HLedgerDocumentFormattingEditProvider implements vscode.DocumentFormatting
                 return null;
             }
 
-            // Initialize amount aligner if not already done
-            if (!amountAligner) {
-                amountAligner = new AmountAligner();
+            // Initialize document formatter if not already done
+            if (!documentFormatter) {
+                documentFormatter = new DocumentFormatter();
             }
 
             // Get the document content
             const content = document.getText();
 
-            // Format the content using AmountAligner
-            const formatResult = amountAligner.formatContent(content);
+            // Format the content using DocumentFormatter
+            const formatResult = documentFormatter.formatContent(content);
 
             if (!formatResult.success || isFailure(formatResult)) {
                 console.error('HLedger formatting failed:', isFailure(formatResult) ? formatResult.error : 'Unknown error');
@@ -272,29 +273,29 @@ export function activate(context: vscode.ExtensionContext): void {
 
                 // Check configuration settings
                 const config = vscode.workspace.getConfiguration('hledger');
-                const isAlignmentEnabled = config.get<boolean>('amountAlignment.enabled', false);
-                const isFormatOnSaveEnabled = config.get<boolean>('amountAlignment.formatOnSave', false);
+                const isFormattingEnabled = config.get<boolean>('formatting.enabled', true);
+                const isFormatOnSaveEnabled = config.get<boolean>('formatting.formatOnSave', false);
 
-                if (!isAlignmentEnabled) {
+                if (!isFormattingEnabled) {
                     const enableAction = await vscode.window.showWarningMessage(
-                        'Amount alignment is disabled. Enable it to format amounts?',
+                        'Document formatting is disabled. Enable it to format documents?',
                         'Enable', 'Cancel'
                     );
 
                     if (enableAction === 'Enable') {
-                        await config.update('amountAlignment.enabled', true, vscode.ConfigurationTarget.WorkspaceFolder);
+                        await config.update('formatting.enabled', true, vscode.ConfigurationTarget.WorkspaceFolder);
 
                         // Also suggest enabling format on save
                         const enableFormatOnSave = await vscode.window.showInformationMessage(
-                            'Amount alignment enabled. Would you like to also enable automatic formatting on save?',
+                            'Document formatting enabled. Would you like to also enable automatic formatting on save?',
                             'Enable Format on Save', 'Not Now'
                         );
 
                         if (enableFormatOnSave === 'Enable Format on Save') {
-                            await config.update('amountAlignment.formatOnSave', true, vscode.ConfigurationTarget.WorkspaceFolder);
-                            vscode.window.showInformationMessage('Amount alignment and format on save enabled for this workspace');
+                            await config.update('formatting.formatOnSave', true, vscode.ConfigurationTarget.WorkspaceFolder);
+                            vscode.window.showInformationMessage('Document formatting and format on save enabled for this workspace');
                         } else {
-                            vscode.window.showInformationMessage('Amount alignment enabled for this workspace');
+                            vscode.window.showInformationMessage('Document formatting enabled for this workspace');
                         }
                     } else {
                         return;
@@ -307,7 +308,7 @@ export function activate(context: vscode.ExtensionContext): void {
                     );
 
                     if (enableFormatOnSave === 'Enable Format on Save') {
-                        await config.update('amountAlignment.formatOnSave', true, vscode.ConfigurationTarget.WorkspaceFolder);
+                        await config.update('formatting.formatOnSave', true, vscode.ConfigurationTarget.WorkspaceFolder);
                         vscode.window.showInformationMessage('Format on save enabled for this workspace');
                     }
                 }
@@ -316,7 +317,7 @@ export function activate(context: vscode.ExtensionContext): void {
                     // Show progress indicator
                     await vscode.window.withProgress({
                         location: vscode.ProgressLocation.Notification,
-                        title: 'Aligning amounts',
+                        title: 'Formatting document',
                         cancellable: false
                     }, async (progress) => {
                         progress.report({ increment: 0, message: 'Formatting document...' });
@@ -345,24 +346,24 @@ export function activate(context: vscode.ExtensionContext): void {
         context.subscriptions.push(
             vscode.commands.registerCommand('hledger.toggleFormatOnSave', async () => {
                 const config = vscode.workspace.getConfiguration('hledger');
-                const isFormatOnSaveEnabled = config.get<boolean>('amountAlignment.formatOnSave', false);
-                const isAmountAlignmentEnabled = config.get<boolean>('amountAlignment.enabled', false);
+                const isFormatOnSaveEnabled = config.get<boolean>('formatting.formatOnSave', false);
+                const isFormattingEnabled = config.get<boolean>('formatting.enabled', true);
 
-                if (!isAmountAlignmentEnabled) {
-                    const enableAlignmentAction = await vscode.window.showWarningMessage(
-                        'Amount alignment must be enabled before using format on save. Enable amount alignment?',
+                if (!isFormattingEnabled) {
+                    const enableFormattingAction = await vscode.window.showWarningMessage(
+                        'Document formatting must be enabled before using format on save. Enable document formatting?',
                         'Enable', 'Cancel'
                     );
 
-                    if (enableAlignmentAction === 'Enable') {
-                        await config.update('amountAlignment.enabled', true, vscode.ConfigurationTarget.WorkspaceFolder);
-                        await config.update('amountAlignment.formatOnSave', true, vscode.ConfigurationTarget.WorkspaceFolder);
-                        vscode.window.showInformationMessage('Amount alignment and format on save enabled');
+                    if (enableFormattingAction === 'Enable') {
+                        await config.update('formatting.enabled', true, vscode.ConfigurationTarget.WorkspaceFolder);
+                        await config.update('formatting.formatOnSave', true, vscode.ConfigurationTarget.WorkspaceFolder);
+                        vscode.window.showInformationMessage('Document formatting and format on save enabled');
                     }
                 } else {
                     // Toggle the format on save setting
                     const newValue = !isFormatOnSaveEnabled;
-                    await config.update('amountAlignment.formatOnSave', newValue, vscode.ConfigurationTarget.WorkspaceFolder);
+                    await config.update('formatting.formatOnSave', newValue, vscode.ConfigurationTarget.WorkspaceFolder);
 
                     const status = newValue ? 'enabled' : 'disabled';
                     vscode.window.showInformationMessage(`Format on save ${status}`);

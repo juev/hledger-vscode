@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 import { HLedgerTabCommand } from '../HLedgerTabCommand';
-import { TransactionBlock, PostingLine } from '../AmountAligner';
+import { TransactionBlock, PostingLine } from '../DocumentFormatter';
 import { failure } from '../types';
 
 // Mock VS Code API
@@ -235,9 +235,9 @@ describe('HLedgerTabCommand', () => {
         });
 
         it('should handle parsing errors gracefully', async () => {
-            // Mock the amountAligner to return a failure
+            // Mock the documentFormatter to return a failure
             const mockParseResult = failure(new Error('Parsing failed'));
-            jest.spyOn(tabCommand['amountAligner'], 'parseTransactions').mockReturnValue(mockParseResult);
+            jest.spyOn(tabCommand['documentFormatter'], 'parseTransactions').mockReturnValue(mockParseResult);
 
             const result = await tabCommand['getOptimalAmountPosition'](mockDocument, 0);
 
