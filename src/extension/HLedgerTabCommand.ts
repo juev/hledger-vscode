@@ -37,6 +37,20 @@ export class HLedgerTabCommand implements vscode.Disposable {
         const tabAction = this.analyzeTabContext(document, position);
 
         if (!tabAction.shouldAlign) {
+            // Check if amount alignment is enabled and provide feedback
+            const config = vscode.workspace.getConfiguration('hledger');
+            const isAlignmentEnabled = config.get<boolean>('amountAlignment.enabled', false);
+
+            if (!isAlignmentEnabled) {
+                vscode.window.setStatusBarMessage('hledger: Enable amount alignment to use smart Tab', 3000);
+            } else {
+                // Check if cursor is in a posting line
+                const lineText = document.lineAt(position.line).text;
+                if (!lineText.match(/^\s+/)) {
+                    vscode.window.setStatusBarMessage('hledger: Smart Tab works only in posting lines (indented)', 2000);
+                }
+            }
+
             // Standard tab behavior
             await vscode.commands.executeCommand('default:type', { text: '\t' });
             return;
@@ -55,6 +69,16 @@ export class HLedgerTabCommand implements vscode.Disposable {
         const textBeforeCursor = lineText.substring(0, position.character);
         const textAfterCursor = lineText.substring(position.character);
 
+        // Check if this is a posting line (starts with indentation)
+        if (!textBeforeCursor.match(/^\s+/)) {
+            return {
+                shouldAlign: false,
+                type: TabActionType.NONE,
+                currentLine: currentLine.lineNumber,
+                currentPosition: position
+            };
+        }
+
         // Case 1: After account name with only whitespace before cursor
         // Pattern: "    Expenses:Food    " -> cursor here
         if (textBeforeCursor.match(/^\s+\S.*\s{2,}$/)) {
@@ -66,9 +90,9 @@ export class HLedgerTabCommand implements vscode.Disposable {
             };
         }
 
-        // Case 2: Right after account name with minimal spacing
-        // Pattern: "    Expenses:Food" -> cursor here
-        if (textBeforeCursor.match(/^\s+\S+[^:]*:[^:]*$/)) {
+        // Case 2: Right after account name (most common case)
+        // Pattern: "    Expenses:Food" -> cursor here OR "    Assets:Cash" -> cursor here
+        if (textBeforeCursor.match(/^\s+\S+.*:\S*$/)) {
             return {
                 shouldAlign: true,
                 type: TabActionType.MOVE_TO_AMOUNT_POSITION,
@@ -80,6 +104,17 @@ export class HLedgerTabCommand implements vscode.Disposable {
         // Case 3: Inside or after incomplete amount entry
         // Pattern: "    Expenses:Food  1" -> cursor here
         if (textBeforeCursor.match(/^\s+\S.*\s{1,}\d*$/)) {
+            return {
+                shouldAlign: true,
+                type: TabActionType.MOVE_TO_AMOUNT_POSITION,
+                currentLine: currentLine.lineNumber,
+                currentPosition: position
+            };
+        }
+
+        // Case 4: Single space after account name
+        // Pattern: "    Expenses:Food " -> cursor here
+        if (textBeforeCursor.match(/^\s+\S+.*:\S*\s$/)) {
             return {
                 shouldAlign: true,
                 type: TabActionType.MOVE_TO_AMOUNT_POSITION,

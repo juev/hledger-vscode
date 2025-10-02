@@ -102,6 +102,19 @@ describe('HLedgerTabCommand', () => {
             expect(result.type).toBe('move_to_amount_position');
         });
 
+        it('should detect context right after simple account name', () => {
+            mockDocument.lineAt.mockReturnValue({
+                text: '    Assets:Cash',
+                lineNumber: 1
+            });
+
+            const position = new vscode.Position(0, 15);
+            const result = tabCommand['analyzeTabContext'](mockDocument, position);
+
+            expect(result.shouldAlign).toBe(true);
+            expect(result.type).toBe('move_to_amount_position');
+        });
+
         it('should not align for non-posting lines', () => {
             mockDocument.lineAt.mockReturnValue({
                 text: '2024/01/01 * Transaction',
@@ -121,6 +134,19 @@ describe('HLedgerTabCommand', () => {
             });
 
             const position = new vscode.Position(0, 21);
+            const result = tabCommand['analyzeTabContext'](mockDocument, position);
+
+            expect(result.shouldAlign).toBe(true);
+            expect(result.type).toBe('move_to_amount_position');
+        });
+
+        it('should detect context with single space after account name', () => {
+            mockDocument.lineAt.mockReturnValue({
+                text: '    Expenses:Food ',
+                lineNumber: 1
+            });
+
+            const position = new vscode.Position(0, 19);
             const result = tabCommand['analyzeTabContext'](mockDocument, position);
 
             expect(result.shouldAlign).toBe(true);
