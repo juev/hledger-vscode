@@ -19,7 +19,7 @@ let documentFormatter: DocumentFormatter;
 
 // Track recently formatted documents to prevent infinite loops
 const recentlyFormattedDocuments = new Set<string>();
-const FORMAT_COOLDOWN_MS = 1000; // 1 second cooldown
+const FORMAT_COOLDOWN_MS = 2000; // 2 second cooldown to prevent auto-save loops
 
 /**
  * Handles document save events and applies automatic formatting if enabled.
@@ -36,8 +36,9 @@ export async function handleDocumentSave(document: vscode.TextDocument): Promise
         }
 
         // Check if this document was recently formatted to prevent infinite loops
-        const documentKey = `${document.uri.toString()}_${document.version}`;
+        const documentKey = document.uri.toString();
         if (recentlyFormattedDocuments.has(documentKey)) {
+            console.log(`Skipping format for ${document.fileName} - in cooldown period`);
             return;
         }
 
@@ -70,6 +71,11 @@ export async function handleDocumentSave(document: vscode.TextDocument): Promise
 
         // Check if content actually changed
         if (formattedContent === content) {
+            // Still mark as formatted to prevent repeated checks during cooldown
+            recentlyFormattedDocuments.add(documentKey);
+            setTimeout(() => {
+                recentlyFormattedDocuments.delete(documentKey);
+            }, FORMAT_COOLDOWN_MS);
             return;
         }
 
