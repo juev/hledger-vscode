@@ -30,8 +30,11 @@ const FORMAT_COOLDOWN_MS = 1000; // 1 second cooldown
  */
 export async function handleDocumentSave(document: vscode.TextDocument): Promise<void> {
     try {
+        console.log(`handleDocumentSave called for: ${document.fileName}, languageId: ${document.languageId}`);
+
         // Check if this is a hledger file
         if (document.languageId !== 'hledger') {
+            console.log('Not a hledger file, skipping');
             return;
         }
 
@@ -44,9 +47,11 @@ export async function handleDocumentSave(document: vscode.TextDocument): Promise
         // Get configuration
         const config = vscode.workspace.getConfiguration('hledger');
         const isFormatOnSaveEnabled = config.get<boolean>('formatOnSave', false);
+        console.log(`Format on save enabled: ${isFormatOnSaveEnabled}`);
 
         // Only format if format on save is enabled
         if (!isFormatOnSaveEnabled) {
+            console.log('Format on save is disabled, skipping');
             return;
         }
 
@@ -59,6 +64,7 @@ export async function handleDocumentSave(document: vscode.TextDocument): Promise
         const content = document.getText();
 
         // Format the content using DocumentFormatter
+        console.log('Formatting document content...');
         const formatResult = documentFormatter.formatContent(content);
 
         if (!formatResult.success || isFailure(formatResult)) {
@@ -67,14 +73,18 @@ export async function handleDocumentSave(document: vscode.TextDocument): Promise
         }
 
         const formattedContent = formatResult.data;
+        console.log('Content formatted successfully');
 
         // Check if content actually changed
         if (formattedContent === content) {
+            console.log('Content unchanged, skipping edit');
             return;
         }
 
         // Apply the formatting using a text edit
         const editor = vscode.window.activeTextEditor;
+        console.log(`Active editor found: ${!!editor}, matches document: ${editor && editor.document === document}`);
+
         if (editor && editor.document === document) {
             const fullRange = new vscode.Range(
                 document.positionAt(0),
