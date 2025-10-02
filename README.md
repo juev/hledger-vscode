@@ -183,9 +183,7 @@ The extension provides comprehensive document formatting for hledger files to im
 
 #### Commands
 
-- **HLedger: Toggle Format on Save**: Enable/disable automatic formatting on save (accessible via Command Palette)
-
-**Note**: Manual formatting commands have been removed. The extension now only supports automatic formatting on save to keep the experience simple and focused.
+**Note**: The extension uses VS Code's standard document formatting. No custom formatting commands are provided. Use VS Code's built-in formatting features like Format Document (Shift+Alt+F) or configure `editor.formatOnSave` for automatic formatting.
 
 #### Advanced Usage Tips
 
@@ -217,15 +215,17 @@ The extension provides comprehensive document formatting for hledger files to im
 
 ### Document Formatting Settings
 
+Document formatting is controlled by VS Code's global editor settings:
+
 ```json
 {
-    "hledger.formatOnSave": false
+    "editor.formatOnSave": true
 }
 ```
 
-- **`hledger.formatOnSave`**: Automatically format hledger files when saving (proper indentation, amount and comment alignment) (default: `false`)
+- **`editor.formatOnSave`**: Enable automatic formatting when saving any supported file type, including hledger files
 
-**Note**: Format on save is disabled by default. You need to enable it manually in settings to use automatic formatting.
+Note: This setting must be enabled at the editor level for hledger files to be formatted on save.
 
 ## Architecture
 
@@ -257,8 +257,8 @@ The extension uses a **strict completion architecture** that provides:
 
 ### Document Formatting Issues
 
-1. **Feature Not Working**: Ensure `hledger.formatOnSave` is set to `true` in settings
-2. **Format on Save Not Working**: Check that you're editing an hledger file and the `hledger.formatOnSave` setting is enabled
+1. **Feature Not Working**: Ensure `editor.formatOnSave` is set to `true` in VS Code settings
+2. **Format on Save Not Working**: Check that you're editing an hledger file and VS Code's `editor.formatOnSave` setting is enabled
 3. **Unexpected Formatting**: The formatter affects transaction postings, comments, and indentation while preserving directives and other content
 4. **Mixed Currencies**: The extension handles different commodity symbols and currencies, aligning based on the position of amounts
 5. **Virtual Postings**: Virtual postings (enclosed in parentheses) are also aligned properly

@@ -45,14 +45,14 @@ export class SimpleFuzzyMatcher {
      */
     match<T extends string>(query: string, items: readonly T[], options: FuzzyMatchOptions<T> = {}): FuzzyMatch<T>[] {
         const lowerQuery = query.toLocaleLowerCase();
-        const maxResults = options.maxResults || 100;
-        const caseSensitive = options.caseSensitive || false;
+        const maxResults = options.maxResults ?? 100;
+        const caseSensitive = options.caseSensitive ?? false;
         
         // Handle empty query
         if (!query) {
             return items.map(item => ({
                 item,
-                score: createCompletionScore(options.usageCounts?.get(item) || 0)
+                score: createCompletionScore(options.usageCounts?.get(item) ?? 0)
             })).sort((a, b) => b.score - a.score).slice(0, maxResults);
         }
         
@@ -104,8 +104,8 @@ export class SimpleFuzzyMatcher {
                 
                 // Then by usage count if available
                 if (options.usageCounts) {
-                    const aUsage = options.usageCounts.get(a) || 0;
-                    const bUsage = options.usageCounts.get(b) || 0;
+                    const aUsage = options.usageCounts.get(a) ?? 0;
+                    const bUsage = options.usageCounts.get(b) ?? 0;
                     if (aUsage !== bUsage) return bUsage - aUsage;
                 }
                 
@@ -143,11 +143,11 @@ export class SimpleFuzzyMatcher {
         
         // Exact match gets highest score
         if (itemToCompare === queryToCompare) {
-            score += options.exactMatchBonus || 200;
+            score += options.exactMatchBonus ?? 200;
         }
         // Prefix match gets high score
         else if (itemToCompare.startsWith(queryToCompare)) {
-            score += options.prefixMatchBonus || 100;
+            score += options.prefixMatchBonus ?? 100;
         }
         // Component match (contains :query) gets medium score
         else if (itemToCompare.includes(':' + queryToCompare)) {
@@ -156,7 +156,7 @@ export class SimpleFuzzyMatcher {
         
         // Add usage count bonus
         if (options.usageCounts) {
-            const usageCount = options.usageCounts.get(item) || 0;
+            const usageCount = options.usageCounts.get(item) ?? 0;
             score += usageCount * 5;
         }
         

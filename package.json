@@ -9,6 +9,7 @@
   },
   "categories": [
     "Language Packs",
+    "Formatters",
     "Other"
   ],
   "keywords": [
@@ -61,11 +62,6 @@
           "default": true,
           "description": "Enable smart indentation on Enter key for hledger files"
         },
-        "hledger.formatOnSave": {
-          "type": "boolean",
-          "default": false,
-          "description": "Automatically format hledger files when saving (tabs to spaces, proper indentation, amount and comment alignment)"
-        },
         "hledger.autoCompletion.maxResults": {
           "type": "number",
           "default": 25,
@@ -92,12 +88,6 @@
       {
         "command": "hledger.onTab",
         "title": "HLedger: Smart Tab for Amount Alignment",
-        "category": "HLedger",
-        "when": "editorTextFocus && editorLangId == hledger"
-      },
-      {
-        "command": "hledger.toggleFormatOnSave",
-        "title": "Toggle Format on Save",
         "category": "HLedger",
         "when": "editorTextFocus && editorLangId == hledger"
       }
@@ -225,6 +215,8 @@
     "test": "jest",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
+    "lint": "eslint src/**/*.ts",
+    "lint:fix": "eslint src/**/*.ts --fix",
     "clean": "rimraf out *.vsix",
     "prebuild": "npm run clean",
     "build": "npm run compile:prod",
@@ -237,10 +229,13 @@
     "@types/jest": "^30.0.0",
     "@types/node": "16.x",
     "@types/vscode": "^1.74.0",
+    "@typescript-eslint/eslint-plugin": "^8.45.0",
+    "@typescript-eslint/parser": "^8.45.0",
     "@vscode/test-electron": "^2.5.2",
     "@vscode/vsce": "^2.22.0",
-    "ovsx": "^0.8.4",
+    "eslint": "^9.36.0",
     "jest": "^30.0.5",
+    "ovsx": "^0.8.4",
     "rimraf": "^6.0.1",
     "ts-jest": "^29.4.0",
     "typescript": "^4.9.4"

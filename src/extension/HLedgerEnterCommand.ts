@@ -41,7 +41,7 @@ export class HLedgerEnterKeyProvider {
         // Case 4: Line with indent and content -> new line preserving indent
         if (currentLineText.match(/^\s+\S.*$/)) {
             const indentMatch = currentLineText.match(/^(\s+)/);
-            const currentIndent = (indentMatch && indentMatch[1]) ? indentMatch[1] : '    ';
+            const currentIndent = indentMatch?.[1] ?? '    ';
             
             return {
                 indentAction: vscode.IndentAction.None,
@@ -68,7 +68,7 @@ export class HLedgerEnterCommand implements vscode.Disposable {
         );
     }
     
-    private async onEnter(textEditor: vscode.TextEditor, edit: vscode.TextEditorEdit): Promise<void> {
+    private async onEnter(textEditor: vscode.TextEditor, _edit: vscode.TextEditorEdit): Promise<void> {
         const document = textEditor.document;
         
         if (document.languageId !== 'hledger') {

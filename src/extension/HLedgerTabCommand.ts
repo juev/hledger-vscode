@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import { DocumentFormatter, TransactionBlock, PostingLine } from './DocumentFormatter';
+import { DocumentFormatter, TransactionBlock } from './DocumentFormatter';
 
 /**
  * Handles Tab key press for amount alignment positioning in hledger files.
@@ -29,8 +29,6 @@ export class HLedgerTabCommand implements vscode.Disposable {
         }
 
         const position = textEditor.selection.active;
-        const currentLine = document.lineAt(position.line);
-        const lineText = currentLine.text;
 
         // Check if we're in a posting line after account name
         const tabAction = this.analyzeTabContext(document, position);
@@ -52,7 +50,6 @@ export class HLedgerTabCommand implements vscode.Disposable {
         const currentLine = document.lineAt(position.line);
         const lineText = currentLine.text;
         const textBeforeCursor = lineText.substring(0, position.character);
-        const textAfterCursor = lineText.substring(position.character);
 
         // Check if this is a posting line (starts with indentation)
         if (!textBeforeCursor.match(/^\s+/)) {
@@ -151,7 +148,7 @@ export class HLedgerTabCommand implements vscode.Disposable {
                 // Fallback to standard tab behavior
                 await vscode.commands.executeCommand('default:type', { text: '\t' });
             }
-        } catch (error) {
+        } catch {
             // Fallback to standard tab behavior
             await vscode.commands.executeCommand('default:type', { text: '\t' });
         }
@@ -202,7 +199,7 @@ export class HLedgerTabCommand implements vscode.Disposable {
             const amountPosition = Math.max(documentAlignment, accountEndPosition + 2);
 
             return amountPosition;
-        } catch (error) {
+        } catch {
             return null;
         }
     }
@@ -239,7 +236,7 @@ export class HLedgerTabCommand implements vscode.Disposable {
         const separatorMatch = trimmedLine.match(/(\S.*?)(?:\s{2,}|\t)(.*)/);
 
         if (separatorMatch) {
-            return separatorMatch[1]?.trim() || null;
+            return separatorMatch[1]?.trim() ?? null;
         }
 
         // If no amount found, the entire trimmed line is the account name

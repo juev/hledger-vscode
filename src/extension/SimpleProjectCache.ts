@@ -31,7 +31,7 @@ export class SimpleProjectCache implements ISimpleCache<CacheKey, ParsedHLedgerD
             
             this.missCount++;
             return null;
-        } catch (error) {
+        } catch {
             // File doesn't exist or can't be accessed
             this.missCount++;
             return null;
@@ -47,7 +47,7 @@ export class SimpleProjectCache implements ISimpleCache<CacheKey, ParsedHLedgerD
             const stats = fs.statSync(key);
             this.cache.set(key, value);
             this.modTimes.set(key, stats.mtimeMs);
-        } catch (error) {
+        } catch {
             // If we can't get stats, don't cache
             // This prevents caching of non-existent files
         }
