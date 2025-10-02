@@ -359,26 +359,41 @@ export class DocumentFormatter {
         const beforeComment = hasComment ? line.substring(0, commentIndex) : line;
         const comment = hasComment ? line.substring(commentIndex) : '';
 
-        // Split the line into account and amount parts
+        // Split the line into account and amount parts using improved pattern from syntax highlighting
         const trimmedBefore = beforeComment.trim();
-        // Pattern to match account name followed by amount (amount contains numbers)
-        // Account name can contain spaces and colons, amount must contain numbers
-        const match = trimmedBefore.match(/^(.*?)(\s+)([+-]?\s*[\d,]+(?:\.\d+)?\s*\S+)$/);
 
-        if (!match) {
-            return line; // No amount found, return as-is
+        // Pattern from syntax highlighting: account + 2+ spaces + amount complex expression
+        // Account can contain spaces, amount can include balance assertions, price assignments, etc.
+        const postingMatch = trimmedBefore.match(/^([^\s;]+(?:\s+[^\s;]+)*?)\s{2,}([^;]+)$/);
+
+        if (!postingMatch) {
+            return line; // No posting with amount found, return as-is
         }
 
-        const accountName = match[1]?.trim() || '';
-        const amount = match[3]?.trim() || '';
+        const accountName = postingMatch[1]?.trim() || '';
+        const amountExpression = postingMatch[2]?.trim() || '';
 
-        if (!accountName || !amount) {
+        if (!accountName || !amountExpression) {
             return line; // Invalid format, return as-is
         }
 
-        // Check if the amount part looks like an amount (contains numbers)
-        if (!/[\p{N}]/u.test(amount)) {
-            return line; // Doesn't look like an amount, return as-is
+        // Check if the amount expression contains numbers (indicating it's really an amount)
+        if (!/[\p{N}]/u.test(amountExpression)) {
+            return line; // Doesn't contain numbers, return as-is
+        }
+
+        // Parse the amount expression to understand its structure
+        // This handles: regular amounts, balance assertions (=, ==), price assignments (@, @@)
+        let amount: string;
+        let balanceAssertion: string = '';
+
+        // Check for balance assertions first
+        const balanceMatch = amountExpression.match(/^(.*?)(\s*[=]+\s*)([-+]?\d+(?:[.,]\d+)?(?:\s*[^\s]+)?)$/);
+        if (balanceMatch) {
+            amount = balanceMatch[1]?.trim() || '';
+            balanceAssertion = balanceMatch[2] + (balanceMatch[3] || '');
+        } else {
+            amount = amountExpression;
         }
 
         // Calculate spacing needed to align amount (align by number, not sign)
@@ -392,10 +407,11 @@ export class DocumentFormatter {
         // Calculate spacing for the amount without sign
         const spacingNeeded = Math.max(2, amountAlignmentColumn - accountLength - (hasSign ? 1 : 0));
 
-        // Reconstruct the line with sign before spacing
+        // Reconstruct the line with balance assertion if present
         const indent = ' '.repeat(this.options.postingIndent);
         const spacing = ' '.repeat(spacingNeeded);
-        const alignedLine = `${indent}${accountName}${spacing}${sign}${amountWithoutSign}${comment}`;
+        const amountPart = `${sign}${amountWithoutSign}${balanceAssertion}`;
+        const alignedLine = `${indent}${accountName}${spacing}${amountPart}${comment}`;
 
         return alignedLine;
     }
@@ -513,11 +529,10 @@ export class DocumentFormatter {
         const beforeComment = commentIndex !== -1 ? trimmedLine.substring(0, commentIndex) : trimmedLine;
         const hasComment = commentIndex !== -1;
 
-        // Find the split point between account and amount in the part before comment
-        // Look for 2+ spaces or a tab as separator
-        const separatorMatch = beforeComment.match(/(\S.*?)(?:\s{2,}|\t)(.*)/);
+        // Find the split point between account and amount using improved pattern from syntax highlighting
+        const postingMatch = beforeComment.match(/^([^\s;]+(?:\s+[^\s;]+)*?)\s{2,}([^;]+)$/);
 
-        if (!separatorMatch) {
+        if (!postingMatch) {
             // No amount found, only account name (with optional comment)
             const accountStartPos = this.findFirstNonWhitespacePosition(line);
             return {
@@ -531,8 +546,8 @@ export class DocumentFormatter {
             };
         }
 
-        const accountName = separatorMatch[1]?.trim() || '';
-        let amountPart = separatorMatch[2]?.trim() || '';
+        const accountName = postingMatch[1]?.trim() || '';
+        let amountPart = postingMatch[2]?.trim() || '';
 
         // If there's a comment in the original line, append it to the amount part
         if (hasComment) {
@@ -542,8 +557,8 @@ export class DocumentFormatter {
 
         const accountStartPos = this.findFirstNonWhitespacePosition(line);
 
-        // Calculate the amount position more accurately by finding the actual amount in the original line
-        const fullMatch = line.match(/^\s*(\S.*?)(?:\s{2,}|\t)(.*)/);
+        // Calculate the amount position more accurately using improved pattern
+        const fullMatch = line.match(/^\s*([^\s;]+(?:\s+[^\s;]+)*?)\s{2,}([^;]*)/);
         let amountStartPos = accountStartPos + accountName.length; // fallback value
 
         if (fullMatch && fullMatch[2]) {
@@ -552,7 +567,7 @@ export class DocumentFormatter {
             const accountText = fullMatch[1] || '';
             const tempAmountStartPos = line.indexOf(accountText) + accountText.length;
 
-            // Verify this amount actually contains numbers (not a comment)
+            // Verify this amount actually contains numbers (not just a comment)
             if (/[\p{N}]/u.test(amountText.trim())) {
                 amountStartPos = tempAmountStartPos;
             }

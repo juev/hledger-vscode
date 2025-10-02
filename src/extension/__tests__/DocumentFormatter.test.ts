@@ -138,8 +138,8 @@ describe('DocumentFormatter', () => {
     describe('Amount alignment integration', () => {
         it('should integrate with DocumentFormatter for amount formatting', () => {
             const content = `2025-01-15 * Test transaction
-    Assets:Bank 100 USD
-    Expenses:Food -50 USD`;
+    Assets:Bank  100 USD
+    Expenses:Food     -50 USD`;
 
             const result = formatter.formatContent(content);
             expect(result.success).toBe(true);
