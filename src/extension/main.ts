@@ -8,6 +8,7 @@ import { HLedgerConfig } from './HLedgerConfig';
 import { SimpleProjectCache } from './SimpleProjectCache';
 import { StrictCompletionProvider } from './StrictCompletionProvider';
 import { HLedgerEnterCommand } from './HLedgerEnterCommand';
+import { HLedgerTabCommand } from './HLedgerTabCommand';
 import { SimpleFuzzyMatcher } from './SimpleFuzzyMatcher';
 import { createCacheKey, isFailure } from './types';
 import { AmountAligner } from './AmountAligner';
@@ -236,6 +237,10 @@ export function activate(context: vscode.ExtensionContext): void {
         // Register Enter key handler for smart indentation
         const enterCommand = new HLedgerEnterCommand();
         context.subscriptions.push(enterCommand);
+
+        // Register Tab key handler for amount alignment positioning
+        const tabCommand = new HLedgerTabCommand();
+        context.subscriptions.push(tabCommand);
 
 
         // Register manual completion commands
