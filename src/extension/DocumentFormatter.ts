@@ -282,7 +282,7 @@ export class DocumentFormatter {
             isPosting: true,
             isStartComment: false,
             hasInlineComment,
-            commentPosition: hasInlineComment ? this.findCommentPosition(trimmedLine) : undefined
+            commentPosition: hasInlineComment ? this.findCommentPosition(trimmedLine) : undefined as any
         };
     }
 
@@ -361,15 +361,16 @@ export class DocumentFormatter {
 
         // Split the line into account and amount parts
         const trimmedBefore = beforeComment.trim();
-        // More flexible pattern to match amounts
-        const match = trimmedBefore.match(/^(.*?)(\s+)(.+)$/);
+        // Pattern to match account name followed by amount (amount contains numbers)
+        // Account name can contain spaces and colons, amount must contain numbers
+        const match = trimmedBefore.match(/^(.*?)(\s+)([+-]?\s*[\d,]+(?:\.\d+)?\s*\S+)$/);
 
         if (!match) {
             return line; // No amount found, return as-is
         }
 
-        const accountName = match[1].trim();
-        const amount = match[3].trim();
+        const accountName = match[1]?.trim() || '';
+        const amount = match[3]?.trim() || '';
 
         if (!accountName || !amount) {
             return line; // Invalid format, return as-is
@@ -541,16 +542,21 @@ export class DocumentFormatter {
 
         const accountStartPos = this.findFirstNonWhitespacePosition(line);
 
-        // Calculate the amount position more accurately
-        // Find where the amount actually starts in the original line
-        const amountInTrimmed = separatorMatch[2] || '';
-        const accountInTrimmed = separatorMatch[1] || '';
-        const accountEndInTrimmed = accountInTrimmed.length;
-        const amountStartInTrimmed = accountEndInTrimmed;
+        // Calculate the amount position more accurately by finding the actual amount in the original line
+        const fullMatch = line.match(/^\s*(\S.*?)(?:\s{2,}|\t)(.*)/);
+        let amountStartPos = accountStartPos + accountName.length; // fallback value
 
-        // Map this back to the original line position
-        const leadingSpaces = line.length - line.trimStart().length;
-        const amountStartPos = leadingSpaces + amountStartInTrimmed;
+        if (fullMatch && fullMatch[2]) {
+            // Find the exact position where the amount starts in the original line
+            const amountText = fullMatch[2] || '';
+            const accountText = fullMatch[1] || '';
+            const tempAmountStartPos = line.indexOf(accountText) + accountText.length;
+
+            // Verify this amount actually contains numbers (not a comment)
+            if (/[\p{N}]/u.test(amountText.trim())) {
+                amountStartPos = tempAmountStartPos;
+            }
+        }
 
         const posting: PostingLine = {
             originalLine: line,
@@ -668,8 +674,8 @@ export class DocumentFormatter {
                     const match = beforeComment.match(/^(.*?)(\s+)(.+)$/);
 
                     if (match) {
-                        const accountName = match[1].trim();
-                        const amount = match[3].trim();
+                        const accountName = match[1]?.trim() || '';
+                        const amount = match[3]?.trim() || '';
 
                         // Check if the amount part looks like an amount (contains numbers)
                         if (/[\p{N}]/u.test(amount)) {

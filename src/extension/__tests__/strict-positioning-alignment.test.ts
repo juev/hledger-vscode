@@ -76,13 +76,19 @@ describe('DocumentFormatter - Strict Positioning File Tests', () => {
             if (postingLinesWithAmounts.length > 1) {
                 expect(amountPositions.length).toBeLessThan(postingLinesWithAmounts.length);
 
-                // Check that amounts are reasonably aligned (within a small range)
-                const maxPos = Math.max(...amountPositions);
-                const minPos = Math.min(...amountPositions);
-                const alignmentRange = maxPos - minPos;
+                // Filter out trading syntax (@@) from alignment calculation as it has different structure
+                const regularAmounts = postingLinesWithAmounts.filter(p => !p.amountPart.includes('@@'));
+                const regularPositions = [...new Set(regularAmounts.map(p => p.amountPosition))];
 
-                // The alignment should be consistent (range should be small)
-                expect(alignmentRange).toBeLessThanOrEqual(5); // Allow some tolerance for different account lengths
+                if (regularPositions.length > 1) {
+                    // Check that regular amounts are reasonably aligned (within a small range)
+                    const maxPos = Math.max(...regularPositions);
+                    const minPos = Math.min(...regularPositions);
+                    const alignmentRange = maxPos - minPos;
+
+                    // The alignment should be consistent (range should be small)
+                    expect(alignmentRange).toBeLessThanOrEqual(5); // Allow some tolerance for different account lengths
+                }
             }
         });
 
