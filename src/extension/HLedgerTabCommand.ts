@@ -148,14 +148,32 @@ export class HLedgerTabCommand implements vscode.Disposable {
             // Get optimal alignment position for this document
             const alignmentPosition = await this.getOptimalAmountPosition(document, currentLine);
 
-            if (alignmentPosition !== null) {
-                // Move cursor to the calculated position
+            console.log(`HLedger Tab: alignmentPosition=${alignmentPosition}, currentLine=${currentLine}`);
+
+            if (alignmentPosition !== null && alignmentPosition > position.character) {
+                // Calculate how many spaces we need to add
+                const spacesToAdd = alignmentPosition - position.character;
+                const currentLineText = document.lineAt(currentLine).text;
+
+                console.log(`HLedger Tab: Need to add ${spacesToAdd} spaces to reach position ${alignmentPosition}`);
+
+                // Add spaces to reach the alignment position
+                const spaces = ' '.repeat(spacesToAdd);
+
+                await textEditor.edit(editBuilder => {
+                    editBuilder.insert(position, spaces);
+                });
+
+                // Move cursor to the new position
                 const newPosition = new vscode.Position(currentLine, alignmentPosition);
                 textEditor.selection = new vscode.Selection(newPosition, newPosition);
 
-                // Show brief indication of smart positioning
-                vscode.window.setStatusBarMessage('hledger: Aligned to amount position', 1500);
+                // Show brief indication of smart positioning with position info
+                vscode.window.setStatusBarMessage(`hledger: Aligned to position ${alignmentPosition}`, 2000);
+
+                console.log(`HLedger Tab: Successfully added ${spacesToAdd} spaces and moved cursor to position ${alignmentPosition}`);
             } else {
+                console.log(`HLedger Tab: No valid alignment position found (alignmentPosition=${alignmentPosition}, current=${position.character}), falling back to standard tab`);
                 // Fallback to standard tab behavior
                 await vscode.commands.executeCommand('default:type', { text: '\t' });
             }
@@ -178,40 +196,49 @@ export class HLedgerTabCommand implements vscode.Disposable {
             const content = document.getText();
             const parseResult = this.amountAligner.parseTransactions(content);
 
+            console.log(`HLedger Tab: parseResult.success=${parseResult.success}`);
+
             if (!parseResult.success) {
+                console.log(`HLedger Tab: Failed to parse transactions`);
                 return null;
             }
 
             const transactions = parseResult.data;
-            if (transactions.length === 0) {
-                return null;
-            }
+            console.log(`HLedger Tab: Found ${transactions.length} transactions`);
 
-            // Find the transaction that contains the current line
-            const currentTransaction = this.findTransactionForLine(transactions, currentLineNumber + 1);
-            if (!currentTransaction) {
-                return null;
+            if (transactions.length === 0) {
+                // For empty document, use default alignment
+                const defaultPosition = 40;
+                console.log(`HLedger Tab: No transactions found, using default position ${defaultPosition}`);
+                return defaultPosition;
             }
 
             // Calculate document-wide alignment
             const documentAlignment = this.amountAligner.calculateDocumentOptimalAlignment(transactions);
+            console.log(`HLedger Tab: Document alignment position: ${documentAlignment}`);
 
             // Get the current line content to find account name length
             const currentLine = document.lineAt(currentLineNumber);
             const lineText = currentLine.text;
+            console.log(`HLedger Tab: Current line text: "${lineText}"`);
 
             // Extract account name from the current line
             const accountName = this.extractAccountName(lineText);
+            console.log(`HLedger Tab: Extracted account name: "${accountName}"`);
+
             if (!accountName) {
+                console.log(`HLedger Tab: No account name found, using document alignment ${documentAlignment}`);
                 return documentAlignment;
             }
 
             // Find account position in the line
             const accountPosition = this.findAccountPosition(lineText);
             const accountEndPosition = accountPosition + accountName.length;
+            console.log(`HLedger Tab: Account position: ${accountPosition}, end: ${accountEndPosition}`);
 
             // Calculate amount position with minimum spacing
             const amountPosition = Math.max(documentAlignment, accountEndPosition + 2);
+            console.log(`HLedger Tab: Final amount position: ${amountPosition} (max(${documentAlignment}, ${accountEndPosition} + 2))`);
 
             return amountPosition;
         } catch (error) {

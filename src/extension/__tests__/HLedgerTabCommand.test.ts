@@ -1,6 +1,7 @@
 import * as vscode from 'vscode';
 import { HLedgerTabCommand } from '../HLedgerTabCommand';
 import { TransactionBlock, PostingLine } from '../AmountAligner';
+import { failure } from '../types';
 
 // Mock VS Code API
 jest.mock('vscode', () => ({
@@ -16,6 +17,11 @@ jest.mock('vscode', () => ({
             }
         },
         setStatusBarMessage: jest.fn()
+    },
+    workspace: {
+        getConfiguration: jest.fn().mockReturnValue({
+            get: jest.fn().mockReturnValue(true)
+        })
     },
     Position: jest.fn().mockImplementation((line, character) => ({ line, character })),
     Selection: jest.fn().mockImplementation((anchor, active) => ({ anchor, active })),
@@ -229,11 +235,25 @@ describe('HLedgerTabCommand', () => {
         });
 
         it('should handle parsing errors gracefully', async () => {
-            mockDocument.getText.mockReturnValue('invalid content');
+            // Mock the amountAligner to return a failure
+            const mockParseResult = failure(new Error('Parsing failed'));
+            jest.spyOn(tabCommand['amountAligner'], 'parseTransactions').mockReturnValue(mockParseResult);
 
             const result = await tabCommand['getOptimalAmountPosition'](mockDocument, 0);
 
             expect(result).toBeNull();
+        });
+
+        it('should return default position for empty document', async () => {
+            mockDocument.getText.mockReturnValue('');
+            mockDocument.lineAt.mockReturnValue({
+                text: '    Expenses:Food',
+                lineNumber: 1
+            });
+
+            const result = await tabCommand['getOptimalAmountPosition'](mockDocument, 0);
+
+            expect(result).toBe(40); // Default position for empty documents
         });
     });
 
