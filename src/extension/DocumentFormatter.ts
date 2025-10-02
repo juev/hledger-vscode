@@ -1,5 +1,5 @@
 // DocumentFormatter.ts - Comprehensive document formatting for hledger files
-// Provides full formatting functionality including tabs to spaces, indentation, and comment alignment
+// Provides full formatting functionality including indentation, amount alignment, and comment alignment
 
 import {
     Result, success, failure, isFailure,
@@ -105,8 +105,6 @@ export const DEFAULT_AMOUNT_FORMATTING_OPTIONS: AmountFormattingOptions = {
  * Interface for document formatting options
  */
 export interface DocumentFormattingOptions {
-    /** Number of spaces to replace tabs with */
-    readonly tabWidth: number;
     /** Number of spaces for posting indentation */
     readonly postingIndent: number;
     /** Minimum spaces between account name and amount */
@@ -119,7 +117,6 @@ export interface DocumentFormattingOptions {
  * Default formatting options following hledger best practices
  */
 export const DEFAULT_FORMATTING_OPTIONS: DocumentFormattingOptions = {
-    tabWidth: 4,
     postingIndent: 4,
     minAmountSpacing: 2,
     preserveExistingAlignment: true
@@ -129,12 +126,12 @@ export const DEFAULT_FORMATTING_OPTIONS: DocumentFormattingOptions = {
  * Service class for comprehensive formatting of hledger documents.
  *
  * Features:
- * - Convert tabs to spaces consistently
  * - Apply proper posting indentation (4 spaces)
  * - Align inline comments within transactions
  * - Align amounts in posting columns
  * - Preserve start-of-line comments unchanged
  * - Handle various transaction formats and edge cases
+ * - Preserve existing tabs and spacing when appropriate
  */
 export class DocumentFormatter {
     private readonly options: DocumentFormattingOptions;
@@ -168,11 +165,8 @@ export class DocumentFormatter {
         }
 
         try {
-            // Step 1: Convert tabs to spaces
-            const tabsConverted = this.convertTabsToSpaces(content);
-
-            // Step 2: Parse and format transactions
-            const formatResult = this.formatTransactions(tabsConverted);
+            // Parse and format transactions (no tab conversion)
+            const formatResult = this.formatTransactions(content);
             if (!formatResult.success) {
                 return formatResult;
             }
@@ -184,19 +178,9 @@ export class DocumentFormatter {
     }
 
     /**
-     * Converts all tabs in the content to spaces.
-     *
-     * @param content The content to process
-     * @returns Content with tabs converted to spaces
-     */
-    private convertTabsToSpaces(content: string): string {
-        return content.replace(/\t/g, ' '.repeat(this.options.tabWidth));
-    }
-
-    /**
      * Formats transactions in the content with proper indentation and alignment.
      *
-     * @param content The content to format (tabs already converted)
+     * @param content The content to format
      * @returns Result containing formatted content or error
      */
     private formatTransactions(content: string): Result<string> {
@@ -518,17 +502,27 @@ export class DocumentFormatter {
     private parsePostingLine(line: string, lineNumber: LineNumber): PostingLine | null {
         const trimmedLine = line.trim();
 
-        // Find the split point between account and amount
+        // Check if this is a comment-only line (should not be considered as posting with amount)
+        if (trimmedLine.startsWith(';')) {
+            return null;
+        }
+
+        // Find comment position first - anything after ; is comment
+        const commentIndex = trimmedLine.indexOf(';');
+        const beforeComment = commentIndex !== -1 ? trimmedLine.substring(0, commentIndex) : trimmedLine;
+        const hasComment = commentIndex !== -1;
+
+        // Find the split point between account and amount in the part before comment
         // Look for 2+ spaces or a tab as separator
-        const separatorMatch = trimmedLine.match(/(\S.*?)(?:\s{2,}|\t)(.*)/);
+        const separatorMatch = beforeComment.match(/(\S.*?)(?:\s{2,}|\t)(.*)/);
 
         if (!separatorMatch) {
-            // No amount found, only account name
+            // No amount found, only account name (with optional comment)
             const accountStartPos = this.findFirstNonWhitespacePosition(line);
             return {
                 originalLine: line,
                 lineNumber,
-                accountName: trimmedLine,
+                accountName: beforeComment.trim(),
                 amountPart: '',
                 accountPosition: createCharacterPosition(accountStartPos),
                 amountPosition: createCharacterPosition(line.length),
@@ -537,9 +531,26 @@ export class DocumentFormatter {
         }
 
         const accountName = separatorMatch[1]?.trim() || '';
-        const amountPart = separatorMatch[2]?.trim() || '';
+        let amountPart = separatorMatch[2]?.trim() || '';
+
+        // If there's a comment in the original line, append it to the amount part
+        if (hasComment) {
+            const commentPart = trimmedLine.substring(commentIndex);
+            amountPart = amountPart + commentPart;
+        }
+
         const accountStartPos = this.findFirstNonWhitespacePosition(line);
-        const amountStartPos = accountStartPos + accountName.length + 2; // Approximate position
+
+        // Calculate the amount position more accurately
+        // Find where the amount actually starts in the original line
+        const amountInTrimmed = separatorMatch[2] || '';
+        const accountInTrimmed = separatorMatch[1] || '';
+        const accountEndInTrimmed = accountInTrimmed.length;
+        const amountStartInTrimmed = accountEndInTrimmed;
+
+        // Map this back to the original line position
+        const leadingSpaces = line.length - line.trimStart().length;
+        const amountStartPos = leadingSpaces + amountStartInTrimmed;
 
         const posting: PostingLine = {
             originalLine: line,
@@ -548,11 +559,11 @@ export class DocumentFormatter {
             amountPart,
             accountPosition: createCharacterPosition(accountStartPos),
             amountPosition: createCharacterPosition(amountStartPos),
-            hasAmount: amountPart.length > 0
+            hasAmount: amountPart.length > 0 && !amountPart.startsWith(';')
         };
 
-        // Try to parse the amount if present
-        if (amountPart && this.isAmountString(amountPart)) {
+        // Try to parse the amount if present (only if it doesn't start with comment)
+        if (posting.hasAmount) {
             const cleanAmount = this.cleanAmountString(amountPart);
 
             const parseResult = this.numberFormatService.parseAmount(cleanAmount);

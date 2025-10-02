@@ -9,8 +9,8 @@ describe('DocumentFormatter', () => {
         formatter = new DocumentFormatter();
     });
 
-    describe('Tab conversion', () => {
-        it('should convert tabs to spaces', () => {
+    describe('Tab preservation', () => {
+        it('should preserve tabs in content', () => {
             const content = `2025-01-15 * Test transaction
 \tAssets:Bank\t\t100 USD
 \tExpenses:Food\t\t-50 USD`;
@@ -20,9 +20,12 @@ describe('DocumentFormatter', () => {
 
             if (result.success) {
                 const formatted = result.data;
-                expect(formatted).not.toContain('\t');
-                expect(formatted).toContain('    Assets:Bank');
-                expect(formatted).toContain('    Expenses:Food');
+                // Should preserve tabs
+                expect(formatted).toContain('\tAssets:Bank');
+                expect(formatted).toContain('\tExpenses:Food');
+                // Should align amounts properly
+                expect(formatted).toContain('100 USD');
+                expect(formatted).toContain('-50 USD');
             }
         });
 
@@ -36,9 +39,12 @@ describe('DocumentFormatter', () => {
 
             if (result.success) {
                 const formatted = result.data;
-                expect(formatted).not.toContain('\t');
-                expect(formatted).toContain('    Assets:Bank');
-                expect(formatted).toContain('    Expenses:Food');
+                // Should format properly (may change original indentation)
+                expect(formatted).toContain('Assets:Bank');
+                expect(formatted).toContain('Expenses:Food');
+                // Should align amounts
+                expect(formatted).toContain('100 USD');
+                expect(formatted).toContain('-50 USD');
             }
         });
     });
@@ -269,17 +275,18 @@ account Expenses:Gas
     });
 
     describe('Custom formatting options', () => {
-        it('should use custom tab width', () => {
-            const customFormatter = new DocumentFormatter({ tabWidth: 2 });
+        it('should preserve tabs in content', () => {
+            const customFormatter = new DocumentFormatter();
             const content = `2025-01-15 * Test transaction
-\tAssets:Bank\t\t100 USD`;
+	Assets:Bank	100 USD`;
 
             const result = customFormatter.formatContent(content);
             expect(result.success).toBe(true);
 
             if (result.success) {
                 const formatted = result.data;
-                expect(formatted).toContain('  Assets:Bank'); // 2 spaces, not 4
+                // Should preserve tabs since we don't convert them anymore
+                expect(formatted).toContain('\tAssets:Bank');
             }
         });
 
@@ -307,7 +314,7 @@ describe('createDocumentFormatter', () => {
     });
 
     it('should create formatter with custom options', () => {
-        const formatter = createDocumentFormatter({ tabWidth: 8 });
+        const formatter = createDocumentFormatter({ postingIndent: 6 });
         expect(formatter).toBeInstanceOf(DocumentFormatter);
     });
 });
