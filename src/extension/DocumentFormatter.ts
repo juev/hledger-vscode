@@ -161,7 +161,7 @@ export class DocumentFormatter {
         numberFormatService?: NumberFormatService
     ) {
         this.options = { ...DEFAULT_FORMATTING_OPTIONS, ...options };
-        this.numberFormatService = numberFormatService || new NumberFormatService();
+        this.numberFormatService = numberFormatService ?? new NumberFormatService();
         this.amountOptions = DEFAULT_AMOUNT_FORMATTING_OPTIONS;
     }
 

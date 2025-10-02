@@ -680,7 +680,7 @@ export class HLedgerParser {
     }
 
     private incrementUsage<TKey extends string>(usageMap: Map<TKey, UsageCount>, key: TKey): void {
-        const currentCount = usageMap.get(key) || createUsageCount(0);
+        const currentCount = usageMap.get(key) ?? createUsageCount(0);
         usageMap.set(key, createUsageCount(currentCount + 1));
     }
 
@@ -706,28 +706,28 @@ export class HLedgerParser {
 
         // Merge usage maps
         source.accountUsage.forEach((count, key) => {
-            const existing = target.accountUsage.get(key) || createUsageCount(0);
+            const existing = target.accountUsage.get(key) ?? createUsageCount(0);
             target.accountUsage.set(key, createUsageCount(existing + count));
         });
 
         source.payeeUsage.forEach((count, key) => {
-            const existing = target.payeeUsage.get(key) || createUsageCount(0);
+            const existing = target.payeeUsage.get(key) ?? createUsageCount(0);
             target.payeeUsage.set(key, createUsageCount(existing + count));
         });
 
         source.tagUsage.forEach((count, key) => {
-            const existing = target.tagUsage.get(key) || createUsageCount(0);
+            const existing = target.tagUsage.get(key) ?? createUsageCount(0);
             target.tagUsage.set(key, createUsageCount(existing + count));
         });
 
         source.commodityUsage.forEach((count, key) => {
-            const existing = target.commodityUsage.get(key) || createUsageCount(0);
+            const existing = target.commodityUsage.get(key) ?? createUsageCount(0);
             target.commodityUsage.set(key, createUsageCount(existing + count));
         });
 
         // Merge tag value usage
         source.tagValueUsage.forEach((count, key) => {
-            const existing = target.tagValueUsage.get(key as any) || createUsageCount(0);
+            const existing = target.tagValueUsage.get(key as any) ?? createUsageCount(0);
             target.tagValueUsage.set(key as any, createUsageCount(existing + count));
         });
 
