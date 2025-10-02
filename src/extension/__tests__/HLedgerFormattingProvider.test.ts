@@ -9,9 +9,6 @@ jest.mock('vscode', () => ({
         registerDocumentFormattingEditProvider: jest.fn(),
         registerDocumentRangeFormattingEditProvider: jest.fn(),
     },
-    workspace: {
-        getConfiguration: jest.fn(),
-    },
     Range: jest.fn(),
     Position: jest.fn(),
     TextEdit: {
@@ -25,20 +22,9 @@ jest.mock('vscode', () => ({
 
 describe('HLedgerFormattingProvider', () => {
     let provider: HLedgerFormattingProvider;
-    let mockGetConfiguration: jest.Mock;
 
     beforeEach(() => {
         jest.clearAllMocks();
-
-        // Setup mock workspace configuration
-        mockGetConfiguration = jest.fn().mockReturnValue({
-            get: jest.fn().mockReturnValue(true), // formatting.enabled = true by default
-        });
-
-        // Mock vscode workspace
-        const vscode = require('vscode');
-        vscode.workspace.getConfiguration = mockGetConfiguration;
-
         provider = new HLedgerFormattingProvider();
     });
 
@@ -51,7 +37,7 @@ describe('HLedgerFormattingProvider', () => {
             expect(typeof provider.provideDocumentFormattingEdits).toBe('function');
         });
 
-        it('should check configuration before formatting', async () => {
+        it('should attempt formatting for any hledger document', async () => {
             const mockDocument = {
                 getText: jest.fn().mockReturnValue('2024-01-01 * Test'),
                 positionAt: jest.fn().mockReturnValue({}),
@@ -59,35 +45,14 @@ describe('HLedgerFormattingProvider', () => {
             const mockOptions = { insertSpaces: true, tabSize: 4 };
             const mockToken = { isCancellationRequested: false };
 
+            // The provider should attempt formatting (controlled by VS Code's global settings)
             await provider.provideDocumentFormattingEdits(
                 mockDocument as any,
                 mockOptions,
                 mockToken as any
             );
 
-            expect(mockGetConfiguration).toHaveBeenCalledWith('hledger');
-        });
-
-        it('should return empty edits when formatting is disabled', async () => {
-            // Mock disabled configuration
-            mockGetConfiguration.mockReturnValue({
-                get: jest.fn().mockReturnValue(false), // formatting.enabled = false
-            });
-
-            const mockDocument = {
-                getText: jest.fn().mockReturnValue('2024-01-01 * Test'),
-                positionAt: jest.fn().mockReturnValue({}),
-            };
-            const mockOptions = { insertSpaces: true, tabSize: 4 };
-            const mockToken = { isCancellationRequested: false };
-
-            const edits = await provider.provideDocumentFormattingEdits(
-                mockDocument as any,
-                mockOptions,
-                mockToken as any
-            );
-
-            expect(edits).toEqual([]);
+            expect(mockDocument.getText).toHaveBeenCalled();
         });
 
         it('should return empty edits when operation is cancelled', async () => {

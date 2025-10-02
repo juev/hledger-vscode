@@ -62,11 +62,6 @@
           "default": true,
           "description": "Enable smart indentation on Enter key for hledger files"
         },
-        "hledger.formatting.enabled": {
-          "type": "boolean",
-          "default": true,
-          "description": "Enable document formatting for hledger files"
-        },
         "hledger.autoCompletion.maxResults": {
           "type": "number",
           "default": 25,

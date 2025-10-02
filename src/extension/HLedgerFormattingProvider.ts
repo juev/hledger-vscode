@@ -35,13 +35,7 @@ export class HLedgerFormattingProvider implements vscode.DocumentFormattingEditP
             return [];
         }
 
-        // Check if formatting is enabled in configuration
-        const config = vscode.workspace.getConfiguration('hledger');
-        const isFormattingEnabled = config.get<boolean>('formatting.enabled', true);
-
-        if (!isFormattingEnabled) {
-            return [];
-        }
+        // Formatting is controlled by VS Code's global editor.formatOnSave setting
 
         try {
             // Get document content
@@ -132,7 +126,8 @@ export class HLedgerRangeFormattingProvider implements vscode.DocumentRangeForma
         const content = document.getText();
         const formatResult = this.documentFormatter.formatContent(content);
 
-        if (!formatResult.success) {
+        if (isFailure(formatResult)) {
+            console.error('HLedger formatting failed:', formatResult.error);
             return [];
         }
 
