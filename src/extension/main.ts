@@ -22,8 +22,8 @@ const recentlyFormattedDocuments = new Set<string>();
 const FORMAT_COOLDOWN_MS = 1000; // 1 second cooldown
 
 /**
- * Handles document save events and applies comprehensive automatic formatting if enabled.
- * Includes tabs to spaces conversion, proper posting indentation, amount and comment alignment.
+ * Handles document save events and applies automatic formatting if enabled.
+ * Includes proper posting indentation, amount alignment, and comment alignment.
  *
  * @param document The document that was saved
  * @returns Promise that resolves when formatting is complete
@@ -43,11 +43,10 @@ export async function handleDocumentSave(document: vscode.TextDocument): Promise
 
         // Get configuration
         const config = vscode.workspace.getConfiguration('hledger');
-        const isFormattingEnabled = config.get<boolean>('formatting.enabled', true);
-        const isFormatOnSaveEnabled = config.get<boolean>('formatting.formatOnSave', false);
+        const isFormatOnSaveEnabled = config.get<boolean>('formatOnSave', false);
 
-        // Only format if formatting is enabled and format on save is enabled
-        if (!isFormattingEnabled || !isFormatOnSaveEnabled) {
+        // Only format if format on save is enabled
+        if (!isFormatOnSaveEnabled) {
             return;
         }
 
@@ -120,81 +119,9 @@ export async function handleDocumentSave(document: vscode.TextDocument): Promise
 }
 
 /**
- * Document formatting provider for hledger files using DocumentFormatter.
- * Provides comprehensive formatting including tabs to spaces, proper indentation, amount and comment alignment.
+ * Document formatting functionality for hledger files using DocumentFormatter.
+ * Provides comprehensive formatting including proper indentation, amount and comment alignment.
  */
-class HLedgerDocumentFormattingEditProvider implements vscode.DocumentFormattingEditProvider {
-    /**
-     * Provides document formatting edits for hledger files.
-     *
-     * @param document The document to format
-     * @param options Formatting options
-     * @param token Cancellation token
-     * @returns Promise resolving to formatting edits or null if formatting is disabled
-     */
-    async provideDocumentFormattingEdits(
-        document: vscode.TextDocument,
-        options: vscode.FormattingOptions,
-        token: vscode.CancellationToken
-    ): Promise<vscode.TextEdit[] | null> {
-        try {
-            // Check if formatting is enabled in configuration
-            const config = vscode.workspace.getConfiguration('hledger');
-            const isFormattingEnabled = config.get<boolean>('formatting.enabled', true);
-
-            if (!isFormattingEnabled) {
-                return null;
-            }
-
-            // Check if the document is a hledger file
-            if (document.languageId !== 'hledger') {
-                return null;
-            }
-
-            // Check for cancellation
-            if (token.isCancellationRequested) {
-                return null;
-            }
-
-            // Initialize document formatter if not already done
-            if (!documentFormatter) {
-                documentFormatter = new DocumentFormatter();
-            }
-
-            // Get the document content
-            const content = document.getText();
-
-            // Format the content using DocumentFormatter
-            const formatResult = documentFormatter.formatContent(content);
-
-            if (!formatResult.success || isFailure(formatResult)) {
-                console.error('HLedger formatting failed:', isFailure(formatResult) ? formatResult.error : 'Unknown error');
-                return null;
-            }
-
-            const formattedContent = formatResult.data;
-
-            // If content hasn't changed, return null
-            if (formattedContent === content) {
-                return null;
-            }
-
-            // Create a single text edit for the entire document
-            const fullRange = new vscode.Range(
-                document.positionAt(0),
-                document.positionAt(content.length)
-            );
-
-            const textEdit = vscode.TextEdit.replace(fullRange, formattedContent);
-
-            return [textEdit];
-
-        } catch (error) {
-            console.error('Error during hledger document formatting:', error);
-            return null;
-        }
-    }
-}
 
 // Main activation function
 export function activate(context: vscode.ExtensionContext): void {
@@ -220,15 +147,7 @@ export function activate(context: vscode.ExtensionContext): void {
             )
         );
 
-        // Register document formatting provider for amount alignment
-        const formattingProvider = new HLedgerDocumentFormattingEditProvider();
-        context.subscriptions.push(
-            vscode.languages.registerDocumentFormattingEditProvider(
-                'hledger',
-                formattingProvider
-            )
-        );
-
+        
         // Register document save event handler for automatic formatting
         const saveHandler = vscode.workspace.onDidSaveTextDocument(async (document) => {
             await handleDocumentSave(document);
@@ -257,117 +176,19 @@ export function activate(context: vscode.ExtensionContext): void {
             })
         );
 
-        // Register manual formatting command
-        context.subscriptions.push(
-            vscode.commands.registerCommand('hledger.formatDocument', async () => {
-                const editor = vscode.window.activeTextEditor;
-                if (!editor) {
-                    vscode.window.showWarningMessage('No active editor found');
-                    return;
-                }
-
-                if (editor.document.languageId !== 'hledger') {
-                    vscode.window.showWarningMessage('This command is only available for hledger files');
-                    return;
-                }
-
-                // Check configuration settings
-                const config = vscode.workspace.getConfiguration('hledger');
-                const isFormattingEnabled = config.get<boolean>('formatting.enabled', true);
-                const isFormatOnSaveEnabled = config.get<boolean>('formatting.formatOnSave', false);
-
-                if (!isFormattingEnabled) {
-                    const enableAction = await vscode.window.showWarningMessage(
-                        'Document formatting is disabled. Enable it to format documents?',
-                        'Enable', 'Cancel'
-                    );
-
-                    if (enableAction === 'Enable') {
-                        await config.update('formatting.enabled', true, vscode.ConfigurationTarget.WorkspaceFolder);
-
-                        // Also suggest enabling format on save
-                        const enableFormatOnSave = await vscode.window.showInformationMessage(
-                            'Document formatting enabled. Would you like to also enable automatic formatting on save?',
-                            'Enable Format on Save', 'Not Now'
-                        );
-
-                        if (enableFormatOnSave === 'Enable Format on Save') {
-                            await config.update('formatting.formatOnSave', true, vscode.ConfigurationTarget.WorkspaceFolder);
-                            vscode.window.showInformationMessage('Document formatting and format on save enabled for this workspace');
-                        } else {
-                            vscode.window.showInformationMessage('Document formatting enabled for this workspace');
-                        }
-                    } else {
-                        return;
-                    }
-                } else if (!isFormatOnSaveEnabled) {
-                    // Suggest enabling format on save if not already enabled
-                    const enableFormatOnSave = await vscode.window.showInformationMessage(
-                        'Would you like to enable automatic formatting on save?',
-                        'Enable Format on Save', 'Not Now'
-                    );
-
-                    if (enableFormatOnSave === 'Enable Format on Save') {
-                        await config.update('formatting.formatOnSave', true, vscode.ConfigurationTarget.WorkspaceFolder);
-                        vscode.window.showInformationMessage('Format on save enabled for this workspace');
-                    }
-                }
-
-                try {
-                    // Show progress indicator
-                    await vscode.window.withProgress({
-                        location: vscode.ProgressLocation.Notification,
-                        title: 'Formatting document',
-                        cancellable: false
-                    }, async (progress) => {
-                        progress.report({ increment: 0, message: 'Formatting document...' });
-
-                        // Execute the format command
-                        await vscode.commands.executeCommand('editor.action.format');
-
-                        progress.report({ increment: 100, message: 'Complete!' });
-
-                        // Brief delay to show completion
-                        await new Promise(resolve => setTimeout(resolve, 500));
-                    });
-
-                    // Show success message
-                    vscode.window.showInformationMessage('Document formatted successfully');
-
-                } catch (error) {
-                    console.error('Error formatting hledger document:', error);
-                    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-                    vscode.window.showErrorMessage(`Failed to format document: ${errorMessage}`);
-                }
-            })
-        );
-
+        
         // Register toggle format on save command
         context.subscriptions.push(
             vscode.commands.registerCommand('hledger.toggleFormatOnSave', async () => {
                 const config = vscode.workspace.getConfiguration('hledger');
-                const isFormatOnSaveEnabled = config.get<boolean>('formatting.formatOnSave', false);
-                const isFormattingEnabled = config.get<boolean>('formatting.enabled', true);
+                const isFormatOnSaveEnabled = config.get<boolean>('formatOnSave', false);
 
-                if (!isFormattingEnabled) {
-                    const enableFormattingAction = await vscode.window.showWarningMessage(
-                        'Document formatting must be enabled before using format on save. Enable document formatting?',
-                        'Enable', 'Cancel'
-                    );
+                // Toggle the format on save setting
+                const newValue = !isFormatOnSaveEnabled;
+                await config.update('formatOnSave', newValue, vscode.ConfigurationTarget.WorkspaceFolder);
 
-                    if (enableFormattingAction === 'Enable') {
-                        await config.update('formatting.enabled', true, vscode.ConfigurationTarget.WorkspaceFolder);
-                        await config.update('formatting.formatOnSave', true, vscode.ConfigurationTarget.WorkspaceFolder);
-                        vscode.window.showInformationMessage('Document formatting and format on save enabled');
-                    }
-                } else {
-                    // Toggle the format on save setting
-                    const newValue = !isFormatOnSaveEnabled;
-                    await config.update('formatting.formatOnSave', newValue, vscode.ConfigurationTarget.WorkspaceFolder);
-
-                    const status = newValue ? 'enabled' : 'disabled';
-                    vscode.window.showInformationMessage(`Format on save ${status}`);
-                }
+                const status = newValue ? 'enabled' : 'disabled';
+                vscode.window.showInformationMessage(`Format on save ${status}`);
             })
         );
 

@@ -61,15 +61,10 @@
           "default": true,
           "description": "Enable smart indentation on Enter key for hledger files"
         },
-        "hledger.formatting.enabled": {
-          "type": "boolean",
-          "default": true,
-          "description": "Enable comprehensive document formatting for hledger files (tabs to spaces, proper indentation, amount and comment alignment)"
-        },
-        "hledger.formatting.formatOnSave": {
+        "hledger.formatOnSave": {
           "type": "boolean",
           "default": false,
-          "description": "Automatically format hledger files when saving (requires formatting to be enabled)"
+          "description": "Automatically format hledger files when saving (tabs to spaces, proper indentation, amount and comment alignment)"
         },
         "hledger.autoCompletion.maxResults": {
           "type": "number",
@@ -101,12 +96,6 @@
         "when": "editorTextFocus && editorLangId == hledger"
       },
       {
-        "command": "hledger.formatDocument",
-        "title": "Align Amounts",
-        "category": "HLedger",
-        "when": "editorTextFocus && editorLangId == hledger"
-      },
-      {
         "command": "hledger.toggleFormatOnSave",
         "title": "Toggle Format on Save",
         "category": "HLedger",
@@ -123,23 +112,6 @@
         "command": "hledger.onEnter",
         "key": "enter",
         "when": "editorTextFocus && editorLangId == hledger && !suggestWidgetVisible && !inSnippetMode && !parameterHintsVisible && config.hledger.smartIndent.enabled"
-      },
-      {
-        "command": "hledger.onTab",
-        "key": "tab",
-        "when": "editorTextFocus && editorLangId == hledger && !suggestWidgetVisible && !inSnippetMode && !parameterHintsVisible && config.hledger.amountAlignment.enabled"
-      },
-      {
-        "command": "hledger.formatDocument",
-        "key": "ctrl+shift+a",
-        "mac": "cmd+shift+a",
-        "when": "editorTextFocus && editorLangId == hledger && config.hledger.amountAlignment.enabled"
-      },
-      {
-        "command": "editor.action.format",
-        "key": "ctrl+shift+f",
-        "mac": "cmd+shift+f",
-        "when": "editorTextFocus && editorLangId == hledger && config.hledger.amountAlignment.enabled"
       }
     ],
     "configurationDefaults": {

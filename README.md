@@ -21,7 +21,7 @@ Visual Studio Code extension providing syntax highlighting, intelligent code com
   - **Tag Completion**: Tag suggestions in comments
   - **Directive Completion**: hledger directive suggestions
 - **Smart Indentation**: Automatic indentation for transactions and postings with Enter key
-- **Amount Alignment**: Automatic alignment of amounts in transaction postings for better readability
+- **Document Formatting**: Comprehensive formatting on save including amount alignment, comment alignment, and proper indentation
 - **Context-Aware Completion**: Strict position analysis for accurate suggestions
 - **Multi-language Support**: Full Unicode support including Cyrillic characters
 - **Project-Based Caching**: Efficient workspace parsing and caching
@@ -68,19 +68,22 @@ The extension provides context-aware completion based on your cursor position:
 - **Preserve Indent**: Maintains proper indentation when continuing posting entries
 - **Smart Context**: Handles different line types appropriately
 
-### Amount Alignment
+### Document Formatting
 
-The extension provides automatic alignment of amounts in transaction postings to improve readability:
+The extension provides comprehensive document formatting for hledger files to improve readability and consistency:
 
-- **Manual Formatting**: Use keyboard shortcuts to align amounts in the current document
-- **Format on Save**: Automatically align amounts when saving files
-- **Smart Detection**: Only aligns amounts within transaction postings, preserving comments and other content
+- **Amount Alignment**: Automatic alignment of amounts in transaction postings
+- **Comment Alignment**: Aligns inline comments within transactions for better readability
+- **Proper Indentation**: Applies consistent 4-space indentation for posting lines
+- **Format on Save**: Automatically formats documents when saving files (when enabled) - the only available formatting mode
+- **Smart Detection**: Only formats transaction postings, preserving directives and start-of-line comments
 - **Multi-Currency Support**: Handles different commodity symbols and currencies seamlessly
 - **International Formats**: Supports both period (.) and comma (,) decimal formats
 - **Balance Assertions**: Properly aligns balance assertions (= and ==)
 - **Virtual Postings**: Correctly handles virtual postings (enclosed in parentheses)
 - **Price Assignments**: Aligns amounts with price assignments (@ and @@)
-- **Preservation**: Maintains the integrity of comments, directives, and other non-transaction content
+- **Account Names with Spaces**: Correctly preserves and aligns account names containing spaces
+- **Preservation**: Maintains the integrity of directives, metadata, and other non-transaction content
 
 #### Before/After Examples
 
@@ -158,24 +161,39 @@ The extension provides automatic alignment of amounts in transaction postings to
     Assets:Savings      == 10000.00 RUB
 ```
 
-#### Keyboard Shortcuts
+**Account names with spaces and comment alignment:**
 
-- **Ctrl+Shift+A** (or **Cmd+Shift+A** on Mac): Align amounts in current document
-- **Ctrl+Shift+F** (or **Cmd+Shift+F** on Mac): Alternative shortcut for formatting
-- **Command Palette**: Access "Align Amounts" and "Toggle Format on Save" commands
+*Before formatting:*
+```
+2025-01-22 Shopping with various accounts
+  Assets:My Bank Account    100 USD    ; Initial balance
+  Expenses:Food:Groceries Store    -50 USD  ; Weekly shopping
+  Expenses:Transport:Gas Station   -25 USD ; Car fuel
+  Assets:Savings Account    -25 USD     ; Transfer to savings
+```
+
+*After formatting:*
+```
+2025-01-22 Shopping with various accounts
+    Assets:My Bank Account                100 USD  ; Initial balance
+    Expenses:Food:Groceries Store        -50 USD  ; Weekly shopping
+    Expenses:Transport:Gas Station       -25 USD  ; Car fuel
+    Assets:Savings Account               -25 USD  ; Transfer to savings
+```
 
 #### Commands
 
-- **HLedger: Align Amounts**: Manually align amounts in the current document
-- **HLedger: Toggle Format on Save**: Enable/disable automatic formatting on save
+- **HLedger: Toggle Format on Save**: Enable/disable automatic formatting on save (accessible via Command Palette)
+
+**Note**: Manual formatting commands have been removed. The extension now only supports automatic formatting on save to keep the experience simple and focused.
 
 #### Advanced Usage Tips
 
-- **Select Specific Transactions**: You can select multiple transactions and use the align command to format only the selected content
-- **Large Files**: The amount alignment works efficiently with large journal files, processing line by line
-- **Mixed Content**: Non-transaction lines (comments, directives, metadata) are preserved and not affected by alignment
-- **Undo Support**: All formatting operations can be undone using VS Code's standard undo functionality
-- **Automatic Detection**: The extension automatically detects transaction boundaries and aligns amounts within each transaction independently
+- **Large Files**: The formatting works efficiently with large journal files, processing line by line during save
+- **Mixed Content**: Non-transaction lines (comments, directives, metadata) are preserved and not affected by formatting
+- **Undo Support**: All formatting operations can be undone using VS Code's standard undo functionality after save
+- **Automatic Detection**: The extension automatically detects transaction boundaries and formats amounts within each transaction independently
+- **Performance**: Since formatting only occurs on save, there's no performance impact during normal editing
 
 ## Configuration
 
@@ -197,17 +215,17 @@ The extension provides automatic alignment of amounts in transaction postings to
 }
 ```
 
-### Amount Alignment Settings
+### Document Formatting Settings
 
 ```json
 {
-    "hledger.amountAlignment.enabled": true,
-    "hledger.amountAlignment.formatOnSave": false
+    "hledger.formatOnSave": false
 }
 ```
 
-- **`hledger.amountAlignment.enabled`**: Enable/disable automatic alignment of amounts in transaction postings (default: `false`)
-- **`hledger.amountAlignment.formatOnSave`**: Automatically align amounts when saving hledger files (default: `false`, requires amount alignment to be enabled)
+- **`hledger.formatOnSave`**: Automatically format hledger files when saving (proper indentation, amount and comment alignment) (default: `false`)
+
+**Note**: Format on save is disabled by default. You need to enable it manually in settings to use automatic formatting.
 
 ## Architecture
 
@@ -237,18 +255,18 @@ The extension uses a **strict completion architecture** that provides:
 1. **Large Files**: The extension handles large files efficiently with project-based caching
 2. **Clear Cache**: Use Command Palette → "Developer: Reload Window" if needed
 
-### Amount Alignment Issues
+### Document Formatting Issues
 
-1. **Feature Not Working**: Ensure `hledger.amountAlignment.enabled` is set to `true` in settings
-2. **Keyboard Shortcuts Not Working**: Check that you're editing an hledger file and the feature is enabled
-3. **Format on Save Not Working**: Ensure both `hledger.amountAlignment.enabled` and `hledger.amountAlignment.formatOnSave` are set to `true`
-4. **Unexpected Formatting**: The alignment only affects transaction postings with amounts. Comments, directives, and other content are preserved
-5. **Mixed Currencies**: The extension handles different commodity symbols and currencies, aligning based on the position of amounts
-6. **Virtual Postings**: Virtual postings (enclosed in parentheses) are also aligned properly
-7. **Performance with Large Files**: If formatting is slow on very large files, consider using manual formatting instead of format on save
-8. **Non-standard Formats**: Very unusual amount formats may not be recognized. Use standard hledger amount syntax for best results
-9. **Selection Issues**: When formatting selections, ensure you include complete transactions for proper alignment
-10. **Undo Issues**: If formatting cannot be undone, check if other VS Code extensions are interfering with document editing
+1. **Feature Not Working**: Ensure `hledger.formatOnSave` is set to `true` in settings
+2. **Format on Save Not Working**: Check that you're editing an hledger file and the `hledger.formatOnSave` setting is enabled
+3. **Unexpected Formatting**: The formatter affects transaction postings, comments, and indentation while preserving directives and other content
+4. **Mixed Currencies**: The extension handles different commodity symbols and currencies, aligning based on the position of amounts
+5. **Virtual Postings**: Virtual postings (enclosed in parentheses) are also aligned properly
+6. **Performance with Large Files**: If formatting is slow on very large files when saving, you can temporarily disable format on save
+7. **Non-standard Formats**: Very unusual amount formats may not be recognized. Use standard hledger amount syntax for best results
+8. **Undo Issues**: If formatting cannot be undone, check if other VS Code extensions are interfering with document editing
+9. **Account Names with Spaces**: The formatter correctly preserves account names containing spaces in the account name part
+10. **Format Not Applied**: Check that the file actually changed during save - if no formatting was needed, no changes will be applied
 
 ## Compatibility
 
