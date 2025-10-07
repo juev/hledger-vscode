@@ -254,6 +254,17 @@ export class ThemeManager {
     const account = cfg.get<string>('hledger.colors.account', '');
     const amount = cfg.get<string>('hledger.colors.amount', '');
     const comment = cfg.get<string>('hledger.colors.comment', '');
+    const date = cfg.get<string>('hledger.colors.date', '');
+    const time = cfg.get<string>('hledger.colors.time', '');
+    const accountVirtual = cfg.get<string>('hledger.colors.accountVirtual', '');
+    const commodity = cfg.get<string>('hledger.colors.commodity', '');
+    const payee = cfg.get<string>('hledger.colors.payee', '');
+    const note = cfg.get<string>('hledger.colors.note', '');
+    const tag = cfg.get<string>('hledger.colors.tag', '');
+    const directive = cfg.get<string>('hledger.colors.directive', '');
+    const operator = cfg.get<string>('hledger.colors.operator', '');
+    const code = cfg.get<string>('hledger.colors.code', '');
+    const link = cfg.get<string>('hledger.colors.link', '');
 
     const current = cfg.get<any>('editor.semanticTokenColorCustomizations') ?? {};
 
@@ -272,6 +283,17 @@ export class ThemeManager {
     addRule('hledger:account', account);
     addRule('hledger:amount', amount);
     addRule('hledger:comment', comment);
+    addRule('hledger:date', date);
+    addRule('hledger:time', time);
+    addRule('hledger:accountVirtual', accountVirtual);
+    addRule('hledger:commodity', commodity);
+    addRule('hledger:payee', payee);
+    addRule('hledger:note', note);
+    addRule('hledger:tag', tag);
+    addRule('hledger:directive', directive);
+    addRule('hledger:operator', operator);
+    addRule('hledger:code', code);
+    addRule('hledger:link', link);
 
     const finalObj = { ...next, rules };
     if (JSON.stringify(finalObj) !== JSON.stringify(current)) {

@@ -165,6 +165,61 @@
           "type": "string",
           "default": "#9E9E9E",
           "description": "Color for comments (semantic tokens)"
+        },
+        "hledger.colors.date": {
+          "type": "string",
+          "default": "#2563EB",
+          "description": "Color for dates (semantic tokens)"
+        },
+        "hledger.colors.time": {
+          "type": "string",
+          "default": "#2563EB",
+          "description": "Color for times (semantic tokens)"
+        },
+        "hledger.colors.accountVirtual": {
+          "type": "string",
+          "default": "#6B7280",
+          "description": "Color for virtual accounts (semantic tokens)"
+        },
+        "hledger.colors.commodity": {
+          "type": "string",
+          "default": "#A855F7",
+          "description": "Color for commodities (semantic tokens)"
+        },
+        "hledger.colors.payee": {
+          "type": "string",
+          "default": "#EF4444",
+          "description": "Color for payees (semantic tokens)"
+        },
+        "hledger.colors.note": {
+          "type": "string",
+          "default": "#6B7280",
+          "description": "Color for notes (semantic tokens)"
+        },
+        "hledger.colors.tag": {
+          "type": "string",
+          "default": "#EC4899",
+          "description": "Color for tags (semantic tokens)"
+        },
+        "hledger.colors.directive": {
+          "type": "string",
+          "default": "#0EA5E9",
+          "description": "Color for directives (semantic tokens)"
+        },
+        "hledger.colors.operator": {
+          "type": "string",
+          "default": "#EAB308",
+          "description": "Color for operators (semantic tokens)"
+        },
+        "hledger.colors.code": {
+          "type": "string",
+          "default": "#A855F7",
+          "description": "Color for transaction codes (semantic tokens)"
+        },
+        "hledger.colors.link": {
+          "type": "string",
+          "default": "#2563EB",
+          "description": "Color for links (semantic tokens)"
         }
       }
     },
@@ -180,7 +235,18 @@
       {
         "id": "comment",
         "description": "HLedger comments"
-      }
+      },
+      { "id": "date", "description": "HLedger dates" },
+      { "id": "time", "description": "HLedger times" },
+      { "id": "accountVirtual", "description": "HLedger virtual accounts" },
+      { "id": "commodity", "description": "HLedger commodities" },
+      { "id": "payee", "description": "HLedger payees" },
+      { "id": "note", "description": "HLedger notes" },
+      { "id": "tag", "description": "HLedger tags" },
+      { "id": "directive", "description": "HLedger directives" },
+      { "id": "operator", "description": "HLedger operators" },
+      { "id": "code", "description": "HLedger transaction codes" },
+      { "id": "link", "description": "HLedger links" }
     ],
     "semanticTokenScopes": [
       {
@@ -202,7 +268,28 @@
             "comment.line.semicolon.hledger",
             "comment.line.number-sign.hledger",
             "comment.block.hledger"
-          ]
+          ],
+          "date": [ "constant.numeric.date.hledger" ],
+          "time": [ "constant.numeric.time.hledger" ],
+          "accountVirtual": [ "variable.other.account.virtual.hledger" ],
+          "commodity": [ "entity.name.type.commodity.hledger" ],
+          "payee": [ "entity.name.function.payee.hledger" ],
+          "note": [ "string.unquoted.note.hledger" ],
+          "tag": [ "entity.name.tag.hledger" ],
+          "directive": [ "keyword.directive.hledger", "keyword.directive.csv.hledger" ],
+          "operator": [
+            "keyword.operator.status.hledger",
+            "keyword.operator.balance-assertion.hledger",
+            "keyword.operator.price-assignment.hledger",
+            "keyword.operator.cost.hledger",
+            "keyword.operator.cost.total.hledger",
+            "keyword.operator.assertion.hledger",
+            "keyword.operator.auto.hledger",
+            "keyword.operator.periodic.hledger",
+            "keyword.operator.timeclock.hledger"
+          ],
+          "code": [ "string.other.code.hledger" ],
+          "link": [ "markup.underline.link.hledger" ]
         }
       }
     ],
