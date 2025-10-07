@@ -12,6 +12,7 @@ import { HLedgerTabCommand } from './HLedgerTabCommand';
 import { SimpleFuzzyMatcher } from './SimpleFuzzyMatcher';
 import { createCacheKey } from './types';
 import { registerFormattingProviders } from './HLedgerFormattingProvider';
+import { ThemeManager } from './ThemeManager';
 
 // Global instances for simplified architecture
 let globalConfig: HLedgerConfig;
@@ -51,6 +52,18 @@ export function activate(context: vscode.ExtensionContext): void {
         // Register Tab key handler for amount alignment positioning
         const tabCommand = new HLedgerTabCommand();
         context.subscriptions.push(tabCommand);
+
+        // Apply theme colors on activation
+        ThemeManager.applyFromConfiguration().catch(err => console.error('Apply theme failed', err));
+
+        // React to configuration changes
+        context.subscriptions.push(
+            vscode.workspace.onDidChangeConfiguration(e => {
+                if (e.affectsConfiguration('hledger.theme')) {
+                    ThemeManager.applyFromConfiguration().catch(err => console.error('Apply theme failed', err));
+                }
+            })
+        );
 
         // Register manual completion commands
         context.subscriptions.push(
