@@ -75,6 +75,81 @@
           "minimum": 5,
           "maximum": 50,
           "description": "Maximum number of account completion items to show (accounts are hierarchical, so more items are useful)"
+        },
+        "hledger.theme.enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable applying custom hledger token colors via theme rules"
+        },
+        "hledger.theme.date": {
+          "type": "string",
+          "default": "#2563EB",
+          "description": "Color for dates"
+        },
+        "hledger.theme.time": {
+          "type": "string",
+          "default": "#2563EB",
+          "description": "Color for times"
+        },
+        "hledger.theme.amount": {
+          "type": "string",
+          "default": "#F59E0B",
+          "description": "Color for amounts"
+        },
+        "hledger.theme.account": {
+          "type": "string",
+          "default": "#0EA5E9",
+          "description": "Color for accounts"
+        },
+        "hledger.theme.accountVirtual": {
+          "type": "string",
+          "default": "#6B7280",
+          "description": "Color for virtual accounts"
+        },
+        "hledger.theme.commodity": {
+          "type": "string",
+          "default": "#A855F7",
+          "description": "Color for commodities"
+        },
+        "hledger.theme.payee": {
+          "type": "string",
+          "default": "#EF4444",
+          "description": "Color for payees"
+        },
+        "hledger.theme.note": {
+          "type": "string",
+          "default": "#6B7280",
+          "description": "Color for notes"
+        },
+        "hledger.theme.comment": {
+          "type": "string",
+          "default": "#9CA3AF",
+          "description": "Color for comments"
+        },
+        "hledger.theme.tag": {
+          "type": "string",
+          "default": "#EC4899",
+          "description": "Color for tags"
+        },
+        "hledger.theme.directive": {
+          "type": "string",
+          "default": "#0EA5E9",
+          "description": "Color for directives"
+        },
+        "hledger.theme.operator": {
+          "type": "string",
+          "default": "#EAB308",
+          "description": "Color for operators"
+        },
+        "hledger.theme.code": {
+          "type": "string",
+          "default": "#A855F7",
+          "description": "Color for transaction codes"
+        },
+        "hledger.theme.link": {
+          "type": "string",
+          "default": "#2563EB",
+          "description": "Color for links"
         }
       }
     },
@@ -110,100 +185,6 @@
         "*.hledger": "hledger",
         "*.ledger": "hledger",
         "journal": "hledger"
-      },
-      "editor.tokenColorCustomizations": {
-        "textMateRules": [
-          {
-            "scope": "constant.numeric.date.hledger",
-            "settings": {
-              "foreground": "#2563EB"
-            }
-          },
-          {
-            "scope": "entity.name.type.account.hledger",
-            "settings": {
-              "foreground": "#0EA5E9"
-            }
-          },
-          {
-            "scope": "constant.numeric.amount.hledger",
-            "settings": {
-              "foreground": "#F59E0B"
-            }
-          },
-          {
-            "scope": "entity.name.type.commodity.hledger",
-            "settings": {
-              "foreground": "#A855F7"
-            }
-          },
-          {
-            "scope": "entity.name.function.payee.hledger",
-            "settings": {
-              "foreground": "#EF4444"
-            }
-          },
-          {
-            "scope": "comment.line.semicolon.hledger",
-            "settings": {
-              "foreground": "#9CA3AF"
-            }
-          },
-          {
-            "scope": "comment.line.number-sign.hledger",
-            "settings": {
-              "foreground": "#9CA3AF"
-            }
-          },
-          {
-            "scope": "comment.block.hledger",
-            "settings": {
-              "foreground": "#9CA3AF"
-            }
-          },
-          {
-            "scope": "entity.name.tag.hledger",
-            "settings": {
-              "foreground": "#EC4899"
-            }
-          },
-          {
-            "scope": "keyword.directive.hledger",
-            "settings": {
-              "foreground": "#0EA5E9"
-            }
-          },
-          {
-            "scope": "keyword.operator.status.hledger",
-            "settings": {
-              "foreground": "#EAB308"
-            }
-          },
-          {
-            "scope": "string.other.code.hledger",
-            "settings": {
-              "foreground": "#A855F7"
-            }
-          },
-          {
-            "scope": "string.unquoted.note.hledger",
-            "settings": {
-              "foreground": "#6B7280"
-            }
-          },
-          {
-            "scope": "markup.underline.link.url.hledger",
-            "settings": {
-              "foreground": "#0563EB"
-            }
-          },
-          {
-            "scope": "entity.name.type.account.virtual.hledger",
-            "settings": {
-              "foreground": "#6B7280"
-            }
-          }
-        ]
       }
     }
   },
