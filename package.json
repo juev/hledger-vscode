@@ -150,9 +150,62 @@
           "type": "string",
           "default": "#2563EB",
           "description": "Color for links"
+        },
+        "hledger.colors.account": {
+          "type": "string",
+          "default": "#4FC3F7",
+          "description": "Color for account names (semantic tokens)"
+        },
+        "hledger.colors.amount": {
+          "type": "string",
+          "default": "#81C784",
+          "description": "Color for amounts (semantic tokens)"
+        },
+        "hledger.colors.comment": {
+          "type": "string",
+          "default": "#9E9E9E",
+          "description": "Color for comments (semantic tokens)"
         }
       }
     },
+    "semanticTokenTypes": [
+      {
+        "id": "account",
+        "description": "HLedger account names"
+      },
+      {
+        "id": "amount",
+        "description": "HLedger amounts"
+      },
+      {
+        "id": "comment",
+        "description": "HLedger comments"
+      }
+    ],
+    "semanticTokenScopes": [
+      {
+        "language": "hledger",
+        "scopes": {
+          "account": [
+            "entity.name.type.account.hledger",
+            "entity.name.type.account.assets.hledger",
+            "entity.name.type.account.expenses.hledger",
+            "entity.name.type.account.liabilities.hledger",
+            "entity.name.type.account.equity.hledger",
+            "entity.name.type.account.income.hledger",
+            "variable.other.account.virtual.hledger"
+          ],
+          "amount": [
+            "constant.numeric.amount.hledger"
+          ],
+          "comment": [
+            "comment.line.semicolon.hledger",
+            "comment.line.number-sign.hledger",
+            "comment.block.hledger"
+          ]
+        }
+      }
+    ],
     "commands": [
       {
         "command": "hledger.onEnter",

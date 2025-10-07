@@ -108,6 +108,9 @@ export class ThemeManager {
     for (const spec of targets) {
       await this.applyToTarget(spec);
     }
+
+    // Apply semantic token colors based on hledger.colors.* too
+    await this.applySemanticTokenColors();
   }
 
   private static resolveTargets(event?: vscode.ConfigurationChangeEvent): Array<{ target: vscode.ConfigurationTarget; folder?: vscode.WorkspaceFolder }> {
@@ -240,5 +243,39 @@ export class ThemeManager {
     }
 
     await cfg.update('editor.tokenColorCustomizations', next, spec.target);
+  }
+
+  /**
+   * Bridge hledger.colors.* to editor semantic token customizations.
+   * This avoids global tokenColorCustomizations and lets users tweak per-language tokens.
+   */
+  private static async applySemanticTokenColors(): Promise<void> {
+    const cfg = vscode.workspace.getConfiguration();
+    const account = cfg.get<string>('hledger.colors.account', '');
+    const amount = cfg.get<string>('hledger.colors.amount', '');
+    const comment = cfg.get<string>('hledger.colors.comment', '');
+
+    const current = cfg.get<any>('editor.semanticTokenColorCustomizations') ?? {};
+
+    // Remove previous hledger overrides to avoid duplication
+    const next: any = { ...current };
+    let rules = Array.isArray(next.rules) ? next.rules.filter((r: any) => !(r && typeof r.scope === 'string' && r.scope.startsWith('hledger@'))) : next.rules;
+
+    const addRule = (scope: string, color?: string) => {
+      if (color && color.trim() !== '') {
+        rules = Array.isArray(rules) ? rules : [];
+        rules.push({ scope, foreground: color });
+      }
+    };
+
+    // Use language-qualified scopes per VS Code schema
+    addRule('hledger:account', account);
+    addRule('hledger:amount', amount);
+    addRule('hledger:comment', comment);
+
+    const finalObj = { ...next, rules };
+    if (JSON.stringify(finalObj) !== JSON.stringify(current)) {
+      await cfg.update('editor.semanticTokenColorCustomizations', finalObj, vscode.ConfigurationTarget.Global);
+    }
   }
 }

@@ -270,7 +270,8 @@ export const workspace = {
 };
 
 export const languages = {
-    registerCompletionItemProvider: jest.fn(() => ({ dispose: jest.fn() }))
+    registerCompletionItemProvider: jest.fn(() => ({ dispose: jest.fn() })),
+    registerDocumentSemanticTokensProvider: jest.fn(() => ({ dispose: jest.fn() })),
 };
 
 export const window = {
@@ -296,6 +297,21 @@ export class SemanticTokensLegend {
     constructor(tokenTypes: readonly string[], tokenModifiers: readonly string[] = []) {
         this.tokenTypes = tokenTypes;
         this.tokenModifiers = tokenModifiers;
+    }
+}
+
+export class SemanticTokensBuilder {
+    private _legend: SemanticTokensLegend;
+    private _tokens: Array<{ line: number; char: number; length: number; type: number; mods: number }>;    
+    constructor(legend: SemanticTokensLegend) {
+        this._legend = legend;
+        this._tokens = [];
+    }
+    push(line: number, char: number, length: number, tokenTypeIndex: number, tokenModifierSet: number = 0) {
+        this._tokens.push({ line, char, length, type: tokenTypeIndex, mods: tokenModifierSet });
+    }
+    build(): any {
+        return { data: this._tokens } as any;
     }
 }
 

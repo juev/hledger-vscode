@@ -13,6 +13,7 @@ import { SimpleFuzzyMatcher } from './SimpleFuzzyMatcher';
 import { createCacheKey } from './types';
 import { registerFormattingProviders } from './HLedgerFormattingProvider';
 import { ThemeManager } from './ThemeManager';
+import { HledgerSemanticTokensProvider, HLEDGER_SEMANTIC_TOKENS_LEGEND } from './HledgerSemanticTokensProvider';
 
 // Global instances for simplified architecture
 let globalConfig: HLedgerConfig;
@@ -56,11 +57,25 @@ export function activate(context: vscode.ExtensionContext): void {
         // Apply theme colors on activation
         ThemeManager.applyFromConfiguration().catch(err => console.error('Apply theme failed', err));
 
+        // Register semantic tokens provider for dynamic coloring
+        context.subscriptions.push(
+            vscode.languages.registerDocumentSemanticTokensProvider(
+                { language: 'hledger' },
+                new HledgerSemanticTokensProvider(),
+                HLEDGER_SEMANTIC_TOKENS_LEGEND
+            )
+        );
+
         // React to configuration changes
         context.subscriptions.push(
             vscode.workspace.onDidChangeConfiguration(e => {
                 if (e.affectsConfiguration('hledger.theme')) {
                     ThemeManager.applyFromConfiguration(e).catch(err => console.error('Apply theme failed', err));
+                }
+                if (e.affectsConfiguration('hledger.colors')) {
+                    // Force semantic tokens refresh by re-applying theme (harmless)
+                    ThemeManager.applyFromConfiguration(e).catch(err => console.error('Apply theme failed', err));
+                    vscode.window.showInformationMessage('HLedger: semantic colors updated');
                 }
             })
         );
