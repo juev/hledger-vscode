@@ -258,8 +258,7 @@
             "entity.name.type.account.expenses.hledger",
             "entity.name.type.account.liabilities.hledger",
             "entity.name.type.account.equity.hledger",
-            "entity.name.type.account.income.hledger",
-            "variable.other.account.virtual.hledger"
+            "entity.name.type.account.income.hledger"
           ],
           "amount": [
             "constant.numeric.amount.hledger"
