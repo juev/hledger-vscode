@@ -78,6 +78,19 @@ export function activate(context: vscode.ExtensionContext): void {
             })
         );
 
+        // Command to manually apply theme colors
+        context.subscriptions.push(
+            vscode.commands.registerCommand('hledger.applyThemeColors', async () => {
+                try {
+                    await ThemeManager.applyFromConfiguration();
+                    vscode.window.setStatusBarMessage('HLedger: theme colors applied', 2000);
+                } catch (err) {
+                    console.error('Apply theme failed', err);
+                    vscode.window.showErrorMessage('HLedger: failed to apply theme colors');
+                }
+            })
+        );
+
         // Extension activation complete
         
     } catch (error) {
