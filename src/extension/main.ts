@@ -60,7 +60,7 @@ export function activate(context: vscode.ExtensionContext): void {
         context.subscriptions.push(
             vscode.workspace.onDidChangeConfiguration(e => {
                 if (e.affectsConfiguration('hledger.theme')) {
-                    ThemeManager.applyFromConfiguration().catch(err => console.error('Apply theme failed', err));
+                    ThemeManager.applyFromConfiguration(e).catch(err => console.error('Apply theme failed', err));
                 }
             })
         );

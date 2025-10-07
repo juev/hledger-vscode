@@ -79,10 +79,120 @@ export function buildHledgerTextMateRules(colors: HledgerThemeColors, enabled: b
 }
 
 export class ThemeManager {
-  static async applyFromConfiguration(): Promise<void> {
-    const cfg = vscode.workspace.getConfiguration();
-    const enabled = cfg.get<boolean>('hledger.theme.enabled', true);
+  /** Keys used under hledger.theme */
+  private static readonly THEME_SETTING_KEYS: readonly string[] = [
+    'enabled',
+    'date',
+    'time',
+    'amount',
+    'account',
+    'accountVirtual',
+    'commodity',
+    'payee',
+    'note',
+    'comment',
+    'tag',
+    'directive',
+    'operator',
+    'code',
+    'link',
+  ] as const;
 
+  /**
+   * Apply token color rules based on current settings, updating only the scope that changed
+   * (workspace folder, workspace, or global). If no event is provided, applies in priority order:
+   * per-folder (if explicitly configured) -> workspace (if configured) -> global (if configured) -> fallback.
+   */
+  static async applyFromConfiguration(event?: vscode.ConfigurationChangeEvent): Promise<void> {
+    const targets = this.resolveTargets(event);
+    for (const spec of targets) {
+      await this.applyToTarget(spec);
+    }
+  }
+
+  private static resolveTargets(event?: vscode.ConfigurationChangeEvent): Array<{ target: vscode.ConfigurationTarget; folder?: vscode.WorkspaceFolder }> {
+    const results: Array<{ target: vscode.ConfigurationTarget; folder?: vscode.WorkspaceFolder }> = [];
+
+    const folders = vscode.workspace.workspaceFolders ?? [];
+
+    // 1) If event specifies folder-scoped changes, handle those explicitly
+    if (event) {
+      for (const folder of folders) {
+        if (event.affectsConfiguration('hledger.theme', folder)) {
+          results.push({ target: vscode.ConfigurationTarget.WorkspaceFolder, folder });
+        }
+      }
+      // 2) Top-level change (workspace or global)
+      if (event.affectsConfiguration('hledger.theme')) {
+        const rootCfg = vscode.workspace.getConfiguration();
+        const hasWorkspace = this.hasAnyScopeValue(rootCfg, vscode.ConfigurationTarget.Workspace);
+        const hasGlobal = this.hasAnyScopeValue(rootCfg, vscode.ConfigurationTarget.Global);
+        if (hasWorkspace) {
+          results.push({ target: vscode.ConfigurationTarget.Workspace });
+        }
+        if (hasGlobal) {
+          results.push({ target: vscode.ConfigurationTarget.Global });
+        }
+        if (!hasWorkspace && !hasGlobal) {
+          // Fallback if cannot infer: prefer workspace when folders open, else global
+          const fallbackTarget = folders.length > 0 ? vscode.ConfigurationTarget.Workspace : vscode.ConfigurationTarget.Global;
+          results.push({ target: fallbackTarget });
+        }
+      }
+      if (results.length > 0) {
+        return results;
+      }
+    }
+
+    // 3) No event: choose scopes with explicit settings
+    for (const folder of folders) {
+      const cfgFolder = vscode.workspace.getConfiguration(undefined, folder.uri);
+      if (this.hasAnyScopeValue(cfgFolder, vscode.ConfigurationTarget.WorkspaceFolder)) {
+        results.push({ target: vscode.ConfigurationTarget.WorkspaceFolder, folder });
+      }
+    }
+
+    const rootCfg = vscode.workspace.getConfiguration();
+    if (this.hasAnyScopeValue(rootCfg, vscode.ConfigurationTarget.Workspace)) {
+      results.push({ target: vscode.ConfigurationTarget.Workspace });
+    }
+    if (this.hasAnyScopeValue(rootCfg, vscode.ConfigurationTarget.Global)) {
+      results.push({ target: vscode.ConfigurationTarget.Global });
+    }
+
+    if (results.length === 0) {
+      // Final fallback: keep previous behavior
+      const fallbackTarget = folders.length > 0 ? vscode.ConfigurationTarget.Workspace : vscode.ConfigurationTarget.Global;
+      results.push({ target: fallbackTarget });
+    }
+
+    return results;
+  }
+
+  private static hasAnyScopeValue(cfg: vscode.WorkspaceConfiguration, target: vscode.ConfigurationTarget): boolean {
+    for (const key of this.THEME_SETTING_KEYS) {
+      const inspected = cfg.inspect<any>(`hledger.theme.${key}`);
+      if (!inspected) continue;
+      const scoped = this.pickScopedValue(inspected, target);
+      if (scoped !== undefined) return true;
+    }
+    return false;
+  }
+
+  private static pickScopedValue<T>(inspected: any, target: vscode.ConfigurationTarget): T | undefined {
+    switch (target) {
+      case vscode.ConfigurationTarget.Global:
+        return inspected.globalValue as T | undefined;
+      case vscode.ConfigurationTarget.Workspace:
+        return inspected.workspaceValue as T | undefined;
+      case vscode.ConfigurationTarget.WorkspaceFolder:
+        // When cfg is created with folder scope, this field will be the folder override
+        return (inspected as any).workspaceFolderValue as T | undefined;
+    }
+  }
+
+  private static readColorsAndEnabled(cfg: vscode.WorkspaceConfiguration): { colors: HledgerThemeColors; enabled: boolean } {
+    const enabled = cfg.get<boolean>('hledger.theme.enabled', true);
     const get = (k: string) => cfg.get<string>(`hledger.theme.${k}`, '');
     const colors: HledgerThemeColors = {
       date: get('date'),
@@ -100,9 +210,25 @@ export class ThemeManager {
       code: get('code'),
       link: get('link'),
     };
+    return { colors, enabled };
+  }
 
-    const currentValue = cfg.get<any>('editor.tokenColorCustomizations') ?? {};
-    const currentObj = typeof currentValue === 'object' && currentValue !== null ? currentValue : {};
+  private static getScopedEditorTokenColors(cfg: vscode.WorkspaceConfiguration, target: vscode.ConfigurationTarget): any {
+    const inspected = cfg.inspect<any>('editor.tokenColorCustomizations');
+    if (!inspected) return {};
+    const value = this.pickScopedValue(inspected, target);
+    const obj = typeof value === 'object' && value !== null ? (value as any) : {};
+    return obj;
+  }
+
+  private static async applyToTarget(spec: { target: vscode.ConfigurationTarget; folder?: vscode.WorkspaceFolder }): Promise<void> {
+    const cfg = spec.folder
+      ? vscode.workspace.getConfiguration(undefined, spec.folder.uri)
+      : vscode.workspace.getConfiguration();
+
+    const { colors, enabled } = this.readColorsAndEnabled(cfg);
+
+    const currentObj = this.getScopedEditorTokenColors(cfg, spec.target);
     const existingRules: any[] = Array.isArray(currentObj.textMateRules) ? currentObj.textMateRules : [];
     const kept = existingRules.filter((r) => !(typeof r?.name === 'string' && r.name.startsWith('hledger@')));
 
@@ -113,9 +239,6 @@ export class ThemeManager {
       return; // No changes needed
     }
 
-    // Prefer workspace target when a folder is open; otherwise fall back to global
-    const hasWorkspace = (vscode.workspace.workspaceFolders?.length ?? 0) > 0;
-    const target = hasWorkspace ? vscode.ConfigurationTarget.Workspace : vscode.ConfigurationTarget.Global;
-    await cfg.update('editor.tokenColorCustomizations', next, target);
+    await cfg.update('editor.tokenColorCustomizations', next, spec.target);
   }
 }
