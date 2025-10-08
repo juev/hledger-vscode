@@ -126,7 +126,7 @@ export class HLedgerParser {
             if (process.env.NODE_ENV !== 'test') {
                 console.error('Error parsing file async:', filePath, error);
             }
-            return this.createEmptyData();
+            return this.toReadonly(this.createEmptyData());
         }
     }
 
@@ -257,8 +257,8 @@ export class HLedgerParser {
             return;
         }
 
-        // Alias directive
-        if (trimmedLine.includes('alias')) {
+        // Alias directive (only at start of line)
+        if (trimmedLine.startsWith('alias ')) {
             this.handleAliasDirective(trimmedLine, data);
             return;
         }
