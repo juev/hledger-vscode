@@ -49,8 +49,9 @@ export class StrictPositionValidator implements PositionValidator {
     isCommodityPosition(line: string, character: number): boolean {
         const beforeCursor = line.substring(0, character);
         
-        // STRICT: Only after amount + single space (support "," or "." and up to 12 decimals)
-        return /^\s*.*\p{N}+(?:[.,]\p{N}{1,12})?\s[\p{Lu}\p{Sc}]*$/u.test(beforeCursor);
+        // STRICT: Only after amount + single space (support "," or "." with any precision)
+        // Note: We intentionally avoid restricting decimal places to a fixed number.
+        return /^\s*.*\p{N}+(?:[.,]\p{N}+)?\s[\p{Lu}\p{Sc}]*$/u.test(beforeCursor);
     }
     
     isForbiddenPosition(line: string, character: number): boolean {
