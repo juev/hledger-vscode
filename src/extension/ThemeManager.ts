@@ -268,34 +268,30 @@ export class ThemeManager {
 
     const current = cfg.get<any>('editor.semanticTokenColorCustomizations') ?? {};
 
-    // Remove previous hledger overrides to avoid duplication
-    const next: any = { ...current };
-    let rules = Array.isArray(next.rules) ? next.rules.filter((r: any) => !(r && typeof r.scope === 'string' && r.scope.startsWith('hledger@'))) : next.rules;
-
-    const addRule = (scope: string, color?: string) => {
+    // Build rules object (token -> color) per language-qualified scopes
+    const rulesObj: Record<string, string | { foreground: string }> = {};
+    const setRule = (scope: string, color?: string) => {
       if (color && color.trim() !== '') {
-        rules = Array.isArray(rules) ? rules : [];
-        rules.push({ scope, foreground: color });
+        rulesObj[scope] = color; // VS Code accepts string or object with foreground
       }
     };
 
-    // Use language-qualified scopes per VS Code schema
-    addRule('hledger:account', account);
-    addRule('hledger:amount', amount);
-    addRule('hledger:comment', comment);
-    addRule('hledger:date', date);
-    addRule('hledger:time', time);
-    addRule('hledger:accountVirtual', accountVirtual);
-    addRule('hledger:commodity', commodity);
-    addRule('hledger:payee', payee);
-    addRule('hledger:note', note);
-    addRule('hledger:tag', tag);
-    addRule('hledger:directive', directive);
-    addRule('hledger:operator', operator);
-    addRule('hledger:code', code);
-    addRule('hledger:link', link);
+    setRule('hledger:account', account);
+    setRule('hledger:amount', amount);
+    setRule('hledger:comment', comment);
+    setRule('hledger:date', date);
+    setRule('hledger:time', time);
+    setRule('hledger:accountVirtual', accountVirtual);
+    setRule('hledger:commodity', commodity);
+    setRule('hledger:payee', payee);
+    setRule('hledger:note', note);
+    setRule('hledger:tag', tag);
+    setRule('hledger:directive', directive);
+    setRule('hledger:operator', operator);
+    setRule('hledger:code', code);
+    setRule('hledger:link', link);
 
-    const finalObj = { ...next, rules };
+    const finalObj = { ...current, rules: { ...(current.rules ?? {}), ...rulesObj } };
     if (JSON.stringify(finalObj) !== JSON.stringify(current)) {
       await cfg.update('editor.semanticTokenColorCustomizations', finalObj, vscode.ConfigurationTarget.Global);
     }
