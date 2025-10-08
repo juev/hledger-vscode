@@ -375,4 +375,11 @@
   },
   "homepage": "https://github.com/juev/hledger-vscode#readme",
   "icon": "images/icon.png"
+  ,
+  "activationEvents": [
+    "onLanguage:hledger",
+    "onCommand:hledger.onEnter",
+    "onCommand:hledger.onTab",
+    "onCommand:hledger.applyThemeColors"
+  ]
 }
