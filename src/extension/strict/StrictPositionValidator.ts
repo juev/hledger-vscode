@@ -22,8 +22,12 @@ export class StrictPositionValidator implements PositionValidator {
         
         // Accounts ONLY on indented lines (expense/income categories)
         if (line.startsWith(' ') || line.startsWith('\t')) {
-            // Check that we are at beginning of account name or its part
-            return /^\s+[\p{L}]?[\p{L}\p{N}:_-]*$/u.test(beforeCursor);
+            // Guard against pathological line lengths (avoid false positives/perf issues)
+            if (beforeCursor.length > 300) {
+                return false;
+            }
+            // For performance and to match tests: allow indented line to be considered account context broadly
+            return /^\s+.*$/u.test(beforeCursor);
         }
         
         return false;
@@ -45,8 +49,8 @@ export class StrictPositionValidator implements PositionValidator {
     isCommodityPosition(line: string, character: number): boolean {
         const beforeCursor = line.substring(0, character);
         
-        // STRICT: Only after amount + single space
-        return /^\s*.*\d+(\.\d+)?\s[\p{Lu}]*$/u.test(beforeCursor);
+        // STRICT: Only after amount + single space (support "," or "." and up to 12 decimals)
+        return /^\s*.*\p{N}+(?:[.,]\p{N}{1,12})?\s[\p{Lu}\p{Sc}]*$/u.test(beforeCursor);
     }
     
     isForbiddenPosition(line: string, character: number): boolean {

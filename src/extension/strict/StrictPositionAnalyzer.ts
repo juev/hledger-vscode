@@ -219,8 +219,9 @@ export class StrictPositionAnalyzer {
             // 5. "  Account  123.456 BTC" or "  Account  123,456 BTC" (varying decimal precision)
             // Pattern: indentation + account + amount + space + optional currency symbols
             const universalAmountPattern = this.createUniversalAmountPattern();
+            const accountNamePart = `[\\p{L}\\p{N}:_\-]+(?:\\s+[\\p{L}\\p{N}:_\-]+)*`;
             const accountAmountCurrencyPattern = new RegExp(
-                `^\\s+[\\p{L}\\p{N}:_-]+\\s+(${universalAmountPattern.source.replace(/^\^|\$$/g, '')})\\s([\\p{Lu}\\p{Sc}$€£¥₽]*)?$`,
+                `^\\s+${accountNamePart}\\s+(${universalAmountPattern.source.replace(/^\^|\$$/g, '')})\\s([\\p{Lu}\\p{Sc}$€£¥₽]*)?$`,
                 'u'
             );
             if (accountAmountCurrencyPattern.test(beforeCursor)) {
