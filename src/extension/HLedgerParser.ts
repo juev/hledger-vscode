@@ -9,6 +9,7 @@ import {
     createAccountName, createPayeeName, createTagName, createTagValue, createCommodityCode, createUsageCount
 } from './types';
 import { NumberFormatService, CommodityFormat } from './services/NumberFormatService';
+import { RegexPatterns } from './RegexPatterns';
 
 /**
  * Internal mutable interface for building parsed data during parsing.
@@ -290,7 +291,7 @@ export class HLedgerParser {
     }
 
     private handleAliasDirective(line: string, data: MutableParsedHLedgerData): void {
-        const aliasMatch = line.match(/alias\s+([^=]+)=(.+)/);
+        const aliasMatch = line.match(RegexPatterns.ALIAS_DIRECTIVE);
         if (aliasMatch?.[1] && aliasMatch[2]) {
             const alias = createAccountName(aliasMatch[1].trim());
             const account = createAccountName(aliasMatch[2].trim());
@@ -318,7 +319,7 @@ export class HLedgerParser {
         }
 
         // Check if this is a format template (contains numbers)
-        const hasNumbers = /\p{N}/u.test(cleanCommodityPart);
+        const hasNumbers = RegexPatterns.NUMBERS.test(cleanCommodityPart);
 
         if (hasNumbers) {
             // This is a format template like "1 000,00 EUR"
@@ -332,13 +333,13 @@ export class HLedgerParser {
                 }
             } else {
                 // Fallback: try to extract just the commodity symbol from the end
-                const commodityMatch = cleanCommodityPart.match(/([\p{L}\p{Sc}]+)\s*$/u);
+                const commodityMatch = cleanCommodityPart.match(RegexPatterns.COMMODITY_DETECTION);
                 if (commodityMatch?.[1]) {
                     const commodityCode = createCommodityCode(commodityMatch[1]);
                     if (commodityCode) {
                         data.commodities.add(commodityCode);
                         // Try to create a basic format from the number pattern
-                        const numberPattern = cleanCommodityPart.replace(/[\p{L}\p{Sc}]+\s*$/u, '').trim();
+                        const numberPattern = cleanCommodityPart.replace(RegexPatterns.COMMODITY_CLEANUP, '').trim();
                         if (numberPattern) {
                             const basicFormat = this.createBasicCommodityFormat(numberPattern, commodityMatch[1]);
                             if (basicFormat) {
@@ -434,7 +435,7 @@ export class HLedgerParser {
         }
 
         // Check if this is a format template (contains numbers)
-        const hasNumbers = /\p{N}/u.test(cleanDefaultPart);
+        const hasNumbers = RegexPatterns.NUMBERS.test(cleanDefaultPart);
 
         if (hasNumbers) {
             // This is a format template like "1000,00 RUB"
@@ -449,14 +450,14 @@ export class HLedgerParser {
                 }
             } else {
                 // Fallback: try to extract just the commodity symbol from the end
-                const commodityMatch = cleanDefaultPart.match(/([\p{L}\p{Sc}]+)\s*$/u);
+                const commodityMatch = cleanDefaultPart.match(RegexPatterns.COMMODITY_DETECTION);
                 if (commodityMatch?.[1]) {
                     const commodityCode = createCommodityCode(commodityMatch[1]);
                     if (commodityCode) {
                         data.defaultCommodity = commodityCode;
                         data.commodities.add(commodityCode);
                         // Try to create a basic format from the number pattern
-                        const numberPattern = cleanDefaultPart.replace(/[\p{L}\p{Sc}]+\s*$/u, '').trim();
+                        const numberPattern = cleanDefaultPart.replace(RegexPatterns.COMMODITY_CLEANUP, '').trim();
                         if (numberPattern) {
                             const basicFormat = this.createBasicCommodityFormat(numberPattern, commodityMatch[1]);
                             if (basicFormat) {
@@ -487,7 +488,7 @@ export class HLedgerParser {
     private createBasicCommodityFormat(numberPattern: string, symbol: string): CommodityFormat | null {
         try {
             // Detect decimal mark by looking for the last comma or period followed by 1-4 digits
-            const decimalMatch = numberPattern.match(/(.*?)([,.])([0-9]{1,4})$/);
+            const decimalMatch = numberPattern.match(RegexPatterns.DECIMAL_MATCH);
 
             let decimalMark: '.' | ',' = '.';
             let groupSeparator: ' ' | ',' | '.' | '' = '';
@@ -546,7 +547,7 @@ export class HLedgerParser {
     }
 
     private handleTransactionLine(line: string, data: MutableParsedHLedgerData): void {
-        const dateMatch = line.match(/^(\d{4}[-\/\.]\d{2}[-\/\.]\d{2}|\d{2}[-\/\.]\d{2})/);
+        const dateMatch = line.match(RegexPatterns.DATE_FULL);
         if (dateMatch?.[1]) {
             data.lastDate = dateMatch[1];
         }
@@ -567,7 +568,7 @@ export class HLedgerParser {
 
         // Extract account name (everything before amount)
         let accountName = '';
-        const parts = trimmedLine.split(/\s{2,}|\t/);
+        const parts = trimmedLine.split(RegexPatterns.AMOUNT_SPLIT);
         if (parts.length > 0 && parts[0]) {
             accountName = parts[0].trim();
 
@@ -592,14 +593,14 @@ export class HLedgerParser {
 
     private extractPayeeFromTransaction(line: string): string {
         // Remove date and status, extract payee (handle both full and short date formats)
-        let cleaned = line.replace(/^(\d{4}[-\/\.]\d{2}[-\/\.]\d{2}|\d{2}[-\/\.]\d{2})/, '').trim();
-        cleaned = cleaned.replace(/^[*!]\s*/, '').trim(); // Remove status
+        let cleaned = line.replace(RegexPatterns.DATE_FULL, '').trim();
+        cleaned = cleaned.replace(RegexPatterns.TRANSACTION_STATUS, '').trim(); // Remove status
 
         // Remove transaction codes like (REF123), (CODE456)
-        cleaned = cleaned.replace(/^\([^)]+\)\s*/, '').trim();
+        cleaned = cleaned.replace(RegexPatterns.TRANSACTION_CODE, '').trim();
 
         // Split only by ; to separate payee from comment, but preserve pipe characters
-        const parts = cleaned.split(/[;]/);
+        const parts = cleaned.split(RegexPatterns.COMMENT_SEMICOLON);
         const payee = parts[0] ? parts[0].trim() : '';
 
         // Normalize Unicode characters for consistent matching (NFC normalization)
@@ -610,7 +611,7 @@ export class HLedgerParser {
     private extractTags(line: string, data: MutableParsedHLedgerData): void {
         // Extract tags only from comments (after ; or #)
         // Tags are in the format tag: or tag:value within comments
-        const commentMatch = line.match(/[;#](.*)$/);
+        const commentMatch = line.match(RegexPatterns.COMMENT_LINE);
         if (!commentMatch?.[1]) {
             return;
         }
@@ -623,7 +624,7 @@ export class HLedgerParser {
         // - Spaces and special characters in values
         // - Multiple tags separated by commas
         // Pattern matches: tagname: or tagname:value where value can contain spaces until next comma or end
-        const tagPattern = /([\p{L}\p{N}_]+):\s*([^,;#]*?)(?=\s*(?:,|$))/gu;
+        const tagPattern = RegexPatterns.TAG_PATTERN;
         const tagMatches = commentText.matchAll(tagPattern);
 
         for (const match of tagMatches) {
@@ -666,7 +667,7 @@ export class HLedgerParser {
         // Enhanced Unicode-aware commodity extraction
         // Matches international currency symbols, cryptocurrency symbols, and commodity codes
         // Supports Latin, Cyrillic, Greek, and other Unicode letter systems
-        const commodityMatch = amountStr.match(/(\p{Sc}|[\p{L}]{2,}\d*|[A-Z]{2,}\d*)/u);
+        const commodityMatch = amountStr.match(RegexPatterns.AMOUNT_EXTRACTION);
         if (commodityMatch?.[1]) {
             const commodity = createCommodityCode(commodityMatch[1]);
             data.commodities.add(commodity);
@@ -676,7 +677,7 @@ export class HLedgerParser {
 
     private isTransactionLine(line: string): boolean {
         // Transaction lines start with a date (full or short format)
-        return /^(\d{4}[-\/\.]\d{2}[-\/\.]\d{2}|\d{2}[-\/\.]\d{2})/.test(line);
+        return RegexPatterns.TRANSACTION_LINE.test(line);
     }
 
     private incrementUsage<TKey extends string>(usageMap: Map<TKey, UsageCount>, key: TKey): void {

@@ -79,8 +79,8 @@ export function buildHledgerTextMateRules(colors: HledgerThemeColors, enabled: b
 }
 
 export class ThemeManager {
-  /** Keys used under hledger.theme */
-  private static readonly THEME_SETTING_KEYS: readonly string[] = [
+  /** Keys used under hledger.color */
+  private static readonly COLOR_SETTING_KEYS: readonly string[] = [
     'enabled',
     'date',
     'time',
@@ -109,7 +109,7 @@ export class ThemeManager {
       await this.applyToTarget(spec);
     }
 
-    // Apply semantic token colors based on hledger.colors.* too
+    // Apply semantic token colors based on hledger.color.* too
     await this.applySemanticTokenColors();
   }
 
@@ -121,12 +121,12 @@ export class ThemeManager {
     // 1) If event specifies folder-scoped changes, handle those explicitly
     if (event) {
       for (const folder of folders) {
-        if (event.affectsConfiguration('hledger.theme', folder)) {
+        if (event.affectsConfiguration('hledger.color', folder)) {
           results.push({ target: vscode.ConfigurationTarget.WorkspaceFolder, folder });
         }
       }
       // 2) Top-level change (workspace or global)
-      if (event.affectsConfiguration('hledger.theme')) {
+      if (event.affectsConfiguration('hledger.color')) {
         const rootCfg = vscode.workspace.getConfiguration();
         const hasWorkspace = this.hasAnyScopeValue(rootCfg, vscode.ConfigurationTarget.Workspace);
         const hasGlobal = this.hasAnyScopeValue(rootCfg, vscode.ConfigurationTarget.Global);
@@ -173,8 +173,8 @@ export class ThemeManager {
   }
 
   private static hasAnyScopeValue(cfg: vscode.WorkspaceConfiguration, target: vscode.ConfigurationTarget): boolean {
-    for (const key of this.THEME_SETTING_KEYS) {
-      const inspected = cfg.inspect<any>(`hledger.theme.${key}`);
+    for (const key of this.COLOR_SETTING_KEYS) {
+      const inspected = cfg.inspect<any>(`hledger.color.${key}`);
       if (!inspected) continue;
       const scoped = this.pickScopedValue(inspected, target);
       if (scoped !== undefined) return true;
@@ -195,8 +195,8 @@ export class ThemeManager {
   }
 
   private static readColorsAndEnabled(cfg: vscode.WorkspaceConfiguration): { colors: HledgerThemeColors; enabled: boolean } {
-    const enabled = cfg.get<boolean>('hledger.theme.enabled', true);
-    const get = (k: string) => cfg.get<string>(`hledger.theme.${k}`, '');
+    const enabled = cfg.get<boolean>('hledger.color.enabled', true);
+    const get = (k: string) => cfg.get<string>(`hledger.color.${k}`, '');
     const colors: HledgerThemeColors = {
       date: get('date'),
       time: get('time'),
@@ -246,25 +246,29 @@ export class ThemeManager {
   }
 
   /**
-   * Bridge hledger.colors.* to editor semantic token customizations.
+   * Bridge hledger.color.* to editor semantic token customizations.
    * This avoids global tokenColorCustomizations and lets users tweak per-language tokens.
    */
   private static async applySemanticTokenColors(): Promise<void> {
     const cfg = vscode.workspace.getConfiguration();
-    const account = cfg.get<string>('hledger.colors.account', '');
-    const amount = cfg.get<string>('hledger.colors.amount', '');
-    const comment = cfg.get<string>('hledger.colors.comment', '');
-    const date = cfg.get<string>('hledger.colors.date', '');
-    const time = cfg.get<string>('hledger.colors.time', '');
-    const accountVirtual = cfg.get<string>('hledger.colors.accountVirtual', '');
-    const commodity = cfg.get<string>('hledger.colors.commodity', '');
-    const payee = cfg.get<string>('hledger.colors.payee', '');
-    const note = cfg.get<string>('hledger.colors.note', '');
-    const tag = cfg.get<string>('hledger.colors.tag', '');
-    const directive = cfg.get<string>('hledger.colors.directive', '');
-    const operator = cfg.get<string>('hledger.colors.operator', '');
-    const code = cfg.get<string>('hledger.colors.code', '');
-    const link = cfg.get<string>('hledger.colors.link', '');
+    const enabled = cfg.get<boolean>('hledger.color.enabled', true);
+
+    if (!enabled) return;
+
+    const account = cfg.get<string>('hledger.color.account', '');
+    const amount = cfg.get<string>('hledger.color.amount', '');
+    const comment = cfg.get<string>('hledger.color.comment', '');
+    const date = cfg.get<string>('hledger.color.date', '');
+    const time = cfg.get<string>('hledger.color.time', '');
+    const accountVirtual = cfg.get<string>('hledger.color.accountVirtual', '');
+    const commodity = cfg.get<string>('hledger.color.commodity', '');
+    const payee = cfg.get<string>('hledger.color.payee', '');
+    const note = cfg.get<string>('hledger.color.note', '');
+    const tag = cfg.get<string>('hledger.color.tag', '');
+    const directive = cfg.get<string>('hledger.color.directive', '');
+    const operator = cfg.get<string>('hledger.color.operator', '');
+    const code = cfg.get<string>('hledger.color.code', '');
+    const link = cfg.get<string>('hledger.color.link', '');
 
     const current = cfg.get<any>('editor.semanticTokenColorCustomizations') ?? {};
 

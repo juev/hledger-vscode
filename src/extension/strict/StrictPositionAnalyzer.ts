@@ -2,6 +2,7 @@ import * as vscode from 'vscode';
 import { CompletionType } from '../types';
 import { NumberFormatService, NumberFormat } from '../services/NumberFormatService';
 import { HLedgerConfig } from '../HLedgerConfig';
+import { RegexPatterns } from '../RegexPatterns';
 
 export enum LineContext {
     LineStart = 'line_start',           // Beginning of line - only dates allowed
@@ -41,21 +42,21 @@ export class StrictPositionAnalyzer {
     
     private static readonly STRICT_PATTERNS = {
         // Strict date patterns - only at line beginning
-        DATE_LINE_START: /^(\d{4}[-/]\d{1,2}[-/]\d{1,2}|\d{1,2}[-/]\d{1,2})$/u,
-        
+        DATE_LINE_START: RegexPatterns.DATE_LINE_START,
+
         // Date with optional status marker (*!) - without payee
-        DATE_WITH_STATUS: /^(\d{4}[-/]\d{1,2}[-/]\d{1,2}|\d{1,2}[-/]\d{1,2})\s*[*!]?\s*$/u,
-        
+        DATE_WITH_STATUS: RegexPatterns.DATE_WITH_STATUS,
+
         // After date with payee - includes status markers and Unicode support
-        AFTER_DATE_PATTERN: /^(\d{4}[-/]\d{1,2}[-/]\d{1,2}|\d{1,2}[-/]\d{1,2})\s*[*!]?\s+[\p{L}\p{N}\s\p{P}]*$/u,
-        
+        AFTER_DATE_PATTERN: RegexPatterns.AFTER_DATE_PATTERN,
+
         // Date with status and space (ready for payee input)
-        DATE_WITH_STATUS_AND_SPACE: /^(\d{4}[-/]\d{1,2}[-/]\d{1,2}|\d{1,2}[-/]\d{1,2})\s*[*!]?\s+$/u,
-        
+        DATE_WITH_STATUS_AND_SPACE: RegexPatterns.DATE_WITH_STATUS_AND_SPACE,
+
         // SPECIAL PATTERNS FOR DIGIT "0" with Unicode support
-        ZERO_START: /^0$/u,                                    // Just "0"
-        ZERO_MONTH: /^0[1-9]$/u,                              // "01" through "09"
-        ZERO_PARTIAL_DATE: /^0[1-9][-/]?\d{0,2}$/u,          // "01-", "01-15"
+        ZERO_START: RegexPatterns.ZERO_START,                  // Just "0"
+        ZERO_MONTH: RegexPatterns.ZERO_MONTH,                  // "01" through "09"
+        ZERO_PARTIAL_DATE: RegexPatterns.ZERO_PARTIAL_DATE,    // "01-", "01-15"
         
         // Account on indented line with Unicode support
         ACCOUNT_INDENTED: /^\s{2,}([\p{L}][\p{L}\p{N}:_-]*)$/u,

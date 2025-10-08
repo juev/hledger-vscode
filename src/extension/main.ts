@@ -83,13 +83,8 @@ export function activate(context: vscode.ExtensionContext): void {
         // React to configuration changes
         context.subscriptions.push(
             vscode.workspace.onDidChangeConfiguration(e => {
-                if (e.affectsConfiguration('hledger.theme')) {
+                if (e.affectsConfiguration('hledger.color')) {
                     ThemeManager.applyFromConfiguration(e).catch(err => console.error('Apply theme failed', err));
-                }
-                if (e.affectsConfiguration('hledger.colors')) {
-                    // Force semantic tokens refresh by re-applying theme (harmless)
-                    ThemeManager.applyFromConfiguration(e).catch(err => console.error('Apply theme failed', err));
-                    vscode.window.showInformationMessage('HLedger: semantic colors updated');
                 }
             })
         );
