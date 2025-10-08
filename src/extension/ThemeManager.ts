@@ -99,6 +99,27 @@ export class ThemeManager {
   ] as const;
 
   /**
+   * Deep equality check for objects. More reliable than JSON.stringify.
+   */
+  private static deepEqual(obj1: any, obj2: any): boolean {
+    if (obj1 === obj2) return true;
+    if (obj1 == null || obj2 == null) return false;
+    if (typeof obj1 !== 'object' || typeof obj2 !== 'object') return false;
+
+    const keys1 = Object.keys(obj1);
+    const keys2 = Object.keys(obj2);
+
+    if (keys1.length !== keys2.length) return false;
+
+    for (const key of keys1) {
+      if (!keys2.includes(key)) return false;
+      if (!this.deepEqual(obj1[key], obj2[key])) return false;
+    }
+
+    return true;
+  }
+
+  /**
    * Apply token color rules based on current settings, updating only the scope that changed
    * (workspace folder, workspace, or global). If no event is provided, applies in priority order:
    * per-folder (if explicitly configured) -> workspace (if configured) -> global (if configured) -> fallback.
@@ -109,8 +130,9 @@ export class ThemeManager {
       await this.applyToTarget(spec);
     }
 
-    // Apply semantic token colors based on hledger.color.* too
-    await this.applySemanticTokenColors();
+    // Note: We don't need to separately apply semantic token colors because
+    // semanticTokenScopes in package.json already maps our semantic tokens
+    // to TextMate scopes, so the TextMate rules handle both.
   }
 
   private static resolveTargets(event?: vscode.ConfigurationChangeEvent): Array<{ target: vscode.ConfigurationTarget; folder?: vscode.WorkspaceFolder }> {
@@ -238,66 +260,10 @@ export class ThemeManager {
     const rules = buildHledgerTextMateRules(colors, enabled);
     const next = { ...currentObj, textMateRules: [...kept, ...rules] };
 
-    if (JSON.stringify(currentObj) === JSON.stringify(next)) {
+    if (this.deepEqual(currentObj, next)) {
       return; // No changes needed
     }
 
     await cfg.update('editor.tokenColorCustomizations', next, spec.target);
-  }
-
-  /**
-   * Bridge hledger.color.* to editor semantic token customizations.
-   * This avoids global tokenColorCustomizations and lets users tweak per-language tokens.
-   */
-  private static async applySemanticTokenColors(): Promise<void> {
-    const cfg = vscode.workspace.getConfiguration();
-    const enabled = cfg.get<boolean>('hledger.color.enabled', true);
-
-    if (!enabled) return;
-
-    const account = cfg.get<string>('hledger.color.account', '');
-    const amount = cfg.get<string>('hledger.color.amount', '');
-    const comment = cfg.get<string>('hledger.color.comment', '');
-    const date = cfg.get<string>('hledger.color.date', '');
-    const time = cfg.get<string>('hledger.color.time', '');
-    const accountVirtual = cfg.get<string>('hledger.color.accountVirtual', '');
-    const commodity = cfg.get<string>('hledger.color.commodity', '');
-    const payee = cfg.get<string>('hledger.color.payee', '');
-    const note = cfg.get<string>('hledger.color.note', '');
-    const tag = cfg.get<string>('hledger.color.tag', '');
-    const directive = cfg.get<string>('hledger.color.directive', '');
-    const operator = cfg.get<string>('hledger.color.operator', '');
-    const code = cfg.get<string>('hledger.color.code', '');
-    const link = cfg.get<string>('hledger.color.link', '');
-
-    const current = cfg.get<any>('editor.semanticTokenColorCustomizations') ?? {};
-
-    // Build rules object (token -> color) per language-qualified scopes
-    const rulesObj: Record<string, string | { foreground: string }> = {};
-    const setRule = (scope: string, color?: string) => {
-      if (color && color.trim() !== '') {
-        rulesObj[scope] = color; // VS Code accepts string or object with foreground
-      }
-    };
-
-    setRule('hledger:account', account);
-    setRule('hledger:amount', amount);
-    setRule('hledger:comment', comment);
-    setRule('hledger:date', date);
-    setRule('hledger:time', time);
-    setRule('hledger:accountVirtual', accountVirtual);
-    setRule('hledger:commodity', commodity);
-    setRule('hledger:payee', payee);
-    setRule('hledger:note', note);
-    setRule('hledger:tag', tag);
-    setRule('hledger:directive', directive);
-    setRule('hledger:operator', operator);
-    setRule('hledger:code', code);
-    setRule('hledger:link', link);
-
-    const finalObj = { ...current, rules: { ...(current.rules ?? {}), ...rulesObj } };
-    if (JSON.stringify(finalObj) !== JSON.stringify(current)) {
-      await cfg.update('editor.semanticTokenColorCustomizations', finalObj, vscode.ConfigurationTarget.Global);
-    }
   }
 }

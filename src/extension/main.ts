@@ -55,7 +55,10 @@ export function activate(context: vscode.ExtensionContext): void {
         context.subscriptions.push(tabCommand);
 
         // Apply theme colors on activation
-        ThemeManager.applyFromConfiguration().catch(err => console.error('Apply theme failed', err));
+        ThemeManager.applyFromConfiguration().catch(err => {
+            console.error('HLedger: failed to apply theme on activation', err);
+            // Don't show error on activation - user hasn't done anything yet
+        });
 
         // Register semantic tokens provider for dynamic coloring
         context.subscriptions.push(
@@ -84,7 +87,17 @@ export function activate(context: vscode.ExtensionContext): void {
         context.subscriptions.push(
             vscode.workspace.onDidChangeConfiguration(e => {
                 if (e.affectsConfiguration('hledger.color')) {
-                    ThemeManager.applyFromConfiguration(e).catch(err => console.error('Apply theme failed', err));
+                    ThemeManager.applyFromConfiguration(e).catch(err => {
+                        console.error('HLedger: failed to apply theme after config change', err);
+                        vscode.window.showWarningMessage(
+                            'HLedger: Could not apply theme colors. Please try running "HLedger: Apply Theme Colors" command manually.',
+                            'Open Command'
+                        ).then(selection => {
+                            if (selection === 'Open Command') {
+                                vscode.commands.executeCommand('hledger.applyThemeColors');
+                            }
+                        });
+                    });
                 }
             })
         );

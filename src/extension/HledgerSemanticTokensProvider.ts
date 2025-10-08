@@ -62,6 +62,11 @@ export class HledgerSemanticTokensProvider implements vscode.DocumentSemanticTok
       const text = document.lineAt(line).text;
       const trimmed = text.trimStart();
 
+      // Performance: skip empty lines and extremely long lines (potential pathological input)
+      if (trimmed === '' || text.length > 1000) {
+        continue;
+      }
+
       // 1) Full-line comments
       if (trimmed.startsWith(';') || trimmed.startsWith('#')) {
         const start = text.length - trimmed.length;
