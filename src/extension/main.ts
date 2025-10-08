@@ -66,6 +66,20 @@ export function activate(context: vscode.ExtensionContext): void {
             )
         );
 
+        // FS watcher for journal files: invalidate cache on change
+        const watcher = vscode.workspace.createFileSystemWatcher('**/*.{journal,hledger,ledger}');
+        const onFsChange = () => {
+            try {
+                globalConfig.clearCache();
+            } catch (err) {
+                console.error('HLedger: cache clear failed after FS change', err);
+            }
+        };
+        watcher.onDidCreate(onFsChange, null, context.subscriptions);
+        watcher.onDidChange(onFsChange, null, context.subscriptions);
+        watcher.onDidDelete(onFsChange, null, context.subscriptions);
+        context.subscriptions.push(watcher);
+
         // React to configuration changes
         context.subscriptions.push(
             vscode.workspace.onDidChangeConfiguration(e => {
