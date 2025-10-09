@@ -12,7 +12,7 @@ Visual Studio Code extension providing syntax highlighting, intelligent code com
 
 ## Features
 
-- **Syntax Highlighting**: Advanced highlighting for dates, accounts, amounts, commodities, payees, comments, tags, and directives
+- **Syntax Highlighting**: Advanced semantic highlighting for dates, accounts, amounts, commodities, payees, comments, tags, and directives with customizable colors through VS Code's standard semantic token system
 - **Intelligent Auto-completion**:
   - **Date Completion**: Smart date suggestions at line start with support for partial typing
   - **Account Completion**: Hierarchical account suggestions with frequency-based prioritization
@@ -25,6 +25,7 @@ Visual Studio Code extension providing syntax highlighting, intelligent code com
 - **Context-Aware Completion**: Strict position analysis for accurate suggestions
 - **Multi-language Support**: Full Unicode support including Cyrillic characters
 - **Project-Based Caching**: Efficient workspace parsing and caching
+- **Theme Integration**: Automatic adaptation to VS Code themes with semantic token color customization
 
 ## Supported File Extensions
 
@@ -226,6 +227,100 @@ Document formatting is controlled by VS Code's global editor settings:
 - **`editor.formatOnSave`**: Enable automatic formatting when saving any supported file type, including hledger files
 
 Note: This setting must be enabled at the editor level for hledger files to be formatted on save.
+
+### Syntax Highlighting Colors
+
+The extension provides semantic token highlighting for hledger files. Colors are automatically applied and can be customized through VS Code's standard semantic token settings.
+
+#### Customizing Colors
+
+You can customize the syntax highlighting colors through VS Code's settings:
+
+**Via Settings UI:**
+1. Open VS Code Settings (Ctrl+,)
+2. Navigate to **Text Editor** → **Semantic Token Color**
+3. Look for hledger-specific tokens (account:hledger, amount:hledger, etc.)
+4. Customize colors for each token type
+
+**Via settings.json:**
+```json
+{
+  "editor.semanticTokenColorCustomizations": {
+    "[Default Dark+]": {
+      "rules": {
+        "account:hledger": "#0EA5E9",
+        "amount:hledger": "#F59E0B",
+        "comment:hledger": "#9CA3AF",
+        "date:hledger": "#2563EB",
+        "commodity:hledger": "#A855F7",
+        "payee:hledger": "#EF4444",
+        "tag:hledger": "#EC4899",
+        "directive:hledger": "#0EA5E9"
+      }
+    },
+    "[Default Light+]": {
+      "rules": {
+        "account:hledger": "#0369A1",
+        "amount:hledger": "#D97706",
+        "comment:hledger": "#6B7280",
+        "date:hledger": "#1D4ED8",
+        "commodity:hledger": "#7C3AED",
+        "payee:hledger": "#DC2626",
+        "tag:hledger": "#DB2777",
+        "directive:hledger": "#0369A1"
+      }
+    }
+  }
+}
+```
+
+#### Available Semantic Tokens
+
+The extension defines the following semantic tokens that can be customized:
+
+- **account:hledger** - Account names
+- **accountVirtual:hledger** - Virtual account names (in parentheses/brackets)
+- **amount:hledger** - Monetary amounts
+- **comment:hledger** - Comments (lines starting with ; or #)
+- **date:hledger** - Transaction dates
+- **time:hledger** - Time values
+- **commodity:hledger** - Currency/commodity symbols
+- **payee:hledger** - Transaction payees
+- **note:hledger** - Transaction notes (after |)
+- **tag:hledger** - Tags (prefixed with #)
+- **directive:hledger** - hledger directives (account, commodity, etc.)
+- **operator:hledger** - Operators (=, ==, @, @@, *, !)
+- **code:hledger** - Transaction codes (in parentheses)
+- **link:hledger** - URLs and links
+
+#### Advanced Customization
+
+**Wildcard patterns:**
+```json
+{
+  "editor.semanticTokenColorCustomizations": {
+    "rules": {
+      "*.hledger": { "bold": true },  // Apply to all hledger tokens
+      "account*.hledger": { "italic": true }  // Apply to account tokens
+    }
+  }
+}
+```
+
+**Style modifiers:**
+```json
+{
+  "editor.semanticTokenColorCustomizations": {
+    "rules": {
+      "account:hledger": {
+        "foreground": "#0EA5E9",
+        "bold": true,
+        "italic": false
+      }
+    }
+  }
+}
+```
 
 ## Architecture
 
