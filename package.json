@@ -75,81 +75,6 @@
           "minimum": 5,
           "maximum": 50,
           "description": "Maximum number of account completion items to show (accounts are hierarchical, so more items are useful)"
-        },
-        "hledger.color.enabled": {
-          "type": "boolean",
-          "default": true,
-          "description": "Enable applying custom hledger token colors via theme rules and semantic tokens"
-        },
-        "hledger.color.date": {
-          "type": "string",
-          "default": "#2563EB",
-          "description": "Color for dates"
-        },
-        "hledger.color.time": {
-          "type": "string",
-          "default": "#2563EB",
-          "description": "Color for times"
-        },
-        "hledger.color.amount": {
-          "type": "string",
-          "default": "#F59E0B",
-          "description": "Color for amounts"
-        },
-        "hledger.color.account": {
-          "type": "string",
-          "default": "#0EA5E9",
-          "description": "Color for accounts"
-        },
-        "hledger.color.accountVirtual": {
-          "type": "string",
-          "default": "#6B7280",
-          "description": "Color for virtual accounts"
-        },
-        "hledger.color.commodity": {
-          "type": "string",
-          "default": "#A855F7",
-          "description": "Color for commodities"
-        },
-        "hledger.color.payee": {
-          "type": "string",
-          "default": "#EF4444",
-          "description": "Color for payees"
-        },
-        "hledger.color.note": {
-          "type": "string",
-          "default": "#6B7280",
-          "description": "Color for notes"
-        },
-        "hledger.color.comment": {
-          "type": "string",
-          "default": "#9CA3AF",
-          "description": "Color for comments"
-        },
-        "hledger.color.tag": {
-          "type": "string",
-          "default": "#EC4899",
-          "description": "Color for tags"
-        },
-        "hledger.color.directive": {
-          "type": "string",
-          "default": "#0EA5E9",
-          "description": "Color for directives"
-        },
-        "hledger.color.operator": {
-          "type": "string",
-          "default": "#EAB308",
-          "description": "Color for operators"
-        },
-        "hledger.color.code": {
-          "type": "string",
-          "default": "#A855F7",
-          "description": "Color for transaction codes"
-        },
-        "hledger.color.link": {
-          "type": "string",
-          "default": "#2563EB",
-          "description": "Color for links"
         }
       }
     },
@@ -234,11 +159,6 @@
         "title": "HLedger: Smart Tab for Amount Alignment",
         "category": "HLedger",
         "when": "editorTextFocus && editorLangId == hledger"
-      },
-      {
-        "command": "hledger.applyThemeColors",
-        "title": "HLedger: Apply Theme Colors",
-        "category": "HLedger"
       }
     ],
     "keybindings": [
@@ -259,6 +179,44 @@
         "*.hledger": "hledger",
         "*.ledger": "hledger",
         "journal": "hledger"
+      },
+      "editor.semanticTokenColorCustomizations": {
+        "[Default Dark+]": {
+          "rules": {
+            "account:hledger": "#0EA5E9",
+            "accountVirtual:hledger": "#6B7280",
+            "amount:hledger": "#F59E0B",
+            "comment:hledger": "#9CA3AF",
+            "date:hledger": "#2563EB",
+            "time:hledger": "#2563EB",
+            "commodity:hledger": "#A855F7",
+            "payee:hledger": "#EF4444",
+            "note:hledger": "#6B7280",
+            "tag:hledger": "#EC4899",
+            "directive:hledger": "#0EA5E9",
+            "operator:hledger": "#EAB308",
+            "code:hledger": "#A855F7",
+            "link:hledger": "#2563EB"
+          }
+        },
+        "[Default Light+]": {
+          "rules": {
+            "account:hledger": "#0369A1",
+            "accountVirtual:hledger": "#374151",
+            "amount:hledger": "#D97706",
+            "comment:hledger": "#6B7280",
+            "date:hledger": "#1D4ED8",
+            "time:hledger": "#1D4ED8",
+            "commodity:hledger": "#7C3AED",
+            "payee:hledger": "#DC2626",
+            "note:hledger": "#374151",
+            "tag:hledger": "#DB2777",
+            "directive:hledger": "#0369A1",
+            "operator:hledger": "#CA8A04",
+            "code:hledger": "#7C3AED",
+            "link:hledger": "#1D4ED8"
+          }
+        }
       }
     }
   },
@@ -309,7 +267,6 @@
   "activationEvents": [
     "onLanguage:hledger",
     "onCommand:hledger.onEnter",
-    "onCommand:hledger.onTab",
-    "onCommand:hledger.applyThemeColors"
+    "onCommand:hledger.onTab"
   ]
 }
