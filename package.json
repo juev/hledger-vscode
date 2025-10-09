@@ -262,8 +262,7 @@
     "url": "https://github.com/juev/hledger-vscode/issues"
   },
   "homepage": "https://github.com/juev/hledger-vscode#readme",
-  "icon": "images/icon.png"
-  ,
+  "icon": "images/icon.png",
   "activationEvents": [
     "onLanguage:hledger",
     "onCommand:hledger.onEnter",
