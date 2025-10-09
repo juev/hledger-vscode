@@ -78,6 +78,75 @@
         }
       }
     },
+    "semanticTokenTypes": [
+      {
+        "id": "account",
+        "description": "HLedger account names"
+      },
+      {
+        "id": "amount",
+        "description": "HLedger amounts"
+      },
+      {
+        "id": "comment",
+        "description": "HLedger comments"
+      },
+      { "id": "date", "description": "HLedger dates" },
+      { "id": "time", "description": "HLedger times" },
+      { "id": "accountVirtual", "description": "HLedger virtual accounts" },
+      { "id": "commodity", "description": "HLedger commodities" },
+      { "id": "payee", "description": "HLedger payees" },
+      { "id": "note", "description": "HLedger notes" },
+      { "id": "tag", "description": "HLedger tags" },
+      { "id": "directive", "description": "HLedger directives" },
+      { "id": "operator", "description": "HLedger operators" },
+      { "id": "code", "description": "HLedger transaction codes" },
+      { "id": "link", "description": "HLedger links" }
+    ],
+    "semanticTokenScopes": [
+      {
+        "language": "hledger",
+        "scopes": {
+          "account": [
+            "entity.name.type.account.hledger",
+            "entity.name.type.account.assets.hledger",
+            "entity.name.type.account.expenses.hledger",
+            "entity.name.type.account.liabilities.hledger",
+            "entity.name.type.account.equity.hledger",
+            "entity.name.type.account.income.hledger"
+          ],
+          "amount": [
+            "constant.numeric.amount.hledger"
+          ],
+          "comment": [
+            "comment.line.semicolon.hledger",
+            "comment.line.number-sign.hledger",
+            "comment.block.hledger"
+          ],
+          "date": [ "constant.numeric.date.hledger" ],
+          "time": [ "constant.numeric.time.hledger" ],
+          "accountVirtual": [ "variable.other.account.virtual.hledger" ],
+          "commodity": [ "entity.name.type.commodity.hledger" ],
+          "payee": [ "entity.name.function.payee.hledger" ],
+          "note": [ "string.unquoted.note.hledger" ],
+          "tag": [ "entity.name.tag.hledger" ],
+          "directive": [ "keyword.directive.hledger", "keyword.directive.csv.hledger" ],
+          "operator": [
+            "keyword.operator.status.hledger",
+            "keyword.operator.balance-assertion.hledger",
+            "keyword.operator.price-assignment.hledger",
+            "keyword.operator.cost.hledger",
+            "keyword.operator.cost.total.hledger",
+            "keyword.operator.assertion.hledger",
+            "keyword.operator.auto.hledger",
+            "keyword.operator.periodic.hledger",
+            "keyword.operator.timeclock.hledger"
+          ],
+          "code": [ "string.other.code.hledger" ],
+          "link": [ "markup.underline.link.hledger" ]
+        }
+      }
+    ],
     "commands": [
       {
         "command": "hledger.onEnter",
@@ -111,99 +180,43 @@
         "*.ledger": "hledger",
         "journal": "hledger"
       },
-      "editor.tokenColorCustomizations": {
-        "textMateRules": [
-          {
-            "scope": "constant.numeric.date.hledger",
-            "settings": {
-              "foreground": "#2563EB"
-            }
-          },
-          {
-            "scope": "entity.name.type.account.hledger",
-            "settings": {
-              "foreground": "#0EA5E9"
-            }
-          },
-          {
-            "scope": "constant.numeric.amount.hledger",
-            "settings": {
-              "foreground": "#F59E0B"
-            }
-          },
-          {
-            "scope": "entity.name.type.commodity.hledger",
-            "settings": {
-              "foreground": "#A855F7"
-            }
-          },
-          {
-            "scope": "entity.name.function.payee.hledger",
-            "settings": {
-              "foreground": "#EF4444"
-            }
-          },
-          {
-            "scope": "comment.line.semicolon.hledger",
-            "settings": {
-              "foreground": "#9CA3AF"
-            }
-          },
-          {
-            "scope": "comment.line.number-sign.hledger",
-            "settings": {
-              "foreground": "#9CA3AF"
-            }
-          },
-          {
-            "scope": "comment.block.hledger",
-            "settings": {
-              "foreground": "#9CA3AF"
-            }
-          },
-          {
-            "scope": "entity.name.tag.hledger",
-            "settings": {
-              "foreground": "#EC4899"
-            }
-          },
-          {
-            "scope": "keyword.directive.hledger",
-            "settings": {
-              "foreground": "#0EA5E9"
-            }
-          },
-          {
-            "scope": "keyword.operator.status.hledger",
-            "settings": {
-              "foreground": "#EAB308"
-            }
-          },
-          {
-            "scope": "string.other.code.hledger",
-            "settings": {
-              "foreground": "#A855F7"
-            }
-          },
-          {
-            "scope": "string.unquoted.note.hledger",
-            "settings": {
-              "foreground": "#6B7280"
-            }
-          },
-          {
-            "scope": "markup.underline.link.url.hledger",
-            "settings": {
-              "foreground": "#0563EB"
-            }
-          },
-          {
-            "scope": "entity.name.type.account.virtual.hledger",
-            "settings": {
-              "foreground": "#6B7280"
-            }
+      "editor.semanticTokenColorCustomizations": {
+        "[Default Dark+]": {
+          "rules": {
+            "account:hledger": "#0EA5E9",
+            "accountVirtual:hledger": "#6B7280",
+            "amount:hledger": "#F59E0B",
+            "comment:hledger": "#9CA3AF",
+            "date:hledger": "#2563EB",
+            "time:hledger": "#2563EB",
+            "commodity:hledger": "#A855F7",
+            "payee:hledger": "#EF4444",
+            "note:hledger": "#6B7280",
+            "tag:hledger": "#EC4899",
+            "directive:hledger": "#0EA5E9",
+            "operator:hledger": "#EAB308",
+            "code:hledger": "#A855F7",
+            "link:hledger": "#2563EB"
           }
-        ]
+        },
+        "[Default Light+]": {
+          "rules": {
+            "account:hledger": "#0369A1",
+            "accountVirtual:hledger": "#374151",
+            "amount:hledger": "#D97706",
+            "comment:hledger": "#6B7280",
+            "date:hledger": "#1D4ED8",
+            "time:hledger": "#1D4ED8",
+            "commodity:hledger": "#7C3AED",
+            "payee:hledger": "#DC2626",
+            "note:hledger": "#374151",
+            "tag:hledger": "#DB2777",
+            "directive:hledger": "#0369A1",
+            "operator:hledger": "#CA8A04",
+            "code:hledger": "#7C3AED",
+            "link:hledger": "#1D4ED8"
+          }
+        }
       }
     }
   },
@@ -228,7 +241,7 @@
   "devDependencies": {
     "@types/jest": "^30.0.0",
     "@types/node": "16.x",
-    "@types/vscode": "^1.74.0",
+    "@types/vscode": "^1.75.0",
     "@typescript-eslint/eslint-plugin": "^8.45.0",
     "@typescript-eslint/parser": "^8.45.0",
     "@vscode/test-electron": "^2.5.2",
@@ -249,5 +262,10 @@
     "url": "https://github.com/juev/hledger-vscode/issues"
   },
   "homepage": "https://github.com/juev/hledger-vscode#readme",
-  "icon": "images/icon.png"
+  "icon": "images/icon.png",
+  "activationEvents": [
+    "onLanguage:hledger",
+    "onCommand:hledger.onEnter",
+    "onCommand:hledger.onTab"
+  ]
 }

@@ -96,9 +96,9 @@ export class HLedgerEnterCommand implements vscode.Disposable {
                 const position = selection.active;
                 
                 if (!action) {
-                    // Standard behavior
+                    // Standard behavior for this cursor only
                     editBuilder.insert(position, '\n');
-                    return;
+                    continue;
                 }
                 
                 let insertText = '\n';

@@ -12,6 +12,7 @@ import { HLedgerTabCommand } from './HLedgerTabCommand';
 import { SimpleFuzzyMatcher } from './SimpleFuzzyMatcher';
 import { createCacheKey } from './types';
 import { registerFormattingProviders } from './HLedgerFormattingProvider';
+import { HledgerSemanticTokensProvider, HLEDGER_SEMANTIC_TOKENS_LEGEND } from './HledgerSemanticTokensProvider';
 
 // Global instances for simplified architecture
 let globalConfig: HLedgerConfig;
@@ -52,6 +53,30 @@ export function activate(context: vscode.ExtensionContext): void {
         const tabCommand = new HLedgerTabCommand();
         context.subscriptions.push(tabCommand);
 
+        // Register semantic tokens provider for dynamic coloring
+        context.subscriptions.push(
+            vscode.languages.registerDocumentSemanticTokensProvider(
+                { language: 'hledger' },
+                new HledgerSemanticTokensProvider(),
+                HLEDGER_SEMANTIC_TOKENS_LEGEND
+            )
+        );
+
+        // FS watcher for journal files: invalidate cache on change
+        const watcher = vscode.workspace.createFileSystemWatcher('**/*.{journal,hledger,ledger}');
+        const onFsChange = () => {
+            try {
+                globalConfig.clearCache();
+            } catch (err) {
+                console.error('HLedger: cache clear failed after FS change', err);
+            }
+        };
+        watcher.onDidCreate(onFsChange, null, context.subscriptions);
+        watcher.onDidChange(onFsChange, null, context.subscriptions);
+        watcher.onDidDelete(onFsChange, null, context.subscriptions);
+        context.subscriptions.push(watcher);
+
+  
         // Register manual completion commands
         context.subscriptions.push(
             vscode.commands.registerCommand('hledger.triggerDateCompletion', () => {
@@ -65,6 +90,7 @@ export function activate(context: vscode.ExtensionContext): void {
             })
         );
 
+    
         // Extension activation complete
         
     } catch (error) {

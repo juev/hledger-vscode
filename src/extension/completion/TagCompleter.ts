@@ -84,7 +84,7 @@ export class TagCompleter {
         // Extract the value part of the query (after "tagname:")
         // Query format: "; tag:" or "; tag:partial_value"
         // We need to extract everything after the tag name and colon
-        const tagStart = context.query.indexOf(`${tagName}:`);
+        const tagStart = context.query.lastIndexOf(`${tagName}:`);
         const valueStart = tagStart + tagName.length + 1; // +1 for the colon
         const valueQuery = context.query.substring(valueStart).trim();
         
