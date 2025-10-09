@@ -1,5 +1,38 @@
 # Change Log
 
+## [0.3.9] - 2025-10-09
+
+### Added
+- feat: replace custom color settings with standard semantic tokens
+- chore: add documentation files to gitignore
+- feat: simplify settings and improve regex parsing
+- feat(cache): invalidate config cache on journal file changes via FS watcher
+- feat(completion): support EU numbers and spaced accounts; fix analyzer regex
+- feat(activation+enter): add activationEvents; fix multi-cursor Enter handling
+- feat(semantics): align legend and provider with all token types; fix PR #21 review note
+- feat(colors): expand semantic tokens and settings to cover all TextMate scopes
+- feat(colors): add semantic tokens with user-configurable colors
+- feat(theme): apply token colors to the scope where settings change
+- feat(theme): add command to manually apply theme colors
+- feat(theme): wire ThemeManager in activation and config change handler
+- feat(theme): introduce ThemeManager to generate/apply TextMate rules
+- feat(theme): add hledger.theme.* settings and remove static color defaults
+
+### Changed
+- Update package.json
+- docs: update README with semantic token color customization
+- refactor: remove ThemeManager and simplify color handling
+- refactor(theme): fix semantic token duplication and improve error handling
+
+### Fixed
+- fix(strict): allow arbitrary decimal precision for commodity detection
+- fix(parser+tags): restrict alias directive to line start; correct async fallback; TagCompleter uses lastIndexOf for multi-tag lines
+- fix(theme): use semanticTokenColorCustomizations.rules object with language scopes
+
+### Removed
+- chore(config): align @types/vscode with engines; remove duplicate ESLint config
+
+
 ## [0.3.8] - 2025-10-02
 
 ### Added
