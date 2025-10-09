@@ -65,3 +65,8 @@ show-changelog.js
 test.sh
 
 tasks.md*
+
+# Documentation files created during development
+color.md
+migration-plan.md
+semantic-colors-example.json
