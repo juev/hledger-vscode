@@ -64,7 +64,7 @@
         },
         "hledger.semanticHighlighting.enabled": {
           "type": "boolean",
-          "default": true,
+          "default": false,
           "description": "Enable semantic highlighting for more precise syntax coloring. When disabled, falls back to TextMate grammar only."
         },
         "hledger.autoCompletion.maxResults": {

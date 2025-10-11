@@ -12,7 +12,7 @@ Visual Studio Code extension providing syntax highlighting, intelligent code com
 
 ## Features
 
-- **Syntax Highlighting**: Advanced semantic highlighting for dates, accounts, amounts, commodities, payees, comments, tags, and directives with customizable colors through VS Code's standard semantic token system
+- **Syntax Highlighting**: Dual-layer syntax highlighting with TextMate grammar (always enabled) and optional semantic tokens for enhanced precision. TextMate grammar provides reliable baseline coloring through scope hierarchies, while semantic highlighting (disabled by default) offers more accurate token identification and customizable colors through VS Code's standard semantic token system
 - **Intelligent Auto-completion**:
   - **Date Completion**: Smart date suggestions at line start with support for partial typing
   - **Account Completion**: Hierarchical account suggestions with frequency-based prioritization
@@ -91,6 +91,7 @@ The extension provides comprehensive document formatting for hledger files to im
 **Simple transaction:**
 
 *Before formatting:*
+
 ```
 2025-01-15 * Coffee shop
   Expenses:Food:Coffee    $4.50
@@ -102,6 +103,7 @@ The extension provides comprehensive document formatting for hledger files to im
 ```
 
 *After formatting:*
+
 ```
 2025-01-15 * Coffee shop
   Expenses:Food:Coffee        $4.50
@@ -115,6 +117,7 @@ The extension provides comprehensive document formatting for hledger files to im
 **Multi-currency transaction:**
 
 *Before formatting:*
+
 ```
 2025-01-20 * Currency Exchange
     Assets:USD              100 USD @ 95.50 RUB
@@ -122,6 +125,7 @@ The extension provides comprehensive document formatting for hledger files to im
 ```
 
 *After formatting:*
+
 ```
 2025-01-20 * Currency Exchange
     Assets:USD          100 USD @ 95.50 RUB
@@ -131,6 +135,7 @@ The extension provides comprehensive document formatting for hledger files to im
 **International number formats:**
 
 *Before formatting:*
+
 ```
 2024-01-17 Mixed Format Transaction
     Assets:Checking       1 234,56 EUR
@@ -139,6 +144,7 @@ The extension provides comprehensive document formatting for hledger files to im
 ```
 
 *After formatting:*
+
 ```
 2024-01-17 Mixed Format Transaction
     Assets:Checking     1 234,56 EUR
@@ -149,6 +155,7 @@ The extension provides comprehensive document formatting for hledger files to im
 **Balance assertions:**
 
 *Before formatting:*
+
 ```
 2025-01-21 Balance Check
     Assets:Checking         = 2500.00 RUB
@@ -156,6 +163,7 @@ The extension provides comprehensive document formatting for hledger files to im
 ```
 
 *After formatting:*
+
 ```
 2025-01-21 Balance Check
     Assets:Checking      = 2500.00 RUB
@@ -165,6 +173,7 @@ The extension provides comprehensive document formatting for hledger files to im
 **Account names with spaces and comment alignment:**
 
 *Before formatting:*
+
 ```
 2025-01-22 Shopping with various accounts
   Assets:My Bank Account    100 USD    ; Initial balance
@@ -174,6 +183,7 @@ The extension provides comprehensive document formatting for hledger files to im
 ```
 
 *After formatting:*
+
 ```
 2025-01-22 Shopping with various accounts
     Assets:My Bank Account                100 USD  ; Initial balance
@@ -230,19 +240,57 @@ Note: This setting must be enabled at the editor level for hledger files to be f
 
 ### Syntax Highlighting Colors
 
-The extension provides semantic token highlighting for hledger files. Colors are automatically applied and can be customized through VS Code's standard semantic token settings.
+The extension provides two layers of syntax highlighting:
+
+1. **TextMate Grammar (Always Active)**: Base syntax highlighting using scope hierarchies that work with all VS Code themes. Elements like numbers, keywords, and comments are automatically colored through standard TextMate scopes.
+
+2. **Semantic Tokens (Optional)**: Enhanced highlighting for precise token identification, especially useful for hledger-specific elements like tags in comments. Disabled by default for better performance.
+
+#### Enabling Semantic Highlighting
+
+To enable the more precise semantic token highlighting:
+
+**Via Settings UI:**
+
+1. Open VS Code Settings (Ctrl+,)
+2. Search for "hledger semantic"
+3. Enable **HLedger: Semantic Highlighting Enabled**
+
+**Via settings.json:**
+
+```json
+{
+    "hledger.semanticHighlighting.enabled": true
+}
+```
+
+**Benefits of enabling semantic highlighting:**
+
+- More precise identification of hledger elements
+- Tags are correctly identified only in comments (not in account names)
+- Custom color mappings for hledger-specific tokens
+- Better differentiation between similar elements
+
+**Why it's disabled by default:**
+
+- TextMate grammar already provides good baseline coloring
+- Semantic tokens require asynchronous processing (minimal delay)
+- Most users won't notice the difference for basic syntax
+- Can be enabled when needed for advanced features
 
 #### Customizing Colors
 
 You can customize the syntax highlighting colors through VS Code's settings:
 
 **Via Settings UI:**
+
 1. Open VS Code Settings (Ctrl+,)
 2. Navigate to **Text Editor** → **Semantic Token Color**
 3. Look for hledger-specific tokens (account:hledger, amount:hledger, etc.)
 4. Customize colors for each token type
 
 **Via settings.json:**
+
 ```json
 {
   "editor.semanticTokenColorCustomizations": {
@@ -296,6 +344,7 @@ The extension defines the following semantic tokens that can be customized:
 #### Advanced Customization
 
 **Wildcard patterns:**
+
 ```json
 {
   "editor.semanticTokenColorCustomizations": {
@@ -308,6 +357,7 @@ The extension defines the following semantic tokens that can be customized:
 ```
 
 **Style modifiers:**
+
 ```json
 {
   "editor.semanticTokenColorCustomizations": {
@@ -386,6 +436,7 @@ The extension uses a **strict completion architecture** that provides:
 ### File Content Preservation
 
 The amount alignment feature preserves and does not modify:
+
 - Comments and metadata
 - hledger directives (`account`, `commodity`, `payee`, etc.)
 - Transaction descriptions and payees
