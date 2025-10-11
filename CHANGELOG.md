@@ -1,5 +1,21 @@
 # Change Log
 
+## [0.3.10] - 2025-10-11
+
+### Added
+- feat: add smart tab functionality for amount alignment in posting lines
+- feat: update default setting for semantic highlighting to false for better performance
+- feat: add semantic highlighting support and improve tokenization performance
+
+### Changed
+- refactor: improve cache eviction strategy to remove 25% of entries
+- refactor: simplify semantic token definitions and improve grammar structure
+
+### Fixed
+- fix: remove outdated Open VSX downloads badge from README
+- fix: update amount and commodity patterns for improved syntax highlighting
+
+
 ## [0.3.9] - 2025-10-09
 
 ### Added
