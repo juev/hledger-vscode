@@ -7,7 +7,6 @@ Visual Studio Code extension providing syntax highlighting, intelligent code com
 [![Rating](https://img.shields.io/visual-studio-marketplace/r/evsyukov.hledger)](https://marketplace.visualstudio.com/items?itemName=evsyukov.hledger&ssr=false#overview)
 
 [![Open VSX Version](https://img.shields.io/open-vsx/v/evsyukov/hledger)](https://open-vsx.org/extension/evsyukov/hledger)
-[![Open VSX Downloads](https://img.shields.io/open-vsx/d/evsyukov/hledger)](https://open-vsx.org/extension/evsyukov/hledger)
 [![Open VSX Rating](https://img.shields.io/open-vsx/rating/evsyukov/hledger)](https://open-vsx.org/extension/evsyukov/hledger)
 
 ## Features
