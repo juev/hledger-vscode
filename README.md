@@ -68,6 +68,13 @@ The extension provides context-aware completion based on your cursor position:
 - **Preserve Indent**: Maintains proper indentation when continuing posting entries
 - **Smart Context**: Handles different line types appropriately
 
+### Smart Tab for Amount Alignment
+
+- **Smart Positioning**: Pressing Tab after an account name in a posting line automatically positions the cursor at the alignment column for entering amounts
+- **Context-Aware**: Only activates in posting lines after account names, falls back to standard Tab behavior elsewhere
+- **Works with Formatting**: Complements the automatic formatting on save feature for consistent amount alignment
+- **Intelligent Detection**: Analyzes the current transaction to determine the optimal alignment position
+
 ### Document Formatting
 
 The extension provides comprehensive document formatting for hledger files to improve readability and consistency:
