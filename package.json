@@ -62,6 +62,11 @@
           "default": true,
           "description": "Enable smart indentation on Enter key for hledger files"
         },
+        "hledger.semanticHighlighting.enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable semantic highlighting for more precise syntax coloring. When disabled, falls back to TextMate grammar only."
+        },
         "hledger.autoCompletion.maxResults": {
           "type": "number",
           "default": 25,
@@ -91,17 +96,50 @@
         "id": "comment",
         "description": "HLedger comments"
       },
-      { "id": "date", "description": "HLedger dates" },
-      { "id": "time", "description": "HLedger times" },
-      { "id": "accountVirtual", "description": "HLedger virtual accounts" },
-      { "id": "commodity", "description": "HLedger commodities" },
-      { "id": "payee", "description": "HLedger payees" },
-      { "id": "note", "description": "HLedger notes" },
-      { "id": "tag", "description": "HLedger tags" },
-      { "id": "directive", "description": "HLedger directives" },
-      { "id": "operator", "description": "HLedger operators" },
-      { "id": "code", "description": "HLedger transaction codes" },
-      { "id": "link", "description": "HLedger links" }
+      {
+        "id": "date",
+        "description": "HLedger dates"
+      },
+      {
+        "id": "time",
+        "description": "HLedger times"
+      },
+      {
+        "id": "accountVirtual",
+        "description": "HLedger virtual accounts"
+      },
+      {
+        "id": "commodity",
+        "description": "HLedger commodities"
+      },
+      {
+        "id": "payee",
+        "description": "HLedger payees"
+      },
+      {
+        "id": "note",
+        "description": "HLedger notes"
+      },
+      {
+        "id": "tag",
+        "description": "HLedger tags"
+      },
+      {
+        "id": "directive",
+        "description": "HLedger directives"
+      },
+      {
+        "id": "operator",
+        "description": "HLedger operators"
+      },
+      {
+        "id": "code",
+        "description": "HLedger transaction codes"
+      },
+      {
+        "id": "link",
+        "description": "HLedger links"
+      }
     ],
     "semanticTokenScopes": [
       {
@@ -123,14 +161,31 @@
             "comment.line.number-sign.hledger",
             "comment.block.hledger"
           ],
-          "date": [ "constant.numeric.date.hledger" ],
-          "time": [ "constant.numeric.time.hledger" ],
-          "accountVirtual": [ "variable.other.account.virtual.hledger" ],
-          "commodity": [ "entity.name.type.commodity.hledger" ],
-          "payee": [ "entity.name.function.payee.hledger" ],
-          "note": [ "string.unquoted.note.hledger" ],
-          "tag": [ "entity.name.tag.hledger" ],
-          "directive": [ "keyword.directive.hledger", "keyword.directive.csv.hledger" ],
+          "date": [
+            "constant.numeric.date.hledger"
+          ],
+          "time": [
+            "constant.numeric.time.hledger"
+          ],
+          "accountVirtual": [
+            "variable.other.account.virtual.hledger"
+          ],
+          "commodity": [
+            "entity.name.type.commodity.hledger"
+          ],
+          "payee": [
+            "entity.name.function.payee.hledger"
+          ],
+          "note": [
+            "string.unquoted.note.hledger"
+          ],
+          "tag": [
+            "entity.name.tag.hledger"
+          ],
+          "directive": [
+            "keyword.directive.hledger",
+            "keyword.directive.csv.hledger"
+          ],
           "operator": [
             "keyword.operator.status.hledger",
             "keyword.operator.balance-assertion.hledger",
@@ -142,8 +197,12 @@
             "keyword.operator.periodic.hledger",
             "keyword.operator.timeclock.hledger"
           ],
-          "code": [ "string.other.code.hledger" ],
-          "link": [ "markup.underline.link.hledger" ]
+          "code": [
+            "string.other.code.hledger"
+          ],
+          "link": [
+            "markup.underline.link.hledger"
+          ]
         }
       }
     ],
@@ -262,10 +321,5 @@
     "url": "https://github.com/juev/hledger-vscode/issues"
   },
   "homepage": "https://github.com/juev/hledger-vscode#readme",
-  "icon": "images/icon.png",
-  "activationEvents": [
-    "onLanguage:hledger",
-    "onCommand:hledger.onEnter",
-    "onCommand:hledger.onTab"
-  ]
+  "icon": "images/icon.png"
 }
