@@ -56,9 +56,14 @@ export class HledgerSemanticTokensProvider implements vscode.DocumentSemanticTok
     this.tokenCache.set(cacheKey, { version: document.version, tokens });
 
     // Limit cache size to prevent memory leaks
+    // When limit is exceeded, remove 25% of oldest entries for better cache management
     if (this.tokenCache.size > 20) {
-      const firstKey = this.tokenCache.keys().next().value;
-      if (firstKey) this.tokenCache.delete(firstKey);
+      const entriesToRemove = Math.max(1, Math.floor(this.tokenCache.size * 0.25));
+      const keys = Array.from(this.tokenCache.keys());
+      for (let i = 0; i < entriesToRemove && i < keys.length; i++) {
+        const key = keys[i];
+        if (key) this.tokenCache.delete(key);
+      }
     }
 
     return tokens;
