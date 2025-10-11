@@ -24,7 +24,7 @@ export function activate(context: vscode.ExtensionContext): void {
         const parser = new HLedgerParser();
         const cache = new SimpleProjectCache();
         globalConfig = new HLedgerConfig(parser, cache);
-        
+
         // Register strict completion provider with necessary triggers
         // VS Code requires explicit triggers - 24x7 IntelliSense doesn't work automatically
         const strictProvider = new StrictCompletionProvider(globalConfig);
@@ -41,7 +41,7 @@ export function activate(context: vscode.ExtensionContext): void {
             )
         );
 
-  
+
         // Register formatting providers for hledger files
         registerFormattingProviders(context);
 
@@ -53,11 +53,21 @@ export function activate(context: vscode.ExtensionContext): void {
         const tabCommand = new HLedgerTabCommand();
         context.subscriptions.push(tabCommand);
 
-        // Register semantic tokens provider for dynamic coloring
+        // Register semantic tokens provider for dynamic coloring with range support
+        const semanticProvider = new HledgerSemanticTokensProvider();
         context.subscriptions.push(
             vscode.languages.registerDocumentSemanticTokensProvider(
                 { language: 'hledger' },
-                new HledgerSemanticTokensProvider(),
+                semanticProvider,
+                HLEDGER_SEMANTIC_TOKENS_LEGEND
+            )
+        );
+
+        // Also register range provider for better performance on large files
+        context.subscriptions.push(
+            vscode.languages.registerDocumentRangeSemanticTokensProvider(
+                { language: 'hledger' },
+                semanticProvider,
                 HLEDGER_SEMANTIC_TOKENS_LEGEND
             )
         );
@@ -76,7 +86,7 @@ export function activate(context: vscode.ExtensionContext): void {
         watcher.onDidDelete(onFsChange, null, context.subscriptions);
         context.subscriptions.push(watcher);
 
-  
+
         // Register manual completion commands
         context.subscriptions.push(
             vscode.commands.registerCommand('hledger.triggerDateCompletion', () => {
@@ -90,9 +100,9 @@ export function activate(context: vscode.ExtensionContext): void {
             })
         );
 
-    
+
         // Extension activation complete
-        
+
     } catch (error) {
         console.error('HLedger extension activation failed:', error);
     }
@@ -116,7 +126,7 @@ export function getConfig(document: vscode.TextDocument): HLedgerConfig {
         const cache = new SimpleProjectCache();
         globalConfig = new HLedgerConfig(parser, cache);
     }
-    
+
     globalConfig.getConfigForDocument(document);
     return globalConfig;
 }

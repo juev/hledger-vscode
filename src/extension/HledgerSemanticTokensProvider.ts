@@ -28,10 +28,68 @@ export const HLEDGER_SEMANTIC_TOKENS_LEGEND = new vscode.SemanticTokensLegend([.
 /**
  * Provides semantic tokens for key hledger constructs, complementing TextMate grammar.
  * Designed to be conservative and fast; it highlights the most important entities.
+ * Supports both full-document and range-based tokenization for better performance.
  */
-export class HledgerSemanticTokensProvider implements vscode.DocumentSemanticTokensProvider {
+export class HledgerSemanticTokensProvider implements vscode.DocumentSemanticTokensProvider, vscode.DocumentRangeSemanticTokensProvider {
+  private tokenCache = new Map<string, { version: number; tokens: vscode.SemanticTokens }>();
+
   provideDocumentSemanticTokens(document: vscode.TextDocument): vscode.ProviderResult<vscode.SemanticTokens> {
+    // Check if semantic highlighting is enabled
+    const config = vscode.workspace.getConfiguration('hledger', document.uri);
+    const enabled = config.get<boolean>('semanticHighlighting.enabled', true);
+
+    if (!enabled) {
+      // Return empty tokens if disabled - fall back to TextMate grammar
+      return new vscode.SemanticTokensBuilder(HLEDGER_SEMANTIC_TOKENS_LEGEND).build();
+    }
+
+    // Check cache first
+    const cacheKey = document.uri.toString();
+    const cached = this.tokenCache.get(cacheKey);
+    if (cached && cached.version === document.version) {
+      return cached.tokens;
+    }
+
+    const tokens = this.buildTokens(document);
+
+    // Cache the result
+    this.tokenCache.set(cacheKey, { version: document.version, tokens });
+
+    // Limit cache size to prevent memory leaks
+    // When limit is exceeded, remove 25% of oldest entries for better cache management
+    if (this.tokenCache.size > 20) {
+      const entriesToRemove = Math.max(1, Math.floor(this.tokenCache.size * 0.25));
+      const keys = Array.from(this.tokenCache.keys());
+      for (let i = 0; i < entriesToRemove && i < keys.length; i++) {
+        const key = keys[i];
+        if (key) this.tokenCache.delete(key);
+      }
+    }
+
+    return tokens;
+  }
+
+  provideDocumentRangeSemanticTokens(
+    document: vscode.TextDocument,
+    range: vscode.Range
+  ): vscode.ProviderResult<vscode.SemanticTokens> {
+    // Check if semantic highlighting is enabled
+    const config = vscode.workspace.getConfiguration('hledger', document.uri);
+    const enabled = config.get<boolean>('semanticHighlighting.enabled', true);
+
+    if (!enabled) {
+      // Return empty tokens if disabled
+      return new vscode.SemanticTokensBuilder(HLEDGER_SEMANTIC_TOKENS_LEGEND).build();
+    }
+
+    return this.buildTokens(document, range);
+  }
+
+  private buildTokens(document: vscode.TextDocument, range?: vscode.Range): vscode.SemanticTokens {
     const builder = new vscode.SemanticTokensBuilder(HLEDGER_SEMANTIC_TOKENS_LEGEND);
+
+    const startLine = range?.start.line ?? 0;
+    const endLine = range?.end.line ?? document.lineCount - 1;
 
     // Common regex helpers (kept simple for performance/readability)
     const urlRe = /\b(?:https?|ftp):\/\/[^\s,;]+/g;
@@ -58,7 +116,7 @@ export class HledgerSemanticTokensProvider implements vscode.DocumentSemanticTok
     // Commodity followed by amount (prefix form)
     const amountPrefixRe = /([\p{L}\p{N}\p{Sc}]+|"[^"]+")\s*([-+]?(?:\d{1,3}(?:[\s,']\d{3})*|\d+)(?:[.,]\d+)?)/gu;
 
-    for (let line = 0; line < document.lineCount; line++) {
+    for (let line = startLine; line <= endLine && line < document.lineCount; line++) {
       const text = document.lineAt(line).text;
       const trimmed = text.trimStart();
 
@@ -101,6 +159,10 @@ export class HledgerSemanticTokensProvider implements vscode.DocumentSemanticTok
       const inlineIdx = text.indexOf(';');
       if (inlineIdx >= 0) {
         this.push(builder, line, inlineIdx, text.length - inlineIdx, 'comment');
+        // Search for tags and links inside inline comments
+        const commentText = text.slice(inlineIdx);
+        this.pushAllMatchesWithOffset(builder, line, commentText, inlineIdx, urlRe, 'link');
+        this.pushTagKeysInSection(builder, line, commentText, inlineIdx, tagRe);
       }
 
       // 4) Directives (account, alias, commodity, include, P, D, Y, payee, tag, ...)
@@ -156,18 +218,23 @@ export class HledgerSemanticTokensProvider implements vscode.DocumentSemanticTok
       const timeclock = opTimeclockRe.exec(text);
       if (timeclock && typeof timeclock[1] === 'string') this.push(builder, line, timeclock.index, timeclock[1].length, 'operator');
 
-      // 7) Dates, times, code, tags, links, notes elsewhere on the line
+      // 7) Dates, times, code, links, notes elsewhere on the line
       this.pushAllMatches(builder, line, text, dateRe, 'date');
       this.pushAllMatches(builder, line, text, timeRe, 'time');
       this.pushAllMatches(builder, line, text, /\([^)]+\)/g, 'code');
       this.pushAllMatches(builder, line, text, urlRe, 'link');
-      this.pushTagKeys(builder, line, text, tagRe);
 
-      // Note content after pipe
+      // Tags should only be highlighted in comments and notes, not in account names
+      // Comments are already handled above, so we only need to check notes after |
       const pipeIdx = text.indexOf('|');
       if (pipeIdx >= 0 && (inlineIdx < 0 || pipeIdx < inlineIdx)) {
         const noteText = text.slice(pipeIdx + 1).trimStart();
-        if (noteText.length > 0) this.push(builder, line, pipeIdx + 1 + (text.length - (pipeIdx + 1) - noteText.length), noteText.length, 'note');
+        const noteStart = pipeIdx + 1 + (text.length - (pipeIdx + 1) - noteText.length);
+        if (noteText.length > 0) {
+          this.push(builder, line, noteStart, noteText.length, 'note');
+          // Search for tags only within the note section
+          this.pushTagKeysInSection(builder, line, noteText, noteStart, tagRe);
+        }
       }
     }
 
@@ -243,6 +310,21 @@ export class HledgerSemanticTokensProvider implements vscode.DocumentSemanticTok
     while ((m = tagRe.exec(text))) {
       const key = m[1];
       if (key) this.push(builder, line, m.index, key.length, 'tag');
+    }
+  }
+
+  private pushTagKeysInSection(
+    builder: vscode.SemanticTokensBuilder,
+    line: number,
+    text: string,
+    offset: number,
+    tagRe: RegExp
+  ): void {
+    tagRe.lastIndex = 0;
+    let m: RegExpExecArray | null;
+    while ((m = tagRe.exec(text))) {
+      const key = m[1];
+      if (key) this.push(builder, line, offset + m.index, key.length, 'tag');
     }
   }
 
