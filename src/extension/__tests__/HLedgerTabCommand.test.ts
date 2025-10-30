@@ -184,6 +184,30 @@ describe('HLedgerTabCommand', () => {
             expect(result.shouldAlign).toBe(true);
             expect(result.type).toBe('move_to_amount_position');
         });
+
+        it('should not align for invalid account starting with colon', () => {
+            mockDocument.lineAt.mockReturnValue({
+                text: '    :InvalidAccount',
+                lineNumber: 1
+            });
+
+            const position = new vscode.Position(0, 18);
+            const result = tabCommand['analyzeTabContext'](mockDocument, position);
+
+            expect(result.shouldAlign).toBe(false);
+        });
+
+        it('should not align for comment lines with colons', () => {
+            mockDocument.lineAt.mockReturnValue({
+                text: '    ; comment: something',
+                lineNumber: 1
+            });
+
+            const position = new vscode.Position(0, 23);
+            const result = tabCommand['analyzeTabContext'](mockDocument, position);
+
+            expect(result.shouldAlign).toBe(false);
+        });
     });
 
     describe('extractAccountName', () => {
