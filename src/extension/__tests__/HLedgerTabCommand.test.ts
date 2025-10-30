@@ -158,6 +158,32 @@ describe('HLedgerTabCommand', () => {
             expect(result.shouldAlign).toBe(true);
             expect(result.type).toBe('move_to_amount_position');
         });
+
+        it('should detect context after account name with spaces', () => {
+            mockDocument.lineAt.mockReturnValue({
+                text: '    Assets:Bank Account',
+                lineNumber: 1
+            });
+
+            const position = new vscode.Position(0, 23);
+            const result = tabCommand['analyzeTabContext'](mockDocument, position);
+
+            expect(result.shouldAlign).toBe(true);
+            expect(result.type).toBe('move_to_amount_position');
+        });
+
+        it('should detect context after account name with multiple spaces', () => {
+            mockDocument.lineAt.mockReturnValue({
+                text: '    Expenses:Grocery Store',
+                lineNumber: 1
+            });
+
+            const position = new vscode.Position(0, 26);
+            const result = tabCommand['analyzeTabContext'](mockDocument, position);
+
+            expect(result.shouldAlign).toBe(true);
+            expect(result.type).toBe('move_to_amount_position');
+        });
     });
 
     describe('extractAccountName', () => {
@@ -180,6 +206,20 @@ describe('HLedgerTabCommand', () => {
             const result = tabCommand['extractAccountName'](line);
 
             expect(result).toBe('Assets:Cash:Bank');
+        });
+
+        it('should handle account names with spaces', () => {
+            const line = '    Assets:Bank Account    500.00';
+            const result = tabCommand['extractAccountName'](line);
+
+            expect(result).toBe('Assets:Bank Account');
+        });
+
+        it('should handle account names with multiple spaces in name', () => {
+            const line = '    Expenses:Grocery Store    100.00';
+            const result = tabCommand['extractAccountName'](line);
+
+            expect(result).toBe('Expenses:Grocery Store');
         });
 
         it('should return null for empty line', () => {
