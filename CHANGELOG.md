@@ -1,5 +1,13 @@
 # Change Log
 
+## [0.3.11] - 2025-10-30
+
+### Added
+- feat: enhance tab alignment logic to support accounts ending with a colon or space and add related tests
+- feat: improve tab alignment logic to exclude comments and invalid account patterns
+- feat: enhance tab handling for account names with spaces and add corresponding tests
+
+
 ## [0.3.10] - 2025-10-11
 
 ### Added
