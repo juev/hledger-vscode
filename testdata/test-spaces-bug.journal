@@ -1,0 +1,19 @@
+; Test file for account names with spaces - Tab and highlighting bugs
+; Issue 1: Tab key should move to amount position after account name with spaces
+; Issue 2: Multiple spaces before amount should not be highlighted as account name
+
+2025-10-30 * Test Transaction with Spaces in Account Names
+    ; Type "Assets:Bank Account" and press Tab - should move to amount position, not insert tab
+    Assets:Bank Account
+    ; Type "Expenses:Grocery Store" and press Tab
+    Expenses:Grocery Store
+    
+2025-10-30 * Test Highlighting with Spaces
+    ; After account name, add multiple spaces then type numbers - they should be highlighted as amounts, not account names
+    Assets:Cash                         100 USD
+    Expenses:Food Store                 50 USD
+
+2025-10-30 * Test Without Spaces (Working Case)
+    ; This should work correctly
+    Assets:Cash
+    Expenses:Food

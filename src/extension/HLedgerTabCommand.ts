@@ -74,7 +74,11 @@ export class HLedgerTabCommand implements vscode.Disposable {
 
         // Case 2: Right after account name (most common case)
         // Pattern: "    Expenses:Food" -> cursor here OR "    Assets:Cash" -> cursor here
-        if (textBeforeCursor.match(/^\s+\S+.*:\S*$/)) {
+        // Updated to support account names with spaces: "    Assets:Bank Account"
+        // Account names must start with a non-whitespace character and contain at least one colon
+        // Excludes comments (starting with ; or #) and invalid patterns
+        // Allow zero or more characters after the colon to support accounts like "Assets:" or "Assets: "
+        if (textBeforeCursor.match(/^\s+[^;#\s:].*:.*$/)) {
             return {
                 shouldAlign: true,
                 type: TabActionType.MOVE_TO_AMOUNT_POSITION,
@@ -96,7 +100,11 @@ export class HLedgerTabCommand implements vscode.Disposable {
 
         // Case 4: Single space after account name
         // Pattern: "    Expenses:Food " -> cursor here
-        if (textBeforeCursor.match(/^\s+\S+.*:\S*\s$/)) {
+        // Updated to support account names with spaces: "    Assets:Bank Account "
+        // Account names must start with a non-whitespace character and contain at least one colon
+        // Excludes comments (starting with ; or #) and invalid patterns
+        // Allow zero or more characters after the colon to support accounts like "Assets: "
+        if (textBeforeCursor.match(/^\s+[^;#\s:].*:.*\s$/)) {
             return {
                 shouldAlign: true,
                 type: TabActionType.MOVE_TO_AMOUNT_POSITION,
