@@ -77,7 +77,8 @@ export class HLedgerTabCommand implements vscode.Disposable {
         // Updated to support account names with spaces: "    Assets:Bank Account"
         // Account names must start with a non-whitespace character and contain at least one colon
         // Excludes comments (starting with ; or #) and invalid patterns
-        if (textBeforeCursor.match(/^\s+[^;#\s:].*:.+$/)) {
+        // Allow zero or more characters after the colon to support accounts like "Assets:" or "Assets: "
+        if (textBeforeCursor.match(/^\s+[^;#\s:].*:.*$/)) {
             return {
                 shouldAlign: true,
                 type: TabActionType.MOVE_TO_AMOUNT_POSITION,
@@ -102,7 +103,8 @@ export class HLedgerTabCommand implements vscode.Disposable {
         // Updated to support account names with spaces: "    Assets:Bank Account "
         // Account names must start with a non-whitespace character and contain at least one colon
         // Excludes comments (starting with ; or #) and invalid patterns
-        if (textBeforeCursor.match(/^\s+[^;#\s:].*:.+\s$/)) {
+        // Allow zero or more characters after the colon to support accounts like "Assets: "
+        if (textBeforeCursor.match(/^\s+[^;#\s:].*:.*\s$/)) {
             return {
                 shouldAlign: true,
                 type: TabActionType.MOVE_TO_AMOUNT_POSITION,

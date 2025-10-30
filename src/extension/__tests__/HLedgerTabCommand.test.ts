@@ -208,6 +208,32 @@ describe('HLedgerTabCommand', () => {
 
             expect(result.shouldAlign).toBe(false);
         });
+
+        it('should detect context when account ends with colon', () => {
+            mockDocument.lineAt.mockReturnValue({
+                text: '    Assets:',
+                lineNumber: 1
+            });
+
+            const position = new vscode.Position(0, 12);
+            const result = tabCommand['analyzeTabContext'](mockDocument, position);
+
+            expect(result.shouldAlign).toBe(true);
+            expect(result.type).toBe('move_to_amount_position');
+        });
+
+        it('should detect context when account ends with colon and space', () => {
+            mockDocument.lineAt.mockReturnValue({
+                text: '    Assets: ',
+                lineNumber: 1
+            });
+
+            const position = new vscode.Position(0, 13);
+            const result = tabCommand['analyzeTabContext'](mockDocument, position);
+
+            expect(result.shouldAlign).toBe(true);
+            expect(result.type).toBe('move_to_amount_position');
+        });
     });
 
     describe('extractAccountName', () => {
