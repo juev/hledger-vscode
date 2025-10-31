@@ -1,5 +1,11 @@
 # Change Log
 
+## [0.3.12] - 2025-10-31
+
+### Fixed
+- fix: update completion item provider triggers to exclude space for account and currency completions
+
+
 ## [0.3.11] - 2025-10-30
 
 ### Added
