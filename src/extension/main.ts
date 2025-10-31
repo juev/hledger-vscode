@@ -32,9 +32,8 @@ export function activate(context: vscode.ExtensionContext): void {
             vscode.languages.registerCompletionItemProvider(
                 'hledger',
                 strictProvider,
-                // Triggers for different completion contexts:
+                // Triggers for different completion contexts (space intentionally excluded):
                 '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',  // Date completion at line start
-                ' ',  // After date for accounts, after amount for currencies
                 ':',  // Account hierarchy
                 '@',  // Commodities
                 ';'   // Comments (future use)
