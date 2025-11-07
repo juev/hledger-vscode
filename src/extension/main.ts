@@ -13,6 +13,9 @@ import { SimpleFuzzyMatcher } from './SimpleFuzzyMatcher';
 import { createCacheKey } from './types';
 import { registerFormattingProviders } from './HLedgerFormattingProvider';
 import { HledgerSemanticTokensProvider, HLEDGER_SEMANTIC_TOKENS_LEGEND } from './HledgerSemanticTokensProvider';
+import { HledgerCliService } from './cli/HledgerCliService';
+import { DashboardDataService } from './dashboard/DashboardDataService';
+import { FinancialDashboardViewProvider } from './dashboard/FinancialDashboardViewProvider';
 
 // Global instances for simplified architecture
 let globalConfig: HLedgerConfig;
@@ -96,6 +99,31 @@ export function activate(context: vscode.ExtensionContext): void {
         context.subscriptions.push(
             vscode.commands.registerCommand('hledger.triggerAccountCompletion', () => {
                 vscode.commands.executeCommand('editor.action.triggerSuggest');
+            })
+        );
+
+        // Register dashboard provider and refresh command
+        const cliService = new HledgerCliService();
+        const dashboardDataService = new DashboardDataService(cliService);
+        const dashboardProvider = new FinancialDashboardViewProvider(context, dashboardDataService);
+
+        context.subscriptions.push(
+            cliService,
+            dashboardProvider,
+            vscode.window.registerWebviewViewProvider(
+                FinancialDashboardViewProvider.viewType,
+                dashboardProvider,
+                {
+                    webviewOptions: {
+                        retainContextWhenHidden: true
+                    }
+                }
+            )
+        );
+
+        context.subscriptions.push(
+            vscode.commands.registerCommand('hledger.dashboard.refresh', async () => {
+                await dashboardProvider.refresh();
             })
         );
 

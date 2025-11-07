@@ -80,14 +80,72 @@
           "minimum": 5,
           "maximum": 50,
           "description": "Maximum number of account completion items to show (accounts are hierarchical, so more items are useful)"
+          },
+          "hledger.cli.path": {
+            "type": "string",
+            "default": "hledger",
+            "description": "Path to the hledger executable used for CLI integrations. Provide an absolute path if the command is not in PATH."
+          },
+          "hledger.cli.defaultJournal": {
+            "type": "string",
+            "default": "",
+            "description": "Optional journal file path passed to hledger via -f. When empty, the extension attempts to detect journal files automatically."
+          },
+          "hledger.cli.timeout": {
+            "type": "number",
+            "default": 10000,
+            "minimum": 1000,
+            "maximum": 60000,
+            "description": "Timeout in milliseconds for hledger CLI commands triggered by the dashboard and other integrations."
+          },
+          "hledger.dashboard.autoRefreshInterval": {
+            "type": "number",
+            "default": 300,
+            "minimum": 0,
+            "maximum": 3600,
+            "description": "Automatic refresh interval for the financial dashboard in seconds. Set to 0 to disable automatic refresh."
+          },
+          "hledger.dashboard.recentDays": {
+            "type": "number",
+            "default": 14,
+            "minimum": 1,
+            "maximum": 365,
+            "description": "Number of days to include when showing recent transactions in the financial dashboard."
+          },
+          "hledger.dashboard.maxRecentTransactions": {
+            "type": "number",
+            "default": 10,
+            "minimum": 1,
+            "maximum": 100,
+            "description": "Maximum number of recent transactions rendered in the financial dashboard."
+          }
         }
-      }
-    },
-    "semanticTokenTypes": [
-      {
-        "id": "account",
-        "description": "HLedger account names"
       },
+      "viewsContainers": {
+        "secondarySideBar": [
+          {
+            "id": "hledgerFinance",
+            "title": "HLedger Finance",
+            "icon": "images/icon.png"
+          }
+        ]
+      },
+      "views": {
+        "hledgerFinance": [
+          {
+            "id": "hledger.dashboardView",
+            "name": "Financial Dashboard",
+            "type": "webview",
+            "icon": "$(graph)",
+            "contextualTitle": "HLedger Financial Dashboard"
+          }
+        ]
+      },
+      "semanticTokenTypes": [
+        {
+          "id": "account",
+          "description": "HLedger account names"
+        },
       {
         "id": "amount",
         "description": "HLedger amounts"
@@ -141,37 +199,51 @@
         "description": "HLedger links"
       }
     ],
-    "commands": [
-      {
-        "command": "hledger.onEnter",
-        "title": "HLedger: Smart Enter",
-        "category": "HLedger",
-        "when": "editorTextFocus && editorLangId == hledger"
+      "commands": [
+        {
+          "command": "hledger.onEnter",
+          "title": "HLedger: Smart Enter",
+          "category": "HLedger",
+          "when": "editorTextFocus && editorLangId == hledger"
+        },
+        {
+          "command": "hledger.onTab",
+          "title": "HLedger: Smart Tab for Amount Alignment",
+          "category": "HLedger",
+          "when": "editorTextFocus && editorLangId == hledger"
+        },
+        {
+          "command": "hledger.dashboard.refresh",
+          "title": "HLedger: Refresh Financial Dashboard",
+          "category": "HLedger"
+        }
+      ],
+      "keybindings": [
+        {
+          "command": "acceptSelectedSuggestion",
+          "key": "enter",
+          "when": "editorTextFocus && editorLangId == hledger && suggestWidgetVisible"
+        },
+        {
+          "command": "hledger.onEnter",
+          "key": "enter",
+          "when": "editorTextFocus && editorLangId == hledger && !suggestWidgetVisible && !inSnippetMode && !parameterHintsVisible && config.hledger.smartIndent.enabled"
+        },
+        {
+          "command": "hledger.onTab",
+          "key": "tab",
+          "when": "editorTextFocus && editorLangId == hledger && !suggestWidgetVisible && !inSnippetMode && !parameterHintsVisible"
+        }
+      ],
+      "menus": {
+        "view/title": [
+          {
+            "command": "hledger.dashboard.refresh",
+            "when": "view == hledger.dashboardView",
+            "group": "navigation"
+          }
+        ]
       },
-      {
-        "command": "hledger.onTab",
-        "title": "HLedger: Smart Tab for Amount Alignment",
-        "category": "HLedger",
-        "when": "editorTextFocus && editorLangId == hledger"
-      }
-    ],
-    "keybindings": [
-      {
-        "command": "acceptSelectedSuggestion",
-        "key": "enter",
-        "when": "editorTextFocus && editorLangId == hledger && suggestWidgetVisible"
-      },
-      {
-        "command": "hledger.onEnter",
-        "key": "enter",
-        "when": "editorTextFocus && editorLangId == hledger && !suggestWidgetVisible && !inSnippetMode && !parameterHintsVisible && config.hledger.smartIndent.enabled"
-      },
-      {
-        "command": "hledger.onTab",
-        "key": "tab",
-        "when": "editorTextFocus && editorLangId == hledger && !suggestWidgetVisible && !inSnippetMode && !parameterHintsVisible"
-      }
-    ],
     "configurationDefaults": {
       "files.associations": {
         "*.journal": "hledger",
