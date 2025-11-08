@@ -74,13 +74,23 @@
           "maximum": 50,
           "description": "Maximum number of completion items to show"
         },
-        "hledger.autoCompletion.maxAccountResults": {
-          "type": "number",
-          "default": 30,
-          "minimum": 5,
-          "maximum": 50,
-          "description": "Maximum number of account completion items to show (accounts are hierarchical, so more items are useful)"
-        }
+         "hledger.autoCompletion.maxAccountResults": {
+           "type": "number",
+           "default": 30,
+           "minimum": 5,
+           "maximum": 50,
+           "description": "Maximum number of account completion items to show (accounts are hierarchical, so more items are useful)"
+         },
+         "hledger.cli.path": {
+           "type": "string",
+           "default": "",
+           "description": "Path to hledger executable. If empty, will search in system PATH"
+         },
+         "hledger.cli.journalFile": {
+           "type": "string",
+           "default": "",
+           "description": "Path to the main hledger journal file. If empty, will try to use LEDGER_FILE environment variable or current file"
+         }
       }
     },
     "semanticTokenTypes": [
@@ -141,20 +151,38 @@
         "description": "HLedger links"
       }
     ],
-    "commands": [
-      {
-        "command": "hledger.onEnter",
-        "title": "HLedger: Smart Enter",
-        "category": "HLedger",
-        "when": "editorTextFocus && editorLangId == hledger"
-      },
-      {
-        "command": "hledger.onTab",
-        "title": "HLedger: Smart Tab for Amount Alignment",
-        "category": "HLedger",
-        "when": "editorTextFocus && editorLangId == hledger"
-      }
-    ],
+     "commands": [
+       {
+         "command": "hledger.onEnter",
+         "title": "HLedger: Smart Enter",
+         "category": "HLedger",
+         "when": "editorTextFocus && editorLangId == hledger"
+       },
+       {
+         "command": "hledger.onTab",
+         "title": "HLedger: Smart Tab for Amount Alignment",
+         "category": "HLedger",
+         "when": "editorTextFocus && editorLangId == hledger"
+       },
+       {
+         "command": "hledger.cli.balance",
+         "title": "HLedger: Insert Balance Report",
+         "category": "HLedger",
+         "when": "editorTextFocus && editorLangId == hledger"
+       },
+       {
+         "command": "hledger.cli.stats",
+         "title": "HLedger: Insert Statistics Report",
+         "category": "HLedger",
+         "when": "editorTextFocus && editorLangId == hledger"
+       },
+       {
+         "command": "hledger.cli.incomestatement",
+         "title": "HLedger: Insert Income Statement",
+         "category": "HLedger",
+         "when": "editorTextFocus && editorLangId == hledger"
+       }
+     ],
     "keybindings": [
       {
         "command": "acceptSelectedSuggestion",

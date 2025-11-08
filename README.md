@@ -21,6 +21,7 @@ Visual Studio Code extension providing syntax highlighting, intelligent code com
   - **Directive Completion**: hledger directive suggestions
 - **Smart Indentation**: Automatic indentation for transactions and postings with Enter key
 - **Document Formatting**: Comprehensive formatting on save including amount alignment, comment alignment, and proper indentation
+- **CLI Integration**: Direct integration with hledger CLI for inserting reports and statistics as comments
 - **Context-Aware Completion**: Strict position analysis for accurate suggestions
 - **Multi-language Support**: Full Unicode support including Cyrillic characters
 - **Project-Based Caching**: Efficient workspace parsing and caching
@@ -36,6 +37,7 @@ Visual Studio Code extension providing syntax highlighting, intelligent code com
 
 - Visual Studio Code 1.75.0 or higher
 - Node.js 16.x or higher
+- [hledger](https://hledger.org/install.html) (optional, for CLI integration features)
 
 ## Installation
 
@@ -98,7 +100,7 @@ The extension provides comprehensive document formatting for hledger files to im
 
 *Before formatting:*
 
-```
+```hledger
 2025-01-15 * Coffee shop
   Expenses:Food:Coffee    $4.50
   Assets:Cash  -4.50
@@ -110,7 +112,7 @@ The extension provides comprehensive document formatting for hledger files to im
 
 *After formatting:*
 
-```
+```hledger
 2025-01-15 * Coffee shop
   Expenses:Food:Coffee        $4.50
   Assets:Cash               -4.50
@@ -124,7 +126,7 @@ The extension provides comprehensive document formatting for hledger files to im
 
 *Before formatting:*
 
-```
+```hledger
 2025-01-20 * Currency Exchange
     Assets:USD              100 USD @ 95.50 RUB
     Assets:RUB              -9550 RUB
@@ -132,7 +134,7 @@ The extension provides comprehensive document formatting for hledger files to im
 
 *After formatting:*
 
-```
+```hledger
 2025-01-20 * Currency Exchange
     Assets:USD          100 USD @ 95.50 RUB
     Assets:RUB         -9550 RUB
@@ -142,7 +144,7 @@ The extension provides comprehensive document formatting for hledger files to im
 
 *Before formatting:*
 
-```
+```hledger
 2024-01-17 Mixed Format Transaction
     Assets:Checking       1 234,56 EUR
     Assets:Savings          987.65 USD
@@ -151,7 +153,7 @@ The extension provides comprehensive document formatting for hledger files to im
 
 *After formatting:*
 
-```
+```hledger
 2024-01-17 Mixed Format Transaction
     Assets:Checking     1 234,56 EUR
     Assets:Savings        987.65 USD
@@ -162,7 +164,7 @@ The extension provides comprehensive document formatting for hledger files to im
 
 *Before formatting:*
 
-```
+```hledger
 2025-01-21 Balance Check
     Assets:Checking         = 2500.00 RUB
     Assets:Savings          == 10000.00 RUB
@@ -170,7 +172,7 @@ The extension provides comprehensive document formatting for hledger files to im
 
 *After formatting:*
 
-```
+```hledger
 2025-01-21 Balance Check
     Assets:Checking      = 2500.00 RUB
     Assets:Savings      == 10000.00 RUB
@@ -180,7 +182,7 @@ The extension provides comprehensive document formatting for hledger files to im
 
 *Before formatting:*
 
-```
+```hledger
 2025-01-22 Shopping with various accounts
   Assets:My Bank Account    100 USD    ; Initial balance
   Expenses:Food:Groceries Store    -50 USD  ; Weekly shopping
@@ -190,7 +192,7 @@ The extension provides comprehensive document formatting for hledger files to im
 
 *After formatting:*
 
-```
+```hledger
 2025-01-22 Shopping with various accounts
     Assets:My Bank Account                100 USD  ; Initial balance
     Expenses:Food:Groceries Store        -50 USD  ; Weekly shopping
@@ -209,6 +211,55 @@ The extension provides comprehensive document formatting for hledger files to im
 - **Undo Support**: All formatting operations can be undone using VS Code's standard undo functionality after save
 - **Automatic Detection**: The extension automatically detects transaction boundaries and formats amounts within each transaction independently
 - **Performance**: Since formatting only occurs on save, there's no performance impact during normal editing
+
+## CLI Integration
+
+The extension provides seamless integration with hledger CLI commands, allowing you to insert financial reports and statistics directly into your journal files as formatted comments.
+
+### Available Commands
+
+- **Balance Sheet** (`hledger.cli.balance`): Inserts a Balance Sheet report showing assets, liabilities, and net worth
+- **Income Statement** (`hledger.cli.incomestatement`): Inserts an Income Statement showing revenues and expenses
+- **Statistics** (`hledger.cli.stats`): Inserts file statistics including transaction counts, date ranges, and performance metrics
+
+### Usage
+
+1. Open a hledger journal file
+2. Place cursor where you want to insert the report
+3. Open Command Palette (Ctrl+Shift+P)
+4. Search for "HLedger: Insert" and select the desired report
+5. The report will be inserted as formatted comments at cursor position
+
+### Journal File Resolution
+
+The extension automatically determines which journal file to use for CLI commands with this priority:
+
+1. **LEDGER_FILE environment variable** (highest priority)
+2. **hledger.cli.journalFile setting** in VS Code configuration
+3. **Current open file** (fallback)
+
+### Example Output
+
+```hledger
+; hledger bs - 2025-11-08
+; ==================================================
+; Balance Sheet 2025-01-04
+;              ||  2025-01-04
+; =============++=============
+;  Assets      ||
+; -------------++-------------
+;  Assets:Bank || 2450.00 USD
+; -------------++-------------
+;              || 2450.00 USD
+; =============++=============
+;  Liabilities ||
+; -------------++-------------
+; -------------++-------------
+;              ||           0
+; =============++=============
+;  Net:        || 2450.00 USD
+; ==================================================
+```
 
 ## Configuration
 
@@ -243,6 +294,18 @@ Document formatting is controlled by VS Code's global editor settings:
 - **`editor.formatOnSave`**: Enable automatic formatting when saving any supported file type, including hledger files
 
 Note: This setting must be enabled at the editor level for hledger files to be formatted on save.
+
+### CLI Integration Settings
+
+```json
+{
+    "hledger.cli.path": "",
+    "hledger.cli.journalFile": ""
+}
+```
+
+- **`hledger.cli.path`**: Path to hledger executable. Leave empty to auto-detect from system PATH
+- **`hledger.cli.journalFile`**: Path to your main hledger journal file. Leave empty to use LEDGER_FILE environment variable or current file
 
 ### Syntax Highlighting Colors
 

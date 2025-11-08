@@ -13,9 +13,13 @@ import { SimpleFuzzyMatcher } from './SimpleFuzzyMatcher';
 import { createCacheKey } from './types';
 import { registerFormattingProviders } from './HLedgerFormattingProvider';
 import { HledgerSemanticTokensProvider, HLEDGER_SEMANTIC_TOKENS_LEGEND } from './HledgerSemanticTokensProvider';
+import { HLedgerCliService } from './services/HLedgerCliService';
+import { HLedgerCliCommands } from './HLedgerCliCommands';
 
 // Global instances for simplified architecture
 let globalConfig: HLedgerConfig;
+let cliService: HLedgerCliService;
+let cliCommands: HLedgerCliCommands;
 
 // Main activation function
 export function activate(context: vscode.ExtensionContext): void {
@@ -24,6 +28,11 @@ export function activate(context: vscode.ExtensionContext): void {
         const parser = new HLedgerParser();
         const cache = new SimpleProjectCache();
         globalConfig = new HLedgerConfig(parser, cache);
+
+        // Initialize CLI service and commands
+        cliService = new HLedgerCliService();
+        cliCommands = new HLedgerCliCommands(cliService);
+        context.subscriptions.push(cliService);
 
         // Register strict completion provider with necessary triggers
         // VS Code requires explicit triggers - 24x7 IntelliSense doesn't work automatically
@@ -96,6 +105,25 @@ export function activate(context: vscode.ExtensionContext): void {
         context.subscriptions.push(
             vscode.commands.registerCommand('hledger.triggerAccountCompletion', () => {
                 vscode.commands.executeCommand('editor.action.triggerSuggest');
+            })
+        );
+
+        // Register CLI commands
+        context.subscriptions.push(
+            vscode.commands.registerCommand('hledger.cli.balance', async () => {
+                await cliCommands.insertBalance();
+            })
+        );
+
+        context.subscriptions.push(
+            vscode.commands.registerCommand('hledger.cli.stats', async () => {
+                await cliCommands.insertStats();
+            })
+        );
+
+        context.subscriptions.push(
+            vscode.commands.registerCommand('hledger.cli.incomestatement', async () => {
+                await cliCommands.insertIncomestatement();
             })
         );
 
