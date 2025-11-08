@@ -36,28 +36,8 @@ export class HLedgerCliCommands {
         }
 
         try {
-            // Check if hledger is available
-            const isAvailable = await this.cliService.isHledgerAvailable();
-            if (!isAvailable) {
-                const installMessage = 'hledger CLI not found. Would you like to install it?';
-                const installChoice = await vscode.window.showInformationMessage(
-                    installMessage,
-                    'Open Installation Guide',
-                    'Configure Path'
-                );
-
-                if (installChoice === 'Open Installation Guide') {
-                    vscode.env.openExternal(vscode.Uri.parse('https://hledger.org/install.html'));
-                } else if (installChoice === 'Configure Path') {
-                    const config = vscode.workspace.getConfiguration('hledger');
-                    const customPath = await vscode.window.showInputBox({
-                        prompt: 'Enter the path to hledger executable',
-                        placeHolder: '/usr/local/bin/hledger'
-                    });
-                    if (customPath) {
-                        await config.update('cli.path', customPath, vscode.ConfigurationTarget.Global);
-                    }
-                }
+            const cliAvailable = await this.ensureCliAvailable();
+            if (!cliAvailable) {
                 return;
             }
 
@@ -93,6 +73,55 @@ export class HLedgerCliCommands {
         } catch (error: any) {
             vscode.window.showErrorMessage(`Failed to run hledger ${command}: ${error.message}`);
         }
+    }
+
+    private async ensureCliAvailable(): Promise<boolean> {
+        let isAvailable = await this.cliService.isHledgerAvailable();
+        if (isAvailable) {
+            return true;
+        }
+
+        const installMessage = 'hledger CLI not found. Would you like to install it?';
+
+        while (!isAvailable) {
+            const installChoice = await vscode.window.showInformationMessage(
+                installMessage,
+                'Open Installation Guide',
+                'Configure Path'
+            );
+
+            if (installChoice === 'Open Installation Guide') {
+                void vscode.env.openExternal(vscode.Uri.parse('https://hledger.org/install.html'));
+                return false;
+            }
+
+            if (installChoice === 'Configure Path') {
+                const config = vscode.workspace.getConfiguration('hledger');
+                const customPath = await vscode.window.showInputBox({
+                    prompt: 'Enter the path to hledger executable',
+                    placeHolder: '/usr/local/bin/hledger'
+                });
+
+                const trimmedPath = customPath?.trim();
+                if (!trimmedPath) {
+                    return false;
+                }
+
+                await config.update('cli.path', trimmedPath, vscode.ConfigurationTarget.Global);
+
+                isAvailable = await this.cliService.isHledgerAvailable();
+                if (isAvailable) {
+                    return true;
+                }
+
+                vscode.window.showErrorMessage('Configured hledger path could not be verified. Please check the path and try again.');
+                continue;
+            }
+
+            return false;
+        }
+
+        return true;
     }
 
     private getJournalFilePath(document: vscode.TextDocument): string {
