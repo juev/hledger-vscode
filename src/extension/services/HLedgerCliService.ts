@@ -5,6 +5,7 @@ import * as child_process from 'child_process';
 import { promisify } from 'util';
 
 const exec = promisify(child_process.exec);
+const execFile = promisify(child_process.execFile);
 
 export class HLedgerCliService {
     private hledgerPath: string | null = null;
@@ -48,15 +49,15 @@ export class HLedgerCliService {
         return this.hledgerPath;
     }
 
-    public async executeCommand(command: string, journalFile: string): Promise<string> {
+    public async executeCommand(subcommand: string, journalFile: string, args: string[] = []): Promise<string> {
         const hledgerPath = await this.getHledgerPath();
         if (!hledgerPath) {
             throw new Error('hledger executable not found. Please install hledger or configure the path in settings.');
         }
 
         try {
-            const fullCommand = `"${hledgerPath}" -f "${journalFile}" ${command}`;
-            const { stdout, stderr } = await exec(fullCommand);
+            const cliArgs = ['-f', journalFile, subcommand, ...args];
+            const { stdout, stderr } = await execFile(hledgerPath, cliArgs, { maxBuffer: 10 * 1024 * 1024 });
 
             if (stderr) {
                 console.warn('hledger stderr:', stderr);
@@ -71,16 +72,16 @@ export class HLedgerCliService {
         }
     }
 
-    public async runBalance(journalFile: string, extraArgs: string = ''): Promise<string> {
-        return this.executeCommand(`bs ${extraArgs}`, journalFile);
+    public async runBalance(journalFile: string, extraArgs: string[] = []): Promise<string> {
+        return this.executeCommand('bs', journalFile, extraArgs);
     }
 
     public async runStats(journalFile: string): Promise<string> {
         return this.executeCommand('stats', journalFile);
     }
 
-    public async runIncomestatement(journalFile: string, extraArgs: string = ''): Promise<string> {
-        return this.executeCommand(`incomestatement ${extraArgs}`, journalFile);
+    public async runIncomestatement(journalFile: string, extraArgs: string[] = []): Promise<string> {
+        return this.executeCommand('incomestatement', journalFile, extraArgs);
     }
 
     public formatAsComment(output: string, command: string): string {
