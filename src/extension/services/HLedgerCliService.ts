@@ -24,8 +24,10 @@ export class HLedgerCliService {
 
         // Try to find hledger in PATH
         try {
-            const { stdout } = await exec('which hledger');
-            this.hledgerPath = stdout.trim();
+            const command = process.platform === 'win32' ? 'where hledger' : 'which hledger';
+            const { stdout } = await exec(command);
+            const resolvedPath = stdout.trim().split(/\r?\n/)[0] ?? '';
+            this.hledgerPath = resolvedPath || null;
         } catch (error) {
             // hledger not found in PATH
             this.hledgerPath = null;
