@@ -63,15 +63,27 @@ export class HLedgerCliService implements vscode.Disposable {
     private async resolveHledgerPath(): Promise<string | null> {
         const customPath = vscode.workspace.getConfiguration('hledger').get<string>('cli.path', '').trim();
         if (customPath.length > 0) {
-            return customPath;
+            return this.validateHledgerPath(customPath);
         }
 
         // Try to find hledger in PATH
         try {
             const command = process.platform === 'win32' ? 'where hledger' : 'which hledger';
             const { stdout } = await exec(command);
-            const resolvedPath = stdout.trim().split(/\r?\n/)[0] ?? '';
-            return resolvedPath || null;
+            const candidates = stdout
+                .trim()
+                .split(/\r?\n/)
+                .map(candidate => candidate.trim())
+                .filter(candidate => candidate.length > 0);
+
+            for (const candidate of candidates) {
+                const validatedPath = await this.validateHledgerPath(candidate);
+                if (validatedPath) {
+                    return validatedPath;
+                }
+            }
+
+            return null;
         } catch (error) {
             // hledger not found in PATH
             return null;
@@ -94,6 +106,20 @@ export class HLedgerCliService implements vscode.Disposable {
     public async getHledgerPath(): Promise<string | null> {
         await this.ensureInitialized();
         return this.hledgerPath;
+    }
+
+    private async validateHledgerPath(candidatePath: string): Promise<string | null> {
+        if (!candidatePath) {
+            return null;
+        }
+
+        try {
+            await execFile(candidatePath, ['--version'], { timeout: 5000 });
+            return candidatePath;
+        } catch (error) {
+            console.warn('Failed to validate hledger executable:', error);
+            return null;
+        }
     }
 
     public async executeCommand(subcommand: string, journalFile: string, args: string[] = []): Promise<string> {
