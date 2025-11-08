@@ -10,10 +10,27 @@ const execFile = promisify(child_process.execFile);
 export class HLedgerCliService {
     private hledgerPath: string | null = null;
     private config: vscode.WorkspaceConfiguration;
+    private initializationPromise: Promise<void> | null = null;
 
     constructor() {
         this.config = vscode.workspace.getConfiguration('hledger');
-        this.initializeHledgerPath();
+        void this.ensureInitialized().catch(error => {
+            console.warn('Failed to initialize hledger path during construction:', error);
+        });
+    }
+
+    private async ensureInitialized(): Promise<void> {
+        if (this.hledgerPath !== null) {
+            return;
+        }
+
+        if (!this.initializationPromise) {
+            this.initializationPromise = this.initializeHledgerPath().finally(() => {
+                this.initializationPromise = null;
+            });
+        }
+
+        await this.initializationPromise;
     }
 
     private async initializeHledgerPath(): Promise<void> {
@@ -36,16 +53,12 @@ export class HLedgerCliService {
     }
 
     public async isHledgerAvailable(): Promise<boolean> {
-        if (this.hledgerPath === null) {
-            await this.initializeHledgerPath();
-        }
+        await this.ensureInitialized();
         return this.hledgerPath !== null;
     }
 
     public async getHledgerPath(): Promise<string | null> {
-        if (this.hledgerPath === null) {
-            await this.initializeHledgerPath();
-        }
+        await this.ensureInitialized();
         return this.hledgerPath;
     }
 
