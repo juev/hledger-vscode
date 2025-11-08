@@ -10,6 +10,7 @@ const execFile = promisify(child_process.execFile);
 export class HLedgerCliService implements vscode.Disposable {
     private hledgerPath: string | null = null;
     private initializationPromise: Promise<void> | null = null;
+    private initializationVersion = 0;
     private readonly configChangeDisposable: vscode.Disposable;
 
     constructor() {
@@ -33,20 +34,36 @@ export class HLedgerCliService implements vscode.Disposable {
             return;
         }
 
-        if (!this.initializationPromise) {
-            this.initializationPromise = this.initializeHledgerPath().finally(() => {
-                this.initializationPromise = null;
-            });
-        }
-
-        await this.initializationPromise;
+        await this.startInitialization();
     }
 
-    private async initializeHledgerPath(): Promise<void> {
+    private startInitialization(force = false): Promise<void> {
+        if (!force && this.initializationPromise) {
+            return this.initializationPromise;
+        }
+
+        const version = ++this.initializationVersion;
+        const promise = (async () => {
+            try {
+                const resolvedPath = await this.resolveHledgerPath();
+                if (this.initializationVersion === version) {
+                    this.hledgerPath = resolvedPath;
+                }
+            } finally {
+                if (this.initializationVersion === version) {
+                    this.initializationPromise = null;
+                }
+            }
+        })();
+
+        this.initializationPromise = promise;
+        return promise;
+    }
+
+    private async resolveHledgerPath(): Promise<string | null> {
         const customPath = vscode.workspace.getConfiguration('hledger').get<string>('cli.path', '').trim();
         if (customPath.length > 0) {
-            this.hledgerPath = customPath;
-            return;
+            return customPath;
         }
 
         // Try to find hledger in PATH
@@ -54,17 +71,17 @@ export class HLedgerCliService implements vscode.Disposable {
             const command = process.platform === 'win32' ? 'where hledger' : 'which hledger';
             const { stdout } = await exec(command);
             const resolvedPath = stdout.trim().split(/\r?\n/)[0] ?? '';
-            this.hledgerPath = resolvedPath || null;
+            return resolvedPath || null;
         } catch (error) {
             // hledger not found in PATH
-            this.hledgerPath = null;
+            return null;
         }
     }
 
     private resetHledgerPath(): void {
         this.hledgerPath = null;
-        this.initializationPromise = null;
-        void this.ensureInitialized().catch(error => {
+        const initialization = this.startInitialization(true);
+        void initialization.catch(error => {
             console.warn('Failed to reinitialize hledger path after configuration change:', error);
         });
     }
