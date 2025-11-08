@@ -95,7 +95,6 @@ export class HLedgerCliService {
             if (line.trim()) {
                 comment += `; ${line}\n`;
             }
-            // Skip empty lines to avoid extra spacing
         }
 
         comment += '; ' + '='.repeat(50) + '\n\n';

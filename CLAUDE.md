@@ -48,7 +48,6 @@ src/
 │   ├── HLedgerParser.ts           # File parsing
 │   ├── SimpleProjectCache.ts      # Caching system
 │   ├── HLedgerConfig.ts           # Configuration
-│   ├── HLedgerCliService.ts       # CLI integration service
 │   ├── HLedgerCliCommands.ts      # CLI command handlers
 │   ├── types.ts                   # Type definitions with branded types
 │   ├── services/                  # Service layer
