@@ -32,6 +32,7 @@ export function activate(context: vscode.ExtensionContext): void {
         // Initialize CLI service and commands
         cliService = new HLedgerCliService();
         cliCommands = new HLedgerCliCommands(cliService);
+        context.subscriptions.push(cliService);
 
         // Register strict completion provider with necessary triggers
         // VS Code requires explicit triggers - 24x7 IntelliSense doesn't work automatically

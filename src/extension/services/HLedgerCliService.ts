@@ -7,16 +7,25 @@ import { promisify } from 'util';
 const exec = promisify(child_process.exec);
 const execFile = promisify(child_process.execFile);
 
-export class HLedgerCliService {
+export class HLedgerCliService implements vscode.Disposable {
     private hledgerPath: string | null = null;
-    private config: vscode.WorkspaceConfiguration;
     private initializationPromise: Promise<void> | null = null;
+    private readonly configChangeDisposable: vscode.Disposable;
 
     constructor() {
-        this.config = vscode.workspace.getConfiguration('hledger');
+        this.configChangeDisposable = vscode.workspace.onDidChangeConfiguration(event => {
+            if (event.affectsConfiguration('hledger.cli.path')) {
+                this.resetHledgerPath();
+            }
+        });
+
         void this.ensureInitialized().catch(error => {
             console.warn('Failed to initialize hledger path during construction:', error);
         });
+    }
+
+    public dispose(): void {
+        this.configChangeDisposable.dispose();
     }
 
     private async ensureInitialized(): Promise<void> {
@@ -34,7 +43,7 @@ export class HLedgerCliService {
     }
 
     private async initializeHledgerPath(): Promise<void> {
-        const customPath = this.config.get<string>('cli.path', '');
+        const customPath = vscode.workspace.getConfiguration('hledger').get<string>('cli.path', '');
         if (customPath) {
             this.hledgerPath = customPath;
             return;
@@ -50,6 +59,14 @@ export class HLedgerCliService {
             // hledger not found in PATH
             this.hledgerPath = null;
         }
+    }
+
+    private resetHledgerPath(): void {
+        this.hledgerPath = null;
+        this.initializationPromise = null;
+        void this.ensureInitialized().catch(error => {
+            console.warn('Failed to reinitialize hledger path after configuration change:', error);
+        });
     }
 
     public async isHledgerAvailable(): Promise<boolean> {
