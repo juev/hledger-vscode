@@ -43,8 +43,8 @@ export class HLedgerCliService implements vscode.Disposable {
     }
 
     private async initializeHledgerPath(): Promise<void> {
-        const customPath = vscode.workspace.getConfiguration('hledger').get<string>('cli.path', '');
-        if (customPath) {
+        const customPath = vscode.workspace.getConfiguration('hledger').get<string>('cli.path', '').trim();
+        if (customPath.length > 0) {
             this.hledgerPath = customPath;
             return;
         }
