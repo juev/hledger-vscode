@@ -1,5 +1,25 @@
 # Change Log
 
+## [0.3.13] - 2025-11-08
+
+### Added
+- feat: add hledger cli integrations
+
+### Changed
+- refactor: enhance hledger path resolution by validating candidates for improved reliability
+- refactor: enhance initialization logic in HLedgerCliService to support forced reinitialization and version tracking
+- refactor: enhance hledger CLI availability check by consolidating logic into ensureCliAvailable method
+- refactor: trim whitespace in custom hledger path configuration for improved validation
+- refactor: implement disposable pattern in HLedgerCliService for configuration change handling
+- refactor: update command handling in HLedgerCliCommands to use shorthand command names for improved clarity
+- refactor: improve initialization logic in HLedgerCliService for better error handling and asynchronous path resolution
+- refactor: remove unused HLedgerCliService.ts file reference and clean up comments
+- refactor: update executeCommand to accept subcommands and arguments for improved flexibility
+
+### Fixed
+- fix: improve hledger path resolution for cross-platform compatibility
+
+
 ## [0.3.12] - 2025-10-31
 
 ### Fixed
