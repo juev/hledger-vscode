@@ -35,11 +35,52 @@ export interface StrictCompletionContext {
     position: PositionInfo;
 }
 
+/**
+ * LRU Cache implementation for RegExp patterns with memory limit
+ */
+class RegexCache {
+    private readonly maxSize: number;
+    private cache = new Map<string, RegExp>();
+
+    constructor(maxSize = 50) {
+        this.maxSize = maxSize;
+    }
+
+    get(key: string): RegExp | undefined {
+        const value = this.cache.get(key);
+        if (value !== undefined) {
+            // Move to end (LRU behavior)
+            this.cache.delete(key);
+            this.cache.set(key, value);
+        }
+        return value;
+    }
+
+    set(key: string, value: RegExp): void {
+        if (this.cache.has(key)) {
+            this.cache.delete(key);
+        } else if (this.cache.size >= this.maxSize) {
+            // Remove least recently used (first item)
+            const firstKey = this.cache.keys().next().value;
+            this.cache.delete(firstKey);
+        }
+        this.cache.set(key, value);
+    }
+
+    clear(): void {
+        this.cache.clear();
+    }
+
+    size(): number {
+        return this.cache.size;
+    }
+}
+
 export class StrictPositionAnalyzer {
     private readonly numberFormatService: NumberFormatService;
     private readonly config: HLedgerConfig;
-    private readonly patternCache = new Map<string, RegExp>();
-    
+    private readonly patternCache = new RegexCache(50); // Limit to prevent memory leaks
+
     private static readonly STRICT_PATTERNS = {
         // Strict date patterns - only at line beginning
         DATE_LINE_START: RegexPatterns.DATE_LINE_START,
@@ -72,38 +113,56 @@ export class StrictPositionAnalyzer {
         this.numberFormatService = numberFormatService;
         this.config = config;
     }
+
+    /**
+     * Cleanup method to prevent memory leaks
+     */
+    public dispose(): void {
+        this.patternCache.clear();
+    }
     
     /**
-     * Creates format-aware amount patterns based on detected or configured decimal formats.
-     * Returns patterns for different contexts: forbidden zone, currency trigger, etc.
+     * Gets format-aware amount patterns with caching to prevent memory leaks.
+     * Returns cached patterns for different contexts: forbidden zone, currency trigger, etc.
      */
-    private createAmountPatterns(): {
+    private getAmountPatterns(): {
         forbiddenZone: RegExp;
         currencyTrigger: RegExp;
         afterAmountTwoSpaces: RegExp;
         afterAmountSingleSpace: RegExp;
     } {
         const cacheKey = 'amount-patterns';
-        const cached = this.patternCache.get(cacheKey);
-        if (cached) {
-            // Return cached patterns object
-            return cached as any;
+
+        // Try to get cached patterns
+        const forbiddenZone = this.patternCache.get(`${cacheKey}-forbidden`);
+        const currencyTrigger = this.patternCache.get(`${cacheKey}-currency`);
+        const afterAmountTwoSpaces = this.patternCache.get(`${cacheKey}-two-spaces`);
+        const afterAmountSingleSpace = this.patternCache.get(`${cacheKey}-single-space`);
+
+        // If all patterns are cached, return them
+        if (forbiddenZone && currencyTrigger && afterAmountTwoSpaces && afterAmountSingleSpace) {
+            return {
+                forbiddenZone,
+                currencyTrigger,
+                afterAmountTwoSpaces,
+                afterAmountSingleSpace
+            };
         }
 
         // Get supported formats from the NumberFormatService
         const formats = this.numberFormatService.getSupportedFormats();
-        
+
         // Create pattern variants for different decimal marks
         const createAmountPatternForFormat = (format: NumberFormat): string => {
             const { decimalMark, groupSeparator, useGrouping } = format;
-            
+
             // Escape special regex characters
             const escapeRegex = (char: string): string => {
                 return char.replace(/[.*+?^${}()|[\\]\\]/g, '\\$&');
             };
 
             const escapedDecimalMark = escapeRegex(decimalMark);
-            
+
             if (useGrouping && groupSeparator) {
                 const escapedGroupSeparator = escapeRegex(groupSeparator);
                 // Pattern for grouped numbers: 1,234.56 or 1 234,56
@@ -118,32 +177,45 @@ export class StrictPositionAnalyzer {
         const amountPatternVariants = formats.map(createAmountPatternForFormat);
         const amountPattern = `(?:${amountPatternVariants.join('|')})`;
 
-        // Create specific patterns for different contexts
+        // Create and cache specific patterns for different contexts
         const patterns = {
             // Forbidden zone: after amount + two or more spaces
-            forbiddenZone: new RegExp(`^${amountPattern}\\s{2,}.*$`, 'u'),
-            
+            forbiddenZone: (() => {
+                const pattern = new RegExp(`^${amountPattern}\\s{2,}.*$`, 'u');
+                this.patternCache.set(`${cacheKey}-forbidden`, pattern);
+                return pattern;
+            })(),
+
             // Currency trigger: after amount + single space (+ optional currency)
-            currencyTrigger: new RegExp(`^${amountPattern}\\s([\\p{Lu}\\p{Sc}$€£¥₽]*)?$`, 'u'),
-            
+            currencyTrigger: (() => {
+                const pattern = new RegExp(`^${amountPattern}\\s([\\p{Lu}\\p{Sc}$€£¥₽]*)?$`, 'u');
+                this.patternCache.set(`${cacheKey}-currency`, pattern);
+                return pattern;
+            })(),
+
             // After amount with two or more spaces (for detection)
-            afterAmountTwoSpaces: new RegExp(`^${amountPattern}\\s{2,}$`, 'u'),
-            
+            afterAmountTwoSpaces: (() => {
+                const pattern = new RegExp(`^${amountPattern}\\s{2,}$`, 'u');
+                this.patternCache.set(`${cacheKey}-two-spaces`, pattern);
+                return pattern;
+            })(),
+
             // After amount with single space (for detection)
-            afterAmountSingleSpace: new RegExp(`^${amountPattern}\\s$`, 'u')
+            afterAmountSingleSpace: (() => {
+                const pattern = new RegExp(`^${amountPattern}\\s$`, 'u');
+                this.patternCache.set(`${cacheKey}-single-space`, pattern);
+                return pattern;
+            })()
         };
 
-        // Cache the patterns directly
-        this.patternCache.set(cacheKey, patterns as any);
-        
         return patterns;
     }
 
     /**
-     * Creates a universal amount pattern that matches amounts in any supported format.
+     * Gets a universal amount pattern with caching that matches amounts in any supported format.
      * Used for general amount detection in posting contexts.
      */
-    private createUniversalAmountPattern(): RegExp {
+    private getUniversalAmountPattern(): RegExp {
         const cacheKey = 'universal-amount';
         const cached = this.patternCache.get(cacheKey);
         if (cached) {
@@ -160,15 +232,21 @@ export class StrictPositionAnalyzer {
      * More robust than hardcoded patterns, supports international formats.
      */
     private containsAmount(text: string): boolean {
-        const universalPattern = this.createUniversalAmountPattern();
-        
+        const universalPattern = this.getUniversalAmountPattern();
+
         // Look for amount patterns in the text
         // This matches standalone amounts or amounts followed by spaces/currency
-        const amountInContextPattern = new RegExp(
-            `(^|\\s)(${universalPattern.source.replace(/^\^|\$$/g, '')})(\\s|$)`,
-            'u'
-        );
-        
+        const cacheKey = 'amount-in-context';
+        let amountInContextPattern = this.patternCache.get(cacheKey);
+
+        if (!amountInContextPattern) {
+            amountInContextPattern = new RegExp(
+                `(^|\\s)(${universalPattern.source.replace(/^\^|\$$/g, '')})(\\s|$)`,
+                'u'
+            );
+            this.patternCache.set(cacheKey, amountInContextPattern);
+        }
+
         return amountInContextPattern.test(text);
     }
     
@@ -219,12 +297,19 @@ export class StrictPositionAnalyzer {
             // 4. "  Account  123 " (whole numbers)
             // 5. "  Account  123.456 BTC" or "  Account  123,456 BTC" (varying decimal precision)
             // Pattern: indentation + account + amount + space + optional currency symbols
-            const universalAmountPattern = this.createUniversalAmountPattern();
+            const universalAmountPattern = this.getUniversalAmountPattern();
             const accountNamePart = `[\\p{L}\\p{N}:_\-]+(?:\\s+[\\p{L}\\p{N}:_\-]+)*`;
-            const accountAmountCurrencyPattern = new RegExp(
-                `^\\s+${accountNamePart}\\s+(${universalAmountPattern.source.replace(/^\^|\$$/g, '')})\\s([\\p{Lu}\\p{Sc}$€£¥₽]*)?$`,
-                'u'
-            );
+
+            // Cache the account amount currency pattern
+            const cacheKey = 'account-amount-currency';
+            let accountAmountCurrencyPattern = this.patternCache.get(cacheKey);
+            if (!accountAmountCurrencyPattern) {
+                accountAmountCurrencyPattern = new RegExp(
+                    `^\\s+${accountNamePart}\\s+(${universalAmountPattern.source.replace(/^\^|\$$/g, '')})\\s([\\p{Lu}\\p{Sc}$€£¥₽]*)?$`,
+                    'u'
+                );
+                this.patternCache.set(cacheKey, accountAmountCurrencyPattern);
+            }
             if (accountAmountCurrencyPattern.test(beforeCursor)) {
                 return LineContext.AfterAmount;
             }
