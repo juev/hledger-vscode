@@ -16,26 +16,27 @@ import { HledgerSemanticTokensProvider, HLEDGER_SEMANTIC_TOKENS_LEGEND } from '.
 import { HLedgerCliService } from './services/HLedgerCliService';
 import { HLedgerCliCommands } from './HLedgerCliCommands';
 
-// Global instances for simplified architecture
-let globalConfig: HLedgerConfig;
-let cliService: HLedgerCliService;
-let cliCommands: HLedgerCliCommands;
+// Global instances for simplified architecture (to be replaced with proper DI)
+let globalConfig: HLedgerConfig | null = null;
+let cliService: HLedgerCliService | null = null;
+let cliCommands: HLedgerCliCommands | null = null;
 
 // Main activation function
 export function activate(context: vscode.ExtensionContext): void {
     try {
-        // Initialize global config with simple architecture
-        const parser = new HLedgerParser();
-        const cache = new SimpleProjectCache();
-        globalConfig = new HLedgerConfig(parser, cache);
+        // Initialize global instances with proper null checks
+        initializeGlobalInstances();
 
-        // Initialize CLI service and commands
-        cliService = new HLedgerCliService();
-        cliCommands = new HLedgerCliCommands(cliService);
-        context.subscriptions.push(cliService);
+        // Add CLI service to subscriptions for proper cleanup
+        if (cliService) {
+            context.subscriptions.push(cliService);
+        }
 
         // Register strict completion provider with necessary triggers
         // VS Code requires explicit triggers - 24x7 IntelliSense doesn't work automatically
+        if (!globalConfig) {
+            throw new Error('HLedger: Global config not initialized');
+        }
         const strictProvider = new StrictCompletionProvider(globalConfig);
         context.subscriptions.push(
             vscode.languages.registerCompletionItemProvider(
@@ -84,7 +85,9 @@ export function activate(context: vscode.ExtensionContext): void {
         const watcher = vscode.workspace.createFileSystemWatcher('**/*.{journal,hledger,ledger}');
         const onFsChange = () => {
             try {
-                globalConfig.clearCache();
+                if (globalConfig) {
+                    globalConfig.clearCache();
+                }
             } catch (err) {
                 console.error('HLedger: cache clear failed after FS change', err);
             }
@@ -109,21 +112,31 @@ export function activate(context: vscode.ExtensionContext): void {
         );
 
         // Register CLI commands
+        if (!cliCommands) {
+            throw new Error('HLedger: CLI commands not initialized');
+        }
+
         context.subscriptions.push(
             vscode.commands.registerCommand('hledger.cli.balance', async () => {
-                await cliCommands.insertBalance();
+                if (cliCommands) {
+                    await cliCommands.insertBalance();
+                }
             })
         );
 
         context.subscriptions.push(
             vscode.commands.registerCommand('hledger.cli.stats', async () => {
-                await cliCommands.insertStats();
+                if (cliCommands) {
+                    await cliCommands.insertStats();
+                }
             })
         );
 
         context.subscriptions.push(
             vscode.commands.registerCommand('hledger.cli.incomestatement', async () => {
-                await cliCommands.insertIncomestatement();
+                if (cliCommands) {
+                    await cliCommands.insertIncomestatement();
+                }
             })
         );
 
@@ -137,16 +150,19 @@ export function activate(context: vscode.ExtensionContext): void {
 
 export function deactivate(): void {
     try {
-        if (globalConfig) {
-            globalConfig.clearCache();
-        }
+        // Use proper cleanup function
+        disposeGlobalInstances();
         // Extension deactivation complete
     } catch (error) {
         console.error('HLedger extension deactivation error:', error);
     }
 }
 
-// Helper function to get config for a document (for backward compatibility)
+/**
+ * Helper function to get config for a document (for backward compatibility).
+ * Creates global config instance if it doesn't exist.
+ * @deprecated Use proper dependency injection instead of global state
+ */
 export function getConfig(document: vscode.TextDocument): HLedgerConfig {
     if (!globalConfig) {
         const parser = new HLedgerParser();
@@ -156,6 +172,47 @@ export function getConfig(document: vscode.TextDocument): HLedgerConfig {
 
     globalConfig.getConfigForDocument(document);
     return globalConfig;
+}
+
+/**
+ * Global initialization function to ensure proper setup
+ * Should be called during extension activation
+ */
+export function initializeGlobalInstances(): void {
+    if (!globalConfig) {
+        const parser = new HLedgerParser();
+        const cache = new SimpleProjectCache();
+        globalConfig = new HLedgerConfig(parser, cache);
+    }
+
+    if (!cliService) {
+        cliService = new HLedgerCliService();
+    }
+
+    if (!cliCommands) {
+        cliCommands = new HLedgerCliCommands(cliService);
+    }
+}
+
+/**
+ * Cleanup function to dispose global instances
+ * Should be called during extension deactivation
+ */
+export function disposeGlobalInstances(): void {
+    try {
+        if (globalConfig) {
+            globalConfig.clearCache();
+        }
+        if (cliService) {
+            cliService.dispose();
+        }
+        // Reset global variables
+        globalConfig = null as any;
+        cliService = null as any;
+        cliCommands = null as any;
+    } catch (error) {
+        console.error('HLedger: Error disposing global instances:', error);
+    }
 }
 
 // Legacy exports for backward compatibility
