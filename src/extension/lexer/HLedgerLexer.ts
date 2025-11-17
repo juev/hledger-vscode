@@ -34,17 +34,17 @@ export interface HLedgerToken {
     readonly type: TokenType;
     readonly rawLine: string;
     readonly trimmedLine: string;
-    readonly account?: AccountName;
-    readonly payee?: PayeeName;
-    readonly amount?: string;
-    readonly commodity?: CommodityCode;
-    readonly tags?: Map<TagName, Set<TagValue>>;
-    readonly tagName?: TagName;
-    readonly aliasFrom?: AccountName;
-    readonly aliasTo?: AccountName;
-    readonly commoditySymbol?: string;
-    readonly formatPattern?: string;
-    readonly decimalMark?: '.' | ',' | null;
+    readonly account?: AccountName | undefined;
+    readonly payee?: PayeeName | undefined;
+    readonly amount?: string | undefined;
+    readonly commodity?: CommodityCode | undefined;
+    readonly tags?: Map<TagName, Set<TagValue>> | undefined;
+    readonly tagName?: TagName | undefined;
+    readonly aliasFrom?: AccountName | undefined;
+    readonly aliasTo?: AccountName | undefined;
+    readonly commoditySymbol?: string | undefined;
+    readonly formatPattern?: string | undefined;
+    readonly decimalMark?: '.' | ',' | null | undefined;
 }
 
 /**
@@ -52,8 +52,8 @@ export interface HLedgerToken {
  */
 export interface TransactionToken {
     readonly date: string;
-    readonly status?: string;
-    readonly code?: string;
+    readonly status?: string | undefined;
+    readonly code?: string | undefined;
     readonly description: string;
     readonly payee: PayeeName;
     readonly tags: Map<TagName, Set<TagValue>>;
@@ -233,15 +233,17 @@ export class HLedgerLexer {
 
         // Extract status (single character like * or !)
         let status: string | undefined;
-        if (currentIndex < parts.length && /^[*!]/.test(parts[currentIndex])) {
-            status = parts[currentIndex];
+        const statusPart = parts[currentIndex];
+        if (statusPart && /^[*!]/.test(statusPart)) {
+            status = statusPart;
             currentIndex++;
         }
 
         // Extract code (in parentheses)
         let code: string | undefined;
-        if (currentIndex < parts.length && parts[currentIndex].startsWith('(') && parts[currentIndex].endsWith(')')) {
-            code = parts[currentIndex];
+        const codePart = parts[currentIndex];
+        if (codePart && codePart.startsWith('(') && codePart.endsWith(')')) {
+            code = codePart;
             currentIndex++;
         }
 
@@ -249,11 +251,11 @@ export class HLedgerLexer {
         const description = parts.slice(currentIndex).join(' ');
 
         return {
-            date: date || '',
+            date: date ?? '',
             status: status,
             code: code,
-            description: description || '',
-            payee: createPayeeName(description || 'Unknown'),
+            description: description ?? '',
+            payee: createPayeeName(description ?? 'Unknown'),
             tags: new Map()
         };
     }
@@ -266,15 +268,15 @@ export class HLedgerLexer {
 
         // Extract account name (everything before amount or comment)
         const accountMatch = trimmed.match(/^([^\s;#]+(?:\s+[^\s;#]+)*?)\s+/);
-        const accountName = accountMatch ? accountMatch[1] : trimmed;
+        const accountName = accountMatch?.[1] ?? trimmed;
 
         // Extract amount if present
         const amountMatch = trimmed.match(/\s+([+-]?\s*[\d,\.]+\s*[A-Za-z$€£¥₽%]*)/);
-        const amount = amountMatch ? amountMatch[1].replace(/\s+/g, '') : '';
+        const amount = amountMatch?.[1]?.replace(/\s+/g, '') ?? '';
 
         // Extract commodity from amount
         const commodityMatch = amount.match(/[A-Za-z$€£¥₽%]+$/);
-        const commodity = commodityMatch ? createCommodityCode(commodityMatch[0]) : undefined;
+        const commodity = commodityMatch?.[0] ? createCommodityCode(commodityMatch[0]) : undefined;
 
         return {
             account: createAccountName(accountName),
@@ -293,7 +295,7 @@ export class HLedgerLexer {
         const tagMatches = line.matchAll(/#(\w+)(?::([^#\s]+))?/g);
 
         for (const match of tagMatches) {
-            const tagName = createTagName(match[1]);
+            const tagName = createTagName(match[1] ?? '');
             const tagValue = match[2] ? createTagValue(match[2]) : createTagValue('');
 
             if (!tags.has(tagName)) {
@@ -385,7 +387,7 @@ export class HLedgerLexer {
      */
     private tokenizeDefaultCommodityDirective(rawLine: string, trimmedLine: string): HLedgerToken {
         const match = trimmedLine.match(/^default commodity\s+([A-Za-z$€£¥₽%])/);
-        const commodity = match ? createCommodityCode(match[1]) : undefined;
+        const commodity = match?.[1] ? createCommodityCode(match[1]) : undefined;
 
         return {
             type: TokenType.DEFAULT_COMMODITY_DIRECTIVE,
@@ -400,7 +402,7 @@ export class HLedgerLexer {
      */
     private tokenizeAccountDirective(rawLine: string, trimmedLine: string): HLedgerToken {
         const match = trimmedLine.match(/^account\s+(.+)$/);
-        const account = match ? createAccountName(match[1]) : undefined;
+        const account = match?.[1] ? createAccountName(match[1]) : undefined;
 
         return {
             type: TokenType.ACCOUNT_DIRECTIVE,
@@ -415,7 +417,7 @@ export class HLedgerLexer {
      */
     private tokenizePayeeDirective(rawLine: string, trimmedLine: string): HLedgerToken {
         const match = trimmedLine.match(/^payee\s+(.+)$/);
-        const payee = match ? createPayeeName(match[1]) : undefined;
+        const payee = match?.[1] ? createPayeeName(match[1]) : undefined;
 
         return {
             type: TokenType.PAYEE_DIRECTIVE,
@@ -430,7 +432,7 @@ export class HLedgerLexer {
      */
     private tokenizeTagDirective(rawLine: string, trimmedLine: string): HLedgerToken {
         const match = trimmedLine.match(/^tag\s+(\w+)(?:\s+(.+))?$/);
-        const tagName = match ? createTagName(match[1]) : undefined;
+        const tagName = match?.[1] ? createTagName(match[1]) : undefined;
 
         return {
             type: TokenType.TAG_DIRECTIVE,

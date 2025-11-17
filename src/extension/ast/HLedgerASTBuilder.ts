@@ -186,7 +186,7 @@ export class HLedgerASTBuilder {
 
         // Extract date from transaction line
         const dateMatch = token.trimmedLine.match(/^(\d{4}[-/]\d{1,2}[-/]\d{1,2})/);
-        if (dateMatch) {
+        if (dateMatch?.[1]) {
             context.lastDate = dateMatch[1];
             data.lastDate = dateMatch[1];
         }
