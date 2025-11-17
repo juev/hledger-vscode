@@ -673,7 +673,7 @@ export class HLedgerFileProcessor {
         sample: string[];
     }> {
         try {
-            const content = fs.readFileSync(filePath, 'utf8');
+            const content = await fs.promises.readFile(filePath, 'utf8');
             const lines = content.split('\n').slice(0, sampleSize);
 
             const nonEmptyLines = lines.filter(line => line.trim() && !line.trim().startsWith(';'));
