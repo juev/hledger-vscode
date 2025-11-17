@@ -345,7 +345,7 @@ export class HLedgerLexer {
      * Tokenizes commodity directive
      */
     private tokenizeCommodityDirective(rawLine: string, trimmedLine: string): HLedgerToken {
-        const match = trimmedLine.match(/^commodity\s+([A-Za-z$€£¥₽%])/);
+        const match = trimmedLine.match(/^commodity\s+([A-Za-z$€£¥₽%]+)/);
         return {
             type: TokenType.COMMODITY_DIRECTIVE,
             rawLine,
@@ -386,7 +386,7 @@ export class HLedgerLexer {
      * Tokenizes default commodity directive
      */
     private tokenizeDefaultCommodityDirective(rawLine: string, trimmedLine: string): HLedgerToken {
-        const match = trimmedLine.match(/^default commodity\s+([A-Za-z$€£¥₽%])/);
+        const match = trimmedLine.match(/^default commodity\s+([A-Za-z$€£¥₽%]+)/);
         const commodity = match?.[1] ? createCommodityCode(match[1]) : undefined;
 
         return {
