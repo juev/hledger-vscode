@@ -287,13 +287,18 @@ describe('HLedgerFileProcessor Security Tests', () => {
 
         it('should skip Unix system directories', () => {
             // Test the isSystemDirectory method directly with mock paths
-            const systemPaths = ['/proc', '/dev', '/sys', '/run', '/tmp'];
+            // Note: /tmp is excluded as it's legitimate for user files
+            const systemPaths = ['/proc', '/dev', '/sys', '/run'];
 
             systemPaths.forEach(sysPath => {
                 // Access the private method for testing
                 const isSystem = (processor as any).isSystemDirectory(sysPath);
                 expect(isSystem).toBe(true);
             });
+
+            // /tmp should not be treated as a system directory
+            const isTmpSystem = (processor as any).isSystemDirectory('/tmp');
+            expect(isTmpSystem).toBe(false);
         });
     });
 

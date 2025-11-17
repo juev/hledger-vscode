@@ -343,8 +343,8 @@ export class HLedgerFileProcessor {
         // Normalize and resolve path for consistent comparison
         const normalizedPath = path.normalize(path.resolve(dirPath));
 
-        // Unix/Linux/macOS system directories
-        const unixSystemDirs = ['/proc', '/dev', '/sys', '/run', '/tmp'];
+        // Unix/Linux/macOS system directories (excluding /tmp which is legitimate for user files)
+        const unixSystemDirs = ['/proc', '/dev', '/sys', '/run'];
 
         // Performance blacklist (common dev directories)
         const performanceBlacklist = ['node_modules', '.git', '.vscode', 'dist', 'build'];
