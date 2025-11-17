@@ -118,7 +118,7 @@ describe('Syntax Highlighting Tests', () => {
       // Extract account name from the line (everything before 2+ spaces)
       const accountMatch = testCase.line.match(/^\s+([^\s;]+(?:\s+[^\s;]+)*?)\s{2,}/);
       if (accountMatch) {
-        const accountName = accountMatch[1];
+        const accountName = accountMatch[1]!;
 
         // Verify account name contains expected characters
         assert.ok(

@@ -17,7 +17,7 @@ describe('Fuzzy Matching', () => {
     test('should match exact prefix', () => {
         const results = fuzzyMatch('Gro', payees);
         expect(results.length).toBeGreaterThan(0);
-        expect(results[0].item).toBe('Grocery Store');
+        expect(results[0]!.item).toBe('Grocery Store');
     });
 
     test('should match prefix (not substring)', () => {
@@ -32,7 +32,7 @@ describe('Fuzzy Matching', () => {
     test('should match exact prefix with partial match', () => {
         const results = fuzzyMatch('McD', payees);
         expect(results.length).toBeGreaterThan(0);
-        expect(results[0].item).toBe('McDonald\'s');
+        expect(results[0]!.item).toBe('McDonald\'s');
     });
 
     test('should handle cyrillic characters', () => {
@@ -56,7 +56,7 @@ describe('Fuzzy Matching', () => {
     test('should score exact prefix matches higher', () => {
         const results = fuzzyMatch('A', payees);
         expect(results.length).toBeGreaterThan(0);
-        expect(results[0].item).toBe('Amazon'); // Should be first due to exact prefix match
+        expect(results[0]!.item).toBe('Amazon'); // Should be first due to exact prefix match
     });
 
     test('should match prefix patterns', () => {
@@ -70,7 +70,7 @@ describe('Fuzzy Matching', () => {
     test('should handle case insensitive matching', () => {
         const results = fuzzyMatch('amazon', payees);
         expect(results.length).toBeGreaterThan(0);
-        expect(results[0].item).toBe('Amazon');
+        expect(results[0]!.item).toBe('Amazon');
     });
 
     test('should support prefix matching', () => {
@@ -95,6 +95,6 @@ describe('Fuzzy Matching', () => {
         const results = fuzzyMatch('Amazing', testItems);
         expect(results.length).toBeGreaterThan(0);
         // Exact matches should score higher than prefix matches
-        expect(results[0].item).toBe('Amazing'); // Exact match
+        expect(results[0]!.item).toBe('Amazing'); // Exact match
     });
 });

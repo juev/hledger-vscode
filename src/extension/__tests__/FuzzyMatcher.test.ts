@@ -22,8 +22,8 @@ describe('SimpleFuzzyMatcher', () => {
         expect(Array.isArray(results)).toBe(true);
         
         if (results.length > 0) {
-            expect(results[0]).toHaveProperty('item');
-            expect(results[0]).toHaveProperty('score');
+            expect(results[0]!).toHaveProperty('item');
+            expect(results[0]!).toHaveProperty('score');
         }
     });
 
@@ -64,20 +64,20 @@ describe('SimpleFuzzyMatcher', () => {
         const results3 = matcher.match('assets', items, { caseSensitive: true });
         // Should match 'assets:checking' as it starts with 'assets' exactly
         expect(results3.length).toBe(1);
-        expect(results3[0].item).toBe('assets:checking');
+        expect(results3[0]!.item).toBe('assets:checking');
         
         // Test component matching
         const results4 = matcher.match('Cash', items, { caseSensitive: true });
         // Should match 'Assets:Cash' because it contains ':Cash'
         expect(results4.length).toBe(1);
-        expect(results4[0].item).toBe('Assets:Cash');
+        expect(results4[0]!.item).toBe('Assets:Cash');
         
         // Test that it doesn't match wrong case
         const results5 = matcher.match('ass', items, { caseSensitive: true });
         // Should only match items that START with 'ass' or contain ':ass' exactly
         // Only 'assets:checking' starts with 'ass', so should return 1 item
         expect(results5.length).toBe(1);
-        expect(results5[0].item).toBe('assets:checking');
+        expect(results5[0]!.item).toBe('assets:checking');
     });
 
     it('should perform case-insensitive matching when caseSensitive is false or not specified', () => {
@@ -101,7 +101,7 @@ describe('SimpleFuzzyMatcher', () => {
         const results3 = matcher.match('cash', items);
         // Should match 'Assets:Cash' because it contains ':Cash' (case-insensitive)
         expect(results3.length).toBe(1);
-        expect(results3[0].item).toBe('Assets:Cash');
+        expect(results3[0]!.item).toBe('Assets:Cash');
         
         // Test with a more specific prefix
         const results4 = matcher.match('assets:', items);

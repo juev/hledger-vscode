@@ -273,7 +273,7 @@ describe('StrictCompletionProvider Integration', () => {
                 
                 // All completions should be of the same kind (single type per position rule)
                 if (completions.length > 0) {
-                    const firstKind = completions[0].kind;
+                    const firstKind = completions[0]!.kind;
                     const allSameKind = completions.every(item => item.kind === firstKind);
                     expect(allSameKind).toBe(true);
                 }
