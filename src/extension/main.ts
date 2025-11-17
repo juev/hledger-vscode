@@ -38,6 +38,8 @@ export function activate(context: vscode.ExtensionContext): void {
             throw new Error('HLedger: Global config not initialized');
         }
         const strictProvider = new StrictCompletionProvider(globalConfig);
+
+        // Register the provider for completion items
         context.subscriptions.push(
             vscode.languages.registerCompletionItemProvider(
                 'hledger',
@@ -49,6 +51,9 @@ export function activate(context: vscode.ExtensionContext): void {
                 ';'   // Comments (future use)
             )
         );
+
+        // Register the provider itself for proper disposal (prevents RegexCache memory leak)
+        context.subscriptions.push(strictProvider);
 
 
         // Register formatting providers for hledger files

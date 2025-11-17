@@ -296,4 +296,12 @@ export class StrictCompletionProvider implements vscode.CompletionItemProvider {
                 return false;
         }
     }
+
+    /**
+     * Cleanup method to prevent memory leaks.
+     * Disposes the position analyzer which clears the RegexCache.
+     */
+    public dispose(): void {
+        this.positionAnalyzer.dispose();
+    }
 }
