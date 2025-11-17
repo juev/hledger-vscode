@@ -237,17 +237,52 @@ export class HLedgerFileProcessor {
     }
 
     /**
-     * Discovers hledger files in a directory
+     * Discovers hledger files in a directory with security protections
+     *
+     * @param dirPath - Directory path to search
+     * @param maxDepth - Maximum recursion depth (default: 10)
+     * @param currentDepth - Current recursion depth (internal use)
+     * @param visitedDirs - Set of visited directories to prevent cycles (internal use)
+     * @returns Array of hledger file paths
      */
-    public findHLedgerFiles(dirPath: string): string[] {
+    public findHLedgerFiles(
+        dirPath: string,
+        maxDepth: number = 10,
+        currentDepth: number = 0,
+        visitedDirs: Set<string> = new Set()
+    ): string[] {
         if (!fs.existsSync(dirPath)) {
             console.warn(`HLedger: Directory does not exist: ${dirPath}`);
+            return [];
+        }
+
+        // Security check: Enforce depth limit to prevent DoS
+        if (currentDepth >= maxDepth) {
+            console.warn(`HLedger: Maximum depth (${maxDepth}) reached at ${dirPath}, stopping traversal`);
+            return [];
+        }
+
+        // Security check: Skip system directories to prevent DoS
+        if (this.isSystemDirectory(dirPath)) {
+            console.warn(`HLedger: Skipping system directory ${dirPath}`);
             return [];
         }
 
         const files: string[] = [];
 
         try {
+            // Resolve real path to detect symlinks
+            const realPath = fs.realpathSync(dirPath);
+
+            // Security check: Detect symlink cycles
+            if (visitedDirs.has(realPath)) {
+                console.warn(`HLedger: Symlink cycle detected at ${dirPath} (real: ${realPath}), skipping`);
+                return [];
+            }
+
+            // Mark this directory as visited
+            visitedDirs.add(realPath);
+
             const entries = fs.readdirSync(dirPath, { withFileTypes: true });
 
             for (const entry of entries) {
@@ -261,8 +296,8 @@ export class HLedgerFileProcessor {
                     if (entry.isFile() && this.isHLedgerFile(entry.name)) {
                         files.push(fullPath);
                     } else if (entry.isDirectory()) {
-                        // Recursively search subdirectories
-                        files.push(...this.findHLedgerFiles(fullPath));
+                        // Recursively search subdirectories with incremented depth
+                        files.push(...this.findHLedgerFiles(fullPath, maxDepth, currentDepth + 1, visitedDirs));
                     }
                 } catch (error) {
                     const errorMessage = error instanceof Error ? error.message : String(error);
@@ -280,6 +315,40 @@ export class HLedgerFileProcessor {
         }
 
         return files.sort(); // Sort for consistent ordering
+    }
+
+    /**
+     * Checks if a directory is a system directory that should be skipped
+     *
+     * @param dirPath - Directory path to check
+     * @returns true if the directory is a system directory
+     */
+    private isSystemDirectory(dirPath: string): boolean {
+        // Normalize and resolve path for consistent comparison
+        const normalizedPath = path.normalize(path.resolve(dirPath));
+
+        // Unix/Linux/macOS system directories
+        const unixSystemDirs = ['/proc', '/dev', '/sys', '/run', '/tmp'];
+
+        // Performance blacklist (common dev directories)
+        const performanceBlacklist = ['node_modules', '.git', '.vscode', 'dist', 'build'];
+
+        // Check if path starts with any Unix system directory
+        for (const sysDir of unixSystemDirs) {
+            if (normalizedPath.startsWith(sysDir + path.sep) || normalizedPath === sysDir) {
+                return true;
+            }
+        }
+
+        // Check if path contains any performance blacklist directory
+        const pathParts = normalizedPath.split(path.sep);
+        for (const blacklisted of performanceBlacklist) {
+            if (pathParts.includes(blacklisted)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**
