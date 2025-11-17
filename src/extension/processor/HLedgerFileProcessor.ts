@@ -3,8 +3,8 @@
 
 import * as fs from 'fs';
 import * as path from 'path';
-import { ParsedHLedgerData } from '../ast/HLedgerASTBuilder';
-import { HLedgerLexer } from '../lexer/HLedgerLexer';
+import { ParsedHLedgerData, HLedgerASTBuilder } from '../ast/HLedgerASTBuilder';
+import { HLedgerLexer, TokenType } from '../lexer/HLedgerLexer';
 
 /**
  * File processing options
@@ -60,11 +60,13 @@ const DEFAULT_OPTIONS: Required<FileProcessingOptions> = {
  */
 export class HLedgerFileProcessor {
     private readonly lexer: HLedgerLexer;
+    private readonly astBuilder: HLedgerASTBuilder;
     private readonly options: Required<FileProcessingOptions>;
 
     constructor(options: FileProcessingOptions = {}) {
         this.options = { ...DEFAULT_OPTIONS, ...options };
         this.lexer = new HLedgerLexer();
+        this.astBuilder = new HLedgerASTBuilder();
     }
 
     /**
@@ -131,6 +133,15 @@ export class HLedgerFileProcessor {
         const validFiles = filePaths.filter(file => !this.shouldExcludeFile(file));
         combinedResult.filesExcluded = filePaths.filter(file => this.shouldExcludeFile(file));
 
+        if (validFiles.length === 0) {
+            combinedResult.processingTime = Date.now() - startTime;
+            return combinedResult;
+        }
+
+        // Initialize mutable data structure for merging
+        let mutableData: any = null;
+        let isFirstFile = true;
+
         // Process files in parallel with limited concurrency
         const concurrencyLimit = 5;
         for (let i = 0; i < validFiles.length; i += concurrencyLimit) {
@@ -138,16 +149,27 @@ export class HLedgerFileProcessor {
             const batchResults = await Promise.all(batch.map(file => this.processFile(file)));
 
             // Combine batch results
-            batchResults.forEach(batchResult => {
+            for (const batchResult of batchResults) {
                 combinedResult.filesProcessed.push(...batchResult.filesProcessed);
                 combinedResult.bytesProcessed += batchResult.bytesProcessed;
 
-                // Note: This would need proper merging logic with the actual ParsedHLedgerData
-                // For now, we'll use the last result as the combined data
+                // Merge parsed data from this batch
                 if (batchResult.data) {
-                    combinedResult.data = batchResult.data;
+                    if (isFirstFile) {
+                        // Initialize with first file's data
+                        mutableData = this.createMutableData(batchResult.data);
+                        isFirstFile = false;
+                    } else {
+                        // Merge subsequent files into combined data
+                        this.astBuilder.mergeData(mutableData, batchResult.data);
+                    }
                 }
-            });
+            }
+        }
+
+        // Convert mutable data back to readonly
+        if (mutableData) {
+            combinedResult.data = this.toReadonlyData(mutableData);
         }
 
         combinedResult.processingTime = Date.now() - startTime;
@@ -236,28 +258,127 @@ export class HLedgerFileProcessor {
     }> {
         const includedFiles: string[] = [];
 
-        // Note: This would need integration with the actual AST builder
-        // For now, this is a placeholder that shows the structure
+        // Tokenize content using the lexer
+        const tokens = this.lexer.tokenizeContent(content);
 
-        if (!this.options.processIncludes || includeDepth >= this.options.maxIncludeDepth) {
+        // Build AST from tokens
+        const parsedData = this.astBuilder.buildFromTokens(tokens, basePath);
+
+        // Process include directives if enabled and depth limit not exceeded
+        if (this.options.processIncludes && includeDepth < this.options.maxIncludeDepth && basePath) {
+            // Create mutable data structure for merging included files
+            const mutableData = this.createMutableData(parsedData);
+
+            // Extract include directives and process them
+            for (const token of tokens) {
+                if (token.type === TokenType.INCLUDE_DIRECTIVE) {
+                    const includeMatch = token.trimmedLine.match(/^include\s+(.+)$/);
+                    if (includeMatch?.[1]) {
+                        const includePath = includeMatch[1].trim();
+                        const resolvedPath = path.isAbsolute(includePath)
+                            ? includePath
+                            : path.join(basePath, includePath);
+
+                        try {
+                            // Check if file should be excluded
+                            if (this.shouldExcludeFile(resolvedPath)) {
+                                continue;
+                            }
+
+                            // Check if file exists
+                            if (!fs.existsSync(resolvedPath)) {
+                                if (process.env.NODE_ENV !== 'test') {
+                                    console.warn(`Include file not found: ${resolvedPath}`);
+                                }
+                                continue;
+                            }
+
+                            // Read and parse included file
+                            const includeContent = fs.readFileSync(resolvedPath, 'utf8');
+                            const includeResult = await this.parseContent(
+                                includeContent,
+                                path.dirname(resolvedPath),
+                                includeDepth + 1
+                            );
+
+                            // Track included files
+                            includedFiles.push(resolvedPath);
+                            includedFiles.push(...includeResult.includedFiles);
+
+                            // Merge included data into main data
+                            this.astBuilder.mergeData(mutableData, includeResult.data);
+
+                        } catch (error) {
+                            if (process.env.NODE_ENV !== 'test') {
+                                console.error(`Error processing include file ${resolvedPath}:`, error);
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Convert mutable data back to readonly
             return {
-                data: {} as ParsedHLedgerData,
+                data: this.toReadonlyData(mutableData),
                 includedFiles
             };
         }
 
-        // Tokenize content
-        const tokens = this.lexer.tokenizeContent(content);
-
-        // Extract include directives
-        for (const token of tokens) {
-            // This would be handled by the main parser/AST builder
-            // The structure shows how includes would be processed
-        }
-
         return {
-            data: {} as ParsedHLedgerData,
+            data: parsedData,
             includedFiles
+        };
+    }
+
+    /**
+     * Creates a mutable copy of ParsedHLedgerData for merging
+     */
+    private createMutableData(data: ParsedHLedgerData): any {
+        return {
+            accounts: new Set(data.accounts),
+            definedAccounts: new Set(data.definedAccounts),
+            usedAccounts: new Set(data.usedAccounts),
+            payees: new Set(data.payees),
+            tags: new Set(data.tags),
+            commodities: new Set(data.commodities),
+            aliases: new Map(data.aliases),
+            tagValues: new Map(
+                Array.from(data.tagValues.entries()).map(([k, v]) => [k, new Set(v)])
+            ),
+            tagValueUsage: new Map(data.tagValueUsage),
+            accountUsage: new Map(data.accountUsage),
+            payeeUsage: new Map(data.payeeUsage),
+            tagUsage: new Map(data.tagUsage),
+            commodityUsage: new Map(data.commodityUsage),
+            commodityFormats: new Map(data.commodityFormats),
+            decimalMark: data.decimalMark,
+            defaultCommodity: data.defaultCommodity,
+            lastDate: data.lastDate
+        };
+    }
+
+    /**
+     * Converts mutable data back to readonly ParsedHLedgerData
+     */
+    private toReadonlyData(mutableData: any): ParsedHLedgerData {
+        return {
+            accounts: mutableData.accounts,
+            definedAccounts: mutableData.definedAccounts,
+            usedAccounts: mutableData.usedAccounts,
+            payees: mutableData.payees,
+            tags: mutableData.tags,
+            commodities: mutableData.commodities,
+            aliases: mutableData.aliases,
+            tagValues: mutableData.tagValues,
+            tagValueUsage: mutableData.tagValueUsage,
+            accountUsage: mutableData.accountUsage,
+            payeeUsage: mutableData.payeeUsage,
+            tagUsage: mutableData.tagUsage,
+            commodityUsage: mutableData.commodityUsage,
+            commodityFormats: mutableData.commodityFormats,
+            decimalMark: mutableData.decimalMark,
+            defaultCommodity: mutableData.defaultCommodity,
+            lastDate: mutableData.lastDate
         };
     }
 
