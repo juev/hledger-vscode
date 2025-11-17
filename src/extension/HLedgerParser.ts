@@ -6,11 +6,11 @@ import * as fs from 'fs';
 import * as path from 'path';
 import {
     AccountName, PayeeName, TagName, TagValue, CommodityCode, UsageCount,
-    createAccountName, createPayeeName, createTagName, createTagValue, createCommodityCode, createUsageCount
+    createTagName, createTagValue, createCommodityCode, createUsageCount
 } from './types';
 import { NumberFormatService, CommodityFormat } from './services/NumberFormatService';
 import { RegexPatterns } from './RegexPatterns';
-import { HLedgerLexer, TokenType, HLedgerToken } from './lexer/HLedgerLexer';
+import { HLedgerLexer } from './lexer/HLedgerLexer';
 import { HLedgerASTBuilder } from './ast/HLedgerASTBuilder';
 import { HLedgerFileProcessor } from './processor/HLedgerFileProcessor';
 
@@ -229,7 +229,7 @@ export class HLedgerParser {
         data: MutableParsedHLedgerData,
         basePath?: string,
         inTransaction = false,
-        transactionPayee = ''
+        _transactionPayee = ''
     ): void {
         const trimmedLine = line.trim();
 
@@ -632,7 +632,7 @@ export class HLedgerParser {
 
                     // Track usage of this specific tag:value pair
                     const pairKey = `${tagName}:${tagValue}`;
-                    this.incrementUsage(data.tagValueUsage, pairKey as any);
+                    this.incrementUsage(data.tagValueUsage, pairKey);
                 } else {
                     // Tag without value - just ensure the tag exists in tagValues map
                     // This allows completion to work even for tags that appear without values
@@ -735,8 +735,8 @@ export class HLedgerParser {
 
         // Merge tag value usage
         source.tagValueUsage.forEach((count, key) => {
-            const existing = target.tagValueUsage.get(key as any) ?? createUsageCount(0);
-            target.tagValueUsage.set(key as any, createUsageCount(existing + count));
+            const existing = target.tagValueUsage.get(key) ?? createUsageCount(0);
+            target.tagValueUsage.set(key, createUsageCount(existing + count));
         });
 
         // Merge commodity formats

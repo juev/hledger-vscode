@@ -98,7 +98,7 @@ export function activate(context: vscode.ExtensionContext): void {
 
         // FS watcher for journal files: invalidate cache on change
         const watcher = vscode.workspace.createFileSystemWatcher('**/*.{journal,hledger,ledger}');
-        const onFsChange = () => {
+        const onFsChange = (): void => {
             try {
                 if (globalConfig) {
                     globalConfig.clearCache();
@@ -211,17 +211,9 @@ export function initializeGlobalInstances(): void {
         globalConfig = new HLedgerConfig(parser, cache);
     }
 
-    if (!cliService) {
-        cliService = new HLedgerCliService();
-    }
-
-    if (!cliCommands) {
-        cliCommands = new HLedgerCliCommands(cliService);
-    }
-
-    if (!errorNotificationHandler) {
-        errorNotificationHandler = new ErrorNotificationHandler();
-    }
+    cliService ??= new HLedgerCliService();
+    cliCommands ??= new HLedgerCliCommands(cliService);
+    errorNotificationHandler ??= new ErrorNotificationHandler();
 }
 
 /**

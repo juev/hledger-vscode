@@ -94,11 +94,11 @@ export class HledgerSemanticTokensProvider implements vscode.DocumentSemanticTok
     // Common regex helpers (kept simple for performance/readability)
     const urlRe = /\b(?:https?|ftp):\/\/[^\s,;]+/g;
     const timeRe = /\b\d{1,2}:\d{2}(?::\d{2})?\b/g;
-    const dateRe = /\b\d{4}[-\/.]\d{1,2}[-\/.]\d{1,2}\b|\b\d{1,2}[-\/.]\d{1,2}(?:[-\/.]\d{2,4})?\b|\b\d{4}\b/g;
+    const dateRe = /\b\d{4}[-/.]\d{1,2}[-/.]\d{1,2}\b|\b\d{1,2}[-/.]\d{1,2}(?:[-/.]\d{2,4})?\b|\b\d{4}\b/g;
     const tagRe = /\b([\p{L}][\p{L}\p{N}_-]*)(:)\s*([^,;\n\r\s]*(?:\s[^,;\n\r\s]+)*)/gu;
 
     // Transaction header: date [status] (code) payee [| note]
-    const headerRe = /^(\d{4}[-\/.]\d{1,2}[-\/.]\d{1,2}|\d{1,2}[-\/.]\d{1,2}[-\/.]\d{2,4}|\d{1,2}[-\/.]\d{1,2}|\d{4})\s*([*!])?\s*(\([^)]+\))?\s*([^|;]*?)(\|[^;]*)?(?=\s*;|$)/;
+    const headerRe = /^(\d{4}[-/.]\d{1,2}[-/.]\d{1,2}|\d{1,2}[-/.]\d{1,2}[-/.]\d{2,4}|\d{1,2}[-/.]\d{1,2}|\d{4})\s*([*!])?\s*(\([^)]+\))?\s*([^|;]*?)(\|[^;]*)?(?=\s*;|$)/;
 
     // Posting with 2+ spaces between account and amount-ish remainder
     const postingRe = /^(\s+)([^;\s][^;]*?\S)\s{2,}([^;]+)(?=;|$)/;
@@ -147,7 +147,7 @@ export class HledgerSemanticTokensProvider implements vscode.DocumentSemanticTok
         // code (parentheses)
         if (code) this.pushGroup(builder, line, text, base, full, code, 'code');
         // payee
-        if (payee && payee.trim()) this.pushGroup(builder, line, text, base, full, payee.trim(), 'payee');
+        if (payee?.trim()) this.pushGroup(builder, line, text, base, full, payee.trim(), 'payee');
         // note (starts with '|')
         if (note) {
           const noteText = note.startsWith('|') ? note.slice(1).trimStart() : note;
@@ -176,7 +176,7 @@ export class HledgerSemanticTokensProvider implements vscode.DocumentSemanticTok
       const posting = postingRe.exec(text);
       if (posting) {
         const whole = posting[0];
-        const indent = posting[1];
+        const _indent = posting[1];
         const accountText = posting[2] ?? '';
         const remainder = posting[3] ?? '';
         const baseIndex = posting.index;
@@ -337,7 +337,7 @@ export class HledgerSemanticTokensProvider implements vscode.DocumentSemanticTok
     prefixRe: RegExp
   ): void {
     // Try suffix form first (amount [commodity])
-    let lastEnd = -1;
+    let _lastEnd = -1;
     suffixRe.lastIndex = 0;
     let m: RegExpExecArray | null;
     while ((m = suffixRe.exec(text))) {
@@ -351,7 +351,7 @@ export class HledgerSemanticTokensProvider implements vscode.DocumentSemanticTok
         const commodityStart = full.indexOf(commodity);
         if (commodityStart >= 0) this.push(builder, line, offset + m.index + commodityStart, commodity.length, 'commodity');
       }
-      lastEnd = m.index + full.length;
+      _lastEnd = m.index + full.length;
     }
 
     // Then prefix form (commodity amount)

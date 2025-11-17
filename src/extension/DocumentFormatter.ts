@@ -143,7 +143,7 @@ export class DocumentFormatter {
     private static readonly NUMBER_REGEX = /[\p{N}]/u;
     private static readonly SUFFIX_COMMODITY_REGEX = /\s*[\p{Sc}$€£¥₽₩\p{L}]+$/u;
     private static readonly SIMPLE_INTEGER_REGEX = /^[-+]?\p{N}+$/u;
-    private static readonly TRANSACTION_HEADER_REGEX = /^(\d{4}[-/\.]\d{1,2}[-/\.]\d{1,2}|\d{1,2}[-/\.]\d{1,2})/;
+    private static readonly TRANSACTION_HEADER_REGEX = /^(\d{4}[-/.]\d{1,2}[-/.]\d{1,2}|\d{1,2}[-/.]\d{1,2})/;
     private static readonly POSTING_REGEX = /^([^\s;]+(?:\s+[^\s;]+)*?)\s{2,}([^;]+)$/;
     private static readonly POSTING_WITH_SPACES_REGEX = /^\s*([^\s;]+(?:\s+[^\s;]+)*?)\s{2,}([^;]*)/;
     private static readonly BALANCE_ASSERTION_REGEX = /^(.*?)(\s*[=]+\s*)([-+]?\d+(?:[.,]\d+)?(?:\s*[^\s]+)?)$/;
@@ -391,8 +391,8 @@ export class DocumentFormatter {
             return line; // No posting with amount found, return as-is
         }
 
-        const accountName = postingMatch[1]?.trim() || '';
-        const amountExpression = postingMatch[2]?.trim() || '';
+        const accountName = postingMatch[1]?.trim() ?? '';
+        const amountExpression = postingMatch[2]?.trim() ?? '';
 
         if (!accountName || !amountExpression) {
             return line; // Invalid format, return as-is
@@ -411,8 +411,8 @@ export class DocumentFormatter {
         // Check for balance assertions first
         const balanceMatch = amountExpression.match(DocumentFormatter.BALANCE_ASSERTION_REGEX);
         if (balanceMatch) {
-            amount = balanceMatch[1]?.trim() || '';
-            balanceAssertion = balanceMatch[2] + (balanceMatch[3] || '');
+            amount = balanceMatch[1]?.trim() ?? '';
+            balanceAssertion = balanceMatch[2] + (balanceMatch[3] ?? '');
         } else {
             amount = amountExpression;
         }
@@ -567,8 +567,8 @@ export class DocumentFormatter {
             };
         }
 
-        const accountName = postingMatch[1]?.trim() || '';
-        let amountPart = postingMatch[2]?.trim() || '';
+        const accountName = postingMatch[1]?.trim() ?? '';
+        let amountPart = postingMatch[2]?.trim() ?? '';
 
         // If there's a comment in the original line, append it to the amount part
         if (hasComment) {
@@ -584,8 +584,8 @@ export class DocumentFormatter {
 
         if (fullMatch?.[2]) {
             // Find the exact position where the amount starts in the original line
-            const amountText = fullMatch[2] || '';
-            const accountText = fullMatch[1] || '';
+            const amountText = fullMatch[2] ?? '';
+            const accountText = fullMatch[1] ?? '';
             const tempAmountStartPos = line.indexOf(accountText) + accountText.length;
 
             // Verify this amount actually contains numbers (not just a comment)
@@ -710,8 +710,8 @@ export class DocumentFormatter {
                     const match = beforeComment.match(DocumentFormatter.SPLIT_LINE_REGEX);
 
                     if (match) {
-                        const accountName = match[1]?.trim() || '';
-                        const amount = match[3]?.trim() || '';
+                        const accountName = match[1]?.trim() ?? '';
+                        const amount = match[3]?.trim() ?? '';
 
                         // Check if the amount part looks like an amount (contains numbers)
                         if (DocumentFormatter.NUMBER_REGEX.test(amount)) {
@@ -758,7 +758,7 @@ export class DocumentFormatter {
                         const postingMatch = beforeCommentTrimmed.match(/^([^\s;]+(?:\s+[^\s;]+)*?)\s{2,}([^;]+)$/);
 
                         if (postingMatch) {
-                            const amountExpression = postingMatch[2]?.trim() || '';
+                            const amountExpression = postingMatch[2]?.trim() ?? '';
 
                             // Calculate where the amount ends
                             // Amount starts at amountAlignmentColumn
@@ -770,8 +770,8 @@ export class DocumentFormatter {
                                 // Check for balance assertions (=, ==) and price assignments (@, @@)
                                 const balanceMatch = amountExpression.match(DocumentFormatter.BALANCE_ASSERTION_REGEX);
                                 if (balanceMatch) {
-                                    const amount = balanceMatch[1]?.trim() || '';
-                                    const assertion = balanceMatch[2] + (balanceMatch[3] || '');
+                                    const amount = balanceMatch[1]?.trim() ?? '';
+                                    const assertion = balanceMatch[2] + (balanceMatch[3] ?? '');
                                     amountEnd = createCharacterPosition(amountStart + amount.length + assertion.length);
                                 } else {
                                     amountEnd = createCharacterPosition(amountStart + amountExpression.length);
@@ -850,8 +850,8 @@ export class DocumentFormatter {
 
         let contentEndPosition = beforeComment.length;
         if (postingMatch) {
-            const accountName = postingMatch[1]?.trim() || '';
-            const amountExpression = postingMatch[2]?.trim() || '';
+            const accountName = postingMatch[1]?.trim() ?? '';
+            const amountExpression = postingMatch[2]?.trim() ?? '';
 
             // Reconstruct the line to find the actual end position
             const indent = ' '.repeat(this.options.postingIndent);
@@ -889,13 +889,13 @@ function createCharacterPosition(value: number): CharacterPosition {
 /**
  * Type guard to check if an object is a valid PostingLine.
  */
-export function isPostingLine(obj: any): obj is PostingLine {
+export function isPostingLine(obj: unknown): obj is PostingLine {
     return typeof obj === 'object' &&
            obj !== null &&
-           typeof obj.originalLine === 'string' &&
-           typeof obj.accountName === 'string' &&
-           typeof obj.amountPart === 'string' &&
-           typeof obj.hasAmount === 'boolean';
+           'originalLine' in obj && typeof (obj as Record<string, unknown>).originalLine === 'string' &&
+           'accountName' in obj && typeof (obj as Record<string, unknown>).accountName === 'string' &&
+           'amountPart' in obj && typeof (obj as Record<string, unknown>).amountPart === 'string' &&
+           'hasAmount' in obj && typeof (obj as Record<string, unknown>).hasAmount === 'boolean';
 }
 
 /**

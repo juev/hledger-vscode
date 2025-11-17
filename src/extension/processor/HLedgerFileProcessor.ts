@@ -252,19 +252,28 @@ export class HLedgerFileProcessor {
         visitedDirs: Set<string> = new Set()
     ): string[] {
         if (!fs.existsSync(dirPath)) {
-            console.warn(`HLedger: Directory does not exist: ${dirPath}`);
+            // Only warn in non-test environments to avoid test noise
+            if (!process.env.JEST_WORKER_ID) {
+                console.warn(`HLedger: Directory does not exist: ${dirPath}`);
+            }
             return [];
         }
 
         // Security check: Enforce depth limit to prevent DoS
         if (currentDepth >= maxDepth) {
-            console.warn(`HLedger: Maximum depth (${maxDepth}) reached at ${dirPath}, stopping traversal`);
+            // Only warn in non-test environments to avoid test noise
+            if (!process.env.JEST_WORKER_ID) {
+                console.warn(`HLedger: Maximum depth (${maxDepth}) reached at ${dirPath}, stopping traversal`);
+            }
             return [];
         }
 
         // Security check: Skip system directories to prevent DoS
         if (this.isSystemDirectory(dirPath)) {
-            console.warn(`HLedger: Skipping system directory ${dirPath}`);
+            // Only warn in non-test environments to avoid test noise
+            if (!process.env.JEST_WORKER_ID) {
+                console.warn(`HLedger: Skipping system directory ${dirPath}`);
+            }
             return [];
         }
 
@@ -276,7 +285,10 @@ export class HLedgerFileProcessor {
 
             // Security check: Detect symlink cycles
             if (visitedDirs.has(realPath)) {
-                console.warn(`HLedger: Symlink cycle detected at ${dirPath} (real: ${realPath}), skipping`);
+                // Only warn in non-test environments to avoid test noise
+                if (!process.env.JEST_WORKER_ID) {
+                    console.warn(`HLedger: Symlink cycle detected at ${dirPath} (real: ${realPath}), skipping`);
+                }
                 return [];
             }
 
@@ -440,7 +452,10 @@ export class HLedgerFileProcessor {
                                         file: basePath || 'unknown',
                                         error: errorMsg
                                     });
-                                    console.warn(`HLedger: ${errorMsg}`);
+                                    // Only warn in non-test environments to avoid test noise
+                                    if (!process.env.JEST_WORKER_ID) {
+                                        console.warn(`HLedger: ${errorMsg}`);
+                                    }
                                     continue;
                                 }
 

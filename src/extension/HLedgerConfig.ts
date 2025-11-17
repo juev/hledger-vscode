@@ -23,11 +23,11 @@ export class HLedgerConfig {
         ACCOUNT_END: /^\s+[^0-9]*\s+/,
         // Improved date patterns for progressive typing
         NUMERIC_START: /^\d{1,4}$/,  // Just digits at line start (for typing year)
-        PARTIAL_DATE: /^\d{1,4}[-\/]?\d{0,2}[-\/]?\d{0,2}$/,  // Flexible partial date
-        FULL_DATE: /^\d{4}[-\/]\d{1,2}[-\/]\d{1,2}$/,  // Complete date format
-        SHORT_DATE: /^(0?[1-9]|1[0-2])[-\/](0?[1-9]|[12]\d|3[01])$/,  // MM/DD or M/D format
+        PARTIAL_DATE: /^\d{1,4}[-/]?\d{0,2}[-/]?\d{0,2}$/,  // Flexible partial date
+        FULL_DATE: /^\d{4}[-/]\d{1,2}[-/]\d{1,2}$/,  // Complete date format
+        SHORT_DATE: /^(0?[1-9]|1[0-2])[-/](0?[1-9]|[12]\d|3[01])$/,  // MM/DD or M/D format
         // Fixed: Support both full dates (YYYY-MM-DD) and short dates (MM-DD) in transactions
-        DATE_IN_TRANSACTION: /^\s*(?:\d{4}[-\/]\d{1,2}[-\/]\d{1,2}|\d{1,2}[-\/]\d{1,2})\s*[*!]?\s*/
+        DATE_IN_TRANSACTION: /^\s*(?:\d{4}[-/]\d{1,2}[-/]\d{1,2}|\d{1,2}[-/]\d{1,2})\s*[*!]?\s*/
     } as const;
 
     private parser: HLedgerParser;
@@ -36,8 +36,8 @@ export class HLedgerConfig {
     private lastWorkspacePath: string | null = null;
 
     constructor(parser?: HLedgerParser, cache?: SimpleProjectCache) {
-        this.parser = parser || new HLedgerParser();
-        this.cache = cache || new SimpleProjectCache();
+        this.parser = parser ?? new HLedgerParser();
+        this.cache = cache ?? new SimpleProjectCache();
     }
 
     // Main method to get configuration for a document
@@ -220,17 +220,17 @@ export class HLedgerConfig {
     }
 
     getDefaultCommodity(): CommodityCode | null {
-        return this.data?.defaultCommodity || null;
+        return this.data?.defaultCommodity ?? null;
     }
 
     // Date methods
     getLastDate(): string | null {
-        return this.data?.lastDate || null;
+        return this.data?.lastDate ?? null;
     }
 
     // Alias methods with enhanced type safety
     getAliases(): ReadonlyMap<AccountName, AccountName> {
-        return this.data?.aliases || new Map();
+        return this.data?.aliases ?? new Map();
     }
 
     // Context detection for completion
@@ -395,25 +395,25 @@ export class HLedgerConfig {
     }
 
     // Get cache statistics
-    getCacheStats() {
+    getCacheStats(): any {
         return this.cache.getStats();
     }
 
     // Direct access to usage maps with enhanced type safety
     get accountUsage(): ReadonlyMap<AccountName, UsageCount> {
-        return this.data?.accountUsage || new Map();
+        return this.data?.accountUsage ?? new Map();
     }
 
     get payeeUsage(): ReadonlyMap<PayeeName, UsageCount> {
-        return this.data?.payeeUsage || new Map();
+        return this.data?.payeeUsage ?? new Map();
     }
 
     get tagUsage(): ReadonlyMap<TagName, UsageCount> {
-        return this.data?.tagUsage || new Map();
+        return this.data?.tagUsage ?? new Map();
     }
 
     get commodityUsage(): ReadonlyMap<CommodityCode, UsageCount> {
-        return this.data?.commodityUsage || new Map();
+        return this.data?.commodityUsage ?? new Map();
     }
 
     // Tag value methods with enhanced type safety
@@ -443,7 +443,7 @@ export class HLedgerConfig {
     }
 
     get tagValueUsage(): ReadonlyMap<string, UsageCount> {
-        return this.data?.tagValueUsage || new Map();
+        return this.data?.tagValueUsage ?? new Map();
     }
 
     // Backward compatibility methods for tests

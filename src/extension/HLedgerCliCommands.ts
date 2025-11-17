@@ -79,8 +79,8 @@ export class HLedgerCliCommands implements vscode.Disposable {
 
             vscode.window.showInformationMessage(`hledger ${cliCommandName} report inserted successfully.`);
 
-        } catch (error: any) {
-            vscode.window.showErrorMessage(`Failed to run hledger ${command}: ${error.message}`);
+        } catch (error: unknown) {
+            vscode.window.showErrorMessage(`Failed to run hledger ${command}: ${error instanceof Error ? error.message : String(error)}`);
         }
     }
 

@@ -87,7 +87,7 @@ export interface CompletionContext {
     readonly type: CompletionType;
     readonly query: string;
     readonly position?: CompletionPosition;
-    readonly document?: DocumentReference;
+    readonly document?: DocumentReference | undefined;
     readonly range?: CompletionRange;
     readonly isCaseSensitive?: boolean;
 }

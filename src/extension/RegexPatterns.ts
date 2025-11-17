@@ -4,7 +4,7 @@
  */
 export class RegexPatterns {
     // Date patterns
-    static readonly DATE_FULL = /^(\d{4}[-\/\.]\d{2}[-\/\.]\d{2}|\d{2}[-\/\.]\d{2})/;
+    static readonly DATE_FULL = /^(\d{4}[-/.]\d{2}[-/.]\d{2}|\d{2}[-/.]\d{2})/;
     static readonly DATE_LINE_START = /^(\d{4}[-/]\d{1,2}[-/]\d{1,2}|\d{1,2}[-/]\d{1,2})$/u;
     static readonly DATE_WITH_STATUS = /^(\d{4}[-/]\d{1,2}[-/]\d{1,2}|\d{1,2}[-/]\d{1,2})\s*[*!]?\s*$/u;
     static readonly AFTER_DATE_PATTERN = /^(\d{4}[-/]\d{1,2}[-/]\d{1,2}|\d{1,2}[-/]\d{1,2})\s*[*!]?\s+[\p{L}\p{N}\s\p{P}]*$/u;
@@ -16,7 +16,7 @@ export class RegexPatterns {
     static readonly ZERO_PARTIAL_DATE = /^0[1-9][-/]?\d{0,2}$/u;
 
     // Transaction patterns
-    static readonly TRANSACTION_LINE = /^(\d{4}[-\/\.]\d{2}[-\/\.]\d{2}|\d{2}[-\/\.]\d{2})/;
+    static readonly TRANSACTION_LINE = /^(\d{4}[-/.]\d{2}[-/.]\d{2}|\d{2}[-/.]\d{2})/;
     static readonly TRANSACTION_CODE = /^\([^)]+\)\s*/;
     static readonly TRANSACTION_STATUS = /^[*!]\s*/;
 

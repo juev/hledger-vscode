@@ -258,10 +258,24 @@ export const createMockExtensionContext = (overrides: Partial<ExtensionContext> 
 });
 
 export const workspace = {
-    getWorkspaceFolder: jest.fn(),
+    getWorkspaceFolder: jest.fn((uri) => {
+        // Return a mock workspace folder for test documents
+        if (uri && uri.fsPath && uri.fsPath.startsWith('/test')) {
+            return {
+                uri: { scheme: 'file', authority: '', path: '/test', query: '', fragment: '', fsPath: '/test', with: jest.fn(), toString: () => 'file:///test', toJSON: () => ({ $mid: 1, fsPath: '/test', path: '/test', scheme: 'file' }) },
+                name: 'test-workspace',
+                index: 0
+            };
+        }
+        return undefined;
+    }),
     onDidOpenTextDocument: jest.fn(() => ({ dispose: jest.fn() })),
     onDidSaveTextDocument: jest.fn(() => ({ dispose: jest.fn() })),
-    workspaceFolders: [] as WorkspaceFolder[],
+    workspaceFolders: [{
+        uri: { scheme: 'file', authority: '', path: '/test', query: '', fragment: '', fsPath: '/test', with: jest.fn(), toString: () => 'file:///test', toJSON: () => ({ $mid: 1, fsPath: '/test', path: '/test', scheme: 'file' }) },
+        name: 'test-workspace',
+        index: 0
+    }] as WorkspaceFolder[],
     fs: {
         readFile: jest.fn(),
         writeFile: jest.fn(),

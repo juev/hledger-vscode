@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 import { HLedgerConfig } from './HLedgerConfig';
-import { CompletionType, CompletionContext, createLineNumber, createCharacterPosition } from './types';
+import { CompletionType, CompletionContext, createLineNumber, createCharacterPosition, DocumentReference, createFilePath, createDocumentVersion } from './types';
 import { StrictPositionAnalyzer, StrictCompletionContext } from './strict/StrictPositionAnalyzer';
 import { CompletionSuppressor } from './strict/CompletionSuppressor';
 import { StrictPositionValidator } from './strict/StrictPositionValidator';
@@ -203,12 +203,12 @@ export class StrictCompletionProvider implements vscode.CompletionItemProvider {
         };
 
         // Create DocumentReference if document is provided
-        let documentRef: any = undefined;
+        let documentRef: DocumentReference | undefined;
         if (vscodeDocument) {
             documentRef = {
-                uri: vscodeDocument.uri.fsPath,
+                uri: createFilePath(vscodeDocument.uri.fsPath),
                 languageId: vscodeDocument.languageId,
-                version: vscodeDocument.version
+                version: createDocumentVersion(vscodeDocument.version)
             };
         }
 
