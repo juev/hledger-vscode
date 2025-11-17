@@ -80,7 +80,7 @@ export class HLedgerLexer {
         const trimmedLine = line.trim();
 
         // Empty line
-        if (!trimmedLine || trimmedLine === '') {
+        if (!trimmedLine) {
             return {
                 type: TokenType.EMPTY,
                 rawLine: line,
