@@ -298,7 +298,10 @@ export class HLedgerASTBuilder {
             if (!data.tagValues.has(tagName)) {
                 data.tagValues.set(tagName, new Set());
             }
-            const valueSet = data.tagValues.get(tagName)!;
+            const valueSet = data.tagValues.get(tagName);
+            if (!valueSet) {
+                continue;
+            }
 
             for (const value of values) {
                 valueSet.add(value);
@@ -391,8 +394,10 @@ export class HLedgerASTBuilder {
             if (!target.tagValues.has(tag)) {
                 target.tagValues.set(tag, new Set());
             }
-            const targetValues = target.tagValues.get(tag)!;
-            values.forEach(value => targetValues.add(value));
+            const targetValues = target.tagValues.get(tag);
+            if (targetValues) {
+                values.forEach(value => targetValues.add(value));
+            }
         });
 
         // Merge usage data
