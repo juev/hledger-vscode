@@ -234,7 +234,7 @@ export class HLedgerLexer {
         // Extract status (single character like * or !)
         let status: string | undefined;
         const statusPart = parts[currentIndex];
-        if (statusPart && /^[*!]/.test(statusPart)) {
+        if (statusPart && /^[*!]$/.test(statusPart)) {
             status = statusPart;
             currentIndex++;
         }
