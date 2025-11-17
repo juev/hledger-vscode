@@ -285,23 +285,14 @@ describe('HLedgerFileProcessor Security Tests', () => {
             expect(files[0]).toBe(normalFile);
         });
 
-        it('should skip Unix system directories if they exist', () => {
-            // We can't create these directories in tests, but we can verify
-            // the logic doesn't traverse them if they exist
-            // This test verifies the isSystemDirectory method
-
-            // Test with mock paths
+        it('should skip Unix system directories', () => {
+            // Test the isSystemDirectory method directly with mock paths
             const systemPaths = ['/proc', '/dev', '/sys', '/run', '/tmp'];
 
             systemPaths.forEach(sysPath => {
-                // Only test if we're on a Unix-like system and path exists
-                if (fs.existsSync(sysPath)) {
-                    const files = processor.findHLedgerFiles(sysPath, 1);
-
-                    // Should return empty array (either doesn't exist or skipped)
-                    // We don't want to traverse these directories
-                    expect(Array.isArray(files)).toBe(true);
-                }
+                // Access the private method for testing
+                const isSystem = (processor as any).isSystemDirectory(sysPath);
+                expect(isSystem).toBe(true);
             });
         });
     });

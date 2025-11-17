@@ -308,6 +308,10 @@ export class HLedgerFileProcessor {
                     if (entry.isFile() && this.isHLedgerFile(entry.name)) {
                         files.push(fullPath);
                     } else if (entry.isDirectory()) {
+                        // Skip system directories
+                        if (this.isSystemDirectory(fullPath)) {
+                            continue;
+                        }
                         // Recursively search subdirectories with incremented depth
                         files.push(...this.findHLedgerFiles(fullPath, maxDepth, currentDepth + 1, visitedDirs));
                     }
