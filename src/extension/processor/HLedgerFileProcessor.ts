@@ -23,6 +23,28 @@ export interface FileProcessingOptions {
 }
 
 /**
+ * File processing error with context
+ */
+export interface FileProcessingError {
+    /** File path where error occurred */
+    file: string;
+    /** Error message */
+    error: string;
+    /** Optional line number where error occurred */
+    line?: number;
+}
+
+/**
+ * File processing warning with context
+ */
+export interface FileProcessingWarning {
+    /** File path where warning occurred */
+    file: string;
+    /** Warning message */
+    message: string;
+}
+
+/**
  * File processing result with metadata
  */
 export interface FileProcessingResult {
@@ -36,6 +58,10 @@ export interface FileProcessingResult {
     processingTime: number;
     /** Total bytes processed */
     bytesProcessed: number;
+    /** Errors encountered during processing */
+    errors: FileProcessingError[];
+    /** Warnings encountered during processing */
+    warnings: FileProcessingWarning[];
 }
 
 /**
@@ -79,12 +105,18 @@ export class HLedgerFileProcessor {
             filesProcessed: [],
             filesExcluded: [],
             processingTime: 0,
-            bytesProcessed: 0
+            bytesProcessed: 0,
+            errors: [],
+            warnings: []
         };
 
         try {
             if (this.shouldExcludeFile(filePath)) {
                 result.filesExcluded.push(filePath);
+                result.warnings.push({
+                    file: filePath,
+                    message: 'File excluded by pattern'
+                });
                 result.processingTime = Date.now() - startTime;
                 return result;
             }
@@ -104,11 +136,25 @@ export class HLedgerFileProcessor {
 
             result.data = parseResult.data;
             result.filesProcessed.push(...parseResult.includedFiles);
+            result.errors.push(...parseResult.errors);
+            result.warnings.push(...parseResult.warnings);
 
         } catch (error) {
-            // Log error only in non-test environment
-            if (process.env.NODE_ENV !== 'test') {
-                console.error('Error processing file:', filePath, error);
+            const errorMessage = error instanceof Error ? error.message : String(error);
+            const contextMessage = `Failed to process file: ${errorMessage}`;
+
+            // Add structured error to result
+            result.errors.push({
+                file: filePath,
+                error: contextMessage
+            });
+
+            // Log error with context for debugging (always, not just non-test)
+            console.error(`HLedger: Error processing file ${filePath}:`, errorMessage);
+
+            // In non-test environment, also log stack trace
+            if (process.env.NODE_ENV !== 'test' && error instanceof Error && error.stack) {
+                console.error('Stack trace:', error.stack);
             }
         }
 
@@ -126,12 +172,24 @@ export class HLedgerFileProcessor {
             filesProcessed: [],
             filesExcluded: [],
             processingTime: 0,
-            bytesProcessed: 0
+            bytesProcessed: 0,
+            errors: [],
+            warnings: []
         };
 
         // Filter out excluded files
         const validFiles = filePaths.filter(file => !this.shouldExcludeFile(file));
-        combinedResult.filesExcluded = filePaths.filter(file => this.shouldExcludeFile(file));
+        const excludedFiles = filePaths.filter(file => this.shouldExcludeFile(file));
+
+        combinedResult.filesExcluded = excludedFiles;
+
+        // Add warnings for excluded files
+        excludedFiles.forEach(file => {
+            combinedResult.warnings.push({
+                file,
+                message: 'File excluded by pattern'
+            });
+        });
 
         if (validFiles.length === 0) {
             combinedResult.processingTime = Date.now() - startTime;
@@ -152,6 +210,8 @@ export class HLedgerFileProcessor {
             for (const batchResult of batchResults) {
                 combinedResult.filesProcessed.push(...batchResult.filesProcessed);
                 combinedResult.bytesProcessed += batchResult.bytesProcessed;
+                combinedResult.errors.push(...batchResult.errors);
+                combinedResult.warnings.push(...batchResult.warnings);
 
                 // Merge parsed data from this batch
                 if (batchResult.data) {
@@ -181,6 +241,7 @@ export class HLedgerFileProcessor {
      */
     public findHLedgerFiles(dirPath: string): string[] {
         if (!fs.existsSync(dirPath)) {
+            console.warn(`HLedger: Directory does not exist: ${dirPath}`);
             return [];
         }
 
@@ -196,16 +257,25 @@ export class HLedgerFileProcessor {
                     continue;
                 }
 
-                if (entry.isFile() && this.isHLedgerFile(entry.name)) {
-                    files.push(fullPath);
-                } else if (entry.isDirectory()) {
-                    // Recursively search subdirectories
-                    files.push(...this.findHLedgerFiles(fullPath));
+                try {
+                    if (entry.isFile() && this.isHLedgerFile(entry.name)) {
+                        files.push(fullPath);
+                    } else if (entry.isDirectory()) {
+                        // Recursively search subdirectories
+                        files.push(...this.findHLedgerFiles(fullPath));
+                    }
+                } catch (error) {
+                    const errorMessage = error instanceof Error ? error.message : String(error);
+                    console.error(`HLedger: Error accessing ${fullPath}: ${errorMessage}`);
+                    // Continue processing other files
                 }
             }
         } catch (error) {
-            if (process.env.NODE_ENV !== 'test') {
-                console.error('Error scanning directory:', dirPath, error);
+            const errorMessage = error instanceof Error ? error.message : String(error);
+            console.error(`HLedger: Error scanning directory ${dirPath}: ${errorMessage}`);
+
+            if (process.env.NODE_ENV !== 'test' && error instanceof Error && error.stack) {
+                console.error('Stack trace:', error.stack);
             }
         }
 
@@ -255,79 +325,141 @@ export class HLedgerFileProcessor {
     private async parseContent(content: string, basePath?: string, includeDepth = 0): Promise<{
         data: ParsedHLedgerData;
         includedFiles: string[];
+        errors: FileProcessingError[];
+        warnings: FileProcessingWarning[];
     }> {
         const includedFiles: string[] = [];
+        const errors: FileProcessingError[] = [];
+        const warnings: FileProcessingWarning[] = [];
 
-        // Tokenize content using the lexer
-        const tokens = this.lexer.tokenizeContent(content);
+        try {
+            // Tokenize content using the lexer
+            const tokens = this.lexer.tokenizeContent(content);
 
-        // Build AST from tokens
-        const parsedData = this.astBuilder.buildFromTokens(tokens, basePath);
+            // Build AST from tokens
+            const parsedData = this.astBuilder.buildFromTokens(tokens, basePath);
 
-        // Process include directives if enabled and depth limit not exceeded
-        if (this.options.processIncludes && includeDepth < this.options.maxIncludeDepth && basePath) {
-            // Create mutable data structure for merging included files
-            const mutableData = this.createMutableData(parsedData);
+            // Process include directives if enabled and depth limit not exceeded
+            if (this.options.processIncludes && includeDepth < this.options.maxIncludeDepth && basePath) {
+                // Create mutable data structure for merging included files
+                const mutableData = this.createMutableData(parsedData);
 
-            // Extract include directives and process them
-            for (const token of tokens) {
-                if (token.type === TokenType.INCLUDE_DIRECTIVE) {
-                    const includeMatch = token.trimmedLine.match(/^include\s+(.+)$/);
-                    if (includeMatch?.[1]) {
-                        const includePath = includeMatch[1].trim();
-                        const resolvedPath = path.isAbsolute(includePath)
-                            ? includePath
-                            : path.join(basePath, includePath);
+                // Extract include directives and process them
+                for (const token of tokens) {
+                    if (token.type === TokenType.INCLUDE_DIRECTIVE) {
+                        const includeMatch = token.trimmedLine.match(/^include\s+(.+)$/);
+                        if (includeMatch?.[1]) {
+                            const includePath = includeMatch[1].trim();
+                            const resolvedPath = path.isAbsolute(includePath)
+                                ? includePath
+                                : path.join(basePath, includePath);
 
-                        try {
-                            // Check if file should be excluded
-                            if (this.shouldExcludeFile(resolvedPath)) {
-                                continue;
-                            }
-
-                            // Check if file exists
-                            if (!fs.existsSync(resolvedPath)) {
-                                if (process.env.NODE_ENV !== 'test') {
-                                    console.warn(`Include file not found: ${resolvedPath}`);
+                            try {
+                                // Check if file should be excluded
+                                if (this.shouldExcludeFile(resolvedPath)) {
+                                    warnings.push({
+                                        file: resolvedPath,
+                                        message: 'Include file excluded by pattern'
+                                    });
+                                    continue;
                                 }
-                                continue;
-                            }
 
-                            // Read and parse included file
-                            const includeContent = fs.readFileSync(resolvedPath, 'utf8');
-                            const includeResult = await this.parseContent(
-                                includeContent,
-                                path.dirname(resolvedPath),
-                                includeDepth + 1
-                            );
+                                // Check if file exists
+                                if (!fs.existsSync(resolvedPath)) {
+                                    const errorMsg = `Include file not found: ${resolvedPath}`;
+                                    errors.push({
+                                        file: basePath || 'unknown',
+                                        error: errorMsg
+                                    });
+                                    console.warn(`HLedger: ${errorMsg}`);
+                                    continue;
+                                }
 
-                            // Track included files
-                            includedFiles.push(resolvedPath);
-                            includedFiles.push(...includeResult.includedFiles);
+                                // Read and parse included file
+                                const includeContent = fs.readFileSync(resolvedPath, 'utf8');
+                                const includeResult = await this.parseContent(
+                                    includeContent,
+                                    path.dirname(resolvedPath),
+                                    includeDepth + 1
+                                );
 
-                            // Merge included data into main data
-                            this.astBuilder.mergeData(mutableData, includeResult.data);
+                                // Track included files
+                                includedFiles.push(resolvedPath);
+                                includedFiles.push(...includeResult.includedFiles);
 
-                        } catch (error) {
-                            if (process.env.NODE_ENV !== 'test') {
-                                console.error(`Error processing include file ${resolvedPath}:`, error);
+                                // Aggregate errors and warnings from included files
+                                errors.push(...includeResult.errors);
+                                warnings.push(...includeResult.warnings);
+
+                                // Merge included data into main data
+                                this.astBuilder.mergeData(mutableData, includeResult.data);
+
+                            } catch (error) {
+                                const errorMessage = error instanceof Error ? error.message : String(error);
+                                const contextMessage = `Error processing include file ${resolvedPath}: ${errorMessage}`;
+
+                                errors.push({
+                                    file: resolvedPath,
+                                    error: contextMessage
+                                });
+
+                                console.error(`HLedger: ${contextMessage}`);
+
+                                if (process.env.NODE_ENV !== 'test' && error instanceof Error && error.stack) {
+                                    console.error('Stack trace:', error.stack);
+                                }
                             }
                         }
                     }
                 }
+
+                // Check for include depth exceeded
+                if (includeDepth >= this.options.maxIncludeDepth) {
+                    warnings.push({
+                        file: basePath || 'unknown',
+                        message: `Include depth limit (${this.options.maxIncludeDepth}) reached, skipping nested includes`
+                    });
+                }
+
+                // Convert mutable data back to readonly
+                return {
+                    data: this.toReadonlyData(mutableData),
+                    includedFiles,
+                    errors,
+                    warnings
+                };
             }
 
-            // Convert mutable data back to readonly
             return {
-                data: this.toReadonlyData(mutableData),
-                includedFiles
+                data: parsedData,
+                includedFiles,
+                errors,
+                warnings
+            };
+
+        } catch (error) {
+            const errorMessage = error instanceof Error ? error.message : String(error);
+            const contextMessage = `Failed to parse content: ${errorMessage}`;
+
+            errors.push({
+                file: basePath || 'unknown',
+                error: contextMessage
+            });
+
+            console.error(`HLedger: ${contextMessage}`);
+
+            if (process.env.NODE_ENV !== 'test' && error instanceof Error && error.stack) {
+                console.error('Stack trace:', error.stack);
+            }
+
+            // Return empty data with error information
+            return {
+                data: {} as ParsedHLedgerData,
+                includedFiles,
+                errors,
+                warnings
             };
         }
-
-        return {
-            data: parsedData,
-            includedFiles
-        };
     }
 
     /**

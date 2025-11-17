@@ -798,12 +798,25 @@ export class HLedgerParser {
         try {
             const files = this.findHLedgerFiles(workspacePath);
             for (const file of files) {
-                const fileData = this.parseFile(file);
-                this.mergeData(data, fileData);
+                try {
+                    const fileData = this.parseFile(file);
+                    this.mergeData(data, fileData);
+                } catch (error) {
+                    const errorMessage = error instanceof Error ? error.message : String(error);
+                    console.error(`HLedger: Error parsing file ${file}: ${errorMessage}`);
+
+                    if (process.env.NODE_ENV !== 'test' && error instanceof Error && error.stack) {
+                        console.error('Stack trace:', error.stack);
+                    }
+                    // Continue processing other files
+                }
             }
         } catch (error) {
-            if (process.env.NODE_ENV !== 'test') {
-                console.error('Error scanning workspace:', workspacePath, error);
+            const errorMessage = error instanceof Error ? error.message : String(error);
+            console.error(`HLedger: Error scanning workspace ${workspacePath}: ${errorMessage}`);
+
+            if (process.env.NODE_ENV !== 'test' && error instanceof Error && error.stack) {
+                console.error('Stack trace:', error.stack);
             }
         }
 

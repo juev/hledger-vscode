@@ -15,11 +15,13 @@ import { registerFormattingProviders } from './HLedgerFormattingProvider';
 import { HledgerSemanticTokensProvider, HLEDGER_SEMANTIC_TOKENS_LEGEND } from './HledgerSemanticTokensProvider';
 import { HLedgerCliService } from './services/HLedgerCliService';
 import { HLedgerCliCommands } from './HLedgerCliCommands';
+import { ErrorNotificationHandler } from './utils/ErrorNotificationHandler';
 
 // Global instances for simplified architecture (to be replaced with proper DI)
 let globalConfig: HLedgerConfig | null = null;
 let cliService: HLedgerCliService | null = null;
 let cliCommands: HLedgerCliCommands | null = null;
+let errorNotificationHandler: ErrorNotificationHandler | null = null;
 
 // Main activation function
 export function activate(context: vscode.ExtensionContext): void {
@@ -30,6 +32,11 @@ export function activate(context: vscode.ExtensionContext): void {
         // Add CLI service to subscriptions for proper cleanup
         if (cliService) {
             context.subscriptions.push(cliService);
+        }
+
+        // Add error notification handler to subscriptions
+        if (errorNotificationHandler) {
+            context.subscriptions.push(errorNotificationHandler);
         }
 
         // Register strict completion provider with necessary triggers
@@ -180,6 +187,14 @@ export function getConfig(document: vscode.TextDocument): HLedgerConfig {
 }
 
 /**
+ * Get the global error notification handler instance
+ * @returns ErrorNotificationHandler instance or null if not initialized
+ */
+export function getErrorNotificationHandler(): ErrorNotificationHandler | null {
+    return errorNotificationHandler;
+}
+
+/**
  * Global initialization function to ensure proper setup
  * Should be called during extension activation
  */
@@ -197,6 +212,10 @@ export function initializeGlobalInstances(): void {
     if (!cliCommands) {
         cliCommands = new HLedgerCliCommands(cliService);
     }
+
+    if (!errorNotificationHandler) {
+        errorNotificationHandler = new ErrorNotificationHandler();
+    }
 }
 
 /**
@@ -211,10 +230,14 @@ export function disposeGlobalInstances(): void {
         if (cliService) {
             cliService.dispose();
         }
+        if (errorNotificationHandler) {
+            errorNotificationHandler.dispose();
+        }
         // Reset global variables to null (type-safe)
         globalConfig = null;
         cliService = null;
         cliCommands = null;
+        errorNotificationHandler = null;
     } catch (error) {
         console.error('HLedger: Error disposing global instances:', error);
     }
