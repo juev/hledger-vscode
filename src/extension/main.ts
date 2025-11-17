@@ -93,6 +93,9 @@ export function activate(context: vscode.ExtensionContext): void {
             )
         );
 
+        // Register the semantic provider itself for proper disposal
+        context.subscriptions.push(semanticProvider);
+
         // FS watcher for journal files: invalidate cache on change
         const watcher = vscode.workspace.createFileSystemWatcher('**/*.{journal,hledger,ledger}');
         const onFsChange = () => {
@@ -127,6 +130,9 @@ export function activate(context: vscode.ExtensionContext): void {
         if (!cliCommands) {
             throw new Error('HLedger: CLI commands not initialized');
         }
+
+        // Register CLI commands handler for proper disposal
+        context.subscriptions.push(cliCommands);
 
         context.subscriptions.push(
             vscode.commands.registerCommand('hledger.cli.balance', async () => {
@@ -224,8 +230,12 @@ export function initializeGlobalInstances(): void {
  */
 export function disposeGlobalInstances(): void {
     try {
+        // Dispose all global instances in reverse order of initialization
         if (globalConfig) {
-            globalConfig.clearCache();
+            globalConfig.dispose();
+        }
+        if (cliCommands) {
+            cliCommands.dispose();
         }
         if (cliService) {
             cliService.dispose();

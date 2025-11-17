@@ -475,4 +475,14 @@ export class HLedgerConfig {
         const defined = new Set(this.getDefinedAccounts());
         return this.getUsedAccounts().filter(account => !defined.has(account));
     }
+
+    /**
+     * Cleanup method to prevent memory leaks.
+     * Clears all cached data and resets internal state.
+     */
+    dispose(): void {
+        this.clearCache();
+        this.data = null;
+        this.lastWorkspacePath = null;
+    }
 }

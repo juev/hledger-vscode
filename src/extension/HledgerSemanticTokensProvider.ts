@@ -30,7 +30,7 @@ export const HLEDGER_SEMANTIC_TOKENS_LEGEND = new vscode.SemanticTokensLegend([.
  * Designed to be conservative and fast; it highlights the most important entities.
  * Supports both full-document and range-based tokenization for better performance.
  */
-export class HledgerSemanticTokensProvider implements vscode.DocumentSemanticTokensProvider, vscode.DocumentRangeSemanticTokensProvider {
+export class HledgerSemanticTokensProvider implements vscode.DocumentSemanticTokensProvider, vscode.DocumentRangeSemanticTokensProvider, vscode.Disposable {
   private tokenCache = new Map<string, { version: number; tokens: vscode.SemanticTokens }>();
 
   provideDocumentSemanticTokens(document: vscode.TextDocument): vscode.ProviderResult<vscode.SemanticTokens> {
@@ -368,5 +368,13 @@ export class HledgerSemanticTokensProvider implements vscode.DocumentSemanticTok
         if (amountStart >= 0) this.push(builder, line, offset + m.index + amountStart, amount.length, 'amount');
       }
     }
+  }
+
+  /**
+   * Cleanup method to prevent memory leaks.
+   * Clears the token cache when the provider is disposed.
+   */
+  dispose(): void {
+    this.tokenCache.clear();
   }
 }
