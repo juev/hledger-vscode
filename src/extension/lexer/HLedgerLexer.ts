@@ -311,7 +311,6 @@ export class HLedgerLexer {
      * Tokenizes include directive
      */
     private tokenizeIncludeDirective(rawLine: string, trimmedLine: string): HLedgerToken {
-        const match = trimmedLine.match(/^include\s+(.+)$/);
         return {
             type: TokenType.INCLUDE_DIRECTIVE,
             rawLine,
