@@ -901,12 +901,15 @@ export function isPostingLine(obj: unknown): obj is PostingLine {
 /**
  * Type guard to check if an object is a valid TransactionBlock.
  */
-export function isTransactionBlock(obj: any): obj is TransactionBlock {
-    return typeof obj === 'object' &&
-           obj !== null &&
-           typeof obj.headerLine === 'string' &&
-           Array.isArray(obj.postings) &&
-           obj.postings.every(isPostingLine);
+export function isTransactionBlock(obj: unknown): obj is TransactionBlock {
+    if (typeof obj !== 'object' || obj === null) {
+        return false;
+    }
+
+    const record = obj as Record<string, unknown>;
+    return typeof record.headerLine === 'string' &&
+           Array.isArray(record.postings) &&
+           record.postings.every(isPostingLine);
 }
 
 /**

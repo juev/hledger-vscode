@@ -6,7 +6,7 @@ import * as vscode from 'vscode';
 import * as path from 'path';
 import { HLedgerParser, ParsedHLedgerData } from './HLedgerParser';
 import { SimpleProjectCache } from './SimpleProjectCache';
-import { CompletionContext, AccountName, PayeeName, TagName, TagValue, CommodityCode, UsageCount, createUsageCount, createCacheKey } from './types';
+import { CompletionContext, AccountName, PayeeName, TagName, TagValue, CommodityCode, UsageCount, createUsageCount, createCacheKey, CacheStats } from './types';
 
 // CompletionContext is now imported from types.ts
 export { CompletionContext } from './types';
@@ -111,22 +111,22 @@ export class HLedgerConfig {
         
         // Update usage counts with proper type handling
         currentData.accountUsage.forEach((count, key) => {
-            const existing = mutableData.accountUsage.get(key) || createUsageCount(0);
+            const existing = mutableData.accountUsage.get(key) ?? createUsageCount(0);
             mutableData.accountUsage.set(key, createUsageCount(existing + count));
         });
-        
+
         currentData.payeeUsage.forEach((count, key) => {
-            const existing = mutableData.payeeUsage.get(key) || createUsageCount(0);
+            const existing = mutableData.payeeUsage.get(key) ?? createUsageCount(0);
             mutableData.payeeUsage.set(key, createUsageCount(existing + count));
         });
-        
+
         currentData.tagUsage.forEach((count, key) => {
-            const existing = mutableData.tagUsage.get(key) || createUsageCount(0);
+            const existing = mutableData.tagUsage.get(key) ?? createUsageCount(0);
             mutableData.tagUsage.set(key, createUsageCount(existing + count));
         });
-        
+
         currentData.commodityUsage.forEach((count, key) => {
-            const existing = mutableData.commodityUsage.get(key) || createUsageCount(0);
+            const existing = mutableData.commodityUsage.get(key) ?? createUsageCount(0);
             mutableData.commodityUsage.set(key, createUsageCount(existing + count));
         });
     }
@@ -140,8 +140,8 @@ export class HLedgerConfig {
         if (!this.data) return [];
         
         return Array.from(this.data.accounts).sort((a, b) => {
-            const aUsage = this.data!.accountUsage.get(a) || 0;
-            const bUsage = this.data!.accountUsage.get(b) || 0;
+            const aUsage = this.data!.accountUsage.get(a) ?? 0;
+            const bUsage = this.data!.accountUsage.get(b) ?? 0;
             
             if (aUsage !== bUsage) {
                 return bUsage - aUsage; // Sort by usage descending
@@ -168,8 +168,8 @@ export class HLedgerConfig {
         if (!this.data) return [];
         
         return Array.from(this.data.payees).sort((a, b) => {
-            const aUsage = this.data!.payeeUsage.get(a) || 0;
-            const bUsage = this.data!.payeeUsage.get(b) || 0;
+            const aUsage = this.data!.payeeUsage.get(a) ?? 0;
+            const bUsage = this.data!.payeeUsage.get(b) ?? 0;
             
             if (aUsage !== bUsage) {
                 return bUsage - aUsage;
@@ -188,8 +188,8 @@ export class HLedgerConfig {
         if (!this.data) return [];
         
         return Array.from(this.data.tags).sort((a, b) => {
-            const aUsage = this.data!.tagUsage.get(a) || 0;
-            const bUsage = this.data!.tagUsage.get(b) || 0;
+            const aUsage = this.data!.tagUsage.get(a) ?? 0;
+            const bUsage = this.data!.tagUsage.get(b) ?? 0;
             
             if (aUsage !== bUsage) {
                 return bUsage - aUsage;
@@ -208,8 +208,8 @@ export class HLedgerConfig {
         if (!this.data) return [];
         
         return Array.from(this.data.commodities).sort((a, b) => {
-            const aUsage = this.data!.commodityUsage.get(a) || 0;
-            const bUsage = this.data!.commodityUsage.get(b) || 0;
+            const aUsage = this.data!.commodityUsage.get(a) ?? 0;
+            const bUsage = this.data!.commodityUsage.get(b) ?? 0;
             
             if (aUsage !== bUsage) {
                 return bUsage - aUsage;
@@ -395,7 +395,7 @@ export class HLedgerConfig {
     }
 
     // Get cache statistics
-    getCacheStats(): any {
+    getCacheStats(): CacheStats {
         return this.cache.getStats();
     }
 
@@ -431,8 +431,8 @@ export class HLedgerConfig {
         return values.sort((a, b) => {
             const keyA = `${tagName}:${a}`;
             const keyB = `${tagName}:${b}`;
-            const aUsage = this.data!.tagValueUsage.get(keyA) || 0;
-            const bUsage = this.data!.tagValueUsage.get(keyB) || 0;
+            const aUsage = this.data!.tagValueUsage.get(keyA) ?? 0;
+            const bUsage = this.data!.tagValueUsage.get(keyB) ?? 0;
             
             if (aUsage !== bUsage) {
                 return bUsage - aUsage;

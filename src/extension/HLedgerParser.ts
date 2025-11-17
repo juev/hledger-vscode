@@ -420,7 +420,7 @@ export class HLedgerParser {
                 data.commodityFormats.set(commodityCode, format);
 
                 // Clear pending format directive
-                if (this.pendingFormatDirective && this.pendingFormatDirective.commodity === commodityCode) {
+                if (this.pendingFormatDirective?.commodity === commodityCode) {
                     this.pendingFormatDirective = null;
                 }
             }

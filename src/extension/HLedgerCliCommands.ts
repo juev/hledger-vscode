@@ -136,14 +136,14 @@ export class HLedgerCliCommands implements vscode.Disposable {
     private getJournalFilePath(document: vscode.TextDocument): string {
         // First, try to get from environment variable LEDGER_FILE
         const ledgerFileFromEnv = process.env.LEDGER_FILE;
-        if (ledgerFileFromEnv && ledgerFileFromEnv.trim()) {
+        if (ledgerFileFromEnv?.trim()) {
             return ledgerFileFromEnv.trim();
         }
 
         // Second, try to get from extension configuration
         const config = vscode.workspace.getConfiguration('hledger');
         const journalFileFromConfig = config.get<string>('cli.journalFile', '');
-        if (journalFileFromConfig && journalFileFromConfig.trim()) {
+        if (journalFileFromConfig?.trim()) {
             return journalFileFromConfig.trim();
         }
 

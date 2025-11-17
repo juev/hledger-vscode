@@ -176,7 +176,6 @@ export class HledgerSemanticTokensProvider implements vscode.DocumentSemanticTok
       const posting = postingRe.exec(text);
       if (posting) {
         const whole = posting[0];
-        const _indent = posting[1];
         const accountText = posting[2] ?? '';
         const remainder = posting[3] ?? '';
         const baseIndex = posting.index;
@@ -337,7 +336,6 @@ export class HledgerSemanticTokensProvider implements vscode.DocumentSemanticTok
     prefixRe: RegExp
   ): void {
     // Try suffix form first (amount [commodity])
-    let _lastEnd = -1;
     suffixRe.lastIndex = 0;
     let m: RegExpExecArray | null;
     while ((m = suffixRe.exec(text))) {
@@ -351,7 +349,6 @@ export class HledgerSemanticTokensProvider implements vscode.DocumentSemanticTok
         const commodityStart = full.indexOf(commodity);
         if (commodityStart >= 0) this.push(builder, line, offset + m.index + commodityStart, commodity.length, 'commodity');
       }
-      _lastEnd = m.index + full.length;
     }
 
     // Then prefix form (commodity amount)
