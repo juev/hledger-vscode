@@ -211,10 +211,10 @@ export function disposeGlobalInstances(): void {
         if (cliService) {
             cliService.dispose();
         }
-        // Reset global variables
-        globalConfig = null as any;
-        cliService = null as any;
-        cliCommands = null as any;
+        // Reset global variables to null (type-safe)
+        globalConfig = null;
+        cliService = null;
+        cliCommands = null;
     } catch (error) {
         console.error('HLedger: Error disposing global instances:', error);
     }
