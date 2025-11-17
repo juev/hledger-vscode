@@ -189,8 +189,9 @@ export class HLedgerLexer {
      * Checks if a line is a transaction line (starts with a date)
      */
     public isTransactionLine(line: string): boolean {
-        // Transaction lines start with a date pattern (YYYY/MM/DD, YYYY-MM-DD, etc.)
-        return this.testDatePattern(line);
+        // Date pattern check: YYYY-MM-DD, YYYY/MM/DD, YYYY.MM.DD, or MM-DD, MM/DD, MM.DD
+        const datePattern = /^(\d{4}[-\/\.]\d{1,2}[-\/\.]\d{1,2}|\d{1,2}[-\/\.]\d{1,2})/;
+        return datePattern.test(line);
     }
 
     /**
@@ -250,12 +251,15 @@ export class HLedgerLexer {
         // Rest is description
         const description = parts.slice(currentIndex).join(' ');
 
+        // Strip comments from description for payee extraction
+        const payeeDescription = description ? description.split(/[;#]/)[0]?.trim() || '' : '';
+
         return {
             date: date ?? '',
             status: status,
             code: code,
             description: description ?? '',
-            payee: createPayeeName(description ?? 'Unknown'),
+            payee: createPayeeName(payeeDescription || 'Unknown'),
             tags: new Map()
         };
     }
@@ -401,7 +405,8 @@ export class HLedgerLexer {
      */
     private tokenizeAccountDirective(rawLine: string, trimmedLine: string): HLedgerToken {
         const match = trimmedLine.match(/^account\s+(.+)$/);
-        const account = match?.[1] ? createAccountName(match[1]) : undefined;
+        const accountName = match?.[1] ? match[1].split(/[;#]/)[0]?.trim() || '' : '';
+        const account = accountName ? createAccountName(accountName) : undefined;
 
         return {
             type: TokenType.ACCOUNT_DIRECTIVE,

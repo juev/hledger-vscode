@@ -184,8 +184,8 @@ export class HLedgerASTBuilder {
         context.inTransaction = true;
         context.transactionPayee = token.payee || createPayeeName('Unknown');
 
-        // Extract date from transaction line
-        const dateMatch = token.trimmedLine.match(/^(\d{4}[-/]\d{1,2}[-/]\d{1,2})/);
+        // Extract date from transaction line (support both full and short date formats)
+        const dateMatch = token.trimmedLine.match(/^(\d{4}[-\/\.]\d{1,2}[-\/\.]\d{1,2}|\d{1,2}[-\/\.]\d{1,2})/);
         if (dateMatch?.[1]) {
             context.lastDate = dateMatch[1];
             data.lastDate = dateMatch[1];
@@ -414,7 +414,7 @@ export class HLedgerASTBuilder {
         if (source.decimalMark && !target.decimalMark) {
             target.decimalMark = source.decimalMark;
         }
-        if (source.lastDate && (!target.lastDate || source.lastDate > target.lastDate)) {
+        if (source.lastDate) {
             target.lastDate = source.lastDate;
         }
     }
