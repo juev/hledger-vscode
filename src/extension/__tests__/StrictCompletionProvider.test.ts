@@ -162,12 +162,12 @@ describe('StrictCompletionProvider Integration', () => {
 
         it('should suppress completions in middle of words', () => {
             const document = new MockTextDocument(['  Assets:Cash']);
-            const position = new vscode.Position(0, 8); // Middle of "Assets:Cash"
+            const position = new vscode.Position(0, 5); // Middle of "Assets" (between 's' and 'e')
 
             const completions = provider.provideCompletionItems(
-                document, 
-                position, 
-                mockCancellationToken, 
+                document,
+                position,
+                mockCancellationToken,
                 mockCompletionContext
             );
 

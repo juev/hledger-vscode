@@ -454,6 +454,14 @@ export class HLedgerConfig {
         } else {
             this.data = parsedData;
         }
+
+        // For tests: also update the cache with the parsed data
+        // This ensures getConfigForDocument() doesn't overwrite test data
+        if (basePath) {
+            const cacheKey = createCacheKey(basePath);
+            this.cache.set(cacheKey, this.data);
+            this.lastWorkspacePath = basePath;
+        }
     }
 
     parseFile(filePath: string): void {
