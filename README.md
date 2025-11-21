@@ -1,245 +1,109 @@
-# hledger for Visual Studio Code
+<div align="center">
 
-Visual Studio Code extension providing syntax highlighting, intelligent code completion, and smart indentation for [hledger](https://hledger.org) journal files.
+# 📊 hledger for VS Code
 
-[![Version](https://img.shields.io/visual-studio-marketplace/v/evsyukov.hledger)](https://marketplace.visualstudio.com/items?itemName=evsyukov.hledger&ssr=false#overview)
-[![Installs](https://img.shields.io/visual-studio-marketplace/i/evsyukov.hledger)](https://marketplace.visualstudio.com/items?itemName=evsyukov.hledger&ssr=false#overview)
-[![Rating](https://img.shields.io/visual-studio-marketplace/r/evsyukov.hledger)](https://marketplace.visualstudio.com/items?itemName=evsyukov.hledger&ssr=false#overview)
+**Full-featured VS Code extension for [hledger](https://hledger.org) plain text accounting**
 
-[![Open VSX Version](https://img.shields.io/open-vsx/v/evsyukov/hledger)](https://open-vsx.org/extension/evsyukov/hledger)
-[![Open VSX Rating](https://img.shields.io/open-vsx/rating/evsyukov/hledger)](https://open-vsx.org/extension/evsyukov/hledger)
+[![Version](https://img.shields.io/visual-studio-marketplace/v/evsyukov.hledger?style=flat-square&logo=visual-studio-code)](https://marketplace.visualstudio.com/items?itemName=evsyukov.hledger)
+[![Installs](https://img.shields.io/visual-studio-marketplace/i/evsyukov.hledger?style=flat-square)](https://marketplace.visualstudio.com/items?itemName=evsyukov.hledger)
+[![Rating](https://img.shields.io/visual-studio-marketplace/r/evsyukov.hledger?style=flat-square)](https://marketplace.visualstudio.com/items?itemName=evsyukov.hledger)
+[![Open VSX](https://img.shields.io/open-vsx/v/evsyukov/hledger?style=flat-square&label=Open%20VSX)](https://open-vsx.org/extension/evsyukov/hledger)
 
-## Features
+[Features](#-features) • [Installation](#-installation) • [Quick Start](#-quick-start) • [Configuration](#%EF%B8%8F-configuration) • [CLI Integration](#-cli-integration)
 
-- **Syntax Highlighting**: Dual-layer syntax highlighting with TextMate grammar (always enabled) and optional semantic tokens for enhanced precision. TextMate grammar provides reliable baseline coloring through scope hierarchies, while semantic highlighting (disabled by default) offers more accurate token identification and customizable colors through VS Code's standard semantic token system
-- **Intelligent Auto-completion**:
-  - **Date Completion**: Smart date suggestions at line start with support for partial typing
-  - **Account Completion**: Hierarchical account suggestions with frequency-based prioritization
-  - **Commodity Completion**: Currency and commodity suggestions after amounts in posting lines
-  - **Payee Completion**: Payee suggestions after transaction dates
-  - **Tag Completion**: Tag suggestions in comments
-  - **Directive Completion**: hledger directive suggestions
-- **Smart Indentation**: Automatic indentation for transactions and postings with Enter key
-- **Document Formatting**: Comprehensive formatting on save including amount alignment, comment alignment, and proper indentation
-- **CLI Integration**: Direct integration with hledger CLI for inserting reports and statistics as comments
-- **Context-Aware Completion**: Strict position analysis for accurate suggestions
-- **Multi-language Support**: Full Unicode support including Cyrillic characters
-- **Project-Based Caching**: Efficient workspace parsing and caching
-- **Theme Integration**: Automatic adaptation to VS Code themes with semantic token color customization
+</div>
 
-## Supported File Extensions
+---
 
-- `.journal`
-- `.hledger`
-- `.ledger`
+## ✨ Features
 
-## Requirements
+Transform your plain text accounting experience with powerful IDE capabilities:
 
-- Visual Studio Code 1.75.0 or higher
-- Node.js 16.x or higher
-- [hledger](https://hledger.org/install.html) (optional, for CLI integration features)
+### 🎯 **Smart Auto-completion**
+- **Context-aware** suggestions based on cursor position
+- **Frequency-based** prioritization for accounts and payees
+- Complete support for dates, accounts, payees, commodities, tags, and directives
+- Works as you type - no keyboard shortcuts needed
 
-## Installation
+### 🎨 **Beautiful Syntax Highlighting**
+- **Dual-layer highlighting**: Fast TextMate grammar + optional semantic tokens
+- **Theme integration**: Adapts to your VS Code theme automatically
+- **Customizable colors** for all hledger elements
 
-1. Open Visual Studio Code
-2. Go to Extensions (Ctrl+Shift+X)
-3. Search for "hledger" or "evsyukov.hledger"
-4. Click Install
-5. Restart VS Code
+### ⚡ **Automatic Formatting**
+- **Smart alignment** for amounts and comments
+- **Format on save** - keep your journals tidy automatically
+- **Multi-currency support** with international number formats
+- Preserves balance assertions, virtual postings, and metadata
 
-**Or install directly from [Visual Studio Marketplace](https://marketplace.visualstudio.com/items?itemName=evsyukov.hledger&ssr=false#overview) or [Open VSX](https://open-vsx.org/extension/evsyukov/hledger)**
+### 🔧 **Smart Editing**
+- **Auto-indent** for transactions and postings
+- **Smart Tab** key positions cursor at amount column
+- **Multi-language** Unicode support (Cyrillic, Asian languages, etc.)
 
-## Usage
+### 📊 **CLI Integration**
+- Insert **balance sheets**, **income statements**, and **statistics** directly into journals
+- Automatic journal file detection
+- Results formatted as comments
 
-The extension automatically activates when you open a file with a supported extension.
+### 🚀 **Performance**
+- **Project-based caching** for large journal files
+- **Incremental updates** - only reparse changed files
+- Efficient workspace parsing
 
-### Auto-completion
+---
 
-The extension provides context-aware completion based on your cursor position:
+## 📦 Installation
 
-- **Date Completion**: Type at the beginning of lines to get date suggestions
-- **Account Completion**: Type in posting lines (indented) to see account suggestions
-- **Payee Completion**: Type after transaction dates to get payee suggestions
-- **Commodity Completion**: Type after amounts in posting lines for currency suggestions
-- **Tag Completion**: Type in comments for tag suggestions
-- **Directive Completion**: Type at line start for hledger directive suggestions
+**Option 1: VS Code Marketplace** (Recommended)
+1. Open VS Code
+2. Press `Ctrl+Shift+X` (Extensions)
+3. Search for **"hledger"**
+4. Click **Install**
 
-### Smart Indentation
+**Option 2: Quick Install**
+- [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=evsyukov.hledger)
+- [Open VSX Registry](https://open-vsx.org/extension/evsyukov/hledger)
 
-- **Automatic Indent**: Pressing Enter after a transaction date automatically indents for posting entries
-- **Preserve Indent**: Maintains proper indentation when continuing posting entries
-- **Smart Context**: Handles different line types appropriately
+**Supported files:** `.journal`, `.hledger`, `.ledger`
 
-### Smart Tab for Amount Alignment
+---
 
-- **Smart Positioning**: Pressing Tab after an account name in a posting line automatically positions the cursor at the alignment column for entering amounts
-- **Context-Aware**: Only activates in posting lines after account names, falls back to standard Tab behavior elsewhere
-- **Works with Formatting**: Complements the automatic formatting on save feature for consistent amount alignment
-- **Intelligent Detection**: Analyzes the current transaction to determine the optimal alignment position
+## 🚀 Quick Start
 
-### Document Formatting
+1. **Create or open** a `.journal`, `.hledger`, or `.ledger` file
+2. **Start typing** - auto-completion activates automatically
+3. **Press Enter** after transaction dates - smart indentation kicks in
+4. **Press Tab** after account names - cursor jumps to amount column
+5. **Save file** - automatic formatting aligns everything beautifully
 
-The extension provides comprehensive document formatting for hledger files to improve readability and consistency:
-
-- **Amount Alignment**: Automatic alignment of amounts in transaction postings
-- **Comment Alignment**: Aligns inline comments within transactions for better readability
-- **Proper Indentation**: Applies consistent 4-space indentation for posting lines
-- **Format on Save**: Automatically formats documents when saving files (when enabled) - the only available formatting mode
-- **Smart Detection**: Only formats transaction postings, preserving directives and start-of-line comments
-- **Multi-Currency Support**: Handles different commodity symbols and currencies seamlessly
-- **International Formats**: Supports both period (.) and comma (,) decimal formats
-- **Balance Assertions**: Properly aligns balance assertions (= and ==)
-- **Virtual Postings**: Correctly handles virtual postings (enclosed in parentheses)
-- **Price Assignments**: Aligns amounts with price assignments (@ and @@)
-- **Account Names with Spaces**: Correctly preserves and aligns account names containing spaces
-- **Preservation**: Maintains the integrity of directives, metadata, and other non-transaction content
-
-#### Before/After Examples
-
-**Simple transaction:**
-
-*Before formatting:*
+### Example Workflow
 
 ```hledger
 2025-01-15 * Coffee shop
-  Expenses:Food:Coffee    $4.50
-  Assets:Cash  -4.50
-
-2025-01-16 * Grocery shopping
-  Expenses:Food:Groceries    $125.75
-  Assets:Checking  -125.75
+    Expenses:Food:Coffee        $4.50
+    Assets:Cash                -4.50
 ```
 
-*After formatting:*
+**Type and get instant suggestions:**
+- Start line with `2025` → Date completions
+- After date, type `Cof` → Payee completions
+- Indent and type `Exp` → Account completions
+- Type `$` after account → Commodity completions
+- Add `;` and type `#` → Tag completions
 
-```hledger
-2025-01-15 * Coffee shop
-  Expenses:Food:Coffee        $4.50
-  Assets:Cash               -4.50
+---
 
-2025-01-16 * Grocery shopping
-  Expenses:Food:Groceries  $125.75
-  Assets:Checking         -125.75
-```
+## 📊 CLI Integration
 
-**Multi-currency transaction:**
+Insert hledger reports directly into your journals as formatted comments.
 
-*Before formatting:*
+**Available Commands** (via Command Palette `Ctrl+Shift+P`):
+- `HLedger: Insert Balance Report` - Balance sheet with assets/liabilities
+- `HLedger: Insert Income Statement` - Revenue and expense summary
+- `HLedger: Insert Statistics Report` - File stats and metrics
 
-```hledger
-2025-01-20 * Currency Exchange
-    Assets:USD              100 USD @ 95.50 RUB
-    Assets:RUB              -9550 RUB
-```
-
-*After formatting:*
-
-```hledger
-2025-01-20 * Currency Exchange
-    Assets:USD          100 USD @ 95.50 RUB
-    Assets:RUB         -9550 RUB
-```
-
-**International number formats:**
-
-*Before formatting:*
-
-```hledger
-2024-01-17 Mixed Format Transaction
-    Assets:Checking       1 234,56 EUR
-    Assets:Savings          987.65 USD
-    Expenses:Shopping    -2 222,21 EUR
-```
-
-*After formatting:*
-
-```hledger
-2024-01-17 Mixed Format Transaction
-    Assets:Checking     1 234,56 EUR
-    Assets:Savings        987.65 USD
-    Expenses:Shopping  -2 222,21 EUR
-```
-
-**Balance assertions:**
-
-*Before formatting:*
-
-```hledger
-2025-01-21 Balance Check
-    Assets:Checking         = 2500.00 RUB
-    Assets:Savings          == 10000.00 RUB
-```
-
-*After formatting:*
-
-```hledger
-2025-01-21 Balance Check
-    Assets:Checking      = 2500.00 RUB
-    Assets:Savings      == 10000.00 RUB
-```
-
-**Account names with spaces and comment alignment:**
-
-*Before formatting:*
-
-```hledger
-2025-01-22 Shopping with various accounts
-  Assets:My Bank Account    100 USD    ; Initial balance
-  Expenses:Food:Groceries Store    -50 USD  ; Weekly shopping
-  Expenses:Transport:Gas Station   -25 USD ; Car fuel
-  Assets:Savings Account    -25 USD     ; Transfer to savings
-```
-
-*After formatting:*
-
-```hledger
-2025-01-22 Shopping with various accounts
-    Assets:My Bank Account                100 USD  ; Initial balance
-    Expenses:Food:Groceries Store        -50 USD  ; Weekly shopping
-    Expenses:Transport:Gas Station       -25 USD  ; Car fuel
-    Assets:Savings Account               -25 USD  ; Transfer to savings
-```
-
-#### Commands
-
-**Note**: The extension uses VS Code's standard document formatting. No custom formatting commands are provided. Use VS Code's built-in formatting features like Format Document (Shift+Alt+F) or configure `editor.formatOnSave` for automatic formatting.
-
-#### Advanced Usage Tips
-
-- **Large Files**: The formatting works efficiently with large journal files, processing line by line during save
-- **Mixed Content**: Non-transaction lines (comments, directives, metadata) are preserved and not affected by formatting
-- **Undo Support**: All formatting operations can be undone using VS Code's standard undo functionality after save
-- **Automatic Detection**: The extension automatically detects transaction boundaries and formats amounts within each transaction independently
-- **Performance**: Since formatting only occurs on save, there's no performance impact during normal editing
-
-## CLI Integration
-
-The extension provides seamless integration with hledger CLI commands, allowing you to insert financial reports and statistics directly into your journal files as formatted comments.
-
-### Available Commands
-
-- **Balance Sheet** (`hledger.cli.balance`): Inserts a Balance Sheet report showing assets, liabilities, and net worth
-- **Income Statement** (`hledger.cli.incomestatement`): Inserts an Income Statement showing revenues and expenses
-- **Statistics** (`hledger.cli.stats`): Inserts file statistics including transaction counts, date ranges, and performance metrics
-
-### Usage
-
-1. Open a hledger journal file
-2. Place cursor where you want to insert the report
-3. Open Command Palette (Ctrl+Shift+P)
-4. Search for "HLedger: Insert" and select the desired report
-5. The report will be inserted as formatted comments at cursor position
-
-### Journal File Resolution
-
-The extension automatically determines which journal file to use for CLI commands with this priority:
-
-1. **LEDGER_FILE environment variable** (highest priority)
-2. **hledger.cli.journalFile setting** in VS Code configuration
-3. **Current open file** (fallback)
-
-### Example Output
-
+**Example output:**
 ```hledger
 ; hledger bs - 2025-11-08
 ; ==================================================
@@ -249,275 +113,99 @@ The extension automatically determines which journal file to use for CLI command
 ;  Assets      ||
 ; -------------++-------------
 ;  Assets:Bank || 2450.00 USD
-; -------------++-------------
-;              || 2450.00 USD
 ; =============++=============
-;  Liabilities ||
-; -------------++-------------
-; -------------++-------------
-;              ||           0
-; =============++=============
-;  Net:        || 2450.00 USD
-; ==================================================
 ```
 
-## Configuration
+**Journal file resolution** (priority order):
+1. `LEDGER_FILE` environment variable
+2. `hledger.cli.journalFile` setting
+3. Current open file
 
-### Auto-completion Settings
+---
 
-```json
+## ⚙️ Configuration
+
+### Essential Settings
+
+```jsonc
 {
-    "hledger.autoCompletion.enabled": true,
-    "hledger.autoCompletion.maxResults": 25,
-    "hledger.autoCompletion.maxAccountResults": 30
+  // Auto-completion
+  "hledger.autoCompletion.enabled": true,
+  "hledger.autoCompletion.maxResults": 25,
+  
+  // Smart features
+  "hledger.smartIndent.enabled": true,
+  "editor.formatOnSave": true,  // Enable auto-formatting
+  
+  // CLI integration
+  "hledger.cli.path": "",  // Auto-detected if empty
+  "hledger.cli.journalFile": "",  // Uses LEDGER_FILE if empty
+  
+  // Optional: Enhanced syntax highlighting
+  "hledger.semanticHighlighting.enabled": false  // Enable for more precision
 }
 ```
 
-### Smart Indentation Settings
+### Customizing Colors
 
-```json
-{
-    "hledger.smartIndent.enabled": true
-}
-```
+Customize syntax colors for any theme:
 
-### Document Formatting Settings
-
-Document formatting is controlled by VS Code's global editor settings:
-
-```json
-{
-    "editor.formatOnSave": true
-}
-```
-
-- **`editor.formatOnSave`**: Enable automatic formatting when saving any supported file type, including hledger files
-
-Note: This setting must be enabled at the editor level for hledger files to be formatted on save.
-
-### CLI Integration Settings
-
-```json
-{
-    "hledger.cli.path": "",
-    "hledger.cli.journalFile": ""
-}
-```
-
-- **`hledger.cli.path`**: Path to hledger executable. Leave empty to auto-detect from system PATH
-- **`hledger.cli.journalFile`**: Path to your main hledger journal file. Leave empty to use LEDGER_FILE environment variable or current file
-
-### Syntax Highlighting Colors
-
-The extension provides two layers of syntax highlighting:
-
-1. **TextMate Grammar (Always Active)**: Base syntax highlighting using scope hierarchies that work with all VS Code themes. Elements like numbers, keywords, and comments are automatically colored through standard TextMate scopes.
-
-2. **Semantic Tokens (Optional)**: Enhanced highlighting for precise token identification, especially useful for hledger-specific elements like tags in comments. Disabled by default for better performance.
-
-#### Enabling Semantic Highlighting
-
-To enable the more precise semantic token highlighting:
-
-**Via Settings UI:**
-
-1. Open VS Code Settings (Ctrl+,)
-2. Search for "hledger semantic"
-3. Enable **HLedger: Semantic Highlighting Enabled**
-
-**Via settings.json:**
-
-```json
-{
-    "hledger.semanticHighlighting.enabled": true
-}
-```
-
-**Benefits of enabling semantic highlighting:**
-
-- More precise identification of hledger elements
-- Tags are correctly identified only in comments (not in account names)
-- Custom color mappings for hledger-specific tokens
-- Better differentiation between similar elements
-
-**Why it's disabled by default:**
-
-- TextMate grammar already provides good baseline coloring
-- Semantic tokens require asynchronous processing (minimal delay)
-- Most users won't notice the difference for basic syntax
-- Can be enabled when needed for advanced features
-
-#### Customizing Colors
-
-You can customize the syntax highlighting colors through VS Code's settings:
-
-**Via Settings UI:**
-
-1. Open VS Code Settings (Ctrl+,)
-2. Navigate to **Text Editor** → **Semantic Token Color**
-3. Look for hledger-specific tokens (account:hledger, amount:hledger, etc.)
-4. Customize colors for each token type
-
-**Via settings.json:**
-
-```json
-{
-  "editor.semanticTokenColorCustomizations": {
-    "[Default Dark+]": {
-      "rules": {
-        "account:hledger": "#0EA5E9",
-        "amount:hledger": "#F59E0B",
-        "comment:hledger": "#9CA3AF",
-        "date:hledger": "#2563EB",
-        "commodity:hledger": "#A855F7",
-        "payee:hledger": "#EF4444",
-        "tag:hledger": "#EC4899",
-        "directive:hledger": "#0EA5E9"
-      }
-    },
-    "[Default Light+]": {
-      "rules": {
-        "account:hledger": "#0369A1",
-        "amount:hledger": "#D97706",
-        "comment:hledger": "#6B7280",
-        "date:hledger": "#1D4ED8",
-        "commodity:hledger": "#7C3AED",
-        "payee:hledger": "#DC2626",
-        "tag:hledger": "#DB2777",
-        "directive:hledger": "#0369A1"
-      }
-    }
-  }
-}
-```
-
-#### Available Semantic Tokens
-
-The extension defines the following semantic tokens that can be customized:
-
-- **account:hledger** - Account names
-- **accountVirtual:hledger** - Virtual account names (in parentheses/brackets)
-- **amount:hledger** - Monetary amounts
-- **comment:hledger** - Comments (lines starting with ; or #)
-- **date:hledger** - Transaction dates
-- **time:hledger** - Time values
-- **commodity:hledger** - Currency/commodity symbols
-- **payee:hledger** - Transaction payees
-- **note:hledger** - Transaction notes (after |)
-- **tag:hledger** - Tags (prefixed with #)
-- **directive:hledger** - hledger directives (account, commodity, etc.)
-- **operator:hledger** - Operators (=, ==, @, @@, *, !)
-- **code:hledger** - Transaction codes (in parentheses)
-- **link:hledger** - URLs and links
-
-#### Advanced Customization
-
-**Wildcard patterns:**
-
-```json
+```jsonc
 {
   "editor.semanticTokenColorCustomizations": {
     "rules": {
-      "*.hledger": { "bold": true },  // Apply to all hledger tokens
-      "account*.hledger": { "italic": true }  // Apply to account tokens
+      "account:hledger": "#0EA5E9",
+      "amount:hledger": "#F59E0B",
+      "payee:hledger": "#EF4444",
+      "tag:hledger": "#EC4899",
+      "commodity:hledger": "#A855F7"
     }
   }
 }
 ```
 
-**Style modifiers:**
+**Available tokens:** `account`, `amount`, `comment`, `date`, `commodity`, `payee`, `tag`, `directive`, `operator`, `code`, `link`
 
-```json
-{
-  "editor.semanticTokenColorCustomizations": {
-    "rules": {
-      "account:hledger": {
-        "foreground": "#0EA5E9",
-        "bold": true,
-        "italic": false
-      }
-    }
-  }
-}
-```
+---
 
-## Architecture
+## 💡 Tips & Tricks
 
-The extension uses a **strict completion architecture** that provides:
+- **Large files?** Project-based caching handles them efficiently
+- **Format not working?** Ensure `editor.formatOnSave` is enabled
+- **Custom hledger path?** Set `hledger.cli.path` in settings
+- **Want more precision?** Enable semantic highlighting for enhanced token identification
+- **Multiple currencies?** The formatter handles them automatically
 
-- **Position Analysis**: Analyzes cursor position to determine completion context
-- **Context Validation**: Ensures completions are appropriate for the current position
-- **Single Type Completion**: Only one completion type per position for accuracy
-- **Efficient Caching**: Project-based caching with smart invalidation
+---
 
-## Troubleshooting
+## 🤝 Contributing
 
-### Completion Not Working
+Contributions are welcome! Feel free to:
+- Report bugs and request features via [GitHub Issues](https://github.com/juev/hledger-vscode/issues)
+- Submit pull requests
+- Improve documentation
 
-1. **Check File Association**: Ensure your file has `.journal`, `.hledger`, or `.ledger` extension
-2. **Verify Language Mode**: Check that VS Code recognizes the file as "hledger"
-3. **Check Position**: Completions are context-aware - ensure you're in the right position
+---
 
-### Indentation Issues
+## 📄 License
 
-1. **Enable Smart Indent**: Set `hledger.smartIndent.enabled: true`
-2. **Check File Type**: Smart indentation only works with hledger files
-3. **Restart VS Code**: After changing settings
+MIT License - see [LICENSE](LICENSE) file for details.
 
-### Performance Issues
+---
 
-1. **Large Files**: The extension handles large files efficiently with project-based caching
-2. **Clear Cache**: Use Command Palette → "Developer: Reload Window" if needed
+## 🔗 Links
 
-### Document Formatting Issues
+- [hledger Official Site](https://hledger.org)
+- [Plain Text Accounting](https://plaintextaccounting.org)
+- [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=evsyukov.hledger)
+- [GitHub Repository](https://github.com/juev/hledger-vscode)
 
-1. **Feature Not Working**: Ensure `editor.formatOnSave` is set to `true` in VS Code settings
-2. **Format on Save Not Working**: Check that you're editing an hledger file and VS Code's `editor.formatOnSave` setting is enabled
-3. **Unexpected Formatting**: The formatter affects transaction postings, comments, and indentation while preserving directives and other content
-4. **Mixed Currencies**: The extension handles different commodity symbols and currencies, aligning based on the position of amounts
-5. **Virtual Postings**: Virtual postings (enclosed in parentheses) are also aligned properly
-6. **Performance with Large Files**: If formatting is slow on very large files when saving, you can temporarily disable format on save
-7. **Non-standard Formats**: Very unusual amount formats may not be recognized. Use standard hledger amount syntax for best results
-8. **Undo Issues**: If formatting cannot be undone, check if other VS Code extensions are interfering with document editing
-9. **Account Names with Spaces**: The formatter correctly preserves account names containing spaces in the account name part
-10. **Format Not Applied**: Check that the file actually changed during save - if no formatting was needed, no changes will be applied
+---
 
-## Compatibility
+<div align="center">
 
-### Supported Transaction Types
+**Made with ❤️ for the plain text accounting community**
 
-- **Standard Transactions**: Regular hledger transactions with dates and postings
-- **Pending Transactions**: Transactions marked with `!` status
-- **Balanced Transactions**: Transactions with balance assertions (`=` and `==`)
-- **Virtual Postings**: Postings enclosed in parentheses `()` and brackets `[]`
-- **Price Assignments**: Transactions with unit prices (`@`) and total prices (`@@`)
-- **Multi-currency**: Transactions involving different commodities and currencies
+*Star the repo if you find it useful!* ⭐
 
-### Supported Amount Formats
-
-- **Standard Decimals**: `123.45`, `0.50`
-- **International Decimals**: `123,45`, `0,50` (comma as decimal separator)
-- **Thousands Separators**: `1,234.56`, `1 234,56` (space or comma as thousands separator)
-- **Whole Numbers**: `100`, `50`
-- **Commodity Symbols**: `$100`, `100 EUR`, `100.50 USD`
-- **Negative Amounts**: `-100.50`, `-1 234,56`
-
-### File Content Preservation
-
-The amount alignment feature preserves and does not modify:
-
-- Comments and metadata
-- hledger directives (`account`, `commodity`, `payee`, etc.)
-- Transaction descriptions and payees
-- Tags and tag values
-- URLs and links in comments
-- Blank lines and spacing between transactions
-- File encoding and special characters
-
-## Contributing
-
-Contributions are welcome! Please submit issues and pull requests.
-
-## License
-
-MIT
+</div>
