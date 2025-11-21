@@ -22,7 +22,13 @@ testdata/**
 .gitignore
 tsconfig*.json
 jest.config.js
+eslint.config.js
+esbuild.js
+optimize-icon.js
 *.log
+
+# Backup files
+*-backup.*
 
 # Documentation (keep only README.md and LICENSE)
 CHANGELOG.md
