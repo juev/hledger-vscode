@@ -10,7 +10,7 @@ async function optimizeIcon() {
   
   await sharp(inputPath)
     .resize(128, 128, { fit: 'inside' })
-    .png({ quality: 90, compressionLevel: 9 })
+    .png({ compressionLevel: 9 })
     .toFile(outputPath);
   
   const optimizedSize = fs.statSync(outputPath).size;
