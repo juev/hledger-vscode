@@ -1,5 +1,26 @@
 # Change Log
 
+## [0.3.15] - 2025-11-21
+
+### Added
+- Add comprehensive optimization results documentation in Russian
+- Fix code review feedback: remove invalid PNG quality param and add entry point validation
+- Add esbuild bundler and optimize icon for 72% size reduction
+
+### Fixed
+- Fix: correct CLI example to match original output format
+- Fix: complete CLI integration example output
+
+### Removed
+- Remove optimization report files from version control
+
+### Other
+- Modernize README: concise, attractive, follows best practices
+- Initial plan
+- Initial analysis: Build system research for size optimization
+- Initial plan
+
+
 ## [0.3.14] - 2025-11-21
 
 ### Added
