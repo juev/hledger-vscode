@@ -1,6 +1,6 @@
 // StrictPositionAnalyzer.test.ts - Tests for strict position analysis
 import * as vscode from 'vscode';
-import { StrictPositionAnalyzer, LineContext, StrictCompletionContext } from '../strict/StrictPositionAnalyzer';
+import { StrictPositionAnalyzer, LineContext, StrictCompletionContext, RegexCache } from '../strict/StrictPositionAnalyzer';
 import { HLedgerConfig } from '../HLedgerConfig';
 import { NumberFormatService, createNumberFormatService } from '../services/NumberFormatService';
 
@@ -460,11 +460,202 @@ describe('StrictPositionAnalyzer', () => {
             // Crypto format: 0,00123456 BTC (comma decimal, many places)
             const document = new MockTextDocument(['  Assets:Bitcoin  0,00123456 ']);
             const position = new vscode.Position(0, 30); // After space following crypto amount
-            
+
             const result = analyzer.analyzePosition(document, position);
-            
+
             expect(result.lineContext).toBe(LineContext.AfterAmount);
             expect(result.allowedTypes).toContain('commodity');
+        });
+    });
+
+    describe('Account validation - query starting with digit', () => {
+        it('should suppress account completion when query starts with a digit', () => {
+            const document = new MockTextDocument(['  123']);
+            const position = new vscode.Position(0, 5); // After "123"
+
+            const result = analyzer.analyzePosition(document, position);
+
+            expect(result.lineContext).toBe(LineContext.InPosting);
+            expect(result.suppressAll).toBe(true);
+            expect(result.allowedTypes).toEqual([]);
+        });
+
+        it('should allow account completion when query starts with a letter', () => {
+            const document = new MockTextDocument(['  Assets']);
+            const position = new vscode.Position(0, 8); // After "Assets"
+
+            const result = analyzer.analyzePosition(document, position);
+
+            expect(result.lineContext).toBe(LineContext.InPosting);
+            expect(result.suppressAll).toBe(false);
+            expect(result.allowedTypes).toContain('account');
+        });
+
+        it('should allow account completion when query is empty', () => {
+            const document = new MockTextDocument(['  ']);
+            const position = new vscode.Position(0, 2); // After indentation
+
+            const result = analyzer.analyzePosition(document, position);
+
+            expect(result.lineContext).toBe(LineContext.InPosting);
+            expect(result.suppressAll).toBe(false);
+            expect(result.allowedTypes).toContain('account');
+        });
+    });
+});
+
+describe('RegexCache', () => {
+    describe('Basic functionality', () => {
+        it('should cache and retrieve regex patterns', () => {
+            const cache = new RegexCache(10);
+            const pattern = 'test.*pattern';
+
+            cache.set(pattern, new RegExp(pattern));
+            const retrieved = cache.get(pattern);
+
+            expect(retrieved).toBeDefined();
+            expect(retrieved?.source).toBe(pattern);
+        });
+
+        it('should return undefined for non-existent pattern', () => {
+            const cache = new RegexCache(10);
+
+            const retrieved = cache.get('nonexistent');
+
+            expect(retrieved).toBeUndefined();
+        });
+
+        it('should track cache size correctly', () => {
+            const cache = new RegexCache(10);
+
+            expect(cache.size()).toBe(0);
+
+            cache.set('pattern1', /test1/);
+            expect(cache.size()).toBe(1);
+
+            cache.set('pattern2', /test2/);
+            expect(cache.size()).toBe(2);
+        });
+
+        it('should clear all cached patterns', () => {
+            const cache = new RegexCache(10);
+            cache.set('pattern1', /test1/);
+            cache.set('pattern2', /test2/);
+            cache.set('pattern3', /test3/);
+
+            expect(cache.size()).toBe(3);
+
+            cache.clear();
+
+            expect(cache.size()).toBe(0);
+            expect(cache.get('pattern1')).toBeUndefined();
+        });
+    });
+
+    describe('LRU eviction', () => {
+        it('should evict least recently used item when cache is full', () => {
+            const cache = new RegexCache(3); // Max size of 3
+
+            // Fill cache
+            cache.set('pattern1', /test1/);
+            cache.set('pattern2', /test2/);
+            cache.set('pattern3', /test3/);
+
+            expect(cache.size()).toBe(3);
+
+            // Add 4th item - should evict pattern1 (least recently used)
+            cache.set('pattern4', /test4/);
+
+            expect(cache.size()).toBe(3);
+            expect(cache.get('pattern1')).toBeUndefined(); // Evicted
+            expect(cache.get('pattern2')).toBeDefined();
+            expect(cache.get('pattern3')).toBeDefined();
+            expect(cache.get('pattern4')).toBeDefined();
+        });
+
+        it('should update LRU order when pattern is accessed', () => {
+            const cache = new RegexCache(3);
+
+            cache.set('pattern1', /test1/);
+            cache.set('pattern2', /test2/);
+            cache.set('pattern3', /test3/);
+
+            // Access pattern1 - moves it to end (most recently used)
+            cache.get('pattern1');
+
+            // Add 4th item - should evict pattern2 (now least recently used)
+            cache.set('pattern4', /test4/);
+
+            expect(cache.get('pattern1')).toBeDefined(); // Not evicted (recently accessed)
+            expect(cache.get('pattern2')).toBeUndefined(); // Evicted
+            expect(cache.get('pattern3')).toBeDefined();
+            expect(cache.get('pattern4')).toBeDefined();
+        });
+
+        it('should handle duplicate keys by updating position', () => {
+            const cache = new RegexCache(3);
+
+            cache.set('pattern1', /test1/);
+            cache.set('pattern2', /test2/);
+
+            // Set pattern1 again - should update its position to most recent
+            cache.set('pattern1', /updated1/);
+
+            cache.set('pattern3', /test3/);
+            cache.set('pattern4', /test4/);
+
+            // pattern2 should be evicted (least recently used)
+            // pattern1 should remain (recently updated)
+            expect(cache.get('pattern1')).toBeDefined();
+            expect(cache.get('pattern1')?.source).toBe('updated1');
+            expect(cache.get('pattern2')).toBeUndefined();
+            expect(cache.get('pattern3')).toBeDefined();
+            expect(cache.get('pattern4')).toBeDefined();
+        });
+    });
+
+    describe('Edge cases', () => {
+        it('should handle cache size of 1', () => {
+            const cache = new RegexCache(1);
+
+            cache.set('pattern1', /test1/);
+            expect(cache.size()).toBe(1);
+            expect(cache.get('pattern1')).toBeDefined();
+
+            cache.set('pattern2', /test2/);
+            expect(cache.size()).toBe(1);
+            expect(cache.get('pattern1')).toBeUndefined();
+            expect(cache.get('pattern2')).toBeDefined();
+        });
+
+        it('should handle empty cache eviction gracefully', () => {
+            const cache = new RegexCache(1);
+
+            // This should not throw even though cache is empty
+            expect(() => cache.set('pattern1', /test1/)).not.toThrow();
+            expect(cache.size()).toBe(1);
+        });
+
+        it('should maintain correct order with multiple accesses', () => {
+            const cache = new RegexCache(4);
+
+            cache.set('p1', /1/);
+            cache.set('p2', /2/);
+            cache.set('p3', /3/);
+            cache.set('p4', /4/);
+
+            // Access in specific order
+            cache.get('p1'); // p1 moves to end
+            cache.get('p3'); // p3 moves to end
+
+            // Add p5 - should evict p2 (least recently used)
+            cache.set('p5', /5/);
+
+            expect(cache.get('p1')).toBeDefined();
+            expect(cache.get('p2')).toBeUndefined();
+            expect(cache.get('p3')).toBeDefined();
+            expect(cache.get('p4')).toBeDefined();
+            expect(cache.get('p5')).toBeDefined();
         });
     });
 });

@@ -3,7 +3,7 @@ import * as path from 'path';
 import * as os from 'os';
 import { SimpleProjectCache } from '../SimpleProjectCache';
 import { ParsedHLedgerData } from '../HLedgerParser';
-import { createAccountName, createPayeeName, createUsageCount, createCommodityCode, createTagName } from '../types';
+import { createAccountName, createPayeeName, createUsageCount } from '../types';
 
 describe('SimpleProjectCache - Incremental Updates', () => {
     let cache: SimpleProjectCache;

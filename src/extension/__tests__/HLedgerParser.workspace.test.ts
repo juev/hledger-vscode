@@ -67,7 +67,6 @@ describe('HLedgerParser.parseWorkspace() - Cache Integration', () => {
 
         // First parse
         const result1 = parser.parseWorkspace(tempDir, cache);
-        const initialAccounts = Array.from(result1.accounts);
 
         // Wait a bit, then modify only file2
         setTimeout(() => {

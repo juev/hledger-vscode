@@ -38,7 +38,7 @@ export interface StrictCompletionContext {
 /**
  * LRU Cache implementation for RegExp patterns with memory limit
  */
-class RegexCache {
+export class RegexCache {
     private readonly maxSize: number;
     private cache = new Map<string, RegExp>();
 
@@ -61,8 +61,10 @@ class RegexCache {
             this.cache.delete(key);
         } else if (this.cache.size >= this.maxSize) {
             // Remove least recently used (first item)
-            const firstKey = this.cache.keys().next().value;
-            this.cache.delete(firstKey);
+            const iterator = this.cache.keys().next();
+            if (!iterator.done && iterator.value !== undefined) {
+                this.cache.delete(iterator.value);
+            }
         }
         this.cache.set(key, value);
     }
@@ -447,7 +449,14 @@ export class StrictPositionAnalyzer {
 
             case LineContext.InPosting:
                 // Strictly only account completion on indented lines
-                baseContext.allowedTypes = ['account'];
+                // Account names must start with a letter, not a digit
+                const accountQuery = this.extractAccountQuery(beforeCursor);
+                if (accountQuery && /^\d/.test(accountQuery)) {
+                    // Suppress completion if query starts with a digit
+                    baseContext.suppressAll = true;
+                } else {
+                    baseContext.allowedTypes = ['account'];
+                }
                 break;
 
             case LineContext.AfterAmount:
@@ -490,7 +499,18 @@ export class StrictPositionAnalyzer {
 
         return beforeEndsWithWord && afterStartsWithWord;
     }
-    
+
+    /**
+     * Extract account query from posting line
+     * Returns the word being typed at cursor position for account completion
+     */
+    private extractAccountQuery(beforeCursor: string): string {
+        // Extract the word being typed at cursor position
+        // Use Unicode-aware pattern to support international characters
+        const match = beforeCursor.match(/[\p{L}\p{N}:_.\s-]*$/u);
+        return match ? match[0].trim() : "";
+    }
+
     /**
      * Special handling for digit "0" at line beginning
      * Supports Unicode patterns for international date formats

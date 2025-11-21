@@ -3,7 +3,7 @@
 
 import {
     AccountName, PayeeName, TagName, TagValue, CommodityCode, UsageCount,
-    createAccountName, createPayeeName, createTagName, createTagValue, createCommodityCode, createUsageCount
+    createPayeeName, createCommodityCode, createUsageCount
 } from '../types';
 import { NumberFormatService, CommodityFormat } from '../services/NumberFormatService';
 import { HLedgerToken, TokenType } from '../lexer/HLedgerLexer';

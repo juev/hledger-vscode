@@ -453,7 +453,7 @@ export class HLedgerFileProcessor {
                                 if (!fs.existsSync(resolvedPath)) {
                                     const errorMsg = `Include file not found: ${resolvedPath}`;
                                     errors.push({
-                                        file: basePath || 'unknown',
+                                        file: basePath ?? 'unknown',
                                         error: errorMsg
                                     });
                                     // Only warn in non-test environments to avoid test noise
@@ -504,7 +504,7 @@ export class HLedgerFileProcessor {
                 // Check for include depth exceeded
                 if (includeDepth >= this.options.maxIncludeDepth) {
                     warnings.push({
-                        file: basePath || 'unknown',
+                        file: basePath ?? 'unknown',
                         message: `Include depth limit (${this.options.maxIncludeDepth}) reached, skipping nested includes`
                     });
                 }
@@ -530,7 +530,7 @@ export class HLedgerFileProcessor {
             const contextMessage = `Failed to parse content: ${errorMessage}`;
 
             errors.push({
-                file: basePath || 'unknown',
+                file: basePath ?? 'unknown',
                 error: contextMessage
             });
 

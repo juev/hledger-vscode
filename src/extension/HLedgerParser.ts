@@ -14,6 +14,7 @@ import { HLedgerLexer } from './lexer/HLedgerLexer';
 import { HLedgerASTBuilder } from './ast/HLedgerASTBuilder';
 import { HLedgerFileProcessor } from './processor/HLedgerFileProcessor';
 import { SimpleProjectCache } from './SimpleProjectCache';
+import { ErrorNotificationHandler } from './utils/ErrorNotificationHandler';
 
 /**
  * Internal mutable interface for building parsed data during parsing.
@@ -100,6 +101,7 @@ export class HLedgerParser {
     private readonly lexer: HLedgerLexer;
     private readonly astBuilder: HLedgerASTBuilder;
     private readonly fileProcessor: HLedgerFileProcessor;
+    private readonly errorHandler: ErrorNotificationHandler | undefined;
 
     // Legacy state for backward compatibility with commodity format handling
     private pendingFormatDirective: {
@@ -107,7 +109,8 @@ export class HLedgerParser {
         expectingFormat: boolean;
     } | null = null;
 
-    constructor() {
+    constructor(errorHandler?: ErrorNotificationHandler) {
+        this.errorHandler = errorHandler;
         this.numberFormatService = new NumberFormatService();
         this.lexer = new HLedgerLexer();
         this.astBuilder = new HLedgerASTBuilder(this.numberFormatService);
@@ -151,6 +154,17 @@ export class HLedgerParser {
             // For large files (>1MB), use async processing via FileProcessor
             if (stats.size > 1024 * 1024) {
                 const result = await this.fileProcessor.processFile(filePath);
+
+                // Propagate errors and warnings to ErrorNotificationHandler
+                if (this.errorHandler) {
+                    if (result.errors.length > 0) {
+                        this.errorHandler.handleFileProcessingErrors(result.errors);
+                    }
+                    if (result.warnings.length > 0) {
+                        this.errorHandler.handleFileProcessingWarnings(result.warnings);
+                    }
+                }
+
                 return this.enhanceWithLegacyParsing(result.data, await fs.promises.readFile(filePath, 'utf8'));
             }
             return this.parseFile(filePath);

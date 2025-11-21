@@ -37,8 +37,9 @@ export function activate(context: vscode.ExtensionContext): void {
             context.subscriptions.push(errorNotificationHandler);
         }
 
-        // Register strict completion provider with necessary triggers
-        // VS Code requires explicit triggers - 24x7 IntelliSense doesn't work automatically
+        // Register strict completion provider with explicit trigger characters
+        // VS Code CompletionItemProvider requires trigger characters to activate completion;
+        // automatic completion on every keystroke is not supported by the API and would degrade performance
         if (!globalConfig) {
             throw new Error('HLedger: Global config not initialized');
         }
@@ -184,7 +185,8 @@ export function deactivate(): void {
  */
 export function getConfig(document: vscode.TextDocument): HLedgerConfig {
     if (!globalConfig) {
-        const parser = new HLedgerParser();
+        errorNotificationHandler ??= new ErrorNotificationHandler();
+        const parser = new HLedgerParser(errorNotificationHandler);
         const cache = new SimpleProjectCache();
         globalConfig = new HLedgerConfig(parser, cache);
     }
@@ -206,15 +208,17 @@ export function getErrorNotificationHandler(): ErrorNotificationHandler | null {
  * Should be called during extension activation
  */
 export function initializeGlobalInstances(): void {
+    // Initialize error handler first, as it's needed by parser
+    errorNotificationHandler ??= new ErrorNotificationHandler();
+
     if (!globalConfig) {
-        const parser = new HLedgerParser();
+        const parser = new HLedgerParser(errorNotificationHandler);
         const cache = new SimpleProjectCache();
         globalConfig = new HLedgerConfig(parser, cache);
     }
 
     cliService ??= new HLedgerCliService();
     cliCommands ??= new HLedgerCliCommands(cliService);
-    errorNotificationHandler ??= new ErrorNotificationHandler();
 }
 
 /**

@@ -19,7 +19,9 @@ import {
   createNumberFormatService,
 } from "./services/NumberFormatService";
 
-export class StrictCompletionProvider implements vscode.CompletionItemProvider {
+export class StrictCompletionProvider
+  implements vscode.CompletionItemProvider, vscode.Disposable
+{
   private numberFormatService: NumberFormatService;
   private positionAnalyzer: StrictPositionAnalyzer;
 
