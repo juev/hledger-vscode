@@ -118,6 +118,7 @@ Insert hledger reports directly into your journals as formatted comments.
 ; =============++=============
 ;  Liabilities ||
 ; -------------++-------------
+; -------------++-------------
 ;              ||           0
 ; =============++=============
 ;  Net:        || 2450.00 USD
