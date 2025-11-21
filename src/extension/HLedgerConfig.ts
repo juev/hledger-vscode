@@ -54,11 +54,12 @@ export class HLedgerConfig {
             projectPath = path.dirname(filePath);
         }
 
-        // Get cached data or parse workspace
+        // Get cached data or parse workspace with incremental cache support
         const cacheKey = createCacheKey(projectPath);
         this.data = this.cache.get(cacheKey);
         if (!this.data || this.lastWorkspacePath !== projectPath) {
-            this.data = this.parser.parseWorkspace(projectPath);
+            // Pass cache to parseWorkspace for incremental updates (mtimeMs validation)
+            this.data = this.parser.parseWorkspace(projectPath, this.cache);
             this.cache.set(cacheKey, this.data);
             this.lastWorkspacePath = projectPath;
         }
@@ -392,11 +393,27 @@ export class HLedgerConfig {
 
     // Note: isKeywordContext method was inlined to use pre-compiled patterns directly
 
-    // Clear cache
+    /**
+     * Clear both parsed data and cache completely.
+     * Use when cache must be invalidated entirely (e.g., configuration change).
+     * For file changes, prefer resetData() to preserve cache for mtimeMs validation.
+     */
     clearCache(): void {
         this.cache.clear();
         this.data = null;
         this.lastWorkspacePath = null;
+    }
+
+    /**
+     * Reset parsed data without clearing cache.
+     * Cache entries will be validated by mtimeMs check on next access.
+     * Use when files may have changed but cache should be preserved for validation.
+     * This enables incremental updates - only modified files will be reparsed.
+     */
+    resetData(): void {
+        this.data = null;
+        this.lastWorkspacePath = null;
+        // Cache is NOT cleared - SimpleProjectCache.get() will validate mtimeMs on next use
     }
 
     // Direct access to usage maps with enhanced type safety
