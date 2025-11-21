@@ -74,20 +74,20 @@ describe('StrictPositionAnalyzer', () => {
     describe('Account completion on indented lines', () => {
         it('should detect account context on indented lines', () => {
             const document = new MockTextDocument(['  Assets:Cash']);
-            const position = new vscode.Position(0, 12);
-            
+            const position = new vscode.Position(0, 13);
+
             const result = analyzer.analyzePosition(document, position);
-            
+
             expect(result.lineContext).toBe(LineContext.InPosting);
             expect(result.allowedTypes).toContain('account');
         });
 
         it('should detect account context with tab indentation', () => {
             const document = new MockTextDocument(['\tAssets:Bank']);
-            const position = new vscode.Position(0, 11);
-            
+            const position = new vscode.Position(0, 12);
+
             const result = analyzer.analyzePosition(document, position);
-            
+
             expect(result.lineContext).toBe(LineContext.InPosting);
             expect(result.allowedTypes).toContain('account');
         });

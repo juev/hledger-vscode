@@ -309,7 +309,7 @@ export class StrictCompletionProvider implements vscode.CompletionItemProvider {
       // Commodity can be uppercase letters or currency symbols
       const commodityMatch = beforeCursor.match(/^\s+[\p{L}\p{N}:_\s-]+\s+\p{N}+(?:[.,]\p{N}+)?\s([\p{Lu}\p{Sc}]*)$/u);
       if (commodityMatch) {
-        return commodityMatch[1] || ""; // Return only commodity characters, empty string if none typed yet
+        return commodityMatch[1] ?? ""; // Return only commodity characters, empty string if none typed yet
       }
       return "";
     }

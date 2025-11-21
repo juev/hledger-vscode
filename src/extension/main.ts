@@ -2,15 +2,13 @@
 // Refactored architecture with ~190 lines (FASE G)
 
 import * as vscode from 'vscode';
-import * as path from 'path';
-import { HLedgerParser, ParsedHLedgerData } from './HLedgerParser';
+import { HLedgerParser } from './HLedgerParser';
 import { HLedgerConfig } from './HLedgerConfig';
 import { SimpleProjectCache } from './SimpleProjectCache';
 import { StrictCompletionProvider } from './StrictCompletionProvider';
 import { HLedgerEnterCommand } from './HLedgerEnterCommand';
 import { HLedgerTabCommand } from './HLedgerTabCommand';
 import { SimpleFuzzyMatcher } from './SimpleFuzzyMatcher';
-import { createCacheKey } from './types';
 import { registerFormattingProviders } from './HLedgerFormattingProvider';
 import { HledgerSemanticTokensProvider, HLEDGER_SEMANTIC_TOKENS_LEGEND } from './HledgerSemanticTokensProvider';
 import { HLedgerCliService } from './services/HLedgerCliService';
@@ -248,5 +246,19 @@ export function disposeGlobalInstances(): void {
 // Public API exports
 export { HLedgerConfig } from './HLedgerConfig';
 export { HLedgerParser } from './HLedgerParser';
-export { SimpleProjectCache } from './SimpleProjectCache';
-export { SimpleFuzzyMatcher } from './SimpleFuzzyMatcher';
+export { SimpleProjectCache as WorkspaceCache } from './SimpleProjectCache';
+export { SimpleFuzzyMatcher, FuzzyMatch } from './SimpleFuzzyMatcher';
+
+/**
+ * Helper function for fuzzy matching that wraps SimpleFuzzyMatcher.
+ * Used by tests and external consumers for simple prefix-based matching.
+ *
+ * @template T - String type to match against
+ * @param query - Search query string
+ * @param items - Array of items to search through
+ * @returns Array of FuzzyMatch results sorted by relevance
+ */
+export function fuzzyMatch<T extends string>(query: string, items: readonly T[]): Array<{ item: T; score: number }> {
+    const matcher = new SimpleFuzzyMatcher();
+    return matcher.match(query, items);
+}

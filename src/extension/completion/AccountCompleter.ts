@@ -18,6 +18,12 @@ export class AccountCompleter {
     }
 
     complete(context: CompletionContext): vscode.CompletionItem[] {
+        // Account names must start with a letter, not a digit
+        // Filter out invalid queries
+        if (context.query && /^\d/.test(context.query)) {
+            return [];
+        }
+
         const accounts = this.config.getAccountsByUsage();
         const matches = this.fuzzyMatcher.match(context.query, accounts, {
             usageCounts: this.config.accountUsage,
