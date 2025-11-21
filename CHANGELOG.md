@@ -1,5 +1,60 @@
 # Change Log
 
+## [0.3.14] - 2025-11-21
+
+### Added
+- test: add integration tests for completion provider functionality
+- test: add unit tests for HLedgerLexer functionality
+- feat(error): implement comprehensive error handling system (hledger-vscode-dnk)
+- feat(parser): implement complete file parsing in HLedgerFileProcessor (hledger-vscode-u2l)
+- feat: complete HLedgerParser refactoring with modular architecture
+
+### Changed
+- refactor: enhance parser architecture and error handling, improve completion logic, and clean up tests
+- refactor: implement incremental caching strategy for improved performance and file change handling
+- refactor: enhance caching logic for test scenarios and improve completion provider tests
+- refactor: improve completion logic and enhance account completer validation
+- refactor: remove CompletionSuppressor and StrictPositionValidator tests and implementations
+- refactor: clean up legacy code and improve public API exports
+- refactor: enhance completion provider to support commodity extraction after amounts
+- refactor(lexer): remove redundant empty string check
+- refactor(lexer): remove unused variable in tokenizeIncludeDirective
+- perf(processor): replace blocking fs.readFileSync with async I/O
+- perf(regex): precompile patterns to eliminate hot path recompilation
+- refactor(parser): integrate modular architecture into production (hledger-vscode-n3o)
+
+### Fixed
+- fix: improve optional chaining in completion context checks
+- fix: use only node 20
+- fix: security tests files
+- fix: update .vscodeignore to exclude .beads and coverage directories
+- fix: lint warnings
+- fix: tests in security
+- fix(ci): remove invalid cache: false parameter from setup-node action
+- fix: disable cache and update dependencies
+- fix(ci): resolve CI test failures by updating dependencies
+- fix: all ts warnings
+- fix: some logic
+- fix: check undefined
+- fix(lexer): support multi-character commodity codes
+- fix(lifecycle): implement comprehensive resource cleanup
+- fix(ast): remove unsafe null assertion operators (hledger-vscode-q0r)
+- security(traversal): fix path traversal vulnerability (hledger-vscode-rou)
+- fix(types): remove unsafe type assertions in cleanup (hledger-vscode-tv4)
+- fix(memory): resolve RegexCache memory leak with disposal chain (hledger-vscode-249)
+- fix(lexer): strengthen transaction status regex validation (hledger-vscode-zsk)
+- fix(config): sync development TypeScript config with production strict checks (hledger-vscode-6u7)
+- fix: resolve TypeScript exactOptionalPropertyTypes violations
+- fix: resolve critical memory leaks and type safety violations
+
+### Removed
+- test: remove problematic strict-positioning-alignment test
+
+### Other
+- chore(deps): bump glob
+- chore(deps): bump js-yaml
+
+
 ## [0.3.13] - 2025-11-08
 
 ### Added
