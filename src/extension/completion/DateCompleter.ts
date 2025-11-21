@@ -124,7 +124,7 @@ export class DateCompleter {
         item.sortText = `${this.getSortPrefix(description)}_${dateStr}`;
         
         // Set replacement range if available
-        if (context && context.range && context.position) {
+        if (context?.range && context.position) {
             item.range = new vscode.Range(
                 new vscode.Position(context.range.start.line, context.range.start.character),
                 new vscode.Position(context.range.end.line, context.range.end.character)

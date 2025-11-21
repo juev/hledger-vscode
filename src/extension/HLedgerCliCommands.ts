@@ -3,11 +3,20 @@
 import * as vscode from 'vscode';
 import { HLedgerCliService } from './services/HLedgerCliService';
 
-export class HLedgerCliCommands {
+export class HLedgerCliCommands implements vscode.Disposable {
     private cliService: HLedgerCliService;
 
     constructor(cliService: HLedgerCliService) {
         this.cliService = cliService;
+    }
+
+    /**
+     * Cleanup method to prevent memory leaks.
+     * Note: This class doesn't hold disposable resources directly,
+     * but implements Disposable for consistency with the lifecycle pattern.
+     */
+    dispose(): void {
+        // No resources to dispose - cliService is disposed separately
     }
 
     public async insertBalance(): Promise<void> {
@@ -70,8 +79,8 @@ export class HLedgerCliCommands {
 
             vscode.window.showInformationMessage(`hledger ${cliCommandName} report inserted successfully.`);
 
-        } catch (error: any) {
-            vscode.window.showErrorMessage(`Failed to run hledger ${command}: ${error.message}`);
+        } catch (error: unknown) {
+            vscode.window.showErrorMessage(`Failed to run hledger ${command}: ${error instanceof Error ? error.message : String(error)}`);
         }
     }
 
@@ -127,14 +136,14 @@ export class HLedgerCliCommands {
     private getJournalFilePath(document: vscode.TextDocument): string {
         // First, try to get from environment variable LEDGER_FILE
         const ledgerFileFromEnv = process.env.LEDGER_FILE;
-        if (ledgerFileFromEnv && ledgerFileFromEnv.trim()) {
+        if (ledgerFileFromEnv?.trim()) {
             return ledgerFileFromEnv.trim();
         }
 
         // Second, try to get from extension configuration
         const config = vscode.workspace.getConfiguration('hledger');
         const journalFileFromConfig = config.get<string>('cli.journalFile', '');
-        if (journalFileFromConfig && journalFileFromConfig.trim()) {
+        if (journalFileFromConfig?.trim()) {
             return journalFileFromConfig.trim();
         }
 

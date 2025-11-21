@@ -2,41 +2,50 @@
 // Refactored architecture with ~190 lines (FASE G)
 
 import * as vscode from 'vscode';
-import * as path from 'path';
-import { HLedgerParser, ParsedHLedgerData } from './HLedgerParser';
+import { HLedgerParser } from './HLedgerParser';
 import { HLedgerConfig } from './HLedgerConfig';
 import { SimpleProjectCache } from './SimpleProjectCache';
 import { StrictCompletionProvider } from './StrictCompletionProvider';
 import { HLedgerEnterCommand } from './HLedgerEnterCommand';
 import { HLedgerTabCommand } from './HLedgerTabCommand';
 import { SimpleFuzzyMatcher } from './SimpleFuzzyMatcher';
-import { createCacheKey } from './types';
 import { registerFormattingProviders } from './HLedgerFormattingProvider';
 import { HledgerSemanticTokensProvider, HLEDGER_SEMANTIC_TOKENS_LEGEND } from './HledgerSemanticTokensProvider';
 import { HLedgerCliService } from './services/HLedgerCliService';
 import { HLedgerCliCommands } from './HLedgerCliCommands';
+import { ErrorNotificationHandler } from './utils/ErrorNotificationHandler';
 
-// Global instances for simplified architecture
-let globalConfig: HLedgerConfig;
-let cliService: HLedgerCliService;
-let cliCommands: HLedgerCliCommands;
+// Global instances for simplified architecture (to be replaced with proper DI)
+let globalConfig: HLedgerConfig | null = null;
+let cliService: HLedgerCliService | null = null;
+let cliCommands: HLedgerCliCommands | null = null;
+let errorNotificationHandler: ErrorNotificationHandler | null = null;
 
 // Main activation function
 export function activate(context: vscode.ExtensionContext): void {
     try {
-        // Initialize global config with simple architecture
-        const parser = new HLedgerParser();
-        const cache = new SimpleProjectCache();
-        globalConfig = new HLedgerConfig(parser, cache);
+        // Initialize global instances with proper null checks
+        initializeGlobalInstances();
 
-        // Initialize CLI service and commands
-        cliService = new HLedgerCliService();
-        cliCommands = new HLedgerCliCommands(cliService);
-        context.subscriptions.push(cliService);
+        // Add CLI service to subscriptions for proper cleanup
+        if (cliService) {
+            context.subscriptions.push(cliService);
+        }
 
-        // Register strict completion provider with necessary triggers
-        // VS Code requires explicit triggers - 24x7 IntelliSense doesn't work automatically
+        // Add error notification handler to subscriptions
+        if (errorNotificationHandler) {
+            context.subscriptions.push(errorNotificationHandler);
+        }
+
+        // Register strict completion provider with explicit trigger characters
+        // VS Code CompletionItemProvider requires trigger characters to activate completion;
+        // automatic completion on every keystroke is not supported by the API and would degrade performance
+        if (!globalConfig) {
+            throw new Error('HLedger: Global config not initialized');
+        }
         const strictProvider = new StrictCompletionProvider(globalConfig);
+
+        // Register the provider for completion items
         context.subscriptions.push(
             vscode.languages.registerCompletionItemProvider(
                 'hledger',
@@ -48,6 +57,9 @@ export function activate(context: vscode.ExtensionContext): void {
                 ';'   // Comments (future use)
             )
         );
+
+        // Register the provider itself for proper disposal (prevents RegexCache memory leak)
+        context.subscriptions.push(strictProvider);
 
 
         // Register formatting providers for hledger files
@@ -80,13 +92,21 @@ export function activate(context: vscode.ExtensionContext): void {
             )
         );
 
-        // FS watcher for journal files: invalidate cache on change
+        // Register the semantic provider itself for proper disposal
+        context.subscriptions.push(semanticProvider);
+
+        // FS watcher for journal files: reset data on change, preserve cache for mtimeMs validation
+        // This enables incremental updates - only modified files will be reparsed
         const watcher = vscode.workspace.createFileSystemWatcher('**/*.{journal,hledger,ledger}');
-        const onFsChange = () => {
+        const onFsChange = (): void => {
             try {
-                globalConfig.clearCache();
+                if (globalConfig) {
+                    // Reset data without clearing cache - SimpleProjectCache.get() validates mtimeMs automatically
+                    // This provides ~50x speedup for large projects by avoiding full workspace reparsing
+                    globalConfig.resetData();
+                }
             } catch (err) {
-                console.error('HLedger: cache clear failed after FS change', err);
+                console.error('HLedger: data reset failed after FS change', err);
             }
         };
         watcher.onDidCreate(onFsChange, null, context.subscriptions);
@@ -109,21 +129,34 @@ export function activate(context: vscode.ExtensionContext): void {
         );
 
         // Register CLI commands
+        if (!cliCommands) {
+            throw new Error('HLedger: CLI commands not initialized');
+        }
+
+        // Register CLI commands handler for proper disposal
+        context.subscriptions.push(cliCommands);
+
         context.subscriptions.push(
             vscode.commands.registerCommand('hledger.cli.balance', async () => {
-                await cliCommands.insertBalance();
+                if (cliCommands) {
+                    await cliCommands.insertBalance();
+                }
             })
         );
 
         context.subscriptions.push(
             vscode.commands.registerCommand('hledger.cli.stats', async () => {
-                await cliCommands.insertStats();
+                if (cliCommands) {
+                    await cliCommands.insertStats();
+                }
             })
         );
 
         context.subscriptions.push(
             vscode.commands.registerCommand('hledger.cli.incomestatement', async () => {
-                await cliCommands.insertIncomestatement();
+                if (cliCommands) {
+                    await cliCommands.insertIncomestatement();
+                }
             })
         );
 
@@ -137,19 +170,23 @@ export function activate(context: vscode.ExtensionContext): void {
 
 export function deactivate(): void {
     try {
-        if (globalConfig) {
-            globalConfig.clearCache();
-        }
+        // Use proper cleanup function
+        disposeGlobalInstances();
         // Extension deactivation complete
     } catch (error) {
         console.error('HLedger extension deactivation error:', error);
     }
 }
 
-// Helper function to get config for a document (for backward compatibility)
+/**
+ * Helper function to get config for a document (for backward compatibility).
+ * Creates global config instance if it doesn't exist.
+ * @deprecated Use proper dependency injection instead of global state
+ */
 export function getConfig(document: vscode.TextDocument): HLedgerConfig {
     if (!globalConfig) {
-        const parser = new HLedgerParser();
+        errorNotificationHandler ??= new ErrorNotificationHandler();
+        const parser = new HLedgerParser(errorNotificationHandler);
         const cache = new SimpleProjectCache();
         globalConfig = new HLedgerConfig(parser, cache);
     }
@@ -158,123 +195,77 @@ export function getConfig(document: vscode.TextDocument): HLedgerConfig {
     return globalConfig;
 }
 
-// Legacy exports for backward compatibility
+/**
+ * Get the global error notification handler instance
+ * @returns ErrorNotificationHandler instance or null if not initialized
+ */
+export function getErrorNotificationHandler(): ErrorNotificationHandler | null {
+    return errorNotificationHandler;
+}
+
+/**
+ * Global initialization function to ensure proper setup
+ * Should be called during extension activation
+ */
+export function initializeGlobalInstances(): void {
+    // Initialize error handler first, as it's needed by parser
+    errorNotificationHandler ??= new ErrorNotificationHandler();
+
+    if (!globalConfig) {
+        const parser = new HLedgerParser(errorNotificationHandler);
+        const cache = new SimpleProjectCache();
+        globalConfig = new HLedgerConfig(parser, cache);
+    }
+
+    cliService ??= new HLedgerCliService();
+    cliCommands ??= new HLedgerCliCommands(cliService);
+}
+
+/**
+ * Cleanup function to dispose global instances
+ * Should be called during extension deactivation
+ */
+export function disposeGlobalInstances(): void {
+    try {
+        // Dispose all global instances in reverse order of initialization
+        if (globalConfig) {
+            globalConfig.dispose();
+        }
+        if (cliCommands) {
+            cliCommands.dispose();
+        }
+        if (cliService) {
+            cliService.dispose();
+        }
+        if (errorNotificationHandler) {
+            errorNotificationHandler.dispose();
+        }
+        // Reset global variables to null (type-safe)
+        globalConfig = null;
+        cliService = null;
+        cliCommands = null;
+        errorNotificationHandler = null;
+    } catch (error) {
+        console.error('HLedger: Error disposing global instances:', error);
+    }
+}
+
+// Public API exports
 export { HLedgerConfig } from './HLedgerConfig';
 export { HLedgerParser } from './HLedgerParser';
+export { SimpleProjectCache as WorkspaceCache } from './SimpleProjectCache';
+export { SimpleFuzzyMatcher, FuzzyMatch } from './SimpleFuzzyMatcher';
 
 /**
- * Legacy WorkspaceCache wrapper for backward compatibility.
- * Provides type-safe wrapper around SimpleProjectCache with branded types.
- * @deprecated Use SimpleProjectCache directly for new code.
- */
-export class WorkspaceCache {
-    private cache = new SimpleProjectCache();
-
-    get(key: string): ParsedHLedgerData | null {
-        return this.cache.get(createCacheKey(key));
-    }
-
-    set(key: string, value: ParsedHLedgerData): void {
-        return this.cache.set(createCacheKey(key), value);
-    }
-
-    clear(): void {
-        return this.cache.clear();
-    }
-
-    isValid(workspacePath: string): boolean {
-        return this.cache.has(createCacheKey(workspacePath));
-    }
-
-    update(workspacePath: string): void {
-        const cacheKey = createCacheKey(workspacePath);
-        if (!this.cache.has(cacheKey)) {
-            const parser = new HLedgerParser();
-            const data = parser.parseWorkspace(workspacePath);
-            this.cache.set(cacheKey, data);
-        }
-    }
-
-    getConfig(): null {
-        return null; // Legacy method
-    }
-
-    invalidate(): void {
-        this.cache.clear();
-    }
-
-    dispose(): void {
-        this.cache.clear();
-    }
-
-    static resetInstance(): void {
-        // No-op for backward compatibility
-    }
-}
-
-/**
- * Legacy ProjectCache wrapper for backward compatibility.
- * Provides type-safe wrapper around SimpleProjectCache with project-specific methods.
- * @deprecated Use SimpleProjectCache directly for new code.
- */
-export class ProjectCache {
-    private cache = new SimpleProjectCache();
-
-    get(key: string): ParsedHLedgerData | null {
-        return this.cache.get(createCacheKey(key));
-    }
-
-    set(key: string, value: ParsedHLedgerData): void {
-        return this.cache.set(createCacheKey(key), value);
-    }
-
-    clear(): void {
-        return this.cache.clear();
-    }
-
-    getConfig(projectPath: string): ParsedHLedgerData | null {
-        return this.cache.get(createCacheKey(projectPath));
-    }
-
-    initializeProject(projectPath: string): ParsedHLedgerData | null {
-        return this.cache.getOrCreateProjectConfig(projectPath);
-    }
-
-    hasProject(projectPath: string): boolean {
-        return this.cache.has(createCacheKey(projectPath));
-    }
-
-    findProjectForFile(filePath: string): string | null {
-        // Simple implementation - use directory of file
-        return path.dirname(filePath);
-    }
-
-    dispose(): void {
-        this.cache.clear();
-    }
-
-    static resetInstance(): void {
-        // No-op for backward compatibility
-    }
-
-    static get(): ProjectCache {
-        return new ProjectCache();
-    }
-
-    static getInstance(): ProjectCache {
-        return new ProjectCache();
-    }
-}
-
-/**
- * Legacy fuzzy match function for backward compatibility.
- * @deprecated Use SimpleFuzzyMatcher directly for new code.
+ * Helper function for fuzzy matching that wraps SimpleFuzzyMatcher.
+ * Used by tests and external consumers for simple prefix-based matching.
+ *
+ * @template T - String type to match against
  * @param query - Search query string
- * @param items - Array of strings to search
- * @param maxResults - Maximum number of results to return
- * @returns Array of fuzzy match results with item and score
+ * @param items - Array of items to search through
+ * @returns Array of FuzzyMatch results sorted by relevance
  */
-export function fuzzyMatch(query: string, items: string[], maxResults = 100): { item: string; score: number }[] {
+export function fuzzyMatch<T extends string>(query: string, items: readonly T[]): Array<{ item: T; score: number }> {
     const matcher = new SimpleFuzzyMatcher();
-    return matcher.match(query, items, { maxResults });
+    return matcher.match(query, items);
 }

@@ -111,10 +111,11 @@ describe('DocumentFormatter', () => {
             if (result.success) {
                 const formatted = result.data;
                 const lines = formatted.split('\n');
+                expect(lines.length).toBeGreaterThanOrEqual(3);
 
                 // Comments should be aligned
-                const commentPos1 = lines[1].indexOf(';');
-                const commentPos2 = lines[2].indexOf(';');
+                const commentPos1 = lines[1]!.indexOf(';');
+                const commentPos2 = lines[2]!.indexOf(';');
                 expect(commentPos1).toBe(commentPos2);
                 expect(commentPos1).toBeGreaterThan(0);
             }
@@ -147,10 +148,11 @@ describe('DocumentFormatter', () => {
             if (result.success) {
                 const formatted = result.data;
                 const lines = formatted.split('\n');
+                expect(lines.length).toBeGreaterThanOrEqual(3);
 
                 // Amounts should be aligned by their numeric values (ignore signs)
-                const amountPos1 = lines[1].indexOf('100');
-                const amountPos2 = lines[2].indexOf('50'); // Look for '50' not '-50'
+                const amountPos1 = lines[1]!.indexOf('100');
+                const amountPos2 = lines[2]!.indexOf('50'); // Look for '50' not '-50'
                 expect(amountPos1).toBe(amountPos2);
             }
         });

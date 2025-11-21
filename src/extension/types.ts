@@ -25,53 +25,36 @@ interface ParsedHLedgerData {
 }
 
 /**
- * Branded types for type safety and domain modeling.
- * These provide compile-time guarantees that values represent specific domain concepts.
+ * Type aliases for domain modeling.
+ * Simple type aliases provide better documentation without the overhead of branded types.
  */
 
-/** Branded type for hledger account names (e.g., 'Assets:Cash', 'Expenses:Food') */
-export type AccountName = string & { readonly __brand: 'AccountName' };
+/** Type alias for hledger account names (e.g., 'Assets:Cash', 'Expenses:Food') */
+export type AccountName = string;
 
-/** Branded type for transaction payee names (e.g., 'Grocery Store', 'Coffee Shop') */
-export type PayeeName = string & { readonly __brand: 'PayeeName' };
+/** Type alias for transaction payee names (e.g., 'Grocery Store', 'Coffee Shop') */
+export type PayeeName = string;
 
-/** Branded type for hledger tag names (e.g., 'category', 'project') */
-export type TagName = string & { readonly __brand: 'TagName' };
+/** Type alias for hledger tag names (e.g., 'category', 'project') */
+export type TagName = string;
 
-/** Branded type for hledger tag values (e.g., 'work', 'personal', 'urgent') */
-export type TagValue = string & { readonly __brand: 'TagValue' };
+/** Type alias for hledger tag values (e.g., 'work', 'personal', 'urgent') */
+export type TagValue = string;
 
-/** Branded type for commodity codes (e.g., 'USD', 'EUR', '$') */
-export type CommodityCode = string & { readonly __brand: 'CommodityCode' };
+/** Type alias for commodity codes (e.g., 'USD', 'EUR', '$') */
+export type CommodityCode = string;
 
-/** Branded type for file system paths */
-export type FilePath = string & { readonly __brand: 'FilePath' };
+/** Type alias for file system paths */
+export type FilePath = string;
 
-/** Branded type for workspace directory paths */
-export type WorkspacePath = string & { readonly __brand: 'WorkspacePath' };
-export type CompletionScore = number & { readonly __brand: 'CompletionScore' };
-export type UsageCount = number & { readonly __brand: 'UsageCount' };
-export type CacheKey = string & { readonly __brand: 'CacheKey' };
-export type LineNumber = number & { readonly __brand: 'LineNumber' };
-export type CharacterPosition = number & { readonly __brand: 'CharacterPosition' };
-export type DocumentVersion = number & { readonly __brand: 'DocumentVersion' };
-
-/**
- * Legacy type aliases for backward compatibility.
- * These are deprecated in favor of more descriptive branded types.
- */
-
-/** @deprecated Use AccountName instead for better type safety */
-export type Account = AccountName;
-
-/** @deprecated Use PayeeName instead for better type safety */
-export type Payee = PayeeName;
-
-/** @deprecated Use TagName instead for better type safety */
-export type Tag = TagName;
-
-/** @deprecated Use CommodityCode instead for better type safety */
-export type Commodity = CommodityCode;
+/** Type alias for workspace directory paths */
+export type WorkspacePath = string;
+export type CompletionScore = number;
+export type UsageCount = number;
+export type CacheKey = string;
+export type LineNumber = number;
+export type CharacterPosition = number;
+export type DocumentVersion = number;
 
 /**
  * Interface for tag:value pairs used in hledger comments.
@@ -87,7 +70,7 @@ export interface CompletionContext {
     readonly type: CompletionType;
     readonly query: string;
     readonly position?: CompletionPosition;
-    readonly document?: DocumentReference;
+    readonly document?: DocumentReference | undefined;
     readonly range?: CompletionRange;
     readonly isCaseSensitive?: boolean;
 }
@@ -218,144 +201,19 @@ export const HLEDGER_KEYWORDS = [
 // Type-safe keyword type
 export type HLedgerKeyword = typeof HLEDGER_KEYWORDS[number];
 
-// Type guards for branded types with safe coercion
-export const isAccountName = (value: string): value is AccountName => {
-    return typeof value === 'string' && value.length > 0;
-};
-
-export const isPayeeName = (value: string): value is PayeeName => {
-    return typeof value === 'string' && value.length > 0;
-};
-
-export const isTagName = (value: string): value is TagName => {
-    return typeof value === 'string' && value.length > 0;
-};
-
-export const isTagValue = (value: string): value is TagValue => {
-    return typeof value === 'string' && value.length > 0;
-};
-
-export const isCommodityCode = (value: string): value is CommodityCode => {
-    if (typeof value !== 'string' || value.length === 0) {
-        return false;
-    }
-    
-    // Enhanced Unicode-aware commodity validation
-    // Matches currency symbols (Unicode Currency Symbols block)
-    if (/^\p{Sc}$/u.test(value)) {
-        return true;
-    }
-    
-    // Matches ISO 4217 currency codes (2-4 uppercase letters)
-    if (/^[A-Z]{2,4}$/u.test(value)) {
-        return true;
-    }
-    
-    // Matches commodity codes with optional numbers (supports international letters)
-    if (/^[\p{L}\p{N}]{2,8}$/u.test(value)) {
-        return true;
-    }
-    
-    return false;
-};
-
-export const isFilePath = (value: string): value is FilePath => {
-    return typeof value === 'string' && value.length > 0;
-};
-
-export const isCacheKey = (value: string): value is CacheKey => {
-    return typeof value === 'string' && value.length > 0;
-};
-
-export const isCompletionScore = (value: number): value is CompletionScore => {
-    return typeof value === 'number' && value >= 0 && isFinite(value);
-};
-
-export const isUsageCount = (value: number): value is UsageCount => {
-    return typeof value === 'number' && value >= 0 && Number.isInteger(value);
-};
-
-export const isLineNumber = (value: number): value is LineNumber => {
-    return typeof value === 'number' && value >= 0 && Number.isInteger(value);
-};
-
-export const isCharacterPosition = (value: number): value is CharacterPosition => {
-    return typeof value === 'number' && value >= 0 && Number.isInteger(value);
-};
-
-export const isDocumentVersion = (value: number): value is DocumentVersion => {
-    return typeof value === 'number' && value >= 1 && Number.isInteger(value);
-};
-
-// Branded type constructors with safe coercion for backward compatibility
-export const createAccountName = (value: string): AccountName => {
-    return value as AccountName;
-};
-
-export const createPayeeName = (value: string): PayeeName => {
-    return value as PayeeName;
-};
-
-export const createTagName = (value: string): TagName => {
-    return value as TagName;
-};
-
-export const createTagValue = (value: string): TagValue => {
-    return value as TagValue;
-};
-
-export const createCommodityCode = (value: string): CommodityCode => {
-    return value as CommodityCode;
-};
-
-export const createFilePath = (value: string): FilePath => {
-    return value as FilePath;
-};
-
-export const createCacheKey = (value: string): CacheKey => {
-    return value as CacheKey;
-};
-
-export const createCompletionScore = (value: number): CompletionScore => {
-    return value as CompletionScore;
-};
-
-export const createUsageCount = (value: number): UsageCount => {
-    return value as UsageCount;
-};
-
-export const createLineNumber = (value: number): LineNumber => {
-    return value as LineNumber;
-};
-
-export const createCharacterPosition = (value: number): CharacterPosition => {
-    return value as CharacterPosition;
-};
-
-export const createDocumentVersion = (value: number): DocumentVersion => {
-    return value as DocumentVersion;
-};
-
-// Safe coercion functions for arrays and collections
-export const coerceAccountNames = (values: string[]): AccountName[] => {
-    return values as AccountName[];
-};
-
-export const coercePayeeNames = (values: string[]): PayeeName[] => {
-    return values as PayeeName[];
-};
-
-export const coerceTagNames = (values: string[]): TagName[] => {
-    return values as TagName[];
-};
-
-export const coerceTagValues = (values: string[]): TagValue[] => {
-    return values as TagValue[];
-};
-
-export const coerceCommodityCodes = (values: string[]): CommodityCode[] => {
-    return values as CommodityCode[];
-};
+// Simple constructor functions for backward compatibility (now just identity functions)
+export const createAccountName = (value: string): AccountName => value;
+export const createPayeeName = (value: string): PayeeName => value;
+export const createTagName = (value: string): TagName => value;
+export const createTagValue = (value: string): TagValue => value;
+export const createCommodityCode = (value: string): CommodityCode => value;
+export const createFilePath = (value: string): FilePath => value;
+export const createCacheKey = (value: string): CacheKey => value;
+export const createCompletionScore = (value: number): CompletionScore => value;
+export const createUsageCount = (value: number): UsageCount => value;
+export const createLineNumber = (value: number): LineNumber => value;
+export const createCharacterPosition = (value: number): CharacterPosition => value;
+export const createDocumentVersion = (value: number): DocumentVersion => value;
 
 // Modern Result type for better error handling
 export type Result<T, E = Error> = 

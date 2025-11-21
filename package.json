@@ -5,7 +5,8 @@
   "version": "0.4.0",
   "publisher": "evsyukov",
   "engines": {
-    "vscode": "^1.75.0"
+    "vscode": "^1.75.0",
+    "node": ">=20.0.0"
   },
   "categories": [
     "Language Packs",
@@ -74,23 +75,23 @@
           "maximum": 50,
           "description": "Maximum number of completion items to show"
         },
-         "hledger.autoCompletion.maxAccountResults": {
-           "type": "number",
-           "default": 30,
-           "minimum": 5,
-           "maximum": 50,
-           "description": "Maximum number of account completion items to show (accounts are hierarchical, so more items are useful)"
-         },
-         "hledger.cli.path": {
-           "type": "string",
-           "default": "",
-           "description": "Path to hledger executable. If empty, will search in system PATH"
-         },
-         "hledger.cli.journalFile": {
-           "type": "string",
-           "default": "",
-           "description": "Path to the main hledger journal file. If empty, will try to use LEDGER_FILE environment variable or current file"
-         }
+        "hledger.autoCompletion.maxAccountResults": {
+          "type": "number",
+          "default": 30,
+          "minimum": 5,
+          "maximum": 50,
+          "description": "Maximum number of account completion items to show (accounts are hierarchical, so more items are useful)"
+        },
+        "hledger.cli.path": {
+          "type": "string",
+          "default": "",
+          "description": "Path to hledger executable. If empty, will search in system PATH"
+        },
+        "hledger.cli.journalFile": {
+          "type": "string",
+          "default": "",
+          "description": "Path to the main hledger journal file. If empty, will try to use LEDGER_FILE environment variable or current file"
+        }
       }
     },
     "semanticTokenTypes": [
@@ -151,38 +152,38 @@
         "description": "HLedger links"
       }
     ],
-     "commands": [
-       {
-         "command": "hledger.onEnter",
-         "title": "HLedger: Smart Enter",
-         "category": "HLedger",
-         "when": "editorTextFocus && editorLangId == hledger"
-       },
-       {
-         "command": "hledger.onTab",
-         "title": "HLedger: Smart Tab for Amount Alignment",
-         "category": "HLedger",
-         "when": "editorTextFocus && editorLangId == hledger"
-       },
-       {
-         "command": "hledger.cli.balance",
-         "title": "HLedger: Insert Balance Report",
-         "category": "HLedger",
-         "when": "editorTextFocus && editorLangId == hledger"
-       },
-       {
-         "command": "hledger.cli.stats",
-         "title": "HLedger: Insert Statistics Report",
-         "category": "HLedger",
-         "when": "editorTextFocus && editorLangId == hledger"
-       },
-       {
-         "command": "hledger.cli.incomestatement",
-         "title": "HLedger: Insert Income Statement",
-         "category": "HLedger",
-         "when": "editorTextFocus && editorLangId == hledger"
-       }
-     ],
+    "commands": [
+      {
+        "command": "hledger.onEnter",
+        "title": "HLedger: Smart Enter",
+        "category": "HLedger",
+        "when": "editorTextFocus && editorLangId == hledger"
+      },
+      {
+        "command": "hledger.onTab",
+        "title": "HLedger: Smart Tab for Amount Alignment",
+        "category": "HLedger",
+        "when": "editorTextFocus && editorLangId == hledger"
+      },
+      {
+        "command": "hledger.cli.balance",
+        "title": "HLedger: Insert Balance Report",
+        "category": "HLedger",
+        "when": "editorTextFocus && editorLangId == hledger"
+      },
+      {
+        "command": "hledger.cli.stats",
+        "title": "HLedger: Insert Statistics Report",
+        "category": "HLedger",
+        "when": "editorTextFocus && editorLangId == hledger"
+      },
+      {
+        "command": "hledger.cli.incomestatement",
+        "title": "HLedger: Insert Income Statement",
+        "category": "HLedger",
+        "when": "editorTextFocus && editorLangId == hledger"
+      }
+    ],
     "keybindings": [
       {
         "command": "acceptSelectedSuggestion",
@@ -266,18 +267,18 @@
     "publish:ovsx": "ovsx publish"
   },
   "devDependencies": {
-    "@types/jest": "^30.0.0",
-    "@types/node": "16.x",
+    "@types/jest": "^29.5.14",
+    "@types/node": "18.x",
     "@types/vscode": "^1.75.0",
     "@typescript-eslint/eslint-plugin": "^8.45.0",
     "@typescript-eslint/parser": "^8.45.0",
     "@vscode/test-electron": "^2.5.2",
     "@vscode/vsce": "^2.22.0",
     "eslint": "^9.36.0",
-    "jest": "^30.0.5",
+    "jest": "^29.7.0",
     "ovsx": "^0.8.4",
     "rimraf": "^6.0.1",
-    "ts-jest": "^29.4.0",
+    "ts-jest": "^29.4.5",
     "typescript": "^4.9.4"
   },
   "license": "MIT",

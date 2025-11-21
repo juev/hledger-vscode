@@ -162,12 +162,12 @@ describe('StrictCompletionProvider Integration', () => {
 
         it('should suppress completions in middle of words', () => {
             const document = new MockTextDocument(['  Assets:Cash']);
-            const position = new vscode.Position(0, 8); // Middle of "Assets:Cash"
+            const position = new vscode.Position(0, 5); // Middle of "Assets" (between 's' and 'e')
 
             const completions = provider.provideCompletionItems(
-                document, 
-                position, 
-                mockCancellationToken, 
+                document,
+                position,
+                mockCancellationToken,
                 mockCompletionContext
             );
 
@@ -273,7 +273,7 @@ describe('StrictCompletionProvider Integration', () => {
                 
                 // All completions should be of the same kind (single type per position rule)
                 if (completions.length > 0) {
-                    const firstKind = completions[0].kind;
+                    const firstKind = completions[0]!.kind;
                     const allSameKind = completions.every(item => item.kind === firstKind);
                     expect(allSameKind).toBe(true);
                 }

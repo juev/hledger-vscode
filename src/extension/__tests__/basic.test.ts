@@ -48,10 +48,10 @@ describe('TypeScript compilation and basic logic', () => {
         expect(aliasDirective.test('alias Активы = Assets')).toBe(true);
         
         const accountMatch = 'account Assets:Bank ; type:Asset'.match(accountDirective);
-        expect(accountMatch?.[1].trim()).toBe('Assets:Bank');
-        
+        expect(accountMatch?.[1]!.trim()).toBe('Assets:Bank');
+
         const aliasMatch = 'alias Активы = Assets'.match(aliasDirective);
-        expect(aliasMatch?.[1].trim()).toBe('Активы');
-        expect(aliasMatch?.[2].trim()).toBe('Assets');
+        expect(aliasMatch?.[1]!.trim()).toBe('Активы');
+        expect(aliasMatch?.[2]!.trim()).toBe('Assets');
     });
 });

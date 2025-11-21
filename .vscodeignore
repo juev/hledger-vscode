@@ -49,3 +49,6 @@ Thumbs.db
 *.swp
 *.swo
 *~
+
+.beads/**
+coverage/**

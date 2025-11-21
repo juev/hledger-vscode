@@ -35,11 +35,65 @@ export interface StrictCompletionContext {
     position: PositionInfo;
 }
 
+/**
+ * LRU Cache implementation for RegExp patterns with memory limit
+ */
+export class RegexCache {
+    private readonly maxSize: number;
+    private cache = new Map<string, RegExp>();
+
+    constructor(maxSize = 50) {
+        this.maxSize = maxSize;
+    }
+
+    get(key: string): RegExp | undefined {
+        const value = this.cache.get(key);
+        if (value !== undefined) {
+            // Move to end (LRU behavior)
+            this.cache.delete(key);
+            this.cache.set(key, value);
+        }
+        return value;
+    }
+
+    set(key: string, value: RegExp): void {
+        if (this.cache.has(key)) {
+            this.cache.delete(key);
+        } else if (this.cache.size >= this.maxSize) {
+            // Remove least recently used (first item)
+            const iterator = this.cache.keys().next();
+            if (!iterator.done && iterator.value !== undefined) {
+                this.cache.delete(iterator.value);
+            }
+        }
+        this.cache.set(key, value);
+    }
+
+    clear(): void {
+        this.cache.clear();
+    }
+
+    size(): number {
+        return this.cache.size;
+    }
+}
+
 export class StrictPositionAnalyzer {
     private readonly numberFormatService: NumberFormatService;
     private readonly config: HLedgerConfig;
-    private readonly patternCache = new Map<string, RegExp>();
-    
+    private readonly patternCache = new RegexCache(50); // Limit to prevent memory leaks
+
+    // Precompiled patterns for hot path performance
+    private readonly precompiledPatterns: {
+        forbiddenZone: RegExp;
+        currencyTrigger: RegExp;
+        afterAmountTwoSpaces: RegExp;
+        afterAmountSingleSpace: RegExp;
+        universalAmount: RegExp;
+        accountAmountCurrency: RegExp;
+        amountInContext: RegExp;
+    };
+
     private static readonly STRICT_PATTERNS = {
         // Strict date patterns - only at line beginning
         DATE_LINE_START: RegexPatterns.DATE_LINE_START,
@@ -57,119 +111,139 @@ export class StrictPositionAnalyzer {
         ZERO_START: RegexPatterns.ZERO_START,                  // Just "0"
         ZERO_MONTH: RegexPatterns.ZERO_MONTH,                  // "01" through "09"
         ZERO_PARTIAL_DATE: RegexPatterns.ZERO_PARTIAL_DATE,    // "01-", "01-15"
-        
+
         // Account on indented line with Unicode support
         ACCOUNT_INDENTED: /^\s{2,}([\p{L}][\p{L}\p{N}:_-]*)$/u,
-        
+
         // NOTE: Amount patterns are now dynamically generated based on detected formats
         // The following patterns will be replaced by format-aware equivalents:
         // AMOUNT_PATTERN - replaced by createForbiddenZonePattern()
-        // CURRENCY_AFTER_AMOUNT - replaced by createCurrencyTriggerPattern() 
+        // CURRENCY_AFTER_AMOUNT - replaced by createCurrencyTriggerPattern()
         // FORBIDDEN_AFTER_AMOUNT - replaced by createForbiddenZonePattern()
     };
-    
+
     constructor(numberFormatService: NumberFormatService, config: HLedgerConfig) {
         this.numberFormatService = numberFormatService;
         this.config = config;
+
+        // Precompile all patterns at initialization to avoid hot path compilation
+        this.precompiledPatterns = this.initializePatterns();
     }
-    
+
     /**
-     * Creates format-aware amount patterns based on detected or configured decimal formats.
-     * Returns patterns for different contexts: forbidden zone, currency trigger, etc.
+     * Cleanup method to prevent memory leaks
      */
-    private createAmountPatterns(): {
+    public dispose(): void {
+        this.patternCache.clear();
+    }
+
+    /**
+     * Initializes and precompiles all regex patterns at construction time.
+     * This eliminates hot path compilation by using the NumberFormatService's
+     * existing pattern caching mechanism.
+     *
+     * Performance optimization: All patterns are compiled once at initialization,
+     * ensuring zero regex compilation during completion (hot path).
+     */
+    private initializePatterns(): {
+        forbiddenZone: RegExp;
+        currencyTrigger: RegExp;
+        afterAmountTwoSpaces: RegExp;
+        afterAmountSingleSpace: RegExp;
+        universalAmount: RegExp;
+        accountAmountCurrency: RegExp;
+        amountInContext: RegExp;
+    } {
+        // Get supported formats from the NumberFormatService
+        const formats = this.numberFormatService.getSupportedFormats();
+
+        // Build combined pattern using NumberFormatService's cached individual patterns
+        // This leverages the existing stable cache keys based on format configuration
+        const amountPatternVariants = formats.map(format => {
+            // Use NumberFormatService.createAmountPattern() which already implements
+            // individual pattern caching with stable keys
+            const pattern = this.numberFormatService.createAmountPattern(format);
+            // Remove ^ and $ anchors for combining
+            return pattern.source.replace(/^\^|\$$/g, '');
+        });
+
+        const amountPattern = `(?:${amountPatternVariants.join('|')})`;
+
+        // Get universal amount pattern (also cached in NumberFormatService)
+        const universalAmount = this.numberFormatService.createUniversalAmountPattern();
+
+        // Build account name pattern for posting contexts
+        const accountNamePart = `[\\p{L}\\p{N}:_\-]+(?:\\s+[\\p{L}\\p{N}:_\-]+)*`;
+
+        // Precompile all patterns at initialization
+        return {
+            // Forbidden zone: after amount + two or more spaces
+            forbiddenZone: new RegExp(`^${amountPattern}\\s{2,}.*$`, 'u'),
+
+            // Currency trigger: after amount + single space (+ optional currency)
+            currencyTrigger: new RegExp(`^${amountPattern}\\s([\\p{Lu}\\p{Sc}$€£¥₽]*)?$`, 'u'),
+
+            // After amount with two or more spaces (for detection)
+            afterAmountTwoSpaces: new RegExp(`^${amountPattern}\\s{2,}$`, 'u'),
+
+            // After amount with single space (for detection)
+            afterAmountSingleSpace: new RegExp(`^${amountPattern}\\s$`, 'u'),
+
+            // Universal amount pattern (already compiled by NumberFormatService)
+            universalAmount: universalAmount,
+
+            // Account + amount + currency pattern for posting detection
+            accountAmountCurrency: new RegExp(
+                `^\\s+${accountNamePart}\\s+(${universalAmount.source.replace(/^\^|\$$/g, '')})\\s([\\p{Lu}\\p{Sc}$€£¥₽]*)?$`,
+                'u'
+            ),
+
+            // Amount in context pattern for containsAmount detection
+            amountInContext: new RegExp(
+                `(^|\\s)(${universalAmount.source.replace(/^\^|\$$/g, '')})(\\s|$)`,
+                'u'
+            )
+        };
+    }
+
+    /**
+     * Gets precompiled amount patterns.
+     * Returns patterns that were compiled at initialization.
+     *
+     * Performance: Zero compilation - all patterns precompiled at construction.
+     */
+    private getAmountPatterns(): {
         forbiddenZone: RegExp;
         currencyTrigger: RegExp;
         afterAmountTwoSpaces: RegExp;
         afterAmountSingleSpace: RegExp;
     } {
-        const cacheKey = 'amount-patterns';
-        const cached = this.patternCache.get(cacheKey);
-        if (cached) {
-            // Return cached patterns object
-            return cached as any;
-        }
-
-        // Get supported formats from the NumberFormatService
-        const formats = this.numberFormatService.getSupportedFormats();
-        
-        // Create pattern variants for different decimal marks
-        const createAmountPatternForFormat = (format: NumberFormat): string => {
-            const { decimalMark, groupSeparator, useGrouping } = format;
-            
-            // Escape special regex characters
-            const escapeRegex = (char: string): string => {
-                return char.replace(/[.*+?^${}()|[\\]\\]/g, '\\$&');
-            };
-
-            const escapedDecimalMark = escapeRegex(decimalMark);
-            
-            if (useGrouping && groupSeparator) {
-                const escapedGroupSeparator = escapeRegex(groupSeparator);
-                // Pattern for grouped numbers: 1,234.56 or 1 234,56
-                return `\\p{N}{1,3}(?:${escapedGroupSeparator}\\p{N}{3})*(?:${escapedDecimalMark}\\p{N}{1,4})?`;
-            } else {
-                // Pattern for simple numbers: 1234.56 or 1234,56
-                return `\\p{N}+(?:${escapedDecimalMark}\\p{N}{1,4})?`;
-            }
+        return {
+            forbiddenZone: this.precompiledPatterns.forbiddenZone,
+            currencyTrigger: this.precompiledPatterns.currencyTrigger,
+            afterAmountTwoSpaces: this.precompiledPatterns.afterAmountTwoSpaces,
+            afterAmountSingleSpace: this.precompiledPatterns.afterAmountSingleSpace
         };
-
-        // Generate patterns for all supported formats
-        const amountPatternVariants = formats.map(createAmountPatternForFormat);
-        const amountPattern = `(?:${amountPatternVariants.join('|')})`;
-
-        // Create specific patterns for different contexts
-        const patterns = {
-            // Forbidden zone: after amount + two or more spaces
-            forbiddenZone: new RegExp(`^${amountPattern}\\s{2,}.*$`, 'u'),
-            
-            // Currency trigger: after amount + single space (+ optional currency)
-            currencyTrigger: new RegExp(`^${amountPattern}\\s([\\p{Lu}\\p{Sc}$€£¥₽]*)?$`, 'u'),
-            
-            // After amount with two or more spaces (for detection)
-            afterAmountTwoSpaces: new RegExp(`^${amountPattern}\\s{2,}$`, 'u'),
-            
-            // After amount with single space (for detection)
-            afterAmountSingleSpace: new RegExp(`^${amountPattern}\\s$`, 'u')
-        };
-
-        // Cache the patterns directly
-        this.patternCache.set(cacheKey, patterns as any);
-        
-        return patterns;
     }
 
     /**
-     * Creates a universal amount pattern that matches amounts in any supported format.
+     * Gets the precompiled universal amount pattern that matches amounts in any supported format.
      * Used for general amount detection in posting contexts.
+     *
+     * Performance: Zero compilation - pattern precompiled at construction.
      */
-    private createUniversalAmountPattern(): RegExp {
-        const cacheKey = 'universal-amount';
-        const cached = this.patternCache.get(cacheKey);
-        if (cached) {
-            return cached;
-        }
-
-        const pattern = this.numberFormatService.createUniversalAmountPattern();
-        this.patternCache.set(cacheKey, pattern);
-        return pattern;
+    private getUniversalAmountPattern(): RegExp {
+        return this.precompiledPatterns.universalAmount;
     }
 
     /**
      * Detects if a string contains an amount in any supported format.
      * More robust than hardcoded patterns, supports international formats.
+     *
+     * Performance: Uses precompiled pattern, zero compilation in hot path.
      */
     private containsAmount(text: string): boolean {
-        const universalPattern = this.createUniversalAmountPattern();
-        
-        // Look for amount patterns in the text
-        // This matches standalone amounts or amounts followed by spaces/currency
-        const amountInContextPattern = new RegExp(
-            `(^|\\s)(${universalPattern.source.replace(/^\^|\$$/g, '')})(\\s|$)`,
-            'u'
-        );
-        
-        return amountInContextPattern.test(text);
+        return this.precompiledPatterns.amountInContext.test(text);
     }
     
     analyzePosition(document: vscode.TextDocument, position: vscode.Position): StrictCompletionContext {
@@ -219,13 +293,8 @@ export class StrictPositionAnalyzer {
             // 4. "  Account  123 " (whole numbers)
             // 5. "  Account  123.456 BTC" or "  Account  123,456 BTC" (varying decimal precision)
             // Pattern: indentation + account + amount + space + optional currency symbols
-            const universalAmountPattern = this.createUniversalAmountPattern();
-            const accountNamePart = `[\\p{L}\\p{N}:_\-]+(?:\\s+[\\p{L}\\p{N}:_\-]+)*`;
-            const accountAmountCurrencyPattern = new RegExp(
-                `^\\s+${accountNamePart}\\s+(${universalAmountPattern.source.replace(/^\^|\$$/g, '')})\\s([\\p{Lu}\\p{Sc}$€£¥₽]*)?$`,
-                'u'
-            );
-            if (accountAmountCurrencyPattern.test(beforeCursor)) {
+            // Performance: Uses precompiled pattern from initialization
+            if (this.precompiledPatterns.accountAmountCurrency.test(beforeCursor)) {
                 return LineContext.AfterAmount;
             }
             
@@ -348,59 +417,100 @@ export class StrictPositionAnalyzer {
     }
     
     private applyStrictRules(
-        context: LineContext, 
-        beforeCursor: string, 
+        context: LineContext,
+        beforeCursor: string,
         afterCursor: string,
         position: PositionInfo
     ): StrictCompletionContext {
-        
+
         const baseContext: StrictCompletionContext = {
             lineContext: context,
             allowedTypes: [],
             suppressAll: false,
             position
         };
-        
+
+        // Check if we're in the middle of a word - suppress all completions
+        if (this.isInMiddleOfWord(beforeCursor, afterCursor, context)) {
+            baseContext.suppressAll = true;
+            return baseContext;
+        }
+
         switch (context) {
             case LineContext.LineStart:
                 // Strictly only date completion at line beginning
                 baseContext.allowedTypes = ['date'];
                 break;
-                
+
             case LineContext.AfterDate:
                 // Payee/description after date
                 baseContext.allowedTypes = ['payee'];
                 break;
-                
+
             case LineContext.InPosting:
                 // Strictly only account completion on indented lines
-                baseContext.allowedTypes = ['account'];
+                // Account names must start with a letter, not a digit
+                const accountQuery = this.extractAccountQuery(beforeCursor);
+                if (accountQuery && /^\d/.test(accountQuery)) {
+                    // Suppress completion if query starts with a digit
+                    baseContext.suppressAll = true;
+                } else {
+                    baseContext.allowedTypes = ['account'];
+                }
                 break;
-                
+
             case LineContext.AfterAmount:
                 // Strictly only currency completion after amount + single space
                 baseContext.allowedTypes = ['commodity'];
                 break;
-                
+
             case LineContext.InComment:
                 // Tag name completion in comments
                 baseContext.allowedTypes = ['tag'];
                 break;
-                
+
             case LineContext.InTagValue:
                 // Tag value completion after tag name and colon
                 baseContext.allowedTypes = ['tag_value'];
                 break;
-                
+
             case LineContext.Forbidden:
                 // Complete completion suppression
                 baseContext.suppressAll = true;
                 break;
         }
-        
+
         return baseContext;
     }
-    
+
+    /**
+     * Check if cursor is in the middle of a word.
+     * Don't suppress in comment contexts - allow completions for tags.
+     */
+    private isInMiddleOfWord(beforeCursor: string, afterCursor: string, context: LineContext): boolean {
+        // Don't suppress in comment contexts - allow completions for tags
+        if (context === LineContext.InComment || context === LineContext.InTagValue) {
+            return false;
+        }
+
+        // Check if we are in the middle of a word using Unicode-aware patterns
+        const beforeEndsWithWord = /[\p{L}\p{N}]$/u.test(beforeCursor);
+        const afterStartsWithWord = /^[\p{L}\p{N}]/u.test(afterCursor);
+
+        return beforeEndsWithWord && afterStartsWithWord;
+    }
+
+    /**
+     * Extract account query from posting line
+     * Returns the word being typed at cursor position for account completion
+     */
+    private extractAccountQuery(beforeCursor: string): string {
+        // Extract the word being typed at cursor position
+        // Use Unicode-aware pattern to support international characters
+        const match = beforeCursor.match(/[\p{L}\p{N}:_.\s-]*$/u);
+        return match ? match[0].trim() : "";
+    }
+
     /**
      * Special handling for digit "0" at line beginning
      * Supports Unicode patterns for international date formats

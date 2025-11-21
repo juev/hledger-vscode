@@ -23,11 +23,11 @@ export class HLedgerConfig {
         ACCOUNT_END: /^\s+[^0-9]*\s+/,
         // Improved date patterns for progressive typing
         NUMERIC_START: /^\d{1,4}$/,  // Just digits at line start (for typing year)
-        PARTIAL_DATE: /^\d{1,4}[-\/]?\d{0,2}[-\/]?\d{0,2}$/,  // Flexible partial date
-        FULL_DATE: /^\d{4}[-\/]\d{1,2}[-\/]\d{1,2}$/,  // Complete date format
-        SHORT_DATE: /^(0?[1-9]|1[0-2])[-\/](0?[1-9]|[12]\d|3[01])$/,  // MM/DD or M/D format
+        PARTIAL_DATE: /^\d{1,4}[-/]?\d{0,2}[-/]?\d{0,2}$/,  // Flexible partial date
+        FULL_DATE: /^\d{4}[-/]\d{1,2}[-/]\d{1,2}$/,  // Complete date format
+        SHORT_DATE: /^(0?[1-9]|1[0-2])[-/](0?[1-9]|[12]\d|3[01])$/,  // MM/DD or M/D format
         // Fixed: Support both full dates (YYYY-MM-DD) and short dates (MM-DD) in transactions
-        DATE_IN_TRANSACTION: /^\s*(?:\d{4}[-\/]\d{1,2}[-\/]\d{1,2}|\d{1,2}[-\/]\d{1,2})\s*[*!]?\s*/
+        DATE_IN_TRANSACTION: /^\s*(?:\d{4}[-/]\d{1,2}[-/]\d{1,2}|\d{1,2}[-/]\d{1,2})\s*[*!]?\s*/
     } as const;
 
     private parser: HLedgerParser;
@@ -36,14 +36,14 @@ export class HLedgerConfig {
     private lastWorkspacePath: string | null = null;
 
     constructor(parser?: HLedgerParser, cache?: SimpleProjectCache) {
-        this.parser = parser || new HLedgerParser();
-        this.cache = cache || new SimpleProjectCache();
+        this.parser = parser ?? new HLedgerParser();
+        this.cache = cache ?? new SimpleProjectCache();
     }
 
     // Main method to get configuration for a document
     getConfigForDocument(document: vscode.TextDocument): void {
         const filePath = document.uri.fsPath;
-        
+
         // Determine project path
         let projectPath: string;
         const workspaceFolder = vscode.workspace.getWorkspaceFolder(document.uri);
@@ -53,19 +53,25 @@ export class HLedgerConfig {
             // No workspace, use directory of the file
             projectPath = path.dirname(filePath);
         }
-        
-        // Get cached data or parse workspace
+
+        // Get cached data or parse workspace with incremental cache support
         const cacheKey = createCacheKey(projectPath);
         this.data = this.cache.get(cacheKey);
         if (!this.data || this.lastWorkspacePath !== projectPath) {
-            this.data = this.parser.parseWorkspace(projectPath);
+            // Pass cache to parseWorkspace for incremental updates (mtimeMs validation)
+            this.data = this.parser.parseWorkspace(projectPath, this.cache);
             this.cache.set(cacheKey, this.data);
             this.lastWorkspacePath = projectPath;
         }
-        
-        // Note: We don't need to merge current document data because parseWorkspace
-        // already includes all files in the workspace, including the current document.
-        // Merging would cause double counting of usage statistics.
+
+        // Parse current document content to capture unsaved changes
+        // This ensures that accounts, payees, commodities, and tags defined in the current
+        // (potentially unsaved) document are available for completion.
+        // The parseContent method merges data with existing workspace data,
+        // properly handling usage statistics to include both saved and unsaved content.
+        const currentContent = document.getText();
+        const currentData = this.parser.parseContent(currentContent, filePath);
+        this.mergeCurrentData(currentData);
     }
 
     // Helper method to cast readonly data to mutable for internal operations
@@ -111,22 +117,22 @@ export class HLedgerConfig {
         
         // Update usage counts with proper type handling
         currentData.accountUsage.forEach((count, key) => {
-            const existing = mutableData.accountUsage.get(key) || createUsageCount(0);
+            const existing = mutableData.accountUsage.get(key) ?? createUsageCount(0);
             mutableData.accountUsage.set(key, createUsageCount(existing + count));
         });
-        
+
         currentData.payeeUsage.forEach((count, key) => {
-            const existing = mutableData.payeeUsage.get(key) || createUsageCount(0);
+            const existing = mutableData.payeeUsage.get(key) ?? createUsageCount(0);
             mutableData.payeeUsage.set(key, createUsageCount(existing + count));
         });
-        
+
         currentData.tagUsage.forEach((count, key) => {
-            const existing = mutableData.tagUsage.get(key) || createUsageCount(0);
+            const existing = mutableData.tagUsage.get(key) ?? createUsageCount(0);
             mutableData.tagUsage.set(key, createUsageCount(existing + count));
         });
-        
+
         currentData.commodityUsage.forEach((count, key) => {
-            const existing = mutableData.commodityUsage.get(key) || createUsageCount(0);
+            const existing = mutableData.commodityUsage.get(key) ?? createUsageCount(0);
             mutableData.commodityUsage.set(key, createUsageCount(existing + count));
         });
     }
@@ -140,8 +146,8 @@ export class HLedgerConfig {
         if (!this.data) return [];
         
         return Array.from(this.data.accounts).sort((a, b) => {
-            const aUsage = this.data!.accountUsage.get(a) || 0;
-            const bUsage = this.data!.accountUsage.get(b) || 0;
+            const aUsage = this.data!.accountUsage.get(a) ?? 0;
+            const bUsage = this.data!.accountUsage.get(b) ?? 0;
             
             if (aUsage !== bUsage) {
                 return bUsage - aUsage; // Sort by usage descending
@@ -168,8 +174,8 @@ export class HLedgerConfig {
         if (!this.data) return [];
         
         return Array.from(this.data.payees).sort((a, b) => {
-            const aUsage = this.data!.payeeUsage.get(a) || 0;
-            const bUsage = this.data!.payeeUsage.get(b) || 0;
+            const aUsage = this.data!.payeeUsage.get(a) ?? 0;
+            const bUsage = this.data!.payeeUsage.get(b) ?? 0;
             
             if (aUsage !== bUsage) {
                 return bUsage - aUsage;
@@ -188,8 +194,8 @@ export class HLedgerConfig {
         if (!this.data) return [];
         
         return Array.from(this.data.tags).sort((a, b) => {
-            const aUsage = this.data!.tagUsage.get(a) || 0;
-            const bUsage = this.data!.tagUsage.get(b) || 0;
+            const aUsage = this.data!.tagUsage.get(a) ?? 0;
+            const bUsage = this.data!.tagUsage.get(b) ?? 0;
             
             if (aUsage !== bUsage) {
                 return bUsage - aUsage;
@@ -208,8 +214,8 @@ export class HLedgerConfig {
         if (!this.data) return [];
         
         return Array.from(this.data.commodities).sort((a, b) => {
-            const aUsage = this.data!.commodityUsage.get(a) || 0;
-            const bUsage = this.data!.commodityUsage.get(b) || 0;
+            const aUsage = this.data!.commodityUsage.get(a) ?? 0;
+            const bUsage = this.data!.commodityUsage.get(b) ?? 0;
             
             if (aUsage !== bUsage) {
                 return bUsage - aUsage;
@@ -220,17 +226,17 @@ export class HLedgerConfig {
     }
 
     getDefaultCommodity(): CommodityCode | null {
-        return this.data?.defaultCommodity || null;
+        return this.data?.defaultCommodity ?? null;
     }
 
     // Date methods
     getLastDate(): string | null {
-        return this.data?.lastDate || null;
+        return this.data?.lastDate ?? null;
     }
 
     // Alias methods with enhanced type safety
     getAliases(): ReadonlyMap<AccountName, AccountName> {
-        return this.data?.aliases || new Map();
+        return this.data?.aliases ?? new Map();
     }
 
     // Context detection for completion
@@ -387,33 +393,44 @@ export class HLedgerConfig {
 
     // Note: isKeywordContext method was inlined to use pre-compiled patterns directly
 
-    // Clear cache
+    /**
+     * Clear both parsed data and cache completely.
+     * Use when cache must be invalidated entirely (e.g., configuration change).
+     * For file changes, prefer resetData() to preserve cache for mtimeMs validation.
+     */
     clearCache(): void {
         this.cache.clear();
         this.data = null;
         this.lastWorkspacePath = null;
     }
 
-    // Get cache statistics
-    getCacheStats() {
-        return this.cache.getStats();
+    /**
+     * Reset parsed data without clearing cache.
+     * Cache entries will be validated by mtimeMs check on next access.
+     * Use when files may have changed but cache should be preserved for validation.
+     * This enables incremental updates - only modified files will be reparsed.
+     */
+    resetData(): void {
+        this.data = null;
+        this.lastWorkspacePath = null;
+        // Cache is NOT cleared - SimpleProjectCache.get() will validate mtimeMs on next use
     }
 
     // Direct access to usage maps with enhanced type safety
     get accountUsage(): ReadonlyMap<AccountName, UsageCount> {
-        return this.data?.accountUsage || new Map();
+        return this.data?.accountUsage ?? new Map();
     }
 
     get payeeUsage(): ReadonlyMap<PayeeName, UsageCount> {
-        return this.data?.payeeUsage || new Map();
+        return this.data?.payeeUsage ?? new Map();
     }
 
     get tagUsage(): ReadonlyMap<TagName, UsageCount> {
-        return this.data?.tagUsage || new Map();
+        return this.data?.tagUsage ?? new Map();
     }
 
     get commodityUsage(): ReadonlyMap<CommodityCode, UsageCount> {
-        return this.data?.commodityUsage || new Map();
+        return this.data?.commodityUsage ?? new Map();
     }
 
     // Tag value methods with enhanced type safety
@@ -431,8 +448,8 @@ export class HLedgerConfig {
         return values.sort((a, b) => {
             const keyA = `${tagName}:${a}`;
             const keyB = `${tagName}:${b}`;
-            const aUsage = this.data!.tagValueUsage.get(keyA) || 0;
-            const bUsage = this.data!.tagValueUsage.get(keyB) || 0;
+            const aUsage = this.data!.tagValueUsage.get(keyA) ?? 0;
+            const bUsage = this.data!.tagValueUsage.get(keyB) ?? 0;
             
             if (aUsage !== bUsage) {
                 return bUsage - aUsage;
@@ -443,7 +460,7 @@ export class HLedgerConfig {
     }
 
     get tagValueUsage(): ReadonlyMap<string, UsageCount> {
-        return this.data?.tagValueUsage || new Map();
+        return this.data?.tagValueUsage ?? new Map();
     }
 
     // Backward compatibility methods for tests
@@ -453,6 +470,14 @@ export class HLedgerConfig {
             this.mergeCurrentData(parsedData);
         } else {
             this.data = parsedData;
+        }
+
+        // For tests: also update the cache with the parsed data
+        // This ensures getConfigForDocument() doesn't overwrite test data
+        if (basePath) {
+            const cacheKey = createCacheKey(basePath);
+            this.cache.set(cacheKey, this.data);
+            this.lastWorkspacePath = basePath;
         }
     }
 
@@ -474,5 +499,15 @@ export class HLedgerConfig {
         // Return accounts that are used but not defined
         const defined = new Set(this.getDefinedAccounts());
         return this.getUsedAccounts().filter(account => !defined.has(account));
+    }
+
+    /**
+     * Cleanup method to prevent memory leaks.
+     * Clears all cached data and resets internal state.
+     */
+    dispose(): void {
+        this.clearCache();
+        this.data = null;
+        this.lastWorkspacePath = null;
     }
 }

@@ -119,8 +119,9 @@ describe('TagCompleter', () => {
             };
             
             const completions = completer.complete(context);
-            const firstItem = completions[0];
-            
+            expect(completions.length).toBeGreaterThan(0);
+            const firstItem = completions[0]!;
+
             expect(firstItem.kind).toBeDefined();
             expect(firstItem.detail).toContain('Value for category');
             expect(firstItem.insertText).toBe(firstItem.label);

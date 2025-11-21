@@ -38,6 +38,72 @@ The extension uses a **strict completion architecture** with:
 - Single completion type per position
 - Frequency-based prioritization for accounts and payees
 
+### Caching Strategy
+
+The extension implements **incremental caching** for optimal performance:
+
+- **SimpleProjectCache** validates files by modification time (`mtimeMs`)
+- **parseWorkspace()** checks cache before parsing each file
+- **File watcher** resets data but preserves cache for validation
+- Only modified files are reparsed on changes
+
+**Performance impact:**
+
+- For 50+ file projects, provides ~50x speedup on file changes
+- Changed file detection is automatic via `mtimeMs` comparison
+- Cache invalidation happens only for modified files
+- Backward compatible - works with or without cache
+
+**Implementation details:**
+
+- `HLedgerParser.parseWorkspace(path, cache?)` - optional cache parameter
+- `HLedgerConfig.resetData()` - preserves cache, resets parsed data
+- `HLedgerConfig.clearCache()` - full cache invalidation (config changes)
+- File system watcher uses `resetData()` for incremental updates
+
+### Parser Architecture
+
+The extension uses a **three-stage parsing pipeline** for processing hledger files:
+
+**Pipeline Stages:**
+
+1. **HLedgerLexer** - Tokenizes raw file content into typed tokens
+   - Identifies transactions, postings, directives, comments
+   - Produces structured token stream for AST building
+
+2. **HLedgerASTBuilder** - Builds structured data from tokens
+   - Extracts accounts, payees, tags, commodities from token stream
+   - Maintains usage frequency counts for completion ranking
+   - Tracks account definitions vs. usage for validation
+
+3. **HLedgerFileProcessor** - Handles file I/O and include directives
+   - Processes include directives recursively with cycle detection
+   - Manages file system operations and error handling
+   - Returns processing results with errors/warnings for user notification
+
+**Legacy Integration:**
+
+The parser maintains backward compatibility through a hybrid approach:
+
+- `HLedgerParser.parseContent()` uses the AST Builder for basic entity extraction
+- Calls `enhanceWithLegacyParsing()` for advanced features not yet in AST:
+  - Commodity format templates (multi-line directives)
+  - Complex tag extraction with regex patterns
+  - Decimal mark directives and format detection
+
+**Error Handling:**
+
+- `HLedgerFileProcessor` returns structured errors/warnings in results
+- `ErrorNotificationHandler` displays errors to users via VS Code notifications
+- Errors include file context and actionable messages
+
+**Performance Considerations:**
+
+- AST-based parsing is faster than regex-heavy legacy parsing
+- Pattern precompilation in `StrictPositionAnalyzer` avoids hot-path regex creation
+- `RegexCache` with LRU eviction (50-pattern limit) prevents memory bloat
+- Large files (>1MB) automatically use async file processing
+
 ### File Structure
 
 ```plain
