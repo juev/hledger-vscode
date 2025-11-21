@@ -39,6 +39,7 @@ PERFORMANCE_REPORT.md
 SYNTAX_HIGHLIGHTING.md
 QWEN.md
 BUILD_OPTIMIZATION_SUMMARY.md
+OPTIMIZATION_RESULTS.md
 
 # Performance and benchmark data
 benchmark-results/**
