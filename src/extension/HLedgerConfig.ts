@@ -43,7 +43,7 @@ export class HLedgerConfig {
     // Main method to get configuration for a document
     getConfigForDocument(document: vscode.TextDocument): void {
         const filePath = document.uri.fsPath;
-        
+
         // Determine project path
         let projectPath: string;
         const workspaceFolder = vscode.workspace.getWorkspaceFolder(document.uri);
@@ -53,7 +53,7 @@ export class HLedgerConfig {
             // No workspace, use directory of the file
             projectPath = path.dirname(filePath);
         }
-        
+
         // Get cached data or parse workspace
         const cacheKey = createCacheKey(projectPath);
         this.data = this.cache.get(cacheKey);
@@ -62,10 +62,15 @@ export class HLedgerConfig {
             this.cache.set(cacheKey, this.data);
             this.lastWorkspacePath = projectPath;
         }
-        
-        // Note: We don't need to merge current document data because parseWorkspace
-        // already includes all files in the workspace, including the current document.
-        // Merging would cause double counting of usage statistics.
+
+        // Parse current document content to capture unsaved changes
+        // This ensures that accounts, payees, commodities, and tags defined in the current
+        // (potentially unsaved) document are available for completion.
+        // The parseContent method merges data with existing workspace data,
+        // properly handling usage statistics to include both saved and unsaved content.
+        const currentContent = document.getText();
+        const currentData = this.parser.parseContent(currentContent, filePath);
+        this.mergeCurrentData(currentData);
     }
 
     // Helper method to cast readonly data to mutable for internal operations

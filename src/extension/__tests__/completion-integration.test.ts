@@ -70,8 +70,10 @@ commodity RUB
         // Parse sample journal content directly into config
         config.parseContent(sampleJournalContent, '/test');
 
-        // Mock getConfigForDocument to prevent data from being overwritten during completion
-        config.getConfigForDocument = jest.fn();
+        // CRITICAL FIX: Do NOT mock getConfigForDocument!
+        // The problem in tests was that mocking prevented cache from working correctly.
+        // Real VS Code calls getConfigForDocument which retrieves data from cache.
+        // By mocking it, we broke the data flow.
 
         provider = new StrictCompletionProvider(config);
     });
@@ -277,6 +279,224 @@ commodity RUB
     });
 
     describe('Commodity Completion after Amount', () => {
+        it('should debug exact position analysis for commodity completion', () => {
+            // Recreate EXACT scenario from screenshot
+            const line = '  Расходы:Программное обеспечение     222 ';
+
+            // Test different positions
+            const positions = [
+                { pos: 41, desc: 'Right after 222 (no space)' },
+                { pos: 42, desc: 'After 222 + 1 space' },
+                { pos: 43, desc: 'After 222 + 2 spaces (if exists)' },
+            ];
+
+            console.log('\n=== DETAILED POSITION ANALYSIS ===');
+            console.log('Full line:', JSON.stringify(line));
+            console.log('Line length:', line.length);
+            console.log('Last 5 chars:', JSON.stringify(line.slice(-5)));
+            console.log('');
+
+            // Create real provider without mocking
+            const realParser = new HLedgerParser();
+            const realCache = new SimpleProjectCache();
+            const realConfig = new HLedgerConfig(realParser, realCache);
+            realConfig.parseContent(sampleJournalContent, '/test');
+            const realProvider = new StrictCompletionProvider(realConfig);
+
+            positions.forEach(({ pos, desc }) => {
+                if (pos > line.length) {
+                    console.log(`Skipping position ${pos} (beyond line length)`);
+                    return;
+                }
+
+                const document = new MockTextDocument([line]);
+                const position = new vscode.Position(0, pos);
+                const beforeCursor = line.substring(0, pos);
+
+                console.log(`--- Position ${pos}: ${desc} ---`);
+                console.log('Before cursor:', JSON.stringify(beforeCursor));
+                console.log('Before cursor ends with space:', beforeCursor.endsWith(' '));
+                console.log('Before cursor length:', beforeCursor.length);
+
+                // Test patterns directly
+                const accountAmountPattern = /^\s+[\p{L}\p{N}:_\-]+(?:\s+[\p{L}\p{N}:_\-]+)*\s+(\d+(?:[.,]\d+)?)\s([\p{Lu}\p{Sc}$€£¥₽]*)?$/u;
+                const commodityPattern = /^\s*.*\p{N}+(?:[.,]\p{N}+)?\s[\p{Lu}\p{Sc}]*$/u;
+
+                console.log('Matches accountAmountPattern:', accountAmountPattern.test(beforeCursor));
+                console.log('Matches commodityPattern:', commodityPattern.test(beforeCursor));
+
+                const completions = realProvider.provideCompletionItems(
+                    document, position, mockCancellationToken, mockCompletionContext
+                );
+
+                console.log('Completions:', completions.length);
+                if (completions.length > 0) {
+                    console.log('First 3:', completions.slice(0, 3).map(c => c.label.toString()));
+
+                    const commodities = realConfig.getCommodities();
+                    const accounts = realConfig.getAccounts();
+                    const hasCommodity = completions.some(item =>
+                        commodities.some(c => item.label.toString() === c)
+                    );
+                    const hasAccount = completions.some(item =>
+                        accounts.some(a => item.label.toString().includes(a))
+                    );
+
+                    console.log('Has commodities:', hasCommodity);
+                    console.log('Has accounts:', hasAccount);
+                }
+                console.log('');
+            });
+        });
+
+        it('should test multiline scenario - cursor on next line after amount', () => {
+            const document = new MockTextDocument([
+                '11-21 Магазин',
+                '  Расходы:Программное обеспечение     222',
+                '  '  // Cursor here on indented line
+            ]);
+            const position = new vscode.Position(2, 2); // On third line, after indent
+
+            console.log('\n=== Multiline scenario (cursor on next line) ===');
+            console.log('Line 1:', document.lineAt(0).text);
+            console.log('Line 2:', document.lineAt(1).text);
+            console.log('Line 3 (cursor here):', JSON.stringify(document.lineAt(2).text));
+            console.log('Cursor position: line 2, char 2');
+
+            const completions = provider.provideCompletionItems(
+                document,
+                position,
+                mockCancellationToken,
+                mockCompletionContext
+            );
+
+            console.log('Completions count:', completions.length);
+            if (completions.length > 0) {
+                console.log('First 5:', completions.slice(0, 5).map(c => c.label.toString()));
+
+                const payees = config.getPayees();
+                const hasPayee = completions.some(item =>
+                    payees.some(p => item.label.toString().includes(p))
+                );
+
+                console.log('Has payees:', hasPayee);
+
+                if (hasPayee) {
+                    console.log('⚠️  Aha! This reproduces the screenshot - cursor on NEXT LINE!');
+                }
+            }
+        });
+
+        it('should test real scenario WITHOUT mocking getConfigForDocument', () => {
+            // Create fresh config WITHOUT mocking to reproduce real VS Code behavior
+            const realParser = new HLedgerParser();
+            const realCache = new SimpleProjectCache();
+            const realConfig = new HLedgerConfig(realParser, realCache);
+
+            // Parse sample data
+            realConfig.parseContent(sampleJournalContent, '/test');
+
+            // Create provider with real config
+            const realProvider = new StrictCompletionProvider(realConfig);
+
+            // Test the problematic line
+            const line = '  Расходы:Программное обеспечение     222';
+            const document = new MockTextDocument([line]);
+            const position = new vscode.Position(0, line.length);
+
+            console.log('\n=== REAL scenario (no mocking) ===');
+            console.log('Line:', JSON.stringify(line));
+            console.log('Position:', position.character);
+
+            const completions = realProvider.provideCompletionItems(
+                document,
+                position,
+                mockCancellationToken,
+                mockCompletionContext
+            );
+
+            console.log('Completions count:', completions.length);
+            if (completions.length > 0) {
+                console.log('First 5 completions:', completions.slice(0, 5).map(c => c.label.toString()));
+
+                // Check what type
+                const payees = realConfig.getPayees();
+                const accounts = realConfig.getAccounts();
+                const commodities = realConfig.getCommodities();
+
+                const hasPayee = completions.some(item =>
+                    payees.some(p => item.label.toString().includes(p))
+                );
+                const hasAccount = completions.some(item =>
+                    accounts.some(a => item.label.toString().includes(a))
+                );
+                const hasCommodity = completions.some(item =>
+                    commodities.some(c => item.label.toString().includes(c))
+                );
+
+                console.log('Has payees:', hasPayee);
+                console.log('Has accounts:', hasAccount);
+                console.log('Has commodities:', hasCommodity);
+
+                if (hasAccount || hasPayee) {
+                    console.log('⚠️  BUG REPRODUCED! Showing accounts/payees instead of commodities!');
+                }
+            }
+        });
+
+        it('should provide commodity completions after Cyrillic account and amount', () => {
+            // This test reproduces the exact scenario from the screenshot
+            const line = '  Расходы:Программное обеспечение     222 ';
+            const document = new MockTextDocument([line]);
+            const position = new vscode.Position(0, line.length); // At the end after space
+
+            console.log('\n=== Cyrillic Account + Amount Test ===');
+            console.log('Line:', JSON.stringify(line));
+            console.log('Line length:', line.length);
+            console.log('Position:', position.character);
+            console.log('Has trailing space:', line.endsWith(' '));
+
+            const completions = provider.provideCompletionItems(
+                document,
+                position,
+                mockCancellationToken,
+                mockCompletionContext
+            );
+
+            console.log('Completions count:', completions.length);
+            if (completions.length > 0) {
+                console.log('First completion:', completions[0]?.label);
+                console.log('First completion kind:', completions[0]?.kind);
+                console.log('Expected kind (commodity):', vscode.CompletionItemKind.Unit);
+            }
+
+            expect(completions).toBeDefined();
+
+            // Should provide commodity completions, not payees!
+            if (completions.length > 0) {
+                // Check if we got commodities or payees
+                const commodities = config.getCommodities();
+                const hasCommodity = completions.some(item =>
+                    commodities.some(c => item.label.toString().includes(c))
+                );
+
+                const payees = config.getPayees();
+                const hasPayee = completions.some(item =>
+                    payees.some(p => item.label.toString().includes(p))
+                );
+
+                console.log('Has commodity completion:', hasCommodity);
+                console.log('Has payee completion:', hasPayee);
+
+                // This should be commodities, NOT payees
+                if (hasPayee) {
+                    console.error('❌ BUG: Showing payees instead of commodities!');
+                }
+
+                expect(hasPayee).toBe(false); // Should NOT have payees
+            }
+        });
+
         it('should provide commodity completions after amount with single space', () => {
             const document = new MockTextDocument(['  Assets:Cash  100.00 ']);
             const position = new vscode.Position(0, 21);
@@ -368,6 +588,40 @@ commodity RUB
 
             expect(completions).toBeDefined();
             // Should provide commodity-related completions
+        });
+
+        it('should parse commodities from current unsaved document', () => {
+            // This test demonstrates the architectural issue:
+            // Commodities defined in the current document should be available
+            // even if the document hasn't been saved to disk yet.
+            const documentContent = [
+                'commodity BTC',
+                'commodity ETH',
+                '',
+                '2024-01-20 Crypto Purchase',
+                '  Assets:Crypto:Bitcoin  1.5 ',
+            ];
+            const document = new MockTextDocument(documentContent);
+            // Position after "1.5 " - should trigger commodity completion
+            const position = new vscode.Position(4, 29);
+
+            const completions = provider.provideCompletionItems(
+                document,
+                position,
+                mockCancellationToken,
+                mockCompletionContext
+            );
+
+            expect(completions).toBeDefined();
+            expect(Array.isArray(completions)).toBe(true);
+
+            // The document defines BTC and ETH commodities
+            // These should be available for completion even though document isn't saved
+            const commodityLabels = completions.map(item => item.label);
+
+            // Now this should PASS because getConfigForDocument() parses current document content
+            expect(commodityLabels).toContain('BTC');
+            expect(commodityLabels).toContain('ETH');
         });
     });
 

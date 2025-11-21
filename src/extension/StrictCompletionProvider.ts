@@ -387,6 +387,20 @@ export class StrictCompletionProvider implements vscode.CompletionItemProvider {
       }
     }
 
+    // For commodity completion after amount, extract only commodity characters after the space
+    // Pattern: indented line + account name + spaces + amount + single space + optional commodity
+    // Examples: "  Assets:Cash  100.00 " -> "", "  Assets:Cash  100.00 U" -> "U"
+    if (context.lineContext === "after_amount") {
+      // Extract commodity characters after amount and space
+      // Must have: indent + account name (letters/unicode) + spaces + amount + single space
+      // Commodity can be uppercase letters or currency symbols
+      const commodityMatch = beforeCursor.match(/^\s+[\p{L}\p{N}:_\s-]+\s+\p{N}+(?:[.,]\p{N}+)?\s([\p{Lu}\p{Sc}]*)$/u);
+      if (commodityMatch) {
+        return commodityMatch[1]; // Return only commodity characters, empty string if none typed yet
+      }
+      return "";
+    }
+
     // For other completion types, extract the word being typed at cursor position
     // Use Unicode-aware pattern to support international characters including spaces
     const match = beforeCursor.match(/[\p{L}\p{N}:_.\s-]*$/u);
