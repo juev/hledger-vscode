@@ -415,57 +415,80 @@ export class StrictPositionAnalyzer {
     }
     
     private applyStrictRules(
-        context: LineContext, 
-        beforeCursor: string, 
+        context: LineContext,
+        beforeCursor: string,
         afterCursor: string,
         position: PositionInfo
     ): StrictCompletionContext {
-        
+
         const baseContext: StrictCompletionContext = {
             lineContext: context,
             allowedTypes: [],
             suppressAll: false,
             position
         };
-        
+
+        // Check if we're in the middle of a word - suppress all completions
+        if (this.isInMiddleOfWord(beforeCursor, afterCursor, context)) {
+            baseContext.suppressAll = true;
+            return baseContext;
+        }
+
         switch (context) {
             case LineContext.LineStart:
                 // Strictly only date completion at line beginning
                 baseContext.allowedTypes = ['date'];
                 break;
-                
+
             case LineContext.AfterDate:
                 // Payee/description after date
                 baseContext.allowedTypes = ['payee'];
                 break;
-                
+
             case LineContext.InPosting:
                 // Strictly only account completion on indented lines
                 baseContext.allowedTypes = ['account'];
                 break;
-                
+
             case LineContext.AfterAmount:
                 // Strictly only currency completion after amount + single space
                 baseContext.allowedTypes = ['commodity'];
                 break;
-                
+
             case LineContext.InComment:
                 // Tag name completion in comments
                 baseContext.allowedTypes = ['tag'];
                 break;
-                
+
             case LineContext.InTagValue:
                 // Tag value completion after tag name and colon
                 baseContext.allowedTypes = ['tag_value'];
                 break;
-                
+
             case LineContext.Forbidden:
                 // Complete completion suppression
                 baseContext.suppressAll = true;
                 break;
         }
-        
+
         return baseContext;
+    }
+
+    /**
+     * Check if cursor is in the middle of a word.
+     * Don't suppress in comment contexts - allow completions for tags.
+     */
+    private isInMiddleOfWord(beforeCursor: string, afterCursor: string, context: LineContext): boolean {
+        // Don't suppress in comment contexts - allow completions for tags
+        if (context === LineContext.InComment || context === LineContext.InTagValue) {
+            return false;
+        }
+
+        // Check if we are in the middle of a word using Unicode-aware patterns
+        const beforeEndsWithWord = /[\p{L}\p{N}]$/u.test(beforeCursor);
+        const afterStartsWithWord = /^[\p{L}\p{N}]/u.test(afterCursor);
+
+        return beforeEndsWithWord && afterStartsWithWord;
     }
     
     /**

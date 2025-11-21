@@ -6,7 +6,7 @@ import * as vscode from 'vscode';
 import * as path from 'path';
 import { HLedgerParser, ParsedHLedgerData } from './HLedgerParser';
 import { SimpleProjectCache } from './SimpleProjectCache';
-import { CompletionContext, AccountName, PayeeName, TagName, TagValue, CommodityCode, UsageCount, createUsageCount, createCacheKey, CacheStats } from './types';
+import { CompletionContext, AccountName, PayeeName, TagName, TagValue, CommodityCode, UsageCount, createUsageCount, createCacheKey } from './types';
 
 // CompletionContext is now imported from types.ts
 export { CompletionContext } from './types';
@@ -397,11 +397,6 @@ export class HLedgerConfig {
         this.cache.clear();
         this.data = null;
         this.lastWorkspacePath = null;
-    }
-
-    // Get cache statistics
-    getCacheStats(): CacheStats {
-        return this.cache.getStats();
     }
 
     // Direct access to usage maps with enhanced type safety

@@ -3,8 +3,7 @@
 
 import {
     Result, success, failure,
-    LineNumber, CharacterPosition,
-    isLineNumber, isCharacterPosition
+    LineNumber, CharacterPosition
 } from './types';
 import { NumberFormatService, ParsedAmount } from './services/NumberFormatService';
 
@@ -871,19 +870,13 @@ export class DocumentFormatter {
     }
 }
 
-// Helper functions for creating branded types
+// Helper functions for type aliases (now simple identity functions)
 function createLineNumber(value: number): LineNumber {
-    if (!isLineNumber(value)) {
-        throw new Error(`Invalid line number: ${value}`);
-    }
-    return value as LineNumber;
+    return value;
 }
 
 function createCharacterPosition(value: number): CharacterPosition {
-    if (!isCharacterPosition(value)) {
-        throw new Error(`Invalid character position: ${value}`);
-    }
-    return value as CharacterPosition;
+    return value;
 }
 
 /**
