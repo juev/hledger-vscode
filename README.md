@@ -113,7 +113,15 @@ Insert hledger reports directly into your journals as formatted comments.
 ;  Assets      ||
 ; -------------++-------------
 ;  Assets:Bank || 2450.00 USD
+; -------------++-------------
+;              || 2450.00 USD
 ; =============++=============
+;  Liabilities ||
+; -------------++-------------
+;              ||           0
+; =============++=============
+;  Net:        || 2450.00 USD
+; ==================================================
 ```
 
 **Journal file resolution** (priority order):
