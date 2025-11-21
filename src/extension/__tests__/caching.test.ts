@@ -1,16 +1,13 @@
-import { HLedgerConfig, ProjectCache } from '../main';
+import { HLedgerConfig } from '../main';
 import { SimpleProjectCache } from '../SimpleProjectCache';
 import { createCacheKey, createAccountName, createUsageCount, createPayeeName, createTagName, createCommodityCode } from '../types';
-// Enhanced with proper type imports
 
 describe('Simplified Caching System - PHASE C', () => {
     let config: HLedgerConfig;
-    let projectCache: ProjectCache;
     let simpleCache: SimpleProjectCache;
-    
+
     beforeEach(() => {
         config = new HLedgerConfig();
-        projectCache = new ProjectCache();
         simpleCache = new SimpleProjectCache();
     });
     

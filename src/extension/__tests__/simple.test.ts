@@ -1,5 +1,5 @@
 // Simple test to verify TypeScript compilation and basic functionality
-import { HLedgerConfig, WorkspaceCache } from '../main';
+import { HLedgerConfig } from '../main';
 import { HLEDGER_KEYWORDS, DEFAULT_COMMODITIES } from '../types';
 
 describe('Basic Functionality', () => {
@@ -45,27 +45,7 @@ describe('Basic Functionality', () => {
             expect(config.getLastDate()).toBe('2025-01-15');
         });
     });
-    
-    describe('WorkspaceCache', () => {
-        let cache: WorkspaceCache;
-        
-        beforeEach(() => {
-            cache = new WorkspaceCache();
-        });
-        
-        it('should create instance', () => {
-            expect(cache).toBeInstanceOf(WorkspaceCache);
-        });
-        
-        it('should return null config initially', () => {
-            expect(cache.getConfig()).toBeNull();
-        });
-        
-        it('should return false for isValid initially', () => {
-            expect(cache.isValid('/test/path')).toBe(false);
-        });
-    });
-    
+
     describe('Constants', () => {
         it('should have hledger keywords', () => {
             expect(HLEDGER_KEYWORDS).toContain('account');
