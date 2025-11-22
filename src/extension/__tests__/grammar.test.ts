@@ -238,8 +238,7 @@ describe('TextMate Grammar Tests', () => {
     });
 
     it('should highlight Russian Equity account (Собственные)', () => {
-      // In posting context, uses generic account scope for generic accounts
-      // Note: Some Cyrillic account names may not match specific patterns
+      // In posting context, uses generic account scope for generic accounts (Note: Some Cyrillic account names may not match specific patterns)
       const line = '    Собственные:Начальный';
       const { tokens } = tokenizeLine(line);
       const allScopes = tokens.flatMap(token => token.scopes);
