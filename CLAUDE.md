@@ -145,7 +145,6 @@ Uses modern TypeScript with branded types for type safety:
 - `grammar.snapshot.test.ts` - Snapshot tests for detecting unintended grammar changes
 - Uses `vscode-textmate` and `vscode-oniguruma` for accurate tokenization testing
 - Tests multi-language support (English, Russian/Cyrillic)
-- See `docs/GRAMMAR_TESTING.md` for detailed testing guide
 
 ## Key Features
 
