@@ -285,7 +285,9 @@
     "rimraf": "^6.0.1",
     "sharp": "^0.34.5",
     "ts-jest": "^29.4.5",
-    "typescript": "^4.9.4"
+    "typescript": "^4.9.4",
+    "vscode-oniguruma": "^2.0.1",
+    "vscode-textmate": "^9.2.1"
   },
   "license": "MIT",
   "repository": {
