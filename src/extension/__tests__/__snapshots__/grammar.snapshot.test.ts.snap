@@ -1,0 +1,675 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`Grammar Snapshot Tests Account Snapshots should tokenize Russian account types 1`] = `
+"Line:     Активы:Наличные
+  Token: "Активы:Наличные"
+    Scopes: source.hledger, meta.posting.account-only.hledger, entity.name.type.account.hledger
+
+Line:     Расходы:Еда
+  Token: "Расходы:Еда"
+    Scopes: source.hledger, meta.posting.account-only.hledger, entity.name.type.account.hledger
+
+Line:     Пассивы:Кредит
+  Token: "Пассивы:Кредит"
+    Scopes: source.hledger, meta.posting.account-only.hledger, entity.name.type.account.hledger
+
+Line:     Собственные:Начальный
+  Token: "Собственные:Начальный"
+    Scopes: source.hledger, meta.posting.account-only.hledger, entity.name.type.account.hledger
+
+Line:     Доходы:Зарплата
+  Token: "Доходы:Зарплата"
+    Scopes: source.hledger, meta.posting.account-only.hledger, entity.name.type.account.hledger
+"
+`;
+
+exports[`Grammar Snapshot Tests Account Snapshots should tokenize account names with spaces 1`] = `
+"Line:     Assets:Bank Account
+  Token: "Assets:Bank Account"
+    Scopes: source.hledger, meta.posting.account-only.hledger, entity.name.type.account.hledger
+
+Line:     Expenses:Food Items
+  Token: "Expenses:Food Items"
+    Scopes: source.hledger, meta.posting.account-only.hledger, entity.name.type.account.hledger
+
+Line:     Assets:Банковский Счет
+  Token: "Assets:Банковский Счет"
+    Scopes: source.hledger, meta.posting.account-only.hledger, entity.name.type.account.hledger
+"
+`;
+
+exports[`Grammar Snapshot Tests Account Snapshots should tokenize different account types 1`] = `
+"Line:     Assets:Cash
+  Token: "Assets:Cash"
+    Scopes: source.hledger, meta.posting.account-only.hledger, entity.name.type.account.hledger
+
+Line:     Expenses:Food
+  Token: "Expenses:Food"
+    Scopes: source.hledger, meta.posting.account-only.hledger, entity.name.type.account.hledger
+
+Line:     Liabilities:CreditCard
+  Token: "Liabilities:CreditCard"
+    Scopes: source.hledger, meta.posting.account-only.hledger, entity.name.type.account.hledger
+
+Line:     Equity:Opening
+  Token: "Equity:Opening"
+    Scopes: source.hledger, meta.posting.account-only.hledger, entity.name.type.account.hledger
+
+Line:     Income:Salary
+  Token: "Income:Salary"
+    Scopes: source.hledger, meta.posting.account-only.hledger, entity.name.type.account.hledger
+
+Line:     Revenue:Sales
+  Token: "Revenue:Sales"
+    Scopes: source.hledger, meta.posting.account-only.hledger, entity.name.type.account.hledger
+"
+`;
+
+exports[`Grammar Snapshot Tests Account Snapshots should tokenize virtual accounts 1`] = `
+"Line:     (Assets:Virtual Cash)
+  Token: "(Assets:Virtual Cash)"
+    Scopes: source.hledger, meta.posting.account-only.hledger, variable.other.account.virtual.hledger
+
+Line:     [Assets:Budget]
+  Token: "[Assets:Budget]"
+    Scopes: source.hledger, meta.posting.account-only.hledger, variable.other.account.virtual.hledger
+"
+`;
+
+exports[`Grammar Snapshot Tests Amount and Commodity Snapshots should tokenize commodity positions 1`] = `
+"Line:     Assets:Cash              $100
+  Token: "Assets:Cash"
+    Scopes: source.hledger, meta.posting.with-amount.hledger, entity.name.type.account.hledger
+  Token: "$10"
+    Scopes: source.hledger, meta.posting.with-amount.hledger, meta.amount.prefix.hledger, entity.name.type.commodity.hledger
+  Token: "0"
+    Scopes: source.hledger, meta.posting.with-amount.hledger, meta.amount.prefix.hledger, constant.numeric.amount.hledger
+
+Line:     Assets:Cash              100 USD
+  Token: "Assets:Cash"
+    Scopes: source.hledger, meta.posting.with-amount.hledger, entity.name.type.account.hledger
+  Token: "100"
+    Scopes: source.hledger, meta.posting.with-amount.hledger, meta.amount.suffix.hledger, constant.numeric.amount.hledger
+  Token: "USD"
+    Scopes: source.hledger, meta.posting.with-amount.hledger, meta.amount.suffix.hledger, entity.name.type.commodity.hledger
+
+Line:     Assets:Cash              €50
+  Token: "Assets:Cash"
+    Scopes: source.hledger, meta.posting.with-amount.hledger, entity.name.type.account.hledger
+  Token: "€5"
+    Scopes: source.hledger, meta.posting.with-amount.hledger, meta.amount.prefix.hledger, entity.name.type.commodity.hledger
+  Token: "0"
+    Scopes: source.hledger, meta.posting.with-amount.hledger, meta.amount.prefix.hledger, constant.numeric.amount.hledger
+
+Line:     Assets:Cash              "CUSTOM COIN" 100
+  Token: "Assets:Cash"
+    Scopes: source.hledger, meta.posting.with-amount.hledger, entity.name.type.account.hledger
+  Token: ""CUSTOM COIN""
+    Scopes: source.hledger, meta.posting.with-amount.hledger, meta.amount.prefix.hledger, entity.name.type.commodity.hledger
+  Token: "100"
+    Scopes: source.hledger, meta.posting.with-amount.hledger, meta.amount.prefix.hledger, constant.numeric.amount.hledger
+"
+`;
+
+exports[`Grammar Snapshot Tests Amount and Commodity Snapshots should tokenize different amount formats 1`] = `
+"Line:     Assets:Cash              100 USD
+  Token: "Assets:Cash"
+    Scopes: source.hledger, meta.posting.with-amount.hledger, entity.name.type.account.hledger
+  Token: "100"
+    Scopes: source.hledger, meta.posting.with-amount.hledger, meta.amount.suffix.hledger, constant.numeric.amount.hledger
+  Token: "USD"
+    Scopes: source.hledger, meta.posting.with-amount.hledger, meta.amount.suffix.hledger, entity.name.type.commodity.hledger
+
+Line:     Assets:Cash              -50 USD
+  Token: "Assets:Cash"
+    Scopes: source.hledger, meta.posting.with-amount.hledger, entity.name.type.account.hledger
+  Token: "-50"
+    Scopes: source.hledger, meta.posting.with-amount.hledger, meta.amount.suffix.hledger, constant.numeric.amount.hledger
+  Token: "USD"
+    Scopes: source.hledger, meta.posting.with-amount.hledger, meta.amount.suffix.hledger, entity.name.type.commodity.hledger
+
+Line:     Assets:Cash              +100 USD
+  Token: "Assets:Cash"
+    Scopes: source.hledger, meta.posting.with-amount.hledger, entity.name.type.account.hledger
+  Token: "+100"
+    Scopes: source.hledger, meta.posting.with-amount.hledger, meta.amount.suffix.hledger, constant.numeric.amount.hledger
+  Token: "USD"
+    Scopes: source.hledger, meta.posting.with-amount.hledger, meta.amount.suffix.hledger, entity.name.type.commodity.hledger
+
+Line:     Assets:Cash              1,000 USD
+  Token: "Assets:Cash"
+    Scopes: source.hledger, meta.posting.with-amount.hledger, entity.name.type.account.hledger
+  Token: "1,000"
+    Scopes: source.hledger, meta.posting.with-amount.hledger, meta.amount.suffix.hledger, constant.numeric.amount.hledger
+  Token: "USD"
+    Scopes: source.hledger, meta.posting.with-amount.hledger, meta.amount.suffix.hledger, entity.name.type.commodity.hledger
+
+Line:     Assets:Cash              1'000 CHF
+  Token: "Assets:Cash"
+    Scopes: source.hledger, meta.posting.with-amount.hledger, entity.name.type.account.hledger
+  Token: "1'000"
+    Scopes: source.hledger, meta.posting.with-amount.hledger, meta.amount.suffix.hledger, constant.numeric.amount.hledger
+  Token: "CHF"
+    Scopes: source.hledger, meta.posting.with-amount.hledger, meta.amount.suffix.hledger, entity.name.type.commodity.hledger
+
+Line:     Assets:Cash              100.50 USD
+  Token: "Assets:Cash"
+    Scopes: source.hledger, meta.posting.with-amount.hledger, entity.name.type.account.hledger
+  Token: "100.50"
+    Scopes: source.hledger, meta.posting.with-amount.hledger, meta.amount.suffix.hledger, constant.numeric.amount.hledger
+  Token: "USD"
+    Scopes: source.hledger, meta.posting.with-amount.hledger, meta.amount.suffix.hledger, entity.name.type.commodity.hledger
+
+Line:     Assets:Cash              100,50 EUR
+  Token: "Assets:Cash"
+    Scopes: source.hledger, meta.posting.with-amount.hledger, entity.name.type.account.hledger
+  Token: "100,50"
+    Scopes: source.hledger, meta.posting.with-amount.hledger, meta.amount.suffix.hledger, constant.numeric.amount.hledger
+  Token: "EUR"
+    Scopes: source.hledger, meta.posting.with-amount.hledger, meta.amount.suffix.hledger, entity.name.type.commodity.hledger
+"
+`;
+
+exports[`Grammar Snapshot Tests CSV Directive Snapshots should tokenize CSV directives 1`] = `
+"Line: source transactions.csv
+  Token: "source"
+    Scopes: source.hledger, meta.directive.csv.hledger, keyword.directive.csv.hledger
+  Token: " transactions.csv"
+    Scopes: source.hledger
+
+Line: separator ,
+  Token: "separator"
+    Scopes: source.hledger, meta.directive.csv.hledger, keyword.directive.csv.hledger
+  Token: " ,"
+    Scopes: source.hledger
+
+Line: skip 1
+  Token: "skip"
+    Scopes: source.hledger, meta.directive.csv.hledger, keyword.directive.csv.hledger
+  Token: " 1"
+    Scopes: source.hledger
+
+Line: date-format %Y-%m-%d
+  Token: "date-format"
+    Scopes: source.hledger, meta.directive.csv.hledger, keyword.directive.csv.hledger
+  Token: " %Y-%m-%d"
+    Scopes: source.hledger
+
+Line: timezone UTC
+  Token: "timezone"
+    Scopes: source.hledger, meta.directive.csv.hledger, keyword.directive.csv.hledger
+  Token: " UTC"
+    Scopes: source.hledger
+
+Line: newest-first
+  Token: "newest-first"
+    Scopes: source.hledger, meta.directive.csv.hledger, keyword.directive.csv.hledger
+
+Line: decimal-mark .
+  Token: "decimal-mark"
+    Scopes: source.hledger, meta.directive.keyword.hledger, keyword.directive.hledger
+  Token: " ."
+    Scopes: source.hledger
+
+Line: fields date, description, amount
+  Token: "fields"
+    Scopes: source.hledger, meta.directive.csv.hledger, keyword.directive.csv.hledger
+  Token: " date, description, amount"
+    Scopes: source.hledger
+
+Line: if %description COFFEE
+  Token: "if"
+    Scopes: source.hledger, meta.directive.csv.hledger, keyword.directive.csv.hledger
+  Token: " %description COFFEE"
+    Scopes: source.hledger
+"
+`;
+
+exports[`Grammar Snapshot Tests Comment Snapshots should tokenize block comments 1`] = `
+"Line: comment
+  Token: "comment"
+    Scopes: source.hledger, comment.block.hledger, keyword.directive.comment.hledger
+
+Line: This is a block comment
+  Token: "This is a block comment"
+    Scopes: source.hledger, comment.block.hledger
+
+Line: with multiple lines
+  Token: "with multiple lines"
+    Scopes: source.hledger, comment.block.hledger
+
+Line: and a URL: https://example.com
+  Token: "and a "
+    Scopes: source.hledger, comment.block.hledger
+  Token: "URL"
+    Scopes: source.hledger, comment.block.hledger, meta.tag.hledger, entity.name.tag.hledger
+  Token: ":"
+    Scopes: source.hledger, comment.block.hledger, meta.tag.hledger, punctuation.separator.key-value.hledger
+  Token: "https://example.com"
+    Scopes: source.hledger, comment.block.hledger, meta.tag.hledger, string.unquoted.tag-value.hledger
+
+Line: and a tag: project: test
+  Token: "and a "
+    Scopes: source.hledger, comment.block.hledger
+  Token: "tag"
+    Scopes: source.hledger, comment.block.hledger, meta.tag.hledger, entity.name.tag.hledger
+  Token: ":"
+    Scopes: source.hledger, comment.block.hledger, meta.tag.hledger, punctuation.separator.key-value.hledger
+  Token: "project: test"
+    Scopes: source.hledger, comment.block.hledger, meta.tag.hledger, string.unquoted.tag-value.hledger
+
+Line: end comment
+  Token: "end comment"
+    Scopes: source.hledger, comment.block.hledger, keyword.directive.comment.hledger
+"
+`;
+
+exports[`Grammar Snapshot Tests Comment Snapshots should tokenize line comments 1`] = `
+"Line: ; This is a semicolon comment
+  Token: "; This is a semicolon comment"
+    Scopes: source.hledger, comment.line.semicolon.hledger
+
+Line: # This is a hash comment
+  Token: "# This is a hash comment"
+    Scopes: source.hledger, comment.line.number-sign.hledger
+
+Line: ; URL: https://example.com
+  Token: "; "
+    Scopes: source.hledger, comment.line.semicolon.hledger
+  Token: "URL"
+    Scopes: source.hledger, comment.line.semicolon.hledger, meta.tag.hledger, entity.name.tag.hledger
+  Token: ":"
+    Scopes: source.hledger, comment.line.semicolon.hledger, meta.tag.hledger, punctuation.separator.key-value.hledger
+  Token: "https://example.com"
+    Scopes: source.hledger, comment.line.semicolon.hledger, meta.tag.hledger, string.unquoted.tag-value.hledger
+
+Line: ; project: hledger-vscode
+  Token: "; "
+    Scopes: source.hledger, comment.line.semicolon.hledger
+  Token: "project"
+    Scopes: source.hledger, comment.line.semicolon.hledger, meta.tag.hledger, entity.name.tag.hledger
+  Token: ":"
+    Scopes: source.hledger, comment.line.semicolon.hledger, meta.tag.hledger, punctuation.separator.key-value.hledger
+  Token: "hledger-vscode"
+    Scopes: source.hledger, comment.line.semicolon.hledger, meta.tag.hledger, string.unquoted.tag-value.hledger
+"
+`;
+
+exports[`Grammar Snapshot Tests Complete Journal Snapshots should tokenize a complete journal file 1`] = `
+"Line: ; Main journal file
+  Token: "; Main journal file"
+    Scopes: source.hledger, comment.line.semicolon.hledger
+
+Line: 
+
+Line: include accounts.journal
+  Token: "include"
+    Scopes: source.hledger, meta.directive.keyword.hledger, keyword.directive.hledger
+  Token: " accounts.journal"
+    Scopes: source.hledger
+
+Line: 
+
+Line: commodity USD
+  Token: "commodity"
+    Scopes: source.hledger, meta.directive.keyword.hledger, keyword.directive.hledger
+  Token: " USD"
+    Scopes: source.hledger
+
+Line:     format $1,000.00
+  Token: "format "
+    Scopes: source.hledger, meta.posting.account-only.hledger, entity.name.type.account.hledger
+  Token: "$1,000.00"
+    Scopes: source.hledger, meta.posting.account-only.hledger
+
+Line: 
+
+Line: account Assets:Checking
+  Token: "account"
+    Scopes: source.hledger, meta.directive.keyword.hledger, keyword.directive.hledger
+  Token: " Assets:Checking"
+    Scopes: source.hledger
+
+Line:     note: Main checking account
+  Token: "note"
+    Scopes: source.hledger, meta.posting.account-only.hledger, entity.name.type.account.hledger
+  Token: ": "
+    Scopes: source.hledger, meta.posting.account-only.hledger
+  Token: "Main checking account"
+    Scopes: source.hledger, meta.posting.account-only.hledger, entity.name.type.account.hledger
+
+Line: 
+
+Line: 2025-11-22 * Opening Balance
+  Token: "2025-11-22"
+    Scopes: source.hledger, meta.transaction.header.hledger, constant.numeric.date.hledger
+  Token: "*"
+    Scopes: source.hledger, meta.transaction.header.hledger, keyword.operator.status.hledger
+  Token: "Opening Balance"
+    Scopes: source.hledger, meta.transaction.header.hledger, entity.name.function.payee.hledger
+
+Line:     Assets:Checking             $1000.00
+  Token: "Assets:Checking"
+    Scopes: source.hledger, meta.posting.with-amount.hledger, entity.name.type.account.hledger
+  Token: "$100"
+    Scopes: source.hledger, meta.posting.with-amount.hledger, meta.amount.prefix.hledger, entity.name.type.commodity.hledger
+  Token: "0.00"
+    Scopes: source.hledger, meta.posting.with-amount.hledger, meta.amount.prefix.hledger, constant.numeric.amount.hledger
+
+Line:     Equity:Opening
+  Token: "Equity:Opening"
+    Scopes: source.hledger, meta.posting.account-only.hledger, entity.name.type.account.hledger
+
+Line: 
+
+Line: 2025-11-23 Grocery Store | Weekly shopping
+  Token: "2025-11-23"
+    Scopes: source.hledger, meta.transaction.header.hledger, constant.numeric.date.hledger
+  Token: "Grocery Store "
+    Scopes: source.hledger, meta.transaction.header.hledger, entity.name.function.payee.hledger
+  Token: "| Weekly shopping"
+    Scopes: source.hledger, meta.transaction.header.hledger, string.unquoted.note.hledger
+
+Line:     ; project: personal
+  Token: "; "
+    Scopes: source.hledger, comment.line.semicolon.hledger
+  Token: "project"
+    Scopes: source.hledger, comment.line.semicolon.hledger, meta.tag.hledger, entity.name.tag.hledger
+  Token: ":"
+    Scopes: source.hledger, comment.line.semicolon.hledger, meta.tag.hledger, punctuation.separator.key-value.hledger
+  Token: "personal"
+    Scopes: source.hledger, comment.line.semicolon.hledger, meta.tag.hledger, string.unquoted.tag-value.hledger
+
+Line:     Expenses:Food:Groceries      $50.00
+  Token: "Expenses:Food:Groceries"
+    Scopes: source.hledger, meta.posting.with-amount.hledger, entity.name.type.account.hledger
+  Token: "$5"
+    Scopes: source.hledger, meta.posting.with-amount.hledger, meta.amount.prefix.hledger, entity.name.type.commodity.hledger
+  Token: "0.00"
+    Scopes: source.hledger, meta.posting.with-amount.hledger, meta.amount.prefix.hledger, constant.numeric.amount.hledger
+
+Line:     Assets:Checking             -$50.00 = $950.00
+  Token: "Assets:Checking"
+    Scopes: source.hledger, meta.posting.with-amount.hledger, entity.name.type.account.hledger
+  Token: "-"
+    Scopes: source.hledger, meta.posting.with-amount.hledger
+  Token: "$5"
+    Scopes: source.hledger, meta.posting.with-amount.hledger, meta.amount.prefix.hledger, entity.name.type.commodity.hledger
+  Token: "0.00"
+    Scopes: source.hledger, meta.posting.with-amount.hledger, meta.amount.prefix.hledger, constant.numeric.amount.hledger
+  Token: " = "
+    Scopes: source.hledger, meta.posting.with-amount.hledger
+  Token: "$95"
+    Scopes: source.hledger, meta.posting.with-amount.hledger, meta.amount.prefix.hledger, entity.name.type.commodity.hledger
+  Token: "0.00"
+    Scopes: source.hledger, meta.posting.with-amount.hledger, meta.amount.prefix.hledger, constant.numeric.amount.hledger
+
+Line: 
+
+Line: P 2025-11-23 EUR $1.20
+  Token: "P"
+    Scopes: source.hledger, meta.directive.keyword.hledger, keyword.directive.hledger
+  Token: " 2025-11-23 EUR $1.20"
+    Scopes: source.hledger
+"
+`;
+
+exports[`Grammar Snapshot Tests Directive Snapshots should tokenize account directive 1`] = `
+"Line: account Assets:Cash
+  Token: "account"
+    Scopes: source.hledger, meta.directive.keyword.hledger, keyword.directive.hledger
+  Token: " Assets:Cash"
+    Scopes: source.hledger
+
+Line:     note: Main cash account
+  Token: "note"
+    Scopes: source.hledger, meta.posting.account-only.hledger, entity.name.type.account.hledger
+  Token: ": "
+    Scopes: source.hledger, meta.posting.account-only.hledger
+  Token: "Main cash account"
+    Scopes: source.hledger, meta.posting.account-only.hledger, entity.name.type.account.hledger
+
+Line:     alias: cash
+  Token: "alias"
+    Scopes: source.hledger, meta.posting.account-only.hledger, entity.name.type.account.hledger
+  Token: ": "
+    Scopes: source.hledger, meta.posting.account-only.hledger
+  Token: "cash"
+    Scopes: source.hledger, meta.posting.account-only.hledger, entity.name.type.account.hledger
+"
+`;
+
+exports[`Grammar Snapshot Tests Directive Snapshots should tokenize commodity directive 1`] = `
+"Line: commodity USD
+  Token: "commodity"
+    Scopes: source.hledger, meta.directive.keyword.hledger, keyword.directive.hledger
+  Token: " USD"
+    Scopes: source.hledger
+
+Line:     format $1,000.00
+  Token: "format "
+    Scopes: source.hledger, meta.posting.account-only.hledger, entity.name.type.account.hledger
+  Token: "$1,000.00"
+    Scopes: source.hledger, meta.posting.account-only.hledger
+"
+`;
+
+exports[`Grammar Snapshot Tests Directive Snapshots should tokenize price directive 1`] = `
+"Line: P 2025-11-22 USD 1.2 EUR
+  Token: "P"
+    Scopes: source.hledger, meta.directive.keyword.hledger, keyword.directive.hledger
+  Token: " 2025-11-22 USD 1.2 EUR"
+    Scopes: source.hledger
+
+Line: P 2025-11-22 AAPL $150.00
+  Token: "P"
+    Scopes: source.hledger, meta.directive.keyword.hledger, keyword.directive.hledger
+  Token: " 2025-11-22 AAPL $150.00"
+    Scopes: source.hledger
+"
+`;
+
+exports[`Grammar Snapshot Tests Directive Snapshots should tokenize various directives 1`] = `
+"Line: include accounts.journal
+  Token: "include"
+    Scopes: source.hledger, meta.directive.keyword.hledger, keyword.directive.hledger
+  Token: " accounts.journal"
+    Scopes: source.hledger
+
+Line: D $1,000.00
+  Token: "D"
+    Scopes: source.hledger, meta.directive.keyword.hledger, keyword.directive.hledger
+  Token: " $1,000.00"
+    Scopes: source.hledger
+
+Line: Y 2025
+  Token: "Y"
+    Scopes: source.hledger, meta.directive.keyword.hledger, keyword.directive.hledger
+  Token: " 2025"
+    Scopes: source.hledger
+
+Line: alias checking = Assets:Bank:Checking
+  Token: "alias"
+    Scopes: source.hledger, meta.directive.keyword.hledger, keyword.directive.hledger
+  Token: " checking = Assets:Bank:Checking"
+    Scopes: source.hledger
+
+Line: payee Grocery Store
+  Token: "payee"
+    Scopes: source.hledger, meta.directive.keyword.hledger, keyword.directive.hledger
+  Token: " Grocery Store"
+    Scopes: source.hledger
+
+Line: tag project
+  Token: "tag"
+    Scopes: source.hledger, meta.directive.keyword.hledger, keyword.directive.hledger
+  Token: " project"
+    Scopes: source.hledger
+"
+`;
+
+exports[`Grammar Snapshot Tests Timeclock Snapshots should tokenize timeclock entries 1`] = `
+"Line: i 2025-11-22 09:00:00 Project Work
+  Token: "i"
+    Scopes: source.hledger, meta.timeclock.hledger, keyword.operator.timeclock.hledger
+  Token: "2025-11-22"
+    Scopes: source.hledger, meta.timeclock.hledger, constant.numeric.date.iso.hledger
+  Token: " 09:00:00 Project Work"
+    Scopes: source.hledger, meta.timeclock.hledger, string.unquoted.description.hledger
+
+Line: o 2025-11-22 17:00:00
+  Token: "o"
+    Scopes: source.hledger, meta.timeclock.hledger, keyword.operator.timeclock.hledger
+  Token: "2025-11-22"
+    Scopes: source.hledger, meta.timeclock.hledger, constant.numeric.date.iso.hledger
+  Token: " 17:00:00"
+    Scopes: source.hledger, meta.timeclock.hledger, string.unquoted.description.hledger
+
+Line: h 2025-11-22 09:00:00 $50
+  Token: "h"
+    Scopes: source.hledger, meta.timeclock.hledger, keyword.operator.timeclock.hledger
+  Token: "2025-11-22"
+    Scopes: source.hledger, meta.timeclock.hledger, constant.numeric.date.iso.hledger
+  Token: " 09:00:00 $50"
+    Scopes: source.hledger, meta.timeclock.hledger, string.unquoted.description.hledger
+"
+`;
+
+exports[`Grammar Snapshot Tests Transaction Snapshots should tokenize auto transaction 1`] = `
+"Line: = expenses:food
+  Token: "="
+    Scopes: source.hledger, meta.transaction.auto.hledger, keyword.operator.auto.hledger
+  Token: "expenses:food"
+    Scopes: source.hledger, meta.transaction.auto.hledger, string.unquoted.query-expression.hledger
+
+Line:     (Budget:Food)              1.0
+  Token: "(Budget:Food)"
+    Scopes: source.hledger, meta.posting.with-amount.hledger, variable.other.account.virtual.hledger
+  Token: "1.0"
+    Scopes: source.hledger, meta.posting.with-amount.hledger, meta.amount.suffix.hledger, constant.numeric.amount.hledger
+"
+`;
+
+exports[`Grammar Snapshot Tests Transaction Snapshots should tokenize periodic transaction 1`] = `
+"Line: ~ monthly
+  Token: "~"
+    Scopes: source.hledger, meta.transaction.periodic.hledger, keyword.operator.periodic.hledger
+  Token: "monthly"
+    Scopes: source.hledger, meta.transaction.periodic.hledger, string.unquoted.period-expression.hledger
+
+Line:     Expenses:Rent              1000 USD
+  Token: "Expenses:Rent"
+    Scopes: source.hledger, meta.posting.with-amount.hledger, entity.name.type.account.hledger
+  Token: "100"
+    Scopes: source.hledger, meta.posting.with-amount.hledger, meta.amount.suffix.hledger, constant.numeric.amount.hledger
+  Token: "0"
+    Scopes: source.hledger, meta.posting.with-amount.hledger, meta.amount.suffix.hledger, constant.numeric.amount.hledger
+  Token: "USD"
+    Scopes: source.hledger, meta.posting.with-amount.hledger, meta.amount.suffix.hledger, entity.name.type.commodity.hledger
+
+Line:     Assets:Checking
+  Token: "Assets:Checking"
+    Scopes: source.hledger, meta.posting.account-only.hledger, entity.name.type.account.hledger
+"
+`;
+
+exports[`Grammar Snapshot Tests Transaction Snapshots should tokenize simple transaction correctly 1`] = `
+"Line: 2025-11-22 Grocery Store
+  Token: "2025-11-22"
+    Scopes: source.hledger, meta.transaction.header.hledger, constant.numeric.date.hledger
+  Token: "Grocery Store"
+    Scopes: source.hledger, meta.transaction.header.hledger, entity.name.function.payee.hledger
+
+Line:     Expenses:Food              50 USD
+  Token: "Expenses:Food"
+    Scopes: source.hledger, meta.posting.with-amount.hledger, entity.name.type.account.hledger
+  Token: "50"
+    Scopes: source.hledger, meta.posting.with-amount.hledger, meta.amount.suffix.hledger, constant.numeric.amount.hledger
+  Token: "USD"
+    Scopes: source.hledger, meta.posting.with-amount.hledger, meta.amount.suffix.hledger, entity.name.type.commodity.hledger
+
+Line:     Assets:Checking
+  Token: "Assets:Checking"
+    Scopes: source.hledger, meta.posting.account-only.hledger, entity.name.type.account.hledger
+"
+`;
+
+exports[`Grammar Snapshot Tests Transaction Snapshots should tokenize transaction with all features 1`] = `
+"Line: 2025-11-22 * (CHECK-123) Grocery Store | Weekly shopping
+  Token: "2025-11-22"
+    Scopes: source.hledger, meta.transaction.header.hledger, constant.numeric.date.hledger
+  Token: "*"
+    Scopes: source.hledger, meta.transaction.header.hledger, keyword.operator.status.hledger
+  Token: "(CHECK-123)"
+    Scopes: source.hledger, meta.transaction.header.hledger, string.other.code.hledger
+  Token: "Grocery Store "
+    Scopes: source.hledger, meta.transaction.header.hledger, entity.name.function.payee.hledger
+  Token: "| Weekly shopping"
+    Scopes: source.hledger, meta.transaction.header.hledger, string.unquoted.note.hledger
+
+Line:     ; project: personal
+  Token: "; "
+    Scopes: source.hledger, comment.line.semicolon.hledger
+  Token: "project"
+    Scopes: source.hledger, comment.line.semicolon.hledger, meta.tag.hledger, entity.name.tag.hledger
+  Token: ":"
+    Scopes: source.hledger, comment.line.semicolon.hledger, meta.tag.hledger, punctuation.separator.key-value.hledger
+  Token: "personal"
+    Scopes: source.hledger, comment.line.semicolon.hledger, meta.tag.hledger, string.unquoted.tag-value.hledger
+
+Line:     Expenses:Food:Groceries      50 USD
+  Token: "Expenses:Food:Groceries"
+    Scopes: source.hledger, meta.posting.with-amount.hledger, entity.name.type.account.hledger
+  Token: "50"
+    Scopes: source.hledger, meta.posting.with-amount.hledger, meta.amount.suffix.hledger, constant.numeric.amount.hledger
+  Token: "USD"
+    Scopes: source.hledger, meta.posting.with-amount.hledger, meta.amount.suffix.hledger, entity.name.type.commodity.hledger
+
+Line:     Assets:Checking             -50 USD = 1000 USD
+  Token: "Assets:Checking"
+    Scopes: source.hledger, meta.posting.with-amount.hledger, entity.name.type.account.hledger
+  Token: "-50"
+    Scopes: source.hledger, meta.posting.with-amount.hledger, meta.amount.suffix.hledger, constant.numeric.amount.hledger
+  Token: "USD"
+    Scopes: source.hledger, meta.posting.with-amount.hledger, meta.amount.suffix.hledger, entity.name.type.commodity.hledger
+  Token: "="
+    Scopes: source.hledger, meta.posting.with-amount.hledger, meta.price-assignment.hledger, keyword.operator.price-assignment.hledger
+  Token: "1000"
+    Scopes: source.hledger, meta.posting.with-amount.hledger, meta.price-assignment.hledger, constant.numeric.amount.hledger
+  Token: "USD"
+    Scopes: source.hledger, meta.posting.with-amount.hledger, meta.price-assignment.hledger, entity.name.type.commodity.hledger
+"
+`;
+
+exports[`Grammar Snapshot Tests Transaction Snapshots should tokenize transaction with cost 1`] = `
+"Line: 2025-11-22 Stock Purchase
+  Token: "2025-11-22"
+    Scopes: source.hledger, meta.transaction.header.hledger, constant.numeric.date.hledger
+  Token: "Stock Purchase"
+    Scopes: source.hledger, meta.transaction.header.hledger, entity.name.function.payee.hledger
+
+Line:     Assets:Stock             10 AAPL @ $150
+  Token: "Assets:Stock"
+    Scopes: source.hledger, meta.posting.with-amount.hledger, entity.name.type.account.hledger
+  Token: "10"
+    Scopes: source.hledger, meta.posting.with-amount.hledger, meta.amount.suffix.hledger, constant.numeric.amount.hledger
+  Token: "AAPL"
+    Scopes: source.hledger, meta.posting.with-amount.hledger, meta.amount.suffix.hledger, entity.name.type.commodity.hledger
+  Token: "@"
+    Scopes: source.hledger, meta.posting.with-amount.hledger, meta.cost.unit.hledger, keyword.operator.cost.hledger
+  Token: "$15"
+    Scopes: source.hledger, meta.posting.with-amount.hledger, meta.cost.unit.hledger, meta.amount.prefix.hledger, entity.name.type.commodity.hledger
+  Token: "0"
+    Scopes: source.hledger, meta.posting.with-amount.hledger, meta.cost.unit.hledger, meta.amount.prefix.hledger, constant.numeric.amount.hledger
+
+Line:     Assets:Cash             -$1500
+  Token: "Assets:Cash"
+    Scopes: source.hledger, meta.posting.with-amount.hledger, entity.name.type.account.hledger
+  Token: "-"
+    Scopes: source.hledger, meta.posting.with-amount.hledger
+  Token: "$150"
+    Scopes: source.hledger, meta.posting.with-amount.hledger, meta.amount.prefix.hledger, entity.name.type.commodity.hledger
+  Token: "0"
+    Scopes: source.hledger, meta.posting.with-amount.hledger, meta.amount.prefix.hledger, constant.numeric.amount.hledger
+"
+`;

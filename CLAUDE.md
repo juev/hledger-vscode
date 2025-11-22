@@ -140,6 +140,13 @@ Uses modern TypeScript with branded types for type safety:
 - Comprehensive test coverage for completion providers
 - Test files follow `*.test.ts` naming pattern in `__tests__` directories
 
+**Grammar Testing:**
+- `grammar.test.ts` - Functional tests validating TextMate scope application
+- `grammar.snapshot.test.ts` - Snapshot tests for detecting unintended grammar changes
+- Uses `vscode-textmate` and `vscode-oniguruma` for accurate tokenization testing
+- Tests multi-language support (English, Russian/Cyrillic)
+- See `docs/GRAMMAR_TESTING.md` for detailed testing guide
+
 ## Key Features
 
 - **Auto-completion**: Context-aware suggestions for dates, accounts, payees, commodities, tags, and directives
