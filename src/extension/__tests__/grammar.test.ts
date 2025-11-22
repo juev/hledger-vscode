@@ -10,17 +10,6 @@ import * as path from 'path';
 import { Registry, INITIAL, IGrammar, IToken, StateStack } from 'vscode-textmate';
 import { loadWASM, OnigScanner, OnigString } from 'vscode-oniguruma';
 
-interface TokenAssertion {
-  text: string;
-  scopes: string[];
-}
-
-interface GrammarTestCase {
-  description: string;
-  line: string;
-  tokens: TokenAssertion[];
-}
-
 describe('TextMate Grammar Tests', () => {
   let grammar: IGrammar;
 
@@ -78,36 +67,6 @@ describe('TextMate Grammar Tests', () => {
     const start = token.startIndex;
     const end = nextToken ? nextToken.startIndex : line.length;
     return line.substring(start, end);
-  }
-
-  /**
-   * Assert that a line produces expected tokens with correct scopes
-   */
-  function assertTokenScopes(line: string, expectedTokens: TokenAssertion[], prevState: StateStack = INITIAL) {
-    const { tokens } = tokenizeLine(line, prevState);
-
-    // Build actual tokens with text and scopes
-    const actualTokens = tokens.map((token, index) => {
-      const nextToken = tokens[index + 1];
-      const text = getTokenText(line, token, nextToken);
-      const scopes = getScopeNames(token);
-      return { text, scopes };
-    });
-
-    // Compare expected vs actual
-    expect(actualTokens.length).toBe(expectedTokens.length);
-
-    for (let i = 0; i < expectedTokens.length; i++) {
-      const expected = expectedTokens[i]!;
-      const actual = actualTokens[i]!;
-
-      expect(actual.text).toBe(expected.text);
-
-      // Check that all expected scopes are present
-      for (const expectedScope of expected.scopes) {
-        expect(actual.scopes).toContain(expectedScope);
-      }
-    }
   }
 
   /**
