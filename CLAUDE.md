@@ -8,14 +8,42 @@ This is a Visual Studio Code extension for hledger (plain text accounting) that 
 
 ## Development Commands
 
-- **Build**: `npm run build` - Compiles TypeScript to production build
-- **Development**: `npm run compile` - Compiles with development config
-- **Watch**: `npm run watch` - Watches for changes and recompiles
+- **Build**: `npm run build` - Compiles TypeScript to production build with esbuild
+- **Development**: `npm run compile` - Compiles with development config (TypeScript only)
+- **Watch**: `npm run watch` - Watches for changes and recompiles with esbuild
 - **Test**: `npm run test` - Runs Jest tests
 - **Test Watch**: `npm run test:watch` - Runs tests in watch mode
 - **Coverage**: `npm run test:coverage` - Runs tests with coverage report
 - **Package**: `npm run package` - Creates VSIX package for distribution
 - **Clean**: `npm run clean` - Removes build artifacts
+- **Lint**: `npm run lint` - Runs ESLint on TypeScript files
+- **Lint Fix**: `npm run lint:fix` - Runs ESLint with auto-fix
+
+## Build System
+
+The project uses **esbuild** for fast, efficient bundling:
+
+### Configuration (`esbuild.js`)
+- **Entry Point**: `src/extension/main.ts`
+- **Output**: `out/extension/main.js`
+- **Format**: CommonJS (`cjs`)
+- **Platform**: Node.js
+- **Target**: `node20` - Optimized for Node.js 20.x runtime
+- **Bundling**: Single-file bundle with tree-shaking
+- **External**: VS Code API (`vscode`) excluded from bundle
+- **Production**: Minified output with metafile generation
+- **Development**: Source maps enabled for debugging
+
+### TypeScript Configuration
+- **Target**: ES2018 for broad compatibility
+- **Module**: CommonJS
+- **Strict Mode**: Enabled with enhanced type checking
+- **Output**: `out/` directory (used by TypeScript compiler for development)
+
+### Node.js Version Requirements
+- **Minimum**: Node.js 20.0.0 (specified in `package.json` engines)
+- **CI/CD**: GitHub Actions uses Node.js 20.x
+- **esbuild Target**: `node20` ensures output is optimized for Node.js 20 features
 
 ## Architecture
 

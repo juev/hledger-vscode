@@ -21,6 +21,7 @@ async function main() {
     sourcemap: !production,
     sourcesContent: false,
     platform: 'node',
+    target: 'node20',
     outfile: 'out/extension/main.js',
     external: ['vscode'],
     logLevel: 'info',
