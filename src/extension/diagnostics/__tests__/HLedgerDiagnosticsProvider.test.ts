@@ -26,7 +26,7 @@ account Expenses:Food
     Expenses:Food  $10.00
     Assets:Bank  -$10.00
 `;
-            config.parseContent(content, '/test/test.journal');
+            config.parseContent(content, '/test');
 
             const document = new MockTextDocument(content.split('\n'), {
                 uri: vscode.Uri.file('/test/test.journal'),
@@ -51,7 +51,7 @@ account Expenses:Food
     Expenses:Food  $10.00
     Assets:Cash  -$10.00
 `;
-            config.parseContent(content, '/test/test.journal');
+            config.parseContent(content, '/test');
 
             const document = new MockTextDocument(content.split('\n'), {
                 uri: vscode.Uri.file('/test/test.journal'),
@@ -74,7 +74,7 @@ account Expenses:Food
     Expenses:Food  $10.00
     Assets:Cash  -$10.00
 `;
-            config.parseContent(content, '/test/test.journal');
+            config.parseContent(content, '/test');
 
             const document = new MockTextDocument(content.split('\n'), {
                 uri: vscode.Uri.file('/test/test.journal'),
@@ -97,7 +97,7 @@ account Расходы:Еда
     Расходы:Еда  $10.00
     Активы:Банк  -$10.00
 `;
-            config.parseContent(content, '/test/test.journal');
+            config.parseContent(content, '/test');
 
             const document = new MockTextDocument(content.split('\n'), {
                 uri: vscode.Uri.file('/test/test.journal'),
@@ -120,7 +120,7 @@ account Расходы:Еда
     Expenses:Food  $10.00
     Assets:Cash  -$10.00
 `;
-            config.parseContent(content, '/test/test.journal');
+            config.parseContent(content, '/test');
 
             const document = new MockTextDocument(content.split('\n'), {
                 uri: vscode.Uri.file('/test/test.journal'),
@@ -142,7 +142,7 @@ account Расходы:Еда
     Expenses:Food  $10.00
     Assets:Cash  -$10.00
 `;
-            config.parseContent(content, '/test/test.journal');
+            config.parseContent(content, '/test');
 
             const document = new MockTextDocument(content.split('\n'), {
                 uri: vscode.Uri.file('/test/test.journal'),
@@ -162,7 +162,7 @@ account Расходы:Еда
     Expenses:Food  $10.00
     Assets:Cash  -$10.00
 `;
-            config.parseContent(content, '/test/test.journal');
+            config.parseContent(content, '/test');
 
             const document = new MockTextDocument(content.split('\n'), {
                 uri: vscode.Uri.file('/test/test.journal'),
@@ -182,7 +182,7 @@ account Расходы:Еда
     Expenses:Food  $10.00
     Assets:Cash  -$10.00
 `;
-            config.parseContent(content, '/test/test.journal');
+            config.parseContent(content, '/test');
 
             const document = new MockTextDocument(content.split('\n'), {
                 uri: vscode.Uri.file('/test/test.journal'),
@@ -203,7 +203,7 @@ account Расходы:Еда
     Expenses:Food  $10.00
     Assets:Cash  -$10.00
 `;
-            config.parseContent(content, '/test/test.journal');
+            config.parseContent(content, '/test');
 
             const document = new MockTextDocument(content.split('\n'), {
                 uri: vscode.Uri.file('/test/test.journal'),
@@ -225,7 +225,7 @@ account Расходы:Еда
     Expenses:Food  $10.00
     Assets:Cash
 `;
-            config.parseContent(content, '/test/test.journal');
+            config.parseContent(content, '/test');
 
             const document = new MockTextDocument(content.split('\n'), {
                 uri: vscode.Uri.file('/test/test.journal'),
@@ -245,7 +245,7 @@ account Расходы:Еда
     Expenses:Food  10.00 USD
     Assets:Cash
 `;
-            config.parseContent(content, '/test/test.journal');
+            config.parseContent(content, '/test');
 
             const document = new MockTextDocument(content.split('\n'), {
                 uri: vscode.Uri.file('/test/test.journal'),
@@ -265,7 +265,7 @@ account Расходы:Еда
     Expenses:Food  -$10.00
     Assets:Cash
 `;
-            config.parseContent(content, '/test/test.journal');
+            config.parseContent(content, '/test');
 
             const document = new MockTextDocument(content.split('\n'), {
                 uri: vscode.Uri.file('/test/test.journal'),
@@ -285,7 +285,7 @@ account Расходы:Еда
     Expenses:Food  $1,000.00
     Assets:Cash
 `;
-            config.parseContent(content, '/test/test.journal');
+            config.parseContent(content, '/test');
 
             const document = new MockTextDocument(content.split('\n'), {
                 uri: vscode.Uri.file('/test/test.journal'),
@@ -305,7 +305,7 @@ account Расходы:Еда
     Expenses:Food  $10$50
     Assets:Cash
 `;
-            config.parseContent(content, '/test/test.journal');
+            config.parseContent(content, '/test');
 
             const document = new MockTextDocument(content.split('\n'), {
                 uri: vscode.Uri.file('/test/test.journal'),
@@ -326,7 +326,7 @@ account Расходы:Еда
     Expenses:Food  $10.00
     Assets:Cash
 `;
-            config.parseContent(content, '/test/test.journal');
+            config.parseContent(content, '/test');
 
             const document = new MockTextDocument(content.split('\n'), {
                 uri: vscode.Uri.file('/test/test.journal'),
@@ -346,7 +346,7 @@ account Расходы:Еда
     Expenses:Food  ₽100.00
     Assets:Cash
 `;
-            config.parseContent(content, '/test/test.journal');
+            config.parseContent(content, '/test');
 
             const document = new MockTextDocument(content.split('\n'), {
                 uri: vscode.Uri.file('/test/test.journal'),
@@ -373,7 +373,7 @@ account Assets:Cash
     Expenses:Food  $10.00
     Assets:Bank  -$10.00
 `;
-            config.parseContent(content, '/test/test.journal');
+            config.parseContent(content, '/test');
 
             const document = new MockTextDocument(content.split('\n'), {
                 uri: vscode.Uri.file('/test/test.journal'),
@@ -397,7 +397,7 @@ account Assets:Cash
     Expenses:Food  $10.00
     Assets:Bank  -$10.00
 `;
-            config.parseContent(content, '/test/test.journal');
+            config.parseContent(content, '/test');
 
             const document = new MockTextDocument(content.split('\n'), {
                 uri: vscode.Uri.file('/test/test.journal'),
@@ -432,7 +432,7 @@ account Assets:Cash
     Expenses:Food  $10.00
     Assets:Cash
 `;
-            config.parseContent(content, '/test/test.journal');
+            config.parseContent(content, '/test');
 
             const document = new MockTextDocument(content.split('\n'), {
                 uri: vscode.Uri.file('/test/test.journal'),
@@ -454,7 +454,7 @@ account Assets:Cash
     Expenses:Food  $10.00
     Assets:Cash
 `;
-            config.parseContent(content, '/test/test.journal');
+            config.parseContent(content, '/test');
 
             const doc1 = new MockTextDocument(content.split('\n'), {
                 uri: vscode.Uri.file('/test/test1.journal'),
