@@ -61,7 +61,7 @@ export class TagCompleter {
 
 
     /**
-     * Complete tag values for a specific tag name (Phase 2).
+     * Complete tag values for a specific tag name.
      * Provides values that have been used with the specified tag.
      */
     private completeTagValues(context: CompletionContext, tagName: TagName): vscode.CompletionItem[] {
@@ -148,7 +148,7 @@ export class TagCompleter {
     }
 
     /**
-     * Complete tag names (Phase 1).
+     * Complete tag names.
      * Provides tag names like "category", "project", "type".
      */
     private completeTagNames(context: CompletionContext): vscode.CompletionItem[] {

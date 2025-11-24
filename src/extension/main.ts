@@ -16,6 +16,8 @@ import { HLedgerParser } from './HLedgerParser';
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { SimpleProjectCache } from './SimpleProjectCache';
 import { SimpleFuzzyMatcher } from './SimpleFuzzyMatcher';
+import { HLedgerCodeActionProvider } from './actions/HLedgerCodeActionProvider';
+import { HLedgerDiagnosticsProvider } from './diagnostics/HLedgerDiagnosticsProvider';
 
 // Main activation function
 export function activate(context: vscode.ExtensionContext): void {
@@ -45,6 +47,21 @@ export function activate(context: vscode.ExtensionContext): void {
         // Register the provider itself for proper disposal (prevents RegexCache memory leak)
         context.subscriptions.push(strictProvider);
 
+        // Register code action provider for balance assertions and quick fixes
+        const codeActionProvider = new HLedgerCodeActionProvider(services.config);
+        context.subscriptions.push(
+            vscode.languages.registerCodeActionsProvider(
+                'hledger',
+                codeActionProvider,
+                {
+                    providedCodeActionKinds: HLedgerCodeActionProvider.providedCodeActionKinds
+                }
+            )
+        );
+
+        // Register diagnostics provider for validation on save
+        const diagnosticsProvider = new HLedgerDiagnosticsProvider(services.config);
+        context.subscriptions.push(diagnosticsProvider);
 
         // Register formatting providers for hledger files
         registerFormattingProviders(context);

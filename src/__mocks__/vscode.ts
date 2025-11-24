@@ -51,9 +51,41 @@ export enum ProgressLocation {
     Notification = 15
 }
 
+export enum DiagnosticSeverity {
+    Error = 0,
+    Warning = 1,
+    Information = 2,
+    Hint = 3
+}
+
+export enum CodeActionTriggerKind {
+    Invoke = 1,
+    Automatic = 2
+}
+
+export class CodeActionKind {
+    static readonly Empty = new CodeActionKind('');
+    static readonly QuickFix = new CodeActionKind('quickfix');
+    static readonly Refactor = new CodeActionKind('refactor');
+    static readonly RefactorExtract = new CodeActionKind('refactor.extract');
+    static readonly RefactorInline = new CodeActionKind('refactor.inline');
+    static readonly RefactorRewrite = new CodeActionKind('refactor.rewrite');
+    static readonly Source = new CodeActionKind('source');
+    static readonly SourceOrganizeImports = new CodeActionKind('source.organizeImports');
+    static readonly SourceFixAll = new CodeActionKind('source.fixAll');
+
+    private constructor(public readonly value: string) {}
+}
+
 export interface CompletionContext {
     triggerKind: CompletionTriggerKind;
     triggerCharacter?: string;
+}
+
+export interface CodeActionContext {
+    diagnostics: any[];
+    only?: CodeActionKind;
+    triggerKind: CodeActionTriggerKind;
 }
 
 export interface CancellationToken {
@@ -79,6 +111,76 @@ export class CompletionItem {
     }
 }
 
+export class Diagnostic {
+    range: Range;
+    message: string;
+    severity: DiagnosticSeverity;
+    source?: string;
+    code?: string | number;
+    relatedInformation?: any[];
+
+    constructor(range: Range, message: string, severity: DiagnosticSeverity) {
+        this.range = range;
+        this.message = message;
+        this.severity = severity;
+    }
+}
+
+export class CodeAction {
+    title: string;
+    kind?: CodeActionKind;
+    edit?: WorkspaceEdit;
+    diagnostics?: any[];
+    command?: any;
+    isPreferred?: boolean;
+    disabled?: { reason: string };
+
+    constructor(title: string, kind?: CodeActionKind) {
+        this.title = title;
+        this.kind = kind;
+    }
+}
+
+export interface CodeActionProvider {
+    provideCodeActions(
+        document: TextDocument,
+        range: Range | Selection,
+        context: CodeActionContext,
+        token: CancellationToken
+    ): CodeAction[] | undefined | null | Promise<CodeAction[] | undefined | null>;
+}
+
+export class WorkspaceEdit {
+    private _edits: Map<string, Array<{ range: Range; newText: string }>> = new Map();
+
+    insert(uri: Uri, position: Position, newText: string): void {
+        const key = uri.toString();
+        if (!this._edits.has(key)) {
+            this._edits.set(key, []);
+        }
+        this._edits.get(key)!.push({
+            range: new Range(position, position),
+            newText
+        });
+    }
+
+    replace(uri: Uri, range: Range, newText: string): void {
+        const key = uri.toString();
+        if (!this._edits.has(key)) {
+            this._edits.set(key, []);
+        }
+        this._edits.get(key)!.push({ range, newText });
+    }
+
+    delete(uri: Uri, range: Range): void {
+        this.replace(uri, range, '');
+    }
+
+    get(uri: Uri): Array<{ range: Range; newText: string }> | undefined {
+        return this._edits.get(uri.toString());
+    }
+}
+
 export class Range {
     start: Position;
     end: Position;
@@ -94,6 +196,67 @@ export class Range {
             this.end = startCharacterOrEnd as Position;
         }
     }
+
+    get isEmpty(): boolean {
+        return this.start.line === this.end.line && this.start.character === this.end.character;
+    }
+
+    get isSingleLine(): boolean {
+        return this.start.line === this.end.line;
+    }
+
+    contains(positionOrRange: Position | Range): boolean {
+        if (positionOrRange instanceof Range) {
+            return this.contains(positionOrRange.start) && this.contains(positionOrRange.end);
+        }
+        return (
+            positionOrRange.line >= this.start.line &&
+            positionOrRange.line <= this.end.line &&
+            (positionOrRange.line !== this.start.line || positionOrRange.character >= this.start.character) &&
+            (positionOrRange.line !== this.end.line || positionOrRange.character <= this.end.character)
+        );
+    }
+
+    isEqual(other: Range): boolean {
+        return this.start.line === other.start.line &&
+               this.start.character === other.start.character &&
+               this.end.line === other.end.line &&
+               this.end.character === other.end.character;
+    }
+
+    intersection(other: Range): Range | undefined {
+        const start = this.start.line > other.start.line ? this.start :
+                     this.start.line < other.start.line ? other.start :
+                     this.start.character > other.start.character ? this.start : other.start;
+        const end = this.end.line < other.end.line ? this.end :
+                   this.end.line > other.end.line ? other.end :
+                   this.end.character < other.end.character ? this.end : other.end;
+
+        if (start.line > end.line || (start.line === end.line && start.character > end.character)) {
+            return undefined;
+        }
+        return new Range(start, end);
+    }
+
+    union(other: Range): Range {
+        const start = this.start.line < other.start.line ? this.start :
+                     this.start.line > other.start.line ? other.start :
+                     this.start.character < other.start.character ? this.start : other.start;
+        const end = this.end.line > other.end.line ? this.end :
+                   this.end.line < other.end.line ? other.end :
+                   this.end.character > other.end.character ? this.end : other.end;
+        return new Range(start, end);
+    }
+
+    with(change: { start?: Position; end?: Position }): Range;
+    with(start?: Position, end?: Position): Range;
+    with(startOrChange?: Position | { start?: Position; end?: Position }, end?: Position): Range {
+        if (startOrChange && typeof startOrChange === 'object' && 'start' in startOrChange) {
+            const change = startOrChange as { start?: Position; end?: Position };
+            return new Range(change.start || this.start, change.end || this.end);
+        }
+        return new Range(startOrChange as Position || this.start, end || this.end);
+    }
 }
 
 export class Position {
@@ -103,6 +266,89 @@ export class Position {
     constructor(line: number, character: number) {
         this.line = line;
         this.character = character;
+    }
+
+    isBefore(other: Position): boolean {
+        return this.line < other.line || (this.line === other.line && this.character < other.character);
+    }
+
+    isBeforeOrEqual(other: Position): boolean {
+        return this.line < other.line || (this.line === other.line && this.character <= other.character);
+    }
+
+    isAfter(other: Position): boolean {
+        return this.line > other.line || (this.line === other.line && this.character > other.character);
+    }
+
+    isAfterOrEqual(other: Position): boolean {
+        return this.line > other.line || (this.line === other.line && this.character >= other.character);
+    }
+
+    isEqual(other: Position): boolean {
+        return this.line === other.line && this.character === other.character;
+    }
+
+    compareTo(other: Position): number {
+        if (this.line < other.line) return -1;
+        if (this.line > other.line) return 1;
+        if (this.character < other.character) return -1;
+        if (this.character > other.character) return 1;
+        return 0;
+    }
+
+    translate(lineDelta?: number, characterDelta?: number): Position;
+    translate(change: { lineDelta?: number; characterDelta?: number }): Position;
+    translate(lineDeltaOrChange?: number | { lineDelta?: number; characterDelta?: number }, characterDelta?: number): Position {
+        if (typeof lineDeltaOrChange === 'object') {
+            const change = lineDeltaOrChange as { lineDelta?: number; characterDelta?: number };
+            return new Position(
+                this.line + (change.lineDelta || 0),
+                this.character + (change.characterDelta || 0)
+            );
+        }
+        return new Position(
+            this.line + (lineDeltaOrChange || 0),
+            this.character + (characterDelta || 0)
+        );
+    }
+
+    with(line?: number, character?: number): Position;
+    with(change: { line?: number; character?: number }): Position;
+    with(lineOrChange?: number | { line?: number; character?: number }, character?: number): Position {
+        if (typeof lineOrChange === 'object') {
+            const change = lineOrChange as { line?: number; character?: number };
+            return new Position(
+                change.line !== undefined ? change.line : this.line,
+                change.character !== undefined ? change.character : this.character
+            );
+        }
+        return new Position(
+            lineOrChange !== undefined ? lineOrChange : this.line,
+            character !== undefined ? character : this.character
+        );
+    }
+}
+
+export class Selection extends Range {
+    anchor: Position;
+    active: Position;
+
+    constructor(anchorLine: number, anchorCharacter: number, activeLine: number, activeCharacter: number);
+    constructor(anchor: Position, active: Position);
+    constructor(anchorOrLine: Position | number, anchorCharacterOrActive?: Position | number, activeLine?: number, activeCharacter?: number) {
+        if (typeof anchorOrLine === 'number') {
+            super(anchorOrLine, anchorCharacterOrActive as number, activeLine!, activeCharacter!);
+            this.anchor = new Position(anchorOrLine, anchorCharacterOrActive as number);
+            this.active = new Position(activeLine!, activeCharacter!);
+        } else {
+            super(anchorOrLine, anchorCharacterOrActive as Position);
+            this.anchor = anchorOrLine;
+            this.active = anchorCharacterOrActive as Position;
+        }
+    }
+
+    get isReversed(): boolean {
+        return this.active.isBefore(this.anchor);
     }
 }
 
@@ -295,9 +541,63 @@ export const workspace = {
     }))
 };
 
+export interface DiagnosticCollection extends Disposable {
+    name: string;
+    set(uri: Uri, diagnostics: Diagnostic[] | undefined): void;
+    delete(uri: Uri): void;
+    clear(): void;
+    forEach(callback: (uri: Uri, diagnostics: Diagnostic[], collection: DiagnosticCollection) => void, thisArg?: any): void;
+    get(uri: Uri): Diagnostic[] | undefined;
+    has(uri: Uri): boolean;
+}
+
+class MockDiagnosticCollection implements DiagnosticCollection {
+    private diagnostics: Map<string, Diagnostic[]> = new Map();
+
+    constructor(public name: string) {}
+
+    set(uri: Uri, diagnostics: Diagnostic[] | undefined): void {
+        const key = uri.toString();
+        if (diagnostics === undefined || diagnostics.length === 0) {
+            this.diagnostics.delete(key);
+        } else {
+            this.diagnostics.set(key, diagnostics);
+        }
+    }
+
+    delete(uri: Uri): void {
+        this.diagnostics.delete(uri.toString());
+    }
+
+    clear(): void {
+        this.diagnostics.clear();
+    }
+
+    forEach(callback: (uri: Uri, diagnostics: Diagnostic[], collection: DiagnosticCollection) => void, thisArg?: any): void {
+        this.diagnostics.forEach((diagnostics, uriString) => {
+            const uri = Uri.parse(uriString);
+            callback.call(thisArg, uri, diagnostics, this);
+        });
+    }
+
+    get(uri: Uri): Diagnostic[] | undefined {
+        return this.diagnostics.get(uri.toString());
+    }
+
+    has(uri: Uri): boolean {
+        return this.diagnostics.has(uri.toString());
+    }
+
+    dispose(): void {
+        this.clear();
+    }
+}
+
 export const languages = {
     registerCompletionItemProvider: jest.fn(() => ({ dispose: jest.fn() })),
     registerDocumentSemanticTokensProvider: jest.fn(() => ({ dispose: jest.fn() })),
+    registerCodeActionsProvider: jest.fn(() => ({ dispose: jest.fn() })),
+    createDiagnosticCollection: jest.fn((name: string): DiagnosticCollection => new MockDiagnosticCollection(name)),
 };
 
 export interface OutputChannel {
