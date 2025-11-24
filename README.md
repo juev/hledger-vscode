@@ -126,9 +126,11 @@ Insert hledger reports directly into your journals as formatted comments.
 ```
 
 **Journal file resolution** (priority order):
-1. `LEDGER_FILE` environment variable
-2. `hledger.cli.journalFile` setting
-3. Current open file
+1. `LEDGER_FILE` environment variable (validated for security)
+2. `hledger.cli.journalFile` setting (validated for security)
+3. Current open file (trusted from VS Code)
+
+> **Security Note:** Paths from environment variables and configuration settings are validated to prevent command injection attacks. Shell metacharacters and inaccessible paths are rejected.
 
 ---
 

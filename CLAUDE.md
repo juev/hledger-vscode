@@ -201,9 +201,11 @@ The extension provides direct integration with hledger CLI commands that insert 
 
 ### Journal File Resolution Priority
 
-1. `LEDGER_FILE` environment variable (highest priority)
-2. `hledger.cli.journalFile` setting
-3. Current open file (fallback)
+1. `LEDGER_FILE` environment variable (highest priority, validated for security)
+2. `hledger.cli.journalFile` setting (validated for security)
+3. Current open file (fallback, trusted from VS Code)
+
+**Security:** Paths from environment variables and configuration settings are validated to prevent command injection attacks. Paths containing shell metacharacters (`;`, `&`, `|`, `` ` ``, `$`, `()`, `[]`, `{}`, `^`, `"`, `\`, `<`, `>`) are rejected with a clear error message. File existence and readability are also verified.
 
 ## Important Notes
 

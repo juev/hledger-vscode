@@ -453,4 +453,135 @@ describe('HLedgerFileProcessor Security Tests', () => {
             expect(files[0]).toBe(rootFile);
         });
     });
+
+    describe('path traversal protection', () => {
+        it('should reject include paths that escape workspace with ..', async () => {
+            // Create workspace directory and a malicious include
+            const workspaceDir = path.join(testDir, 'workspace');
+            fs.mkdirSync(workspaceDir);
+
+            const mainFile = path.join(workspaceDir, 'main.journal');
+            const maliciousInclude = 'include ../../../../../../../etc/passwd\n';
+            fs.writeFileSync(mainFile, maliciousInclude);
+
+            // Process the file
+            const result = await processor.processFile(mainFile);
+
+            // Should have a security warning about rejected path
+            expect(result.warnings.some(w =>
+                w.message.includes('security') || w.message.includes('outside workspace')
+            )).toBe(true);
+
+            // Should not have errors (graceful rejection)
+            expect(result.errors).toHaveLength(0);
+        });
+
+        it('should reject absolute paths to system directories', async () => {
+            // Create workspace directory
+            const workspaceDir = path.join(testDir, 'workspace');
+            fs.mkdirSync(workspaceDir);
+
+            const mainFile = path.join(workspaceDir, 'main.journal');
+            const maliciousInclude = 'include /etc/passwd\n';
+            fs.writeFileSync(mainFile, maliciousInclude);
+
+            // Process the file
+            const result = await processor.processFile(mainFile);
+
+            // Should have a security warning
+            expect(result.warnings.some(w =>
+                w.message.includes('security') || w.message.includes('system directory')
+            )).toBe(true);
+        });
+
+        it('should accept valid relative paths within workspace', async () => {
+            // Create workspace directory with valid includes
+            const workspaceDir = path.join(testDir, 'workspace');
+            const subDir = path.join(workspaceDir, 'sub');
+            fs.mkdirSync(subDir, { recursive: true });
+
+            const includedFile = path.join(subDir, 'included.journal');
+            fs.writeFileSync(includedFile, '2024-01-01 Test transaction\n  Assets:Bank  $100\n  Income:Salary\n');
+
+            const mainFile = path.join(workspaceDir, 'main.journal');
+            fs.writeFileSync(mainFile, 'include sub/included.journal\n');
+
+            // Process the file
+            const result = await processor.processFile(mainFile);
+
+            // Should not have security warnings
+            expect(result.warnings.some(w =>
+                w.message.includes('security') || w.message.includes('outside workspace')
+            )).toBe(false);
+
+            // Should successfully process the included file
+            expect(result.filesProcessed).toContain(includedFile);
+        });
+
+        it('should accept valid absolute paths within workspace', async () => {
+            // Create workspace directory with valid includes
+            const workspaceDir = path.join(testDir, 'workspace');
+            const subDir = path.join(workspaceDir, 'sub');
+            fs.mkdirSync(subDir, { recursive: true });
+
+            const includedFile = path.join(subDir, 'included.journal');
+            fs.writeFileSync(includedFile, '2024-01-01 Test transaction\n  Assets:Bank  $100\n  Income:Salary\n');
+
+            const mainFile = path.join(workspaceDir, 'main.journal');
+            // Use absolute path within workspace
+            fs.writeFileSync(mainFile, `include ${includedFile}\n`);
+
+            // Process the file
+            const result = await processor.processFile(mainFile);
+
+            // Should not have security warnings
+            expect(result.warnings.some(w =>
+                w.message.includes('security')
+            )).toBe(false);
+
+            // Should successfully process the included file
+            expect(result.filesProcessed).toContain(includedFile);
+        });
+
+        it('should reject paths that resolve outside workspace after normalization', async () => {
+            // Create workspace directory
+            const workspaceDir = path.join(testDir, 'workspace');
+            const subDir = path.join(workspaceDir, 'sub');
+            fs.mkdirSync(subDir, { recursive: true });
+
+            const mainFile = path.join(subDir, 'main.journal');
+            // Path that looks ok but resolves outside workspace
+            const maliciousInclude = 'include ../../../outside.journal\n';
+            fs.writeFileSync(mainFile, maliciousInclude);
+
+            // Process the file
+            const result = await processor.processFile(mainFile);
+
+            // Should have a security warning
+            expect(result.warnings.some(w =>
+                w.message.includes('security') || w.message.includes('outside workspace')
+            )).toBe(true);
+        });
+
+        it('should handle Windows-style paths correctly', async () => {
+            // Create workspace directory
+            const workspaceDir = path.join(testDir, 'workspace');
+            fs.mkdirSync(workspaceDir);
+
+            const mainFile = path.join(workspaceDir, 'main.journal');
+            // Windows system directory
+            const maliciousInclude = 'include C:\\Windows\\System32\\config\\sam\n';
+            fs.writeFileSync(mainFile, maliciousInclude);
+
+            // Process the file
+            const result = await processor.processFile(mainFile);
+
+            // Should have a security warning on Windows, or not process on Unix
+            if (process.platform === 'win32') {
+                expect(result.warnings.some(w =>
+                    w.message.includes('security') || w.message.includes('system directory')
+                )).toBe(true);
+            }
+        });
+    });
 });

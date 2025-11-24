@@ -271,6 +271,7 @@ export const workspace = {
     }),
     onDidOpenTextDocument: jest.fn(() => ({ dispose: jest.fn() })),
     onDidSaveTextDocument: jest.fn(() => ({ dispose: jest.fn() })),
+    onDidChangeConfiguration: jest.fn(() => ({ dispose: jest.fn() })),
     workspaceFolders: [{
         uri: { scheme: 'file', authority: '', path: '/test', query: '', fragment: '', fsPath: '/test', with: jest.fn(), toString: () => 'file:///test', toJSON: () => ({ $mid: 1, fsPath: '/test', path: '/test', scheme: 'file' }) },
         name: 'test-workspace',
@@ -280,7 +281,12 @@ export const workspace = {
         readFile: jest.fn(),
         writeFile: jest.fn(),
     },
-    getConfiguration: jest.fn()
+    getConfiguration: jest.fn(() => ({
+        get: jest.fn(() => ''),
+        update: jest.fn(),
+        has: jest.fn(() => false),
+        inspect: jest.fn()
+    }))
 };
 
 export const languages = {
