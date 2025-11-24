@@ -24,7 +24,7 @@ describe('SimpleFuzzyMatcher - Abbreviation Matching', () => {
             const result = matcher.match('asc', items);
 
             expect(result.length).toBeGreaterThan(0);
-            expect(result[0].item).toBe('Assets:Checking');
+            expect(result[0]?.item).toBe('Assets:Checking');
         });
 
         test('matches "efd" to "Expenses:Food:Dining"', () => {
@@ -33,7 +33,7 @@ describe('SimpleFuzzyMatcher - Abbreviation Matching', () => {
             const result = matcher.match('efd', items);
 
             expect(result.length).toBeGreaterThan(0);
-            expect(result[0].item).toBe('Expenses:Food:Dining');
+            expect(result[0]?.item).toBe('Expenses:Food:Dining');
         });
     });
 
@@ -44,7 +44,7 @@ describe('SimpleFuzzyMatcher - Abbreviation Matching', () => {
             const result = matcher.match('exfo', items);
 
             expect(result.length).toBeGreaterThan(0);
-            expect(result[0].item).toBe('Expenses:Food');
+            expect(result[0]?.item).toBe('Expenses:Food');
         });
 
         test('matches "ascs" to "Assets:Checking:Savings"', () => {
@@ -53,7 +53,7 @@ describe('SimpleFuzzyMatcher - Abbreviation Matching', () => {
             const result = matcher.match('ascs', items);
 
             expect(result.length).toBeGreaterThan(0);
-            expect(result[0].item).toBe('Assets:Checking:Savings');
+            expect(result[0]?.item).toBe('Assets:Checking:Savings');
         });
 
         test('matches "expe" to "Expenses:Entertainment"', () => {
@@ -62,7 +62,7 @@ describe('SimpleFuzzyMatcher - Abbreviation Matching', () => {
             const result = matcher.match('expe', items);
 
             expect(result.length).toBeGreaterThan(0);
-            expect(result[0].item).toBe('Expenses:Entertainment');
+            expect(result[0]?.item).toBe('Expenses:Entertainment');
         });
     });
 
@@ -73,8 +73,8 @@ describe('SimpleFuzzyMatcher - Abbreviation Matching', () => {
             const result = matcher.match('ef', items);
 
             expect(result.length).toBe(2);
-            expect(result[0].item).toBe('effort'); // prefix match "ef..."
-            expect(result[1].item).toBe('Expenses:Food'); // abbreviation match
+            expect(result[0]?.item).toBe('effort'); // prefix match "ef..."
+            expect(result[1]?.item).toBe('Expenses:Food'); // abbreviation match
         });
 
         test('prioritizes component match over abbreviation match', () => {
@@ -83,7 +83,7 @@ describe('SimpleFuzzyMatcher - Abbreviation Matching', () => {
             const result = matcher.match('ef', items);
 
             expect(result.length).toBeGreaterThan(0);
-            expect(result[0].item).toBe('Something:ef'); // component match ":ef"
+            expect(result[0]?.item).toBe('Something:ef'); // component match ":ef"
         });
 
         test('abbreviation match appears after exact, prefix, and component matches', () => {
@@ -97,10 +97,10 @@ describe('SimpleFuzzyMatcher - Abbreviation Matching', () => {
             const result = matcher.match('ef', items);
 
             expect(result.length).toBe(4);
-            expect(result[0].item).toBe('ef');              // exact
-            expect(result[1].item).toBe('effort');          // prefix
-            expect(result[2].item).toBe('Something:ef');    // component
-            expect(result[3].item).toBe('Expenses:Food');   // abbreviation
+            expect(result[0]?.item).toBe('ef');              // exact
+            expect(result[1]?.item).toBe('effort');          // prefix
+            expect(result[2]?.item).toBe('Something:ef');    // component
+            expect(result[3]?.item).toBe('Expenses:Food');   // abbreviation
         });
     });
 
@@ -121,7 +121,7 @@ describe('SimpleFuzzyMatcher - Abbreviation Matching', () => {
             const result = matcher.match('AsC', items);
 
             expect(result.length).toBeGreaterThan(0);
-            expect(result[0].item).toBe('Assets:Checking');
+            expect(result[0]?.item).toBe('Assets:Checking');
         });
     });
 

@@ -44,8 +44,8 @@ describe('HLedgerCodeActionProvider', () => {
 
             expect(actions).toBeDefined();
             expect(actions?.length).toBe(1);
-            expect(actions?.[0].title).toBe('Add balance assertion');
-            expect(actions?.[0].kind).toEqual(vscode.CodeActionKind.Refactor);
+            expect(actions?.[0]?.title).toBe('Add balance assertion');
+            expect(actions?.[0]?.kind).toEqual(vscode.CodeActionKind.Refactor);
         });
 
         test('inserts balance assertion at end of line with correct format', () => {

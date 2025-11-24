@@ -1,3 +1,8 @@
+/**
+ * Thenable type for Promise-like objects.
+ */
+export type Thenable<T> = Promise<T> | { then<TResult1 = T, TResult2 = never>(onfulfilled?: ((value: T) => TResult1 | Thenable<TResult1>) | null, onrejected?: ((reason: any) => TResult2 | Thenable<TResult2>) | null): Thenable<TResult1 | TResult2>; };
+
 export enum CompletionItemKind {
     Text = 0,
     Method = 1,
@@ -137,7 +142,9 @@ export class CodeAction {
 
     constructor(title: string, kind?: CodeActionKind) {
         this.title = title;
-        this.kind = kind;
+        if (kind !== undefined) {
+            this.kind = kind;
+        }
     }
 }
 
@@ -689,18 +696,20 @@ export class MarkdownString {
     }
 }
 
+const createUriObject = (path: string): Uri => ({
+    scheme: 'file',
+    authority: '',
+    path,
+    query: '',
+    fragment: '',
+    fsPath: path,
+    with: jest.fn(),
+    toString: () => `file://${path}`,
+    toJSON: () => ({ $mid: 1, fsPath: path, path, scheme: 'file' })
+});
+
 export const Uri = {
-    file: (path: string) => ({
-        scheme: 'file',
-        authority: '',
-        path,
-        query: '',
-        fragment: '',
-        fsPath: path,
-        with: jest.fn(),
-        toString: () => `file://${path}`,
-        toJSON: () => ({ $mid: 1, fsPath: path, path, scheme: 'file' })
-    }),
+    file: createUriObject,
     parse: jest.fn()
 };
 
@@ -864,7 +873,37 @@ export class MockTextDocument implements TextDocument {
         const line = Math.max(0, Math.min(position.line, this.lines.length - 1));
         const lineText = this.lines[line] || '';
         const character = Math.max(0, Math.min(position.character, lineText.length));
-        
+
         return new Position(line, character);
     }
 }
+
+// Export vscode module as both named exports and default export for compatibility
+export default {
+    Uri,
+    workspace,
+    window,
+    commands,
+    languages,
+    DiagnosticSeverity,
+    CodeActionKind,
+    CompletionItemKind,
+    CompletionTriggerKind,
+    ConfigurationTarget,
+    EndOfLine,
+    ProgressLocation,
+    CodeActionTriggerKind,
+    Range,
+    Position,
+    Selection,
+    Diagnostic,
+    CodeAction,
+    CompletionItem,
+    WorkspaceEdit,
+    SemanticTokensLegend,
+    SemanticTokensBuilder,
+    MarkdownString,
+    Disposable,
+    createMockExtensionContext,
+    MockTextDocument
+};

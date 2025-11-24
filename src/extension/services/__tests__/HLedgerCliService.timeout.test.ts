@@ -17,11 +17,12 @@ describe('HLedgerCliService - Timeout Protection', () => {
         it('should apply timeout to PATH resolution exec call', async () => {
             const { HLedgerCliService } = await import('../HLedgerCliService');
 
-            // Mock successful hledger path resolution
-            mockExec.mockImplementation((command: string, options: any, callback: Function) => {
-                callback(null, { stdout: '/usr/bin/hledger\n' });
+            mockExec.mockImplementation(((command: string, options: child_process.ExecOptions | null | undefined, callback?: ((error: child_process.ExecException | null, stdout: string | Buffer, stderr: string | Buffer) => void)) => {
+                if (callback) {
+                    callback(null, '/usr/bin/hledger\n', '');
+                }
                 return {} as any;
-            });
+            }) as any);
 
             const service = new HLedgerCliService();
 
@@ -42,7 +43,7 @@ describe('HLedgerCliService - Timeout Protection', () => {
             if (pathResolutionCall) {
                 const options = pathResolutionCall[1];
                 expect(options).toBeDefined();
-                expect(options.timeout).toBe(5000);
+                expect(options?.timeout).toBe(5000);
             }
 
             service.dispose();
@@ -53,13 +54,15 @@ describe('HLedgerCliService - Timeout Protection', () => {
 
             const timeoutValues: number[] = [];
 
-            mockExec.mockImplementation((command: string, options: any, callback: Function) => {
+            mockExec.mockImplementation(((command: string, options: child_process.ExecOptions | null | undefined, callback?: ((error: child_process.ExecException | null, stdout: string | Buffer, stderr: string | Buffer) => void)) => {
                 if (options && typeof options.timeout === 'number') {
                     timeoutValues.push(options.timeout);
                 }
-                callback(null, { stdout: '/usr/bin/hledger\n' });
+                if (callback) {
+                    callback(null, '/usr/bin/hledger\n', '');
+                }
                 return {} as any;
-            });
+            }) as any);
 
             const service = new HLedgerCliService();
 
