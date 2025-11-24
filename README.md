@@ -189,6 +189,34 @@ Customize syntax colors for any theme:
 
 ---
 
+## 🔧 Troubleshooting
+
+Having issues? Check our comprehensive [**Troubleshooting Guide**](./TROUBLESHOOTING.md):
+
+- 🚫 [Completions not working](./TROUBLESHOOTING.md#completions-not-appearing)
+- 🐌 [Performance with large files](./TROUBLESHOOTING.md#slow-performance-with-large-files)
+- ⏱️ [CLI timeouts](./TROUBLESHOOTING.md#commands-timing-out)
+- 🎨 [Syntax highlighting issues](./TROUBLESHOOTING.md#no-colors--plain-text)
+
+**Quick fixes:**
+- Reload window: `Ctrl+Shift+P` → "Reload Window"
+- Manual completion: `Ctrl+Space`
+- Verify file extension: `.journal`, `.hledger`, or `.ledger`
+
+[**→ Full Troubleshooting Guide**](./TROUBLESHOOTING.md)
+
+---
+
+## 📚 Learning Resources
+
+New to hledger?
+- [Official Tutorial](https://hledger.org/quickstart.html)
+- [Example Files](https://hledger.org/examples.html)
+- [Accounting Concepts](https://hledger.org/accounting.html)
+- [CLI Reference](https://hledger.org/hledger.html)
+
+---
+
 ## 🤝 Contributing
 
 Contributions are welcome! Feel free to:

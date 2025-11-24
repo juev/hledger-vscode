@@ -45,44 +45,50 @@ export class HLedgerCliCommands implements vscode.Disposable {
             return;
         }
 
-        try {
-            const cliAvailable = await this.ensureCliAvailable();
-            if (!cliAvailable) {
-                return;
+        await vscode.window.withProgress({
+            location: vscode.ProgressLocation.Notification,
+            title: `Running hledger ${command}...`,
+            cancellable: false
+        }, async () => {
+            try {
+                const cliAvailable = await this.ensureCliAvailable();
+                if (!cliAvailable) {
+                    return;
+                }
+
+                // Get the journal file path
+                const journalFile = this.getJournalFilePath(document);
+
+                // Execute the command
+                let output: string;
+                let cliCommandName: string;
+                switch (command) {
+                    case 'balance':
+                        output = await this.cliService.runBalance(journalFile);
+                        cliCommandName = 'bs';
+                        break;
+                    case 'stats':
+                        output = await this.cliService.runStats(journalFile);
+                        cliCommandName = 'stats';
+                        break;
+                    case 'incomestatement':
+                        output = await this.cliService.runIncomestatement(journalFile);
+                        cliCommandName = 'incomestatement';
+                        break;
+                    default:
+                        throw new Error(`Unknown command: ${command}`);
+                }
+
+                // Format as comment and insert
+                const comment = this.cliService.formatAsComment(output, cliCommandName);
+                await this.insertCommentAtCursor(editor, comment);
+
+                vscode.window.showInformationMessage(`hledger ${cliCommandName} report inserted successfully.`);
+
+            } catch (error: unknown) {
+                vscode.window.showErrorMessage(`Failed to run hledger ${command}: ${error instanceof Error ? error.message : String(error)}`);
             }
-
-            // Get the journal file path
-            const journalFile = this.getJournalFilePath(document);
-
-            // Execute the command
-            let output: string;
-            let cliCommandName: string;
-            switch (command) {
-                case 'balance':
-                    output = await this.cliService.runBalance(journalFile);
-                    cliCommandName = 'bs';
-                    break;
-                case 'stats':
-                    output = await this.cliService.runStats(journalFile);
-                    cliCommandName = 'stats';
-                    break;
-                case 'incomestatement':
-                    output = await this.cliService.runIncomestatement(journalFile);
-                    cliCommandName = 'incomestatement';
-                    break;
-                default:
-                    throw new Error(`Unknown command: ${command}`);
-            }
-
-            // Format as comment and insert
-            const comment = this.cliService.formatAsComment(output, cliCommandName);
-            await this.insertCommentAtCursor(editor, comment);
-
-            vscode.window.showInformationMessage(`hledger ${cliCommandName} report inserted successfully.`);
-
-        } catch (error: unknown) {
-            vscode.window.showErrorMessage(`Failed to run hledger ${command}: ${error instanceof Error ? error.message : String(error)}`);
-        }
+        });
     }
 
     private async ensureCliAvailable(): Promise<boolean> {

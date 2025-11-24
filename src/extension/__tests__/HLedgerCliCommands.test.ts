@@ -6,6 +6,125 @@ import * as path from 'path';
 import { HLedgerCliCommands } from '../HLedgerCliCommands';
 import { HLedgerCliService } from '../services/HLedgerCliService';
 
+describe('HLedgerCliCommands - Progress Indicators', () => {
+    let tempDir: string;
+    let validJournalPath: string;
+    let mockService: HLedgerCliService;
+    let commands: HLedgerCliCommands;
+    let mockEditor: any;
+    let mockDocument: any;
+    let mockProgress: any;
+
+    beforeEach(() => {
+        tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'hledger-test-'));
+        validJournalPath = path.join(tempDir, 'test.journal');
+        fs.writeFileSync(validJournalPath, '2025-01-01 Test\n  Assets:Bank  $100\n');
+
+        mockService = new HLedgerCliService();
+        commands = new HLedgerCliCommands(mockService);
+
+        mockDocument = {
+            uri: { fsPath: validJournalPath },
+            languageId: 'hledger'
+        };
+
+        mockEditor = {
+            document: mockDocument,
+            selection: { active: { line: 0, character: 0 } },
+            edit: jest.fn().mockResolvedValue(true)
+        };
+
+        mockProgress = {
+            report: jest.fn()
+        };
+
+        const vscode = require('vscode');
+        vscode.window.activeTextEditor = mockEditor;
+        vscode.window.showInformationMessage = jest.fn();
+        vscode.window.showErrorMessage = jest.fn();
+    });
+
+    afterEach(() => {
+        commands.dispose();
+        mockService.dispose();
+        fs.rmSync(tempDir, { recursive: true, force: true });
+        delete process.env.LEDGER_FILE;
+    });
+
+    it('should show progress notification during balance command execution', async () => {
+        const vscode = require('vscode');
+        const withProgressSpy = jest.spyOn(vscode.window, 'withProgress');
+
+        jest.spyOn(mockService, 'isHledgerAvailable').mockResolvedValue(true);
+        jest.spyOn(mockService, 'runBalance').mockResolvedValue('Balance Report');
+        jest.spyOn(mockService, 'formatAsComment').mockReturnValue('; Balance Report');
+
+        await commands.insertBalance();
+
+        expect(withProgressSpy).toHaveBeenCalledWith(
+            expect.objectContaining({
+                location: vscode.ProgressLocation.Notification,
+                title: 'Running hledger balance...',
+                cancellable: false
+            }),
+            expect.any(Function)
+        );
+    });
+
+    it('should show progress notification during stats command execution', async () => {
+        const vscode = require('vscode');
+        const withProgressSpy = jest.spyOn(vscode.window, 'withProgress');
+
+        jest.spyOn(mockService, 'isHledgerAvailable').mockResolvedValue(true);
+        jest.spyOn(mockService, 'runStats').mockResolvedValue('Stats Report');
+        jest.spyOn(mockService, 'formatAsComment').mockReturnValue('; Stats Report');
+
+        await commands.insertStats();
+
+        expect(withProgressSpy).toHaveBeenCalledWith(
+            expect.objectContaining({
+                location: vscode.ProgressLocation.Notification,
+                title: 'Running hledger stats...',
+                cancellable: false
+            }),
+            expect.any(Function)
+        );
+    });
+
+    it('should show progress notification during incomestatement command execution', async () => {
+        const vscode = require('vscode');
+        const withProgressSpy = jest.spyOn(vscode.window, 'withProgress');
+
+        jest.spyOn(mockService, 'isHledgerAvailable').mockResolvedValue(true);
+        jest.spyOn(mockService, 'runIncomestatement').mockResolvedValue('Income Statement Report');
+        jest.spyOn(mockService, 'formatAsComment').mockReturnValue('; Income Statement Report');
+
+        await commands.insertIncomestatement();
+
+        expect(withProgressSpy).toHaveBeenCalledWith(
+            expect.objectContaining({
+                location: vscode.ProgressLocation.Notification,
+                title: 'Running hledger incomestatement...',
+                cancellable: false
+            }),
+            expect.any(Function)
+        );
+    });
+
+    it('should still show error messages when CLI fails inside progress', async () => {
+        const vscode = require('vscode');
+
+        jest.spyOn(mockService, 'isHledgerAvailable').mockResolvedValue(true);
+        jest.spyOn(mockService, 'runBalance').mockRejectedValue(new Error('CLI execution failed'));
+
+        await commands.insertBalance();
+
+        expect(vscode.window.showErrorMessage).toHaveBeenCalledWith(
+            expect.stringContaining('Failed to run hledger balance')
+        );
+    });
+});
+
 describe('HLedgerCliCommands - Command Injection Prevention', () => {
     let tempDir: string;
     let validJournalPath: string;

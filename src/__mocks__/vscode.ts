@@ -45,6 +45,12 @@ export enum EndOfLine {
     CRLF = 2
 }
 
+export enum ProgressLocation {
+    SourceControl = 1,
+    Window = 10,
+    Notification = 15
+}
+
 export interface CompletionContext {
     triggerKind: CompletionTriggerKind;
     triggerCharacter?: string;
@@ -294,6 +300,16 @@ export const languages = {
     registerDocumentSemanticTokensProvider: jest.fn(() => ({ dispose: jest.fn() })),
 };
 
+export interface OutputChannel {
+    name: string;
+    append(value: string): void;
+    appendLine(value: string): void;
+    clear(): void;
+    show(preserveFocus?: boolean): void;
+    hide(): void;
+    dispose(): void;
+}
+
 export const window = {
     showInformationMessage: jest.fn(),
     showErrorMessage: jest.fn(),
@@ -303,7 +319,16 @@ export const window = {
         document: null,
         edit: jest.fn(),
     },
-    withProgress: jest.fn(),
+    withProgress: jest.fn((options, task) => task({ report: jest.fn() })),
+    createOutputChannel: jest.fn((name: string): OutputChannel => ({
+        name,
+        append: jest.fn(),
+        appendLine: jest.fn(),
+        clear: jest.fn(),
+        show: jest.fn(),
+        hide: jest.fn(),
+        dispose: jest.fn(),
+    })),
 };
 
 export const commands = {
