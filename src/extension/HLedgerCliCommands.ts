@@ -151,7 +151,8 @@ export class HLedgerCliCommands implements vscode.Disposable {
      * @throws Error if path contains shell metacharacters or is inaccessible
      */
     private sanitizeJournalPath(filePath: string): string {
-        const dangerousChars = /[;|&`$()[\]{}^"\\<>]/;
+        // Dangerous shell metacharacters (excluding backslash for Windows path compatibility)
+        const dangerousChars = /[;|&`$()[\]{}^"<>]/;
 
         if (dangerousChars.test(filePath)) {
             throw new Error(`Path contains shell metacharacters: ${filePath}`);

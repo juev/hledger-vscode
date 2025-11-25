@@ -1,6 +1,6 @@
 // CompletionSuppressor.test.ts - Tests for completion suppression logic
 import { CompletionSuppressor } from '../strict/CompletionSuppressor';
-import { StrictCompletionContext, LineContext, PositionInfo } from '../strict/StrictPositionAnalyzer';
+import { StrictCompletionContext, LineContext } from '../strict/StrictPositionAnalyzer';
 import { CompletionType } from '../types';
 import { NumberFormatService } from '../services/NumberFormatService';
 

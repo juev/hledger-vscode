@@ -1,7 +1,6 @@
 // HLedgerCliService.timeout.test.ts - Tests for CLI timeout protection
 
 import * as child_process from 'child_process';
-import { promisify } from 'util';
 
 // Mock the exec function to verify timeout option is passed
 jest.mock('child_process');

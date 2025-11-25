@@ -234,12 +234,14 @@ describe('HLedgerCliCommands - Command Injection Prevention', () => {
             }).toThrow(/shell metacharacters/);
         });
 
-        it('should reject paths with backslash', () => {
-            const maliciousPath = `${validJournalPath}\\test`;
+        it('should allow paths with backslash (Windows compatibility)', () => {
+            // Backslash is allowed for Windows path compatibility
+            // The path will be rejected only if it doesn't exist, not as a shell metacharacter
+            const windowsStylePath = `${validJournalPath}\\test`;
 
             expect(() => {
-                (commands as any).sanitizeJournalPath(maliciousPath);
-            }).toThrow(/shell metacharacters/);
+                (commands as any).sanitizeJournalPath(windowsStylePath);
+            }).toThrow(/does not exist/);
         });
 
         it('should reject paths with less-than', () => {

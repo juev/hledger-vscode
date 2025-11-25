@@ -8,13 +8,6 @@ import { HLedgerTabCommand } from './HLedgerTabCommand';
 import { registerFormattingProviders } from './HLedgerFormattingProvider';
 import { HledgerSemanticTokensProvider, HLEDGER_SEMANTIC_TOKENS_LEGEND } from './HledgerSemanticTokensProvider';
 import { createServices } from './services';
-// Re-exports for public API
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-import { HLedgerConfig } from './HLedgerConfig';
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-import { HLedgerParser } from './HLedgerParser';
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-import { SimpleProjectCache } from './SimpleProjectCache';
 import { SimpleFuzzyMatcher } from './SimpleFuzzyMatcher';
 import { HLedgerCodeActionProvider } from './actions/HLedgerCodeActionProvider';
 import { HLedgerDiagnosticsProvider } from './diagnostics/HLedgerDiagnosticsProvider';

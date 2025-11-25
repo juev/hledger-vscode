@@ -481,7 +481,7 @@ export class HLedgerFileProcessor {
                             const validatedPath = this.validateIncludePath(basePath, includePath);
                             if (!validatedPath) {
                                 warnings.push({
-                                    file: basePath ?? 'unknown',
+                                    file: basePath,
                                     message: `Security: Include path rejected (outside workspace or system directory): ${includePath}`
                                 });
                                 continue;
