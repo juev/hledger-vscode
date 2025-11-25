@@ -34,7 +34,7 @@ export class SimpleProjectCache {
             const cached = this.cache.get(key);
             const lastModTime = this.modTimes.get(key);
 
-            if (cached && lastModTime && stats.mtimeMs <= lastModTime) {
+            if (cached && lastModTime && stats.mtimeMs === lastModTime) {
                 return cached;
             }
 

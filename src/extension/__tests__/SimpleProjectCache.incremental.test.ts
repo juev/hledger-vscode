@@ -66,6 +66,45 @@ describe('SimpleProjectCache - Incremental Updates', () => {
             expect(Array.from(cached!.accounts)[0]).toBe('Assets:Cash');
         });
 
+        it('should reject cache when file mtime is strictly less than stored mtime', () => {
+            // Create test file
+            fs.writeFileSync(testFile1, '2025-01-15 Test\n  Assets:Cash  100\n');
+
+            // Create mock parsed data with a future timestamp (simulating clock skew or race condition)
+            const mockData: ParsedHLedgerData = {
+                accounts: new Set([createAccountName('Assets:Cash')]),
+                definedAccounts: new Set(),
+                usedAccounts: new Set([createAccountName('Assets:Cash')]),
+                payees: new Set([createPayeeName('Test')]),
+                tags: new Set(),
+                commodities: new Set(),
+                aliases: new Map(),
+                tagValues: new Map(),
+                tagValueUsage: new Map(),
+                accountUsage: new Map(),
+                payeeUsage: new Map(),
+                tagUsage: new Map(),
+                commodityUsage: new Map(),
+                commodityFormats: new Map(),
+                decimalMark: null,
+                defaultCommodity: null,
+                lastDate: '2025-01-15'
+            };
+
+            // Get the file's mtimeMs
+            const stats = fs.statSync(testFile1);
+            const currentMtime = stats.mtimeMs;
+
+            // Store mtime in modTimes map with a value greater than current mtime
+            cache.set(testFile1, mockData);
+            const storedMtime = currentMtime + 1;
+            (cache as any).modTimes.set(testFile1, storedMtime);
+
+            // Request cached data - should return null because file mtime is less than stored mtime
+            const cached = cache.get(testFile1);
+            expect(cached).toBeNull();
+        });
+
         it('should return null when file modified after caching', (done) => {
             // Create test file
             fs.writeFileSync(testFile1, '2025-01-15 Test\n  Assets:Cash  100\n');

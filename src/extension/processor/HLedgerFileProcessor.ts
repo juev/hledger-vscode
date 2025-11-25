@@ -405,6 +405,47 @@ export class HLedgerFileProcessor {
     }
 
     /**
+     * Validates include path stays within workspace boundaries
+     *
+     * Security: Prevents path traversal attacks that could access system files
+     * outside the workspace. Rejects paths that:
+     * - Escape workspace boundaries using .. navigation
+     * - Target system directories (/etc, /sys, /proc, C:\Windows, etc.)
+     *
+     * @param basePath - Base directory path (workspace root)
+     * @param includePath - Relative or absolute include path from journal
+     * @returns Validated absolute path or null if rejected
+     */
+    private validateIncludePath(basePath: string, includePath: string): string | null {
+        const resolvedPath = path.isAbsolute(includePath)
+            ? path.resolve(includePath)
+            : path.resolve(basePath, includePath);
+
+        const normalizedBase = path.resolve(basePath);
+        const normalizedPath = path.resolve(resolvedPath);
+
+        // Check if resolved path is within workspace boundaries
+        if (!normalizedPath.startsWith(normalizedBase + path.sep) && normalizedPath !== normalizedBase) {
+            // Only log in non-test environments
+            if (!process.env.JEST_WORKER_ID) {
+                console.warn(`HLedger Security: Rejected include path outside workspace: ${includePath}`);
+            }
+            return null;
+        }
+
+        // Check if path targets system directory
+        if (this.isSystemDirectory(normalizedPath)) {
+            // Only log in non-test environments
+            if (!process.env.JEST_WORKER_ID) {
+                console.warn(`HLedger Security: Rejected include path to system directory: ${includePath}`);
+            }
+            return null;
+        }
+
+        return resolvedPath;
+    }
+
+    /**
      * Parses content with include directive processing
      */
     private async parseContent(content: string, basePath?: string, includeDepth = 0): Promise<{
@@ -435,9 +476,18 @@ export class HLedgerFileProcessor {
                         const includeMatch = token.trimmedLine.match(/^include\s+(.+)$/);
                         if (includeMatch?.[1]) {
                             const includePath = includeMatch[1].trim();
-                            const resolvedPath = path.isAbsolute(includePath)
-                                ? includePath
-                                : path.join(basePath, includePath);
+
+                            // Validate include path for security
+                            const validatedPath = this.validateIncludePath(basePath, includePath);
+                            if (!validatedPath) {
+                                warnings.push({
+                                    file: basePath ?? 'unknown',
+                                    message: `Security: Include path rejected (outside workspace or system directory): ${includePath}`
+                                });
+                                continue;
+                            }
+
+                            const resolvedPath = validatedPath;
 
                             try {
                                 // Check if file should be excluded
