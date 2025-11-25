@@ -1,6 +1,7 @@
 // services.ts - Service factory for extension dependency management
 // Provides lightweight service factory pattern to replace global mutable state
 
+import * as vscode from 'vscode';
 import { HLedgerConfig } from './HLedgerConfig';
 import { HLedgerParser } from './HLedgerParser';
 import { SimpleProjectCache } from './SimpleProjectCache';
@@ -12,8 +13,10 @@ import { ErrorNotificationHandler } from './utils/ErrorNotificationHandler';
  * Collection of core extension services with proper lifecycle management.
  * Provides centralized access to all major components with guaranteed
  * initialization order and cleanup.
+ *
+ * Extends vscode.Disposable to integrate with VS Code's subscription system.
  */
-export interface ExtensionServices {
+export interface ExtensionServices extends vscode.Disposable {
     /** Configuration and cache management service */
     readonly config: HLedgerConfig;
 
@@ -25,9 +28,6 @@ export interface ExtensionServices {
 
     /** Error notification handler for user-facing messages */
     readonly errorHandler: ErrorNotificationHandler;
-
-    /** Cleanup method to dispose all services */
-    dispose(): void;
 }
 
 /**
