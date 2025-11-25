@@ -496,9 +496,37 @@ export class HLedgerConfig {
     }
 
     getUndefinedAccounts(): AccountName[] {
-        // Return accounts that are used but not defined
+        // Return accounts that are used but not defined (including parent accounts)
         const defined = new Set(this.getDefinedAccounts());
-        return this.getUsedAccounts().filter(account => !defined.has(account));
+        return this.getUsedAccounts().filter(account =>
+            !this.isAccountDefinedOrHasDefinedParent(account, defined)
+        );
+    }
+
+    /**
+     * Checks if an account is defined or has a defined parent account.
+     * For example, if 'Assets' is defined, then 'Assets:Bank:Cash' is considered valid.
+     */
+    private isAccountDefinedOrHasDefinedParent(
+        accountName: AccountName,
+        definedAccounts: ReadonlySet<AccountName>
+    ): boolean {
+        // Check exact match first
+        if (definedAccounts.has(accountName)) {
+            return true;
+        }
+
+        // Check if any parent account is defined
+        // For 'Assets:Bank:Cash', check 'Assets:Bank' and 'Assets'
+        const parts = accountName.split(':');
+        for (let i = parts.length - 1; i > 0; i--) {
+            const parentAccount = parts.slice(0, i).join(':') as AccountName;
+            if (definedAccounts.has(parentAccount)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**

@@ -111,6 +111,80 @@ account Расходы:Еда
             expect(undefinedAccountDiag).toBeDefined();
             expect(undefinedAccountDiag?.severity).toBe(vscode.DiagnosticSeverity.Warning);
         });
+
+        test('no warning for sub-accounts when parent account is defined', () => {
+            const content = `
+account Assets
+account Expenses
+
+2024-01-01 Test
+    Expenses:Food:Lunch  $10.00
+    Assets:Bank:Cash  -$10.00
+`;
+            config.parseContent(content, '/test');
+
+            const document = new MockTextDocument(content.split('\n'), {
+                uri: vscode.Uri.file('/test/test.journal'),
+                languageId: 'hledger'
+            });
+
+            provider['validateDocument'](document);
+
+            const diagnostics = provider.diagnosticCollection.get(document.uri);
+            const undefinedAccountDiags = diagnostics?.filter(d => d.message.includes('not defined')) ?? [];
+            expect(undefinedAccountDiags.length).toBe(0);
+        });
+
+        test('warns about sub-accounts when only sibling parent is defined', () => {
+            const content = `
+account Assets:Bank
+
+2024-01-01 Test
+    Assets:Bank:Cash     $10.00
+    Liabilities:Card  -$10.00
+`;
+            config.parseContent(content, '/test');
+
+            const document = new MockTextDocument(content.split('\n'), {
+                uri: vscode.Uri.file('/test/test.journal'),
+                languageId: 'hledger'
+            });
+
+            provider['validateDocument'](document);
+
+            const diagnostics = provider.diagnosticCollection.get(document.uri);
+
+            // Assets:Bank:Cash should be valid (parent Assets:Bank is defined)
+            const cashDiag = diagnostics?.find(d => d.message.includes('Assets:Bank:Cash'));
+            expect(cashDiag).toBeUndefined();
+
+            // Liabilities:Card should be undefined
+            const cardDiag = diagnostics?.find(d => d.message.includes('Liabilities:Card'));
+            expect(cardDiag).toBeDefined();
+            expect(cardDiag?.severity).toBe(vscode.DiagnosticSeverity.Warning);
+        });
+
+        test('handles deep nested accounts with root parent defined', () => {
+            const content = `
+account Assets
+
+2024-01-01 Test
+    Assets:Bank:Checking:Main     $10.00
+    Assets:Cash:Wallet:Personal  -$10.00
+`;
+            config.parseContent(content, '/test');
+
+            const document = new MockTextDocument(content.split('\n'), {
+                uri: vscode.Uri.file('/test/test.journal'),
+                languageId: 'hledger'
+            });
+
+            provider['validateDocument'](document);
+
+            const diagnostics = provider.diagnosticCollection.get(document.uri);
+            const undefinedAccountDiags = diagnostics?.filter(d => d.message.includes('not defined')) ?? [];
+            expect(undefinedAccountDiags.length).toBe(0);
+        });
     });
 
     describe('Tag Format Validation', () => {

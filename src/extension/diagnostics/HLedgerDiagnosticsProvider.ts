@@ -91,7 +91,7 @@ export class HLedgerDiagnosticsProvider implements vscode.Disposable {
             return undefined;
         }
 
-        if (!definedAccounts.has(accountName)) {
+        if (!this.isAccountDefinedOrHasDefinedParent(accountName, definedAccounts)) {
             const matchStart = postingMatch.index ?? 0;
             const matchLength = postingMatch[1]?.length ?? accountName.length;
             const range = new vscode.Range(
@@ -112,6 +112,32 @@ export class HLedgerDiagnosticsProvider implements vscode.Disposable {
         }
 
         return undefined;
+    }
+
+    /**
+     * Checks if an account is defined or has a defined parent account.
+     * For example, if 'Assets' is defined, then 'Assets:Bank:Cash' is considered valid.
+     */
+    private isAccountDefinedOrHasDefinedParent(
+        accountName: AccountName,
+        definedAccounts: ReadonlySet<AccountName>
+    ): boolean {
+        // Check exact match first
+        if (definedAccounts.has(accountName)) {
+            return true;
+        }
+
+        // Check if any parent account is defined
+        // For 'Assets:Bank:Cash', check 'Assets:Bank' and 'Assets'
+        const parts = accountName.split(':');
+        for (let i = parts.length - 1; i > 0; i--) {
+            const parentAccount = parts.slice(0, i).join(':') as AccountName;
+            if (definedAccounts.has(parentAccount)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private validateTagFormat(
