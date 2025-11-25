@@ -154,30 +154,33 @@ export class HLedgerDiagnosticsProvider implements vscode.Disposable {
             return undefined;
         }
 
-        const noteWords = /\b(note|memo|description)\b/i;
-        if (noteWords.test(commentContent)) {
-            return undefined;
-        }
-
-        const orphanTagPattern = /(?<![:\p{L}\p{N}_-])([\p{L}\p{N}_-]+)(?=\s*[,]|\s*$)/gu;
-        const matches = Array.from(commentContent.matchAll(orphanTagPattern));
+        // In hledger, a tag is defined as: word followed by colon (tag: or tag:value)
+        // Words without colons are just comments, not tags
+        // Special tags like date: and date2: MUST have a value
+        const specialTagPattern = /\b(date2?):(\s*)(?=[,\s]|$)/g;
+        const matches = Array.from(commentContent.matchAll(specialTagPattern));
 
         if (matches.length > 0) {
             const firstMatch = matches[0];
             if (!firstMatch) {
                 return undefined;
             }
-            const firstCapture = firstMatch[1];
-            if (firstMatch.index !== undefined && firstCapture) {
-                const startPos = commentMatch.index + commentMatch[0].indexOf(commentContent) + firstMatch.index;
-                const endPos = startPos + firstCapture.length;
+            const tagName = firstMatch[1];
+            const tagValue = firstMatch[2];
 
-                const range = new vscode.Range(lineNumber, startPos, lineNumber, endPos);
+            // date: and date2: tags must have a value
+            if (tagName && (!tagValue || tagValue.trim() === '')) {
+                const commentStartIndex = commentMatch.index ?? 0;
+                const commentPrefixLength = commentMatch[0].indexOf(commentContent);
+                const startPos = commentStartIndex + commentPrefixLength + (firstMatch.index ?? 0);
+                const matchLength = firstMatch[0].length;
+
+                const range = new vscode.Range(lineNumber, startPos, lineNumber, startPos + matchLength);
 
                 const diagnostic = new vscode.Diagnostic(
                     range,
-                    `Tag '${firstCapture}' should have a value (use 'tag:value' format)`,
-                    vscode.DiagnosticSeverity.Information
+                    `Tag '${tagName}:' requires a value (e.g., '${tagName}:2024-01-01')`,
+                    vscode.DiagnosticSeverity.Warning
                 );
                 diagnostic.code = HLedgerDiagnosticCode.InvalidTagFormat;
                 diagnostic.source = 'hledger';

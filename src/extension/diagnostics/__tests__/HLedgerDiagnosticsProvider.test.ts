@@ -188,7 +188,10 @@ account Assets
     });
 
     describe('Tag Format Validation', () => {
-        test('suggests adding value to orphan tags', () => {
+        // In hledger, a tag is word+colon (tag: or tag:value)
+        // Words without colons are just comments, not tags
+
+        test('no warning for plain comments without tags', () => {
             const content = `
 2024-01-01 Test  ; project
     Expenses:Food  $10.00
@@ -204,10 +207,31 @@ account Assets
             provider['validateDocument'](document);
 
             const diagnostics = provider.diagnosticCollection.get(document.uri);
-            const tagDiag = diagnostics?.find(d => d.message.includes('project'));
-            expect(tagDiag).toBeDefined();
-            expect(tagDiag?.severity).toBe(vscode.DiagnosticSeverity.Information);
-            expect(tagDiag?.message).toContain('tag:value');
+            const tagDiags = diagnostics?.filter(d => d.code === 'invalid-tag-format') ?? [];
+            // 'project' is just a comment, not a tag (no colon)
+            expect(tagDiags.length).toBe(0);
+        });
+
+        test('no warning for date comments like ;; 01-03', () => {
+            const content = `
+;; 01-03
+2024-01-01 Test
+    Expenses:Food  $10.00
+    Assets:Cash  -$10.00
+`;
+            config.parseContent(content, '/test');
+
+            const document = new MockTextDocument(content.split('\n'), {
+                uri: vscode.Uri.file('/test/test.journal'),
+                languageId: 'hledger'
+            });
+
+            provider['validateDocument'](document);
+
+            const diagnostics = provider.diagnosticCollection.get(document.uri);
+            const tagDiags = diagnostics?.filter(d => d.code === 'invalid-tag-format') ?? [];
+            // '01-03' is just a comment, not a tag
+            expect(tagDiags.length).toBe(0);
         });
 
         test('accepts tags with values', () => {
@@ -226,13 +250,13 @@ account Assets
             provider['validateDocument'](document);
 
             const diagnostics = provider.diagnosticCollection.get(document.uri);
-            const tagDiags = diagnostics?.filter(d => d.message.includes('tag:value')) ?? [];
+            const tagDiags = diagnostics?.filter(d => d.code === 'invalid-tag-format') ?? [];
             expect(tagDiags.length).toBe(0);
         });
 
-        test('ignores note text (not tags)', () => {
+        test('warns about date: tag without value', () => {
             const content = `
-2024-01-01 Test  ; note: this is a memo
+2024-01-01 Test  ; date:
     Expenses:Food  $10.00
     Assets:Cash  -$10.00
 `;
@@ -246,7 +270,71 @@ account Assets
             provider['validateDocument'](document);
 
             const diagnostics = provider.diagnosticCollection.get(document.uri);
-            const tagDiags = diagnostics?.filter(d => d.message.includes('tag:value')) ?? [];
+            const tagDiag = diagnostics?.find(d => d.message.includes("date:"));
+            expect(tagDiag).toBeDefined();
+            expect(tagDiag?.severity).toBe(vscode.DiagnosticSeverity.Warning);
+            expect(tagDiag?.message).toContain('requires a value');
+        });
+
+        test('warns about date2: tag without value', () => {
+            const content = `
+2024-01-01 Test  ; date2:
+    Expenses:Food  $10.00
+    Assets:Cash  -$10.00
+`;
+            config.parseContent(content, '/test');
+
+            const document = new MockTextDocument(content.split('\n'), {
+                uri: vscode.Uri.file('/test/test.journal'),
+                languageId: 'hledger'
+            });
+
+            provider['validateDocument'](document);
+
+            const diagnostics = provider.diagnosticCollection.get(document.uri);
+            const tagDiag = diagnostics?.find(d => d.message.includes("date2:"));
+            expect(tagDiag).toBeDefined();
+            expect(tagDiag?.severity).toBe(vscode.DiagnosticSeverity.Warning);
+        });
+
+        test('accepts date: tag with value', () => {
+            const content = `
+2024-01-01 Test  ; date:2024-01-15
+    Expenses:Food  $10.00
+    Assets:Cash  -$10.00
+`;
+            config.parseContent(content, '/test');
+
+            const document = new MockTextDocument(content.split('\n'), {
+                uri: vscode.Uri.file('/test/test.journal'),
+                languageId: 'hledger'
+            });
+
+            provider['validateDocument'](document);
+
+            const diagnostics = provider.diagnosticCollection.get(document.uri);
+            const tagDiags = diagnostics?.filter(d => d.code === 'invalid-tag-format') ?? [];
+            expect(tagDiags.length).toBe(0);
+        });
+
+        test('no warning for regular tags without values', () => {
+            // Regular tags (not date/date2) can be without value
+            const content = `
+2024-01-01 Test  ; project:
+    Expenses:Food  $10.00
+    Assets:Cash  -$10.00
+`;
+            config.parseContent(content, '/test');
+
+            const document = new MockTextDocument(content.split('\n'), {
+                uri: vscode.Uri.file('/test/test.journal'),
+                languageId: 'hledger'
+            });
+
+            provider['validateDocument'](document);
+
+            const diagnostics = provider.diagnosticCollection.get(document.uri);
+            const tagDiags = diagnostics?.filter(d => d.code === 'invalid-tag-format') ?? [];
             expect(tagDiags.length).toBe(0);
         });
 
@@ -266,12 +354,12 @@ account Assets
             provider['validateDocument'](document);
 
             const diagnostics = provider.diagnosticCollection.get(document.uri);
-            const tagDiag = diagnostics?.find(d => d.message.includes('category'));
-            expect(tagDiag).toBeDefined();
-            expect(tagDiag?.severity).toBe(vscode.DiagnosticSeverity.Information);
+            const tagDiags = diagnostics?.filter(d => d.code === 'invalid-tag-format') ?? [];
+            // 'category' without colon is just a comment, not a tag - no warning
+            expect(tagDiags.length).toBe(0);
         });
 
-        test('handles Unicode tags', () => {
+        test('no warning for Unicode comments without colon', () => {
             const content = `
 2024-01-01 Test  ; проект
     Expenses:Food  $10.00
@@ -287,8 +375,9 @@ account Assets
             provider['validateDocument'](document);
 
             const diagnostics = provider.diagnosticCollection.get(document.uri);
-            const tagDiag = diagnostics?.find(d => d.message.includes('проект'));
-            expect(tagDiag).toBeDefined();
+            const tagDiags = diagnostics?.filter(d => d.code === 'invalid-tag-format') ?? [];
+            // 'проект' without colon is just a comment, not a tag - no warning
+            expect(tagDiags.length).toBe(0);
         });
     });
 
@@ -501,8 +590,11 @@ account Assets:Cash
 
     describe('Diagnostic Management', () => {
         test('clearDiagnostics removes diagnostics for document', () => {
+            // Use content that generates diagnostics (undefined account)
             const content = `
-2024-01-01 Test  ; project
+account Assets:Cash
+
+2024-01-01 Test
     Expenses:Food  $10.00
     Assets:Cash
 `;
@@ -523,8 +615,11 @@ account Assets:Cash
         });
 
         test('clearAll removes all diagnostics', () => {
+            // Use content that generates diagnostics (undefined account)
             const content = `
-2024-01-01 Test  ; project
+account Assets:Cash
+
+2024-01-01 Test
     Expenses:Food  $10.00
     Assets:Cash
 `;
