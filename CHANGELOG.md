@@ -1,5 +1,11 @@
 # Change Log
 
+## [0.4.1] - 2025-11-29
+
+### Changed
+- chore: update .vscodeignore to include documentation directory
+
+
 ## [0.4.0] - 2025-11-29
 
 ### Added
