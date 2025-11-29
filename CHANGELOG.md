@@ -1,5 +1,40 @@
 # Change Log
 
+## [0.4.0] - 2025-11-29
+
+### Added
+- Add comprehensive hledger journal format reference documentation
+- Implement payee extraction from date lines in StrictCompletionProvider
+- Enhance completion system with advanced features and validation
+- Add critical security fixes: path traversal and command injection prevention
+- Add esbuild target parameter for Node.js 20 and update CLAUDE.md documentation
+
+### Changed
+- Remove unused isZeroDateStart method from StrictPositionValidator to streamline code and improve maintainability.
+- Improve tag validation: enforce value requirement for date and date2 tags, update tests
+- Enhance account validation: consider parent accounts for undefined accounts
+- Phase 2: Architecture & Documentation improvements (v0.4.1)
+- Update src/extension/__tests__/grammar.test.ts
+- Update CLAUDE.md
+
+### Fixed
+- Fix PR #36 review comments: cache validation, Windows paths, unused imports
+- Fix ESLint module warning and glob security vulnerability
+- Fix HLedgerDiagnosticsProvider tests - cache key alignment
+
+### Removed
+- Remove unused assertTokenScopes function and TokenAssertion/GrammarTestCase interfaces
+
+### Other
+- Make ExtensionServices explicitly extend vscode.Disposable
+- Initial plan
+- Initial plan
+- Enable TypeScript strict mode for production builds
+- Initial plan
+- Initial plan
+- tests: grammar tests
+
+
 ## [0.3.15] - 2025-11-21
 
 ### Added
