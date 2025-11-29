@@ -126,9 +126,11 @@ Insert hledger reports directly into your journals as formatted comments.
 ```
 
 **Journal file resolution** (priority order):
-1. `LEDGER_FILE` environment variable
-2. `hledger.cli.journalFile` setting
-3. Current open file
+1. `LEDGER_FILE` environment variable (validated for security)
+2. `hledger.cli.journalFile` setting (validated for security)
+3. Current open file (trusted from VS Code)
+
+> **Security Note:** Paths from environment variables and configuration settings are validated to prevent command injection attacks. Shell metacharacters and inaccessible paths are rejected.
 
 ---
 
@@ -184,6 +186,34 @@ Customize syntax colors for any theme:
 - **Custom hledger path?** Set `hledger.cli.path` in settings
 - **Want more precision?** Enable semantic highlighting for enhanced token identification
 - **Multiple currencies?** The formatter handles them automatically
+
+---
+
+## 🔧 Troubleshooting
+
+Having issues? Check our comprehensive [**Troubleshooting Guide**](./TROUBLESHOOTING.md):
+
+- 🚫 [Completions not working](./TROUBLESHOOTING.md#completions-not-appearing)
+- 🐌 [Performance with large files](./TROUBLESHOOTING.md#slow-performance-with-large-files)
+- ⏱️ [CLI timeouts](./TROUBLESHOOTING.md#commands-timing-out)
+- 🎨 [Syntax highlighting issues](./TROUBLESHOOTING.md#no-colors--plain-text)
+
+**Quick fixes:**
+- Reload window: `Ctrl+Shift+P` → "Reload Window"
+- Manual completion: `Ctrl+Space`
+- Verify file extension: `.journal`, `.hledger`, or `.ledger`
+
+[**→ Full Troubleshooting Guide**](./TROUBLESHOOTING.md)
+
+---
+
+## 📚 Learning Resources
+
+New to hledger?
+- [Official Tutorial](https://hledger.org/quickstart.html)
+- [Example Files](https://hledger.org/examples.html)
+- [Accounting Concepts](https://hledger.org/accounting.html)
+- [CLI Reference](https://hledger.org/hledger.html)
 
 ---
 

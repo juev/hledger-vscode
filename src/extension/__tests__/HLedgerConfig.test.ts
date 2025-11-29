@@ -133,14 +133,48 @@ account Assets:Bank
     Assets:Cash      -50
     Expenses:Food    -50
 `;
-            
+
             config.parseContent(content);
-            
+
             expect(config.getUndefinedAccounts()).toEqual(expect.arrayContaining([
                 'Assets:Cash',
                 'Expenses:Food'
             ]));
             expect(config.getUndefinedAccounts()).not.toContain('Assets:Bank');
+        });
+
+        it('should consider sub-accounts valid if parent account is defined', () => {
+            const content = `
+account Assets
+account Expenses
+
+2025-01-15 Test
+    Assets:Bank:Cash     100
+    Assets:Wallet        -50
+    Expenses:Food:Lunch  -50
+`;
+
+            config.parseContent(content);
+
+            // All accounts should be valid because parent accounts are defined
+            expect(config.getUndefinedAccounts()).toHaveLength(0);
+        });
+
+        it('should return undefined accounts when no parent is defined', () => {
+            const content = `
+account Assets:Bank
+
+2025-01-15 Test
+    Assets:Bank:Cash     100
+    Liabilities:Card     -100
+`;
+
+            config.parseContent(content);
+
+            // Assets:Bank:Cash is valid (parent Assets:Bank is defined)
+            // Liabilities:Card is undefined (no parent defined)
+            expect(config.getUndefinedAccounts()).toEqual(['Liabilities:Card']);
+            expect(config.getUndefinedAccounts()).not.toContain('Assets:Bank:Cash');
         });
     });
     

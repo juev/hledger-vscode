@@ -69,7 +69,7 @@ export class HLedgerCliService implements vscode.Disposable {
         // Try to find hledger in PATH
         try {
             const command = process.platform === 'win32' ? 'where hledger' : 'which hledger';
-            const { stdout } = await exec(command);
+            const { stdout } = await exec(command, { timeout: 5000 });
             const candidates = stdout
                 .trim()
                 .split(/\r?\n/)

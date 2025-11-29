@@ -12,10 +12,9 @@ describe('TypeScript compilation and basic logic', () => {
     
     it('should export main classes', () => {
         const main = require('../main');
-        
+
         expect(typeof main.HLedgerConfig).toBe('function');
         expect(typeof main.WorkspaceCache).toBe('function');
-        expect(typeof main.getConfig).toBe('function');
         expect(typeof main.activate).toBe('function');
         expect(typeof main.deactivate).toBe('function');
     });

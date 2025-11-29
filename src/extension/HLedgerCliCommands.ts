@@ -1,6 +1,7 @@
 // HLedgerCliCommands.ts - CLI command handlers for hledger
 
 import * as vscode from 'vscode';
+import * as fs from 'fs';
 import { HLedgerCliService } from './services/HLedgerCliService';
 
 export class HLedgerCliCommands implements vscode.Disposable {
@@ -44,44 +45,50 @@ export class HLedgerCliCommands implements vscode.Disposable {
             return;
         }
 
-        try {
-            const cliAvailable = await this.ensureCliAvailable();
-            if (!cliAvailable) {
-                return;
+        await vscode.window.withProgress({
+            location: vscode.ProgressLocation.Notification,
+            title: `Running hledger ${command}...`,
+            cancellable: false
+        }, async () => {
+            try {
+                const cliAvailable = await this.ensureCliAvailable();
+                if (!cliAvailable) {
+                    return;
+                }
+
+                // Get the journal file path
+                const journalFile = this.getJournalFilePath(document);
+
+                // Execute the command
+                let output: string;
+                let cliCommandName: string;
+                switch (command) {
+                    case 'balance':
+                        output = await this.cliService.runBalance(journalFile);
+                        cliCommandName = 'bs';
+                        break;
+                    case 'stats':
+                        output = await this.cliService.runStats(journalFile);
+                        cliCommandName = 'stats';
+                        break;
+                    case 'incomestatement':
+                        output = await this.cliService.runIncomestatement(journalFile);
+                        cliCommandName = 'incomestatement';
+                        break;
+                    default:
+                        throw new Error(`Unknown command: ${command}`);
+                }
+
+                // Format as comment and insert
+                const comment = this.cliService.formatAsComment(output, cliCommandName);
+                await this.insertCommentAtCursor(editor, comment);
+
+                vscode.window.showInformationMessage(`hledger ${cliCommandName} report inserted successfully.`);
+
+            } catch (error: unknown) {
+                vscode.window.showErrorMessage(`Failed to run hledger ${command}: ${error instanceof Error ? error.message : String(error)}`);
             }
-
-            // Get the journal file path
-            const journalFile = this.getJournalFilePath(document);
-
-            // Execute the command
-            let output: string;
-            let cliCommandName: string;
-            switch (command) {
-                case 'balance':
-                    output = await this.cliService.runBalance(journalFile);
-                    cliCommandName = 'bs';
-                    break;
-                case 'stats':
-                    output = await this.cliService.runStats(journalFile);
-                    cliCommandName = 'stats';
-                    break;
-                case 'incomestatement':
-                    output = await this.cliService.runIncomestatement(journalFile);
-                    cliCommandName = 'incomestatement';
-                    break;
-                default:
-                    throw new Error(`Unknown command: ${command}`);
-            }
-
-            // Format as comment and insert
-            const comment = this.cliService.formatAsComment(output, cliCommandName);
-            await this.insertCommentAtCursor(editor, comment);
-
-            vscode.window.showInformationMessage(`hledger ${cliCommandName} report inserted successfully.`);
-
-        } catch (error: unknown) {
-            vscode.window.showErrorMessage(`Failed to run hledger ${command}: ${error instanceof Error ? error.message : String(error)}`);
-        }
+        });
     }
 
     private async ensureCliAvailable(): Promise<boolean> {
@@ -133,21 +140,59 @@ export class HLedgerCliCommands implements vscode.Disposable {
         return true;
     }
 
+    /**
+     * Sanitizes journal file path for shell safety.
+     *
+     * Prevents command injection through malicious paths containing
+     * shell metacharacters in environment variables or configuration settings.
+     *
+     * @param filePath - Journal file path from untrusted source
+     * @returns Sanitized path if valid
+     * @throws Error if path contains shell metacharacters or is inaccessible
+     */
+    private sanitizeJournalPath(filePath: string): string {
+        // Dangerous shell metacharacters (excluding backslash for Windows path compatibility)
+        const dangerousChars = /[;|&`$()[\]{}^"<>]/;
+
+        if (dangerousChars.test(filePath)) {
+            throw new Error(`Path contains shell metacharacters: ${filePath}`);
+        }
+
+        try {
+            fs.accessSync(filePath, fs.constants.R_OK);
+        } catch {
+            throw new Error(`Path does not exist or is not accessible: ${filePath}`);
+        }
+
+        return filePath;
+    }
+
+    /**
+     * Resolves journal file path with security validation.
+     *
+     * Priority order:
+     * 1. LEDGER_FILE environment variable (validated)
+     * 2. hledger.cli.journalFile setting (validated)
+     * 3. Current file (trusted - from VS Code)
+     *
+     * @param document - Current text document
+     * @returns Journal file path
+     */
     private getJournalFilePath(document: vscode.TextDocument): string {
         // First, try to get from environment variable LEDGER_FILE
         const ledgerFileFromEnv = process.env.LEDGER_FILE;
         if (ledgerFileFromEnv?.trim()) {
-            return ledgerFileFromEnv.trim();
+            return this.sanitizeJournalPath(ledgerFileFromEnv.trim());
         }
 
         // Second, try to get from extension configuration
         const config = vscode.workspace.getConfiguration('hledger');
         const journalFileFromConfig = config.get<string>('cli.journalFile', '');
         if (journalFileFromConfig?.trim()) {
-            return journalFileFromConfig.trim();
+            return this.sanitizeJournalPath(journalFileFromConfig.trim());
         }
 
-        // Finally, use the current file as fallback
+        // Current file is trusted (from VS Code URI), skip validation
         return document.uri.fsPath;
     }
 

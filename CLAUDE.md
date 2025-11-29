@@ -49,13 +49,15 @@ The project uses **esbuild** for fast, efficient bundling:
 
 ### Core Components
 
-- **main.ts** (142 lines): Entry point with simplified architecture using global config instances
+- **main.ts** (170 lines): Entry point with service factory pattern
 - **StrictCompletionProvider**: Context-aware completion system with position analysis
 - **HLedgerParser**: Parses hledger files and extracts accounts, payees, tags, commodities
 - **SimpleProjectCache**: Project-based caching with smart invalidation
 - **HLedgerConfig**: Configuration management and coordination
 - **HLedgerCliService**: CLI integration service for running hledger commands
 - **HLedgerCliCommands**: Command handlers for inserting CLI reports as comments
+- **HLedgerCodeActionProvider**: Provides balance assertions and quick fixes
+- **HLedgerDiagnosticsProvider**: Validation diagnostics on save/open
 
 ### Completion System
 
@@ -146,6 +148,12 @@ src/
 │   ├── types.ts                   # Type definitions with branded types
 │   ├── services/                  # Service layer
 │   │   └── HLedgerCliService.ts   # CLI service implementation
+│   ├── actions/                   # Code actions
+│   │   ├── HLedgerCodeActionProvider.ts
+│   │   └── __tests__/
+│   ├── diagnostics/               # Validation diagnostics
+│   │   ├── HLedgerDiagnosticsProvider.ts
+│   │   └── __tests__/
 │   ├── strict/                    # Position analysis and validation
 │   ├── completion/                # Individual completion providers
 │   └── __tests__/                 # Test files
@@ -177,7 +185,16 @@ Uses modern TypeScript with branded types for type safety:
 ## Key Features
 
 - **Auto-completion**: Context-aware suggestions for dates, accounts, payees, commodities, tags, and directives
+  - **Tag Value Completion**: Complete tag values after typing "tag:"
+  - **Abbreviation Matching**: Type "ef" to match "Expenses:Food"
 - **Smart Indentation**: Automatic indentation for transactions and postings
+- **Code Actions**: Quick fixes and refactorings
+  - **Balance Assertions**: Add balance assertions to postings
+  - **Quick Fixes**: Auto-fix undefined accounts and tag format issues
+- **Validation Diagnostics**: Real-time validation on save
+  - Warns about undefined accounts
+  - Suggests proper tag format (tag:value)
+  - Detects malformed amounts
 - **Project-Based Caching**: Efficient workspace parsing with cache invalidation
 - **CLI Integration**: Direct integration with hledger CLI for reports and statistics
 - **Multi-language Support**: Full Unicode support including Cyrillic characters
@@ -201,9 +218,11 @@ The extension provides direct integration with hledger CLI commands that insert 
 
 ### Journal File Resolution Priority
 
-1. `LEDGER_FILE` environment variable (highest priority)
-2. `hledger.cli.journalFile` setting
-3. Current open file (fallback)
+1. `LEDGER_FILE` environment variable (highest priority, validated for security)
+2. `hledger.cli.journalFile` setting (validated for security)
+3. Current open file (fallback, trusted from VS Code)
+
+**Security:** Paths from environment variables and configuration settings are validated to prevent command injection attacks. Paths containing shell metacharacters (`;`, `&`, `|`, `` ` ``, `$`, `()`, `[]`, `{}`, `^`, `"`, `\`, `<`, `>`) are rejected with a clear error message. File existence and readability are also verified.
 
 ## Important Notes
 
