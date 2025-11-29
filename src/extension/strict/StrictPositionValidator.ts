@@ -99,28 +99,6 @@ export class StrictPositionValidator implements PositionValidator {
     }
     
     /**
-     * Special check for digit "0" at line beginning
-     */
-    private isZeroDateStart(beforeCursor: string, character: number): boolean {
-        // "0" by itself - valid date beginning
-        if (/^0$/.test(beforeCursor) && character <= 1) {
-            return true;
-        }
-        
-        // "01", "02", ... "09" - valid months
-        if (/^0[1-9]$/.test(beforeCursor) && character <= 3) {
-            return true;
-        }
-        
-        // "01-", "01/", "02-" - valid partial dates
-        if (/^0[1-9][-/]?\d{0,2}$/.test(beforeCursor) && character <= 6) {
-            return true;
-        }
-        
-        return false;
-    }
-    
-    /**
      * Check if we are in the middle of existing text
      */
     private isInMiddleOfExistingText(line: string, character: number): boolean {
