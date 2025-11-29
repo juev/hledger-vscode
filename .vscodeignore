@@ -31,6 +31,7 @@ optimize-icon.js
 *-backup.*
 
 # Documentation (keep only README.md and LICENSE)
+docs/**
 CHANGELOG.md
 CLAUDE.md
 MIGRATION.md
