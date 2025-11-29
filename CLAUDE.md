@@ -2,9 +2,21 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Documentation Reference
+
+**Important:** Project documentation is located in the `docs/` directory. Always consult `docs/hledger.md` first for hledger format reference and feature specifications. For questions not covered in local docs, refer to the [official hledger documentation](https://hledger.org/hledger.html).
+
 ## Project Overview
 
-This is a Visual Studio Code extension for hledger (plain text accounting) that provides syntax highlighting, intelligent code completion, and smart indentation for `.journal`, `.hledger`, and `.ledger` files.
+This is a Visual Studio Code extension for hledger (plain text accounting) that provides:
+
+- Syntax highlighting (TextMate grammar + optional semantic tokens)
+- Intelligent code completion with context awareness
+- Smart indentation and document formatting
+- Validation diagnostics and quick fixes
+- CLI integration for reports
+
+Supported file extensions: `.journal`, `.hledger`, `.ledger`
 
 ## Development Commands
 
@@ -24,6 +36,7 @@ This is a Visual Studio Code extension for hledger (plain text accounting) that 
 The project uses **esbuild** for fast, efficient bundling:
 
 ### Configuration (`esbuild.js`)
+
 - **Entry Point**: `src/extension/main.ts`
 - **Output**: `out/extension/main.js`
 - **Format**: CommonJS (`cjs`)
@@ -35,12 +48,14 @@ The project uses **esbuild** for fast, efficient bundling:
 - **Development**: Source maps enabled for debugging
 
 ### TypeScript Configuration
+
 - **Target**: ES2018 for broad compatibility
 - **Module**: CommonJS
 - **Strict Mode**: Enabled with enhanced type checking
 - **Output**: `out/` directory (used by TypeScript compiler for development)
 
 ### Node.js Version Requirements
+
 - **Minimum**: Node.js 20.0.0 (specified in `package.json` engines)
 - **CI/CD**: GitHub Actions uses Node.js 20.x
 - **esbuild Target**: `node20` ensures output is optimized for Node.js 20 features
@@ -49,24 +64,48 @@ The project uses **esbuild** for fast, efficient bundling:
 
 ### Core Components
 
-- **main.ts** (170 lines): Entry point with service factory pattern
+- **main.ts** (~190 lines): Entry point with service factory pattern, explicit `vscode.Disposable` management
 - **StrictCompletionProvider**: Context-aware completion system with position analysis
-- **HLedgerParser**: Parses hledger files and extracts accounts, payees, tags, commodities
+- **HLedgerParser**: Parses hledger files using three-stage pipeline
 - **SimpleProjectCache**: Project-based caching with smart invalidation
 - **HLedgerConfig**: Configuration management and coordination
 - **HLedgerCliService**: CLI integration service for running hledger commands
 - **HLedgerCliCommands**: Command handlers for inserting CLI reports as comments
 - **HLedgerCodeActionProvider**: Provides balance assertions and quick fixes
 - **HLedgerDiagnosticsProvider**: Validation diagnostics on save/open
+- **HledgerSemanticTokensProvider**: Optional semantic tokens with caching and range support
+- **DocumentFormatter**: Full document formatting with alignment
+- **NumberFormatService**: International number formatting support
+
+### Highlighting System
+
+The extension provides **dual-layer highlighting**:
+
+1. **TextMate Grammar** (`syntaxes/hledger.tmLanguage.json`): Basic syntax highlighting, always active
+2. **Semantic Tokens** (optional): Enhanced highlighting with 14 token types, caching, and range-based tokenization for large files
+
+Semantic tokens are disabled by default and can be enabled via `hledger.semanticHighlighting.enabled`.
 
 ### Completion System
 
 The extension uses a **strict completion architecture** with:
 
 - Position-based analysis to determine completion context
+- **CompletionSuppressor** for intelligent suppression in forbidden zones
 - Context validation for accurate suggestions
 - Single completion type per position
 - Frequency-based prioritization for accounts and payees
+- Abbreviation matching (type "ef" to match "Expenses:Food")
+
+### Formatting System
+
+Document formatting support includes:
+
+- **Smart amount alignment**: Aligns amounts to a configurable column
+- **Comment alignment**: Aligns inline comments
+- **International number formats**: Supports different decimal marks (`.` or `,`) and group separators (` `, `,`, `.`)
+- **Balance assertion preservation**: Maintains balance assertions during formatting
+- **Multi-currency support**: Handles mixed currency postings
 
 ### Caching Strategy
 
@@ -97,16 +136,16 @@ The extension uses a **three-stage parsing pipeline** for processing hledger fil
 
 **Pipeline Stages:**
 
-1. **HLedgerLexer** - Tokenizes raw file content into typed tokens
+1. **HLedgerLexer** (`lexer/HLedgerLexer.ts`) - Tokenizes raw file content into typed tokens
    - Identifies transactions, postings, directives, comments
    - Produces structured token stream for AST building
 
-2. **HLedgerASTBuilder** - Builds structured data from tokens
+2. **HLedgerASTBuilder** (`ast/HLedgerASTBuilder.ts`) - Builds structured data from tokens
    - Extracts accounts, payees, tags, commodities from token stream
    - Maintains usage frequency counts for completion ranking
    - Tracks account definitions vs. usage for validation
 
-3. **HLedgerFileProcessor** - Handles file I/O and include directives
+3. **HLedgerFileProcessor** (`processor/HLedgerFileProcessor.ts`) - Handles file I/O and include directives
    - Processes include directives recursively with cycle detection
    - Manages file system operations and error handling
    - Returns processing results with errors/warnings for user notification
@@ -138,27 +177,62 @@ The parser maintains backward compatibility through a hybrid approach:
 
 ```plain
 src/
-├── extension/
-│   ├── main.ts                    # Entry point
-│   ├── StrictCompletionProvider.ts # Main completion logic
-│   ├── HLedgerParser.ts           # File parsing
-│   ├── SimpleProjectCache.ts      # Caching system
-│   ├── HLedgerConfig.ts           # Configuration
-│   ├── HLedgerCliCommands.ts      # CLI command handlers
-│   ├── types.ts                   # Type definitions with branded types
-│   ├── services/                  # Service layer
-│   │   └── HLedgerCliService.ts   # CLI service implementation
-│   ├── actions/                   # Code actions
-│   │   ├── HLedgerCodeActionProvider.ts
-│   │   └── __tests__/
-│   ├── diagnostics/               # Validation diagnostics
-│   │   ├── HLedgerDiagnosticsProvider.ts
-│   │   └── __tests__/
-│   ├── strict/                    # Position analysis and validation
-│   ├── completion/                # Individual completion providers
-│   └── __tests__/                 # Test files
-├── __mocks__/vscode.ts            # VS Code API mocks
-└── syntaxes/hledger.tmLanguage.json # TextMate grammar
+├── __mocks__/
+│   └── vscode.ts                      # VS Code API mocks for testing
+└── extension/
+    ├── main.ts                        # Entry point with service factory
+    ├── types.ts                       # Type definitions (branded types)
+    ├── services.ts                    # Service factory and types
+    ├── StrictCompletionProvider.ts    # Main completion logic
+    ├── HLedgerParser.ts               # File parsing orchestration
+    ├── HLedgerConfig.ts               # Configuration management
+    ├── HLedgerCliCommands.ts          # CLI command handlers
+    ├── HledgerSemanticTokensProvider.ts # Semantic tokens with caching
+    ├── HLedgerFormattingProvider.ts   # VS Code formatting integration
+    ├── DocumentFormatter.ts           # Formatting logic
+    ├── HLedgerEnterCommand.ts         # Smart Enter key handler
+    ├── HLedgerTabCommand.ts           # Smart Tab for amount alignment
+    ├── RegexPatterns.ts               # Regex pattern definitions
+    ├── SimpleProjectCache.ts          # Project-based caching
+    ├── SimpleFuzzyMatcher.ts          # Fuzzy matching utility
+    ├── ast/                           # Abstract Syntax Tree
+    │   └── HLedgerASTBuilder.ts       # AST construction from tokens
+    ├── lexer/                         # Tokenization
+    │   ├── HLedgerLexer.ts            # Token stream generation
+    │   └── __tests__/
+    ├── processor/                     # File processing
+    │   ├── HLedgerFileProcessor.ts    # Include handling, cycle detection
+    │   └── __tests__/
+    ├── services/                      # Service layer
+    │   ├── HLedgerCliService.ts       # CLI service implementation
+    │   ├── NumberFormatService.ts     # International number formatting
+    │   ├── index.ts
+    │   └── __tests__/
+    ├── strict/                        # Position analysis and validation
+    │   ├── StrictPositionAnalyzer.ts  # Position context detection
+    │   ├── StrictPositionValidator.ts # Validation rules
+    │   └── CompletionSuppressor.ts    # Intelligent completion filtering
+    ├── completion/                    # Individual completion providers
+    │   ├── AccountCompleter.ts
+    │   ├── CommodityCompleter.ts
+    │   ├── DateCompleter.ts
+    │   ├── PayeeCompleter.ts
+    │   └── TagCompleter.ts
+    ├── actions/                       # Code actions
+    │   ├── HLedgerCodeActionProvider.ts
+    │   └── __tests__/
+    ├── diagnostics/                   # Validation diagnostics
+    │   ├── HLedgerDiagnosticsProvider.ts
+    │   └── __tests__/
+    ├── utils/                         # Utilities
+    │   └── ErrorNotificationHandler.ts
+    └── __tests__/                     # Test files (28+ test files)
+
+docs/
+└── hledger.md                         # Comprehensive hledger format reference
+
+syntaxes/
+└── hledger.tmLanguage.json            # TextMate grammar
 ```
 
 ### Type System
@@ -173,10 +247,11 @@ Uses modern TypeScript with branded types for type safety:
 
 - Jest test framework with ts-jest preset
 - VS Code API mocked in `src/__mocks__/vscode.ts`
-- Comprehensive test coverage for completion providers
+- Comprehensive test coverage (28+ test files)
 - Test files follow `*.test.ts` naming pattern in `__tests__` directories
 
 **Grammar Testing:**
+
 - `grammar.test.ts` - Functional tests validating TextMate scope application
 - `grammar.snapshot.test.ts` - Snapshot tests for detecting unintended grammar changes
 - Uses `vscode-textmate` and `vscode-oniguruma` for accurate tokenization testing
@@ -187,13 +262,17 @@ Uses modern TypeScript with branded types for type safety:
 - **Auto-completion**: Context-aware suggestions for dates, accounts, payees, commodities, tags, and directives
   - **Tag Value Completion**: Complete tag values after typing "tag:"
   - **Abbreviation Matching**: Type "ef" to match "Expenses:Food"
+  - **Completion Suppression**: Intelligent filtering based on cursor position
+- **Syntax Highlighting**: Dual-layer system with TextMate grammar and optional semantic tokens
 - **Smart Indentation**: Automatic indentation for transactions and postings
+- **Document Formatting**: Amount and comment alignment with international number support
 - **Code Actions**: Quick fixes and refactorings
   - **Balance Assertions**: Add balance assertions to postings
   - **Quick Fixes**: Auto-fix undefined accounts and tag format issues
 - **Validation Diagnostics**: Real-time validation on save
-  - Warns about undefined accounts
+  - Warns about undefined accounts (considers parent accounts)
   - Suggests proper tag format (tag:value)
+  - Validates specific tags require values (date, date2)
   - Detects malformed amounts
 - **Project-Based Caching**: Efficient workspace parsing with cache invalidation
 - **CLI Integration**: Direct integration with hledger CLI for reports and statistics
@@ -205,6 +284,7 @@ Uses modern TypeScript with branded types for type safety:
 - `hledger.autoCompletion.maxResults`: Maximum completion results (default: 25)
 - `hledger.autoCompletion.maxAccountResults`: Maximum account results (default: 30)
 - `hledger.smartIndent.enabled`: Enable/disable smart indentation
+- `hledger.semanticHighlighting.enabled`: Enable/disable semantic tokens (default: false)
 - `hledger.cli.path`: Path to hledger executable (auto-detected if empty)
 - `hledger.cli.journalFile`: Path to main hledger journal file (uses LEDGER_FILE env var or current file if empty)
 
@@ -231,3 +311,4 @@ The extension provides direct integration with hledger CLI commands that insert 
 - The extension automatically activates for `.journal`, `.hledger`, and `.ledger` files
 - Uses strict TypeScript configuration with enhanced type checking
 - Legacy compatibility wrappers provided for deprecated APIs
+- Documentation in `docs/hledger.md` provides comprehensive hledger format reference
