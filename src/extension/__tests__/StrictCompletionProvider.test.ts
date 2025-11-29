@@ -254,6 +254,250 @@ describe('StrictCompletionProvider Integration', () => {
         });
     });
 
+    describe('Payee query extraction', () => {
+        // Tests for correct payee query extraction from date lines
+        // Bug fix: the regex should not capture the date portion
+
+        beforeEach(() => {
+            // Populate config with test payees using parseContent
+            // Multiple uses of each payee increase usage count for sorting
+            const testJournal = `
+2024-01-01 Amazon
+  Assets:Cash  -100 USD
+  Expenses:Shopping
+
+2024-01-02 Amazon
+  Assets:Cash  -50 USD
+  Expenses:Shopping
+
+2024-01-03 Amazon
+  Assets:Cash  -75 USD
+  Expenses:Shopping
+
+2024-01-04 Amazon
+  Assets:Cash  -25 USD
+  Expenses:Shopping
+
+2024-01-05 Amazon
+  Assets:Cash  -30 USD
+  Expenses:Shopping
+
+2024-01-06 Amazon Purchase
+  Assets:Cash  -200 USD
+  Expenses:Shopping
+
+2024-01-07 Amazon Purchase
+  Assets:Cash  -150 USD
+  Expenses:Shopping
+
+2024-01-08 Amazon Purchase
+  Assets:Cash  -100 USD
+  Expenses:Shopping
+
+2024-01-09 Amazon Prime
+  Assets:Cash  -15 USD
+  Expenses:Subscription
+
+2024-01-10 Amazon Prime
+  Assets:Cash  -15 USD
+  Expenses:Subscription
+
+2024-01-11 Grocery Store
+  Assets:Cash  -80 USD
+  Expenses:Food
+
+2024-01-12 Grocery Store
+  Assets:Cash  -90 USD
+  Expenses:Food
+
+2024-01-13 Grocery Store
+  Assets:Cash  -70 USD
+  Expenses:Food
+
+2024-01-14 Grocery Store
+  Assets:Cash  -60 USD
+  Expenses:Food
+
+2024-01-15 Test Payee
+  Assets:Cash  -10 USD
+  Expenses:Other
+`;
+            config.parseContent(testJournal, '/test');
+        });
+
+        it('should extract empty query after date and space', () => {
+            // Input: "2024-01-15 " -> Expected query: ""
+            const document = new MockTextDocument(['2024-01-15 ']);
+            const position = new vscode.Position(0, 11);
+
+            const completions = provider.provideCompletionItems(
+                document,
+                position,
+                mockCancellationToken,
+                mockCompletionContext
+            );
+
+            // With empty query, all payees should be returned (at least the 5 we defined)
+            expect(completions).toBeDefined();
+            expect(completions.length).toBeGreaterThanOrEqual(5);
+        });
+
+        it('should extract partial payee name after date', () => {
+            // Input: "2024-01-15 Ama" -> Expected query: "Ama"
+            const document = new MockTextDocument(['2024-01-15 Ama']);
+            const position = new vscode.Position(0, 14);
+
+            const completions = provider.provideCompletionItems(
+                document,
+                position,
+                mockCancellationToken,
+                mockCompletionContext
+            );
+
+            // Should filter to only Amazon-related payees (at least 3)
+            expect(completions).toBeDefined();
+            expect(completions.length).toBeGreaterThanOrEqual(3);
+            // Verify Amazon-related payees are included
+            const labels = completions.map(c => c.label.toString());
+            expect(labels).toContain('Amazon');
+            expect(labels).toContain('Amazon Purchase');
+            expect(labels).toContain('Amazon Prime');
+        });
+
+        it('should extract multi-word payee name after date', () => {
+            // Input: "2024-01-15 Amazon Pur" -> Expected query: "Amazon Pur"
+            // This was the failing case - the date was being captured
+            const document = new MockTextDocument(['2024-01-15 Amazon Pur']);
+            const position = new vscode.Position(0, 21);
+
+            const completions = provider.provideCompletionItems(
+                document,
+                position,
+                mockCancellationToken,
+                mockCompletionContext
+            );
+
+            // Should filter to "Amazon Purchase" only (matches "Amazon Pur")
+            expect(completions).toBeDefined();
+            expect(completions.length).toBeGreaterThan(0);
+            // The most relevant match should be "Amazon Purchase"
+            const labels = completions.map(c => c.label.toString());
+            expect(labels).toContain('Amazon Purchase');
+        });
+
+        it('should extract empty query after date with status marker and space', () => {
+            // Input: "2024-01-15 * " -> Expected query: ""
+            const document = new MockTextDocument(['2024-01-15 * ']);
+            const position = new vscode.Position(0, 13);
+
+            const completions = provider.provideCompletionItems(
+                document,
+                position,
+                mockCancellationToken,
+                mockCompletionContext
+            );
+
+            // With empty query, all payees should be returned (at least the 5 we defined)
+            expect(completions).toBeDefined();
+            expect(completions.length).toBeGreaterThanOrEqual(5);
+        });
+
+        it('should extract payee name after date with cleared status marker', () => {
+            // Input: "2024-01-15 * Amazon" -> Expected query: "Amazon"
+            const document = new MockTextDocument(['2024-01-15 * Amazon']);
+            const position = new vscode.Position(0, 19);
+
+            const completions = provider.provideCompletionItems(
+                document,
+                position,
+                mockCancellationToken,
+                mockCompletionContext
+            );
+
+            // Should filter to Amazon-related payees (at least 3)
+            expect(completions).toBeDefined();
+            expect(completions.length).toBeGreaterThanOrEqual(3);
+            const labels = completions.map(c => c.label.toString());
+            expect(labels).toContain('Amazon');
+        });
+
+        it('should extract multi-word payee after date with pending status marker', () => {
+            // Input: "2024-01-15 ! Amazon Purchase" -> Expected query: "Amazon Purchase"
+            const document = new MockTextDocument(['2024-01-15 ! Amazon Purchase']);
+            const position = new vscode.Position(0, 28);
+
+            const completions = provider.provideCompletionItems(
+                document,
+                position,
+                mockCancellationToken,
+                mockCompletionContext
+            );
+
+            expect(completions).toBeDefined();
+            // Should match "Amazon Purchase" exactly
+            const labels = completions.map(c => c.label.toString());
+            expect(labels).toContain('Amazon Purchase');
+        });
+
+        it('should extract payee after short date format', () => {
+            // Input: "01-15 Test" -> Expected query: "Test"
+            const document = new MockTextDocument(['01-15 Test']);
+            const position = new vscode.Position(0, 10);
+
+            const completions = provider.provideCompletionItems(
+                document,
+                position,
+                mockCancellationToken,
+                mockCompletionContext
+            );
+
+            // Should filter to Test-related payees
+            expect(completions).toBeDefined();
+            const labels = completions.map(c => c.label.toString());
+            expect(labels).toContain('Test Payee');
+        });
+
+        it('should extract payee after date with slash separator', () => {
+            // Input: "2024/01/15 Test" -> Expected query: "Test"
+            const document = new MockTextDocument(['2024/01/15 Test']);
+            const position = new vscode.Position(0, 15);
+
+            const completions = provider.provideCompletionItems(
+                document,
+                position,
+                mockCancellationToken,
+                mockCompletionContext
+            );
+
+            // Should filter to Test-related payees
+            expect(completions).toBeDefined();
+            const labels = completions.map(c => c.label.toString());
+            expect(labels).toContain('Test Payee');
+        });
+
+        it('should NOT include date in payee query - regression test', () => {
+            // The bug: when typing "2024-01-15 Amazon Pur", the query was
+            // incorrectly extracted as "2024-01-15 Amazon Pur" instead of "Amazon Pur"
+            // This caused no matches because no payee contains "2024"
+            const document = new MockTextDocument(['2024-01-15 Grocery']);
+            const position = new vscode.Position(0, 18);
+
+            const completions = provider.provideCompletionItems(
+                document,
+                position,
+                mockCancellationToken,
+                mockCompletionContext
+            );
+
+            // Should match "Grocery Store" since query is "Grocery"
+            // If bug exists, query would be "2024-01-15 Grocery" and no match found
+            expect(completions).toBeDefined();
+            expect(completions.length).toBeGreaterThan(0);
+            const labels = completions.map(c => c.label.toString());
+            expect(labels).toContain('Grocery Store');
+        });
+    });
+
     describe('Strict rules enforcement', () => {
         it('should enforce exactly one completion type per position', () => {
             const testCases = [

@@ -316,6 +316,21 @@ export class StrictCompletionProvider
       return "";
     }
 
+    // For payee completion after date, extract only the payee portion
+    // Date formats: YYYY-MM-DD, YYYY/MM/DD, YYYY.MM.DD, MM-DD, MM/DD
+    // Optional status markers: * (cleared) or ! (pending)
+    if (context.lineContext === "after_date") {
+      // Pattern captures: date + optional whitespace + optional status marker + whitespace + payee
+      // The payee part is everything after the last mandatory whitespace following date/status
+      const datePayeeMatch = beforeCursor.match(
+        /^(?:\d{4}[-/.]\d{1,2}[-/.]\d{1,2}|\d{1,2}[-/.]\d{1,2})\s*[*!]?\s+(.*)$/u
+      );
+      if (datePayeeMatch) {
+        return datePayeeMatch[1]?.trim() ?? "";
+      }
+      return "";
+    }
+
     // For other completion types, extract the word being typed at cursor position
     // Use Unicode-aware pattern to support international characters including spaces
     const match = beforeCursor.match(/[\p{L}\p{N}:_.\s-]*$/u);
