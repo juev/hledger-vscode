@@ -591,6 +591,61 @@ describe('StrictPositionAnalyzer', () => {
         });
     });
 
+    describe('Negative amounts in forbidden zone', () => {
+        it('should suppress completions after negative whole number amount with 2+ spaces', () => {
+            // Pattern: Account + spaces + negative amount + 2 spaces (forbidden zone)
+            const document = new MockTextDocument(['    Активы:Альфа:Текущий                -106  ']);
+            const position = new vscode.Position(0, 46); // End of line after 2 spaces
+
+            const result = analyzer.analyzePosition(document, position);
+
+            expect(result.lineContext).toBe(LineContext.Forbidden);
+            expect(result.suppressAll).toBe(true);
+        });
+
+        it('should allow commodity completion after negative whole number with single space', () => {
+            // Pattern: Account + spaces + negative amount + 1 space (commodity zone)
+            const document = new MockTextDocument(['    Активы:Альфа:Текущий                -106 ']);
+            const position = new vscode.Position(0, 45); // End of line after 1 space
+
+            const result = analyzer.analyzePosition(document, position);
+
+            expect(result.lineContext).toBe(LineContext.AfterAmount);
+            expect(result.allowedTypes).toContain('commodity');
+        });
+
+        it('should suppress completions after negative decimal amount (European format)', () => {
+            const document = new MockTextDocument(['    Account  -123,45  ']);
+            const position = new vscode.Position(0, 22); // End of line
+
+            const result = analyzer.analyzePosition(document, position);
+
+            expect(result.lineContext).toBe(LineContext.Forbidden);
+            expect(result.suppressAll).toBe(true);
+        });
+
+        it('should suppress completions after negative decimal amount (US format)', () => {
+            const document = new MockTextDocument(['    Account  -123.45  ']);
+            const position = new vscode.Position(0, 22); // End of line
+
+            const result = analyzer.analyzePosition(document, position);
+
+            expect(result.lineContext).toBe(LineContext.Forbidden);
+            expect(result.suppressAll).toBe(true);
+        });
+
+        it('should allow commodity completion after negative amount with single space', () => {
+            // Single space after amount = commodity completion zone
+            const document = new MockTextDocument(['    Account  -100 ']);
+            const position = new vscode.Position(0, 18); // After single space
+
+            const result = analyzer.analyzePosition(document, position);
+
+            expect(result.lineContext).toBe(LineContext.AfterAmount);
+            expect(result.allowedTypes).toContain('commodity');
+        });
+    });
+
     describe('Account validation - query starting with digit', () => {
         it('should suppress account completion when query starts with a digit', () => {
             const document = new MockTextDocument(['  123']);

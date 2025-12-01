@@ -388,17 +388,18 @@ export class StrictPositionAnalyzer {
      */
     private isForbiddenZoneContext(beforeCursor: string): boolean {
         // Simple patterns for common amount formats followed by two or more spaces
+        // All patterns support optional leading minus sign for negative amounts
         const forbiddenPatterns = [
-            // US format: 123.45 + two or more spaces (including crypto with many decimals)
-            /\d+\.\d+\s{2,}/u,
-            // European format: 123,45 + two or more spaces (including crypto with many decimals)
-            /\d+,\d+\s{2,}/u,
-            // Whole numbers: 123 + two or more spaces
-            /\d+\s{2,}/u,
-            // Grouped US format: 1,234.56 + two or more spaces
-            /\d{1,3}(?:,\d{3})*\.\d+\s{2,}/u,
-            // Grouped European format: 1.234,56 + two or more spaces or 1 234,56
-            /\d{1,3}(?:[.\s]\d{3})*,\d+\s{2,}/u,
+            // US format: -123.45 or 123.45 + two or more spaces
+            /-?\d+\.\d+\s{2,}/u,
+            // European format: -123,45 or 123,45 + two or more spaces
+            /-?\d+,\d+\s{2,}/u,
+            // Whole numbers: -123 or 123 + two or more spaces
+            /-?\d+\s{2,}/u,
+            // Grouped US format: -1,234.56 or 1,234.56 + two or more spaces
+            /-?\d{1,3}(?:,\d{3})*\.\d+\s{2,}/u,
+            // Grouped European format: -1.234,56 or 1.234,56 or 1 234,56 + two or more spaces
+            /-?\d{1,3}(?:[.\s]\d{3})*,\d+\s{2,}/u,
         ];
         
         // Test each pattern

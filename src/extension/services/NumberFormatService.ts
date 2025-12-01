@@ -172,18 +172,20 @@ export class NumberFormatService {
 
         if (useGrouping && groupSeparator) {
             // Pattern for grouped numbers with Unicode digit support
-            // Matches: 1,234.56 or 1 234,56 depending on format
+            // Matches: 1,234.56 or 1 234,56 or -1,234.56 depending on format
             // Support crypto amounts with many decimal places (up to 12)
+            // Optional leading minus sign for negative amounts
             const groupPattern = `\\p{N}{1,3}(?:${escapedGroupSeparator}\\p{N}{3})*`;
             const decimalPattern = `(?:${escapedDecimalMark}\\p{N}{1,12})?`;
-            pattern = `^${groupPattern}${decimalPattern}$`;
+            pattern = `^-?${groupPattern}${decimalPattern}$`;
         } else {
             // Pattern for simple numbers without grouping
-            // Matches: 1234.56 or 1234,56 depending on decimal mark
+            // Matches: 1234.56 or 1234,56 or -1234.56 depending on decimal mark
             // Support crypto amounts with many decimal places (up to 12)
+            // Optional leading minus sign for negative amounts
             const integerPattern = '\\p{N}+';
             const decimalPattern = `(?:${escapedDecimalMark}\\p{N}{1,12})?`;
-            pattern = `^${integerPattern}${decimalPattern}$`;
+            pattern = `^-?${integerPattern}${decimalPattern}$`;
         }
 
         const regex = new RegExp(pattern, 'u');
