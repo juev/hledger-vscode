@@ -298,7 +298,20 @@ export class StrictPositionAnalyzer {
                 return LineContext.AfterAmount;
             }
             
-            // Priority 2c: Default to account completion for other indented contexts
+            // Priority 2c: Check balance assertion with amount + single space (commodity completion)
+            // Pattern: Account  =-106 | or Account  = $500 |
+            // This must be checked BEFORE the general balance assertion context
+            if (this.isAfterBalanceAssertionAmount(beforeCursor)) {
+                return LineContext.AfterAmount;
+            }
+
+            // Priority 2d: Check balance assertion context - suppress completions
+            // Must be checked before falling back to InPosting
+            if (this.isInBalanceAssertionContext(beforeCursor)) {
+                return LineContext.Forbidden;
+            }
+
+            // Priority 2d: Default to account completion for other indented contexts
             return LineContext.InPosting;
         }
         
@@ -349,31 +362,101 @@ export class StrictPositionAnalyzer {
     }
     
     /**
+     * Determines if cursor is in a balance assertion context.
+     * Balance assertions use = or == markers, optionally with * for inclusive assertions.
+     * Completions should be suppressed in this context.
+     *
+     * Patterns matched:
+     * - account + spaces + = (single assertion)
+     * - account + spaces + == (total assertion)
+     * - account + spaces + =* (inclusive assertion)
+     * - account + spaces + ==* (total inclusive assertion)
+     * - Any of above followed by amounts, spaces, currency symbols
+     *
+     * Also supports virtual postings:
+     * - (Account) - unbalanced virtual posting
+     * - [Account] - balanced virtual posting
+     *
+     * Separator: Two or more spaces OR a single tab (hledger standard delimiter)
+     */
+    private isInBalanceAssertionContext(beforeCursor: string): boolean {
+        // Pattern matches: indentation + optional virtual posting brackets + account name +
+        // optional closing bracket + separator (2+ spaces OR tab) + assertion marker (=, ==, =*, ==*)
+        // Account name: Unicode letters, digits, colons, underscores, hyphens, spaces (for multi-word accounts)
+        // Virtual postings: (Account) or [Account]
+        // Separator: hledger requires 2+ spaces OR single tab between account and amount/assertion
+        const balanceAssertionPattern = /^\s+[(\[]?[\p{L}][\p{L}\p{N}:_\s-]*[)\]]?(\s{2,}|\t)={1,2}\*?/u;
+        return balanceAssertionPattern.test(beforeCursor);
+    }
+
+    /**
+     * Determines if cursor is after a balance assertion amount with a single trailing space.
+     * This indicates the user may want to add a commodity symbol.
+     *
+     * Patterns matched:
+     * - Account  =-106 | (balance assertion with amount + space)
+     * - Account  = $500 | (balance assertion with currency + amount + space)
+     * - Account  ==$1000 | (total assertion with amount + space)
+     * - Account  =* 500 | (inclusive assertion with amount + space)
+     *
+     * Also supports virtual postings:
+     * - (Account)  =-106 | (unbalanced virtual posting)
+     * - [Account]  = $500 | (balanced virtual posting)
+     *
+     * Supports all hledger amount formats: signs, scientific notation, currency prefixes.
+     */
+    private isAfterBalanceAssertionAmount(beforeCursor: string): boolean {
+        // Pattern: optional virtual posting brackets + account + separator + assertion marker + optional space + amount + single trailing space
+        // Virtual postings: (Account) or [Account]
+        // Account: Unicode letters, digits, colons, underscores, hyphens
+        // Separator: 2+ spaces OR tab
+        // Assertion: = or == with optional * for inclusive
+        // Amount: [sign]? [currency]? [sign]? number [decimal]? [scientific]?
+        // Must end with exactly one space (for commodity completion)
+        const pattern = /^\s+[(\[]?[\p{L}][\p{L}\p{N}:_\s-]*[)\]]?(\s{2,}|\t)={1,2}\*?\s*[+-]?[\p{Sc}]?[+-]?\d+(?:[.,]\d*)?(?:[Ee][+-]?\d+)?\s$/u;
+        return pattern.test(beforeCursor);
+    }
+
+    /**
      * Determines if cursor is in a forbidden zone - after amount + two or more spaces
      * Uses a simpler approach that checks for amount patterns followed by multiple spaces
+     *
+     * Supports extended hledger amount formats:
+     * - Sign placement: -100, +100, $-100, -$100
+     * - Scientific notation: 1E3, 1e-6, 1E+3
+     * - Trailing decimal: 10. (disambiguates integer from decimal)
+     * - Currency symbols: $100, €100, ₽100
      */
     private isForbiddenZoneContext(beforeCursor: string): boolean {
-        // Simple patterns for common amount formats followed by two or more spaces
+        // Extended patterns for amount formats followed by two or more spaces
+        // Pattern components:
+        // - [+-]? - optional leading sign
+        // - [\p{Sc}]? - optional currency symbol (Unicode currency category)
+        // - [+-]? - optional sign after currency
+        // - Number patterns (various formats)
+        // - Scientific notation: (?:[Ee][+-]?\d+)?
+        // - \s{2,} - two or more spaces (forbidden zone marker)
+
         const forbiddenPatterns = [
-            // US format: 123.45 + two or more spaces (including crypto with many decimals)
-            /\d+\.\d+\s{2,}/u,
-            // European format: 123,45 + two or more spaces (including crypto with many decimals)
-            /\d+,\d+\s{2,}/u,
-            // Whole numbers: 123 + two or more spaces
-            /\d+\s{2,}/u,
-            // Grouped US format: 1,234.56 + two or more spaces
-            /\d{1,3}(?:,\d{3})*\.\d+\s{2,}/u,
-            // Grouped European format: 1.234,56 + two or more spaces or 1 234,56
-            /\d{1,3}(?:[.\s]\d{3})*,\d+\s{2,}/u,
+            // US format with decimal: [sign]? [currency]? [sign]? digits.digits [scientific]? + 2+ spaces
+            /[+-]?[\p{Sc}]?[+-]?\d+\.\d*(?:[Ee][+-]?\d+)?\s{2,}/u,
+            // European format: [sign]? [currency]? [sign]? digits,digits [scientific]? + 2+ spaces
+            /[+-]?[\p{Sc}]?[+-]?\d+,\d+(?:[Ee][+-]?\d+)?\s{2,}/u,
+            // Whole numbers or scientific without decimal: [sign]? [currency]? [sign]? digits [scientific]? + 2+ spaces
+            /[+-]?[\p{Sc}]?[+-]?\d+(?:[Ee][+-]?\d+)?\s{2,}/u,
+            // Grouped US format: [sign]? [currency]? [sign]? grouped.decimal [scientific]? + 2+ spaces
+            /[+-]?[\p{Sc}]?[+-]?\d{1,3}(?:,\d{3})*\.\d*(?:[Ee][+-]?\d+)?\s{2,}/u,
+            // Grouped European format: [sign]? [currency]? [sign]? grouped,decimal [scientific]? + 2+ spaces
+            /[+-]?[\p{Sc}]?[+-]?\d{1,3}(?:[.\s]\d{3})*,\d+(?:[Ee][+-]?\d+)?\s{2,}/u,
         ];
-        
+
         // Test each pattern
         for (const pattern of forbiddenPatterns) {
             if (pattern.test(beforeCursor)) {
                 return true;
             }
         }
-        
+
         return false;
     }
 

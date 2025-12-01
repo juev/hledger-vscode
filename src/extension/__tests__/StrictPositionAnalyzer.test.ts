@@ -468,6 +468,281 @@ describe('StrictPositionAnalyzer', () => {
         });
     });
 
+    describe('Balance assertion context suppression', () => {
+        it('should suppress completions after balance assertion marker without amount', () => {
+            // Pattern: Account + spaces + =$ (balance assertion start)
+            const document = new MockTextDocument(['    Расходы:Красота и здоровье          =$']);
+            const position = new vscode.Position(0, 42); // After =$
+
+            const result = analyzer.analyzePosition(document, position);
+
+            expect(result.lineContext).toBe(LineContext.Forbidden);
+            expect(result.suppressAll).toBe(true);
+        });
+
+        it('should suppress completions after balance assertion with space', () => {
+            // Pattern: Account + spaces + = + space
+            const document = new MockTextDocument(['    Account          = $']);
+            const position = new vscode.Position(0, 24); // After "= $"
+
+            const result = analyzer.analyzePosition(document, position);
+
+            expect(result.lineContext).toBe(LineContext.Forbidden);
+            expect(result.suppressAll).toBe(true);
+        });
+
+        it('should suppress completions after total assertion with amount', () => {
+            // Pattern: Account + spaces + ==amount
+            const document = new MockTextDocument(['    Account          ==$500']);
+            const position = new vscode.Position(0, 27); // After "==$500"
+
+            const result = analyzer.analyzePosition(document, position);
+
+            expect(result.lineContext).toBe(LineContext.Forbidden);
+            expect(result.suppressAll).toBe(true);
+        });
+
+        it('should suppress completions after inclusive assertion marker', () => {
+            // Pattern: Account + spaces + =* + space
+            const document = new MockTextDocument(['    Account          =* $']);
+            const position = new vscode.Position(0, 25); // After "=* $"
+
+            const result = analyzer.analyzePosition(document, position);
+
+            expect(result.lineContext).toBe(LineContext.Forbidden);
+            expect(result.suppressAll).toBe(true);
+        });
+
+        it('should suppress completions when positioned between amount and balance assertion', () => {
+            // Pattern: Account + amount + spaces + = + amount
+            const document = new MockTextDocument(['    Account    $100  = $500']);
+            const position = new vscode.Position(0, 27); // After the balance assertion
+
+            const result = analyzer.analyzePosition(document, position);
+
+            expect(result.lineContext).toBe(LineContext.Forbidden);
+            expect(result.suppressAll).toBe(true);
+        });
+
+        it('should suppress completions for total inclusive assertion', () => {
+            // Pattern: Account + spaces + ==*
+            const document = new MockTextDocument(['    Account          ==* $100']);
+            const position = new vscode.Position(0, 29); // After "==* $100"
+
+            const result = analyzer.analyzePosition(document, position);
+
+            expect(result.lineContext).toBe(LineContext.Forbidden);
+            expect(result.suppressAll).toBe(true);
+        });
+
+        it('should allow account completion before balance assertion marker', () => {
+            // Cursor is still in account name area, not after =
+            const document = new MockTextDocument(['    Account']);
+            const position = new vscode.Position(0, 11); // Still in account name
+
+            const result = analyzer.analyzePosition(document, position);
+
+            expect(result.lineContext).toBe(LineContext.InPosting);
+            expect(result.allowedTypes).toContain('account');
+        });
+
+        it('should suppress completions for unbalanced virtual posting with balance assertion', () => {
+            // Pattern: (Account) + spaces + = (unbalanced virtual posting)
+            const document = new MockTextDocument(['    (Assets:Checking)  = $500']);
+            const position = new vscode.Position(0, 29); // After "= $500"
+
+            const result = analyzer.analyzePosition(document, position);
+
+            expect(result.lineContext).toBe(LineContext.Forbidden);
+            expect(result.suppressAll).toBe(true);
+        });
+
+        it('should suppress completions for balanced virtual posting with balance assertion', () => {
+            // Pattern: [Account] + spaces + = (balanced virtual posting)
+            const document = new MockTextDocument(['    [Budget:Food]  = $500']);
+            const position = new vscode.Position(0, 25); // After "= $500"
+
+            const result = analyzer.analyzePosition(document, position);
+
+            expect(result.lineContext).toBe(LineContext.Forbidden);
+            expect(result.suppressAll).toBe(true);
+        });
+
+        it('should suppress completions for virtual posting with total assertion', () => {
+            // Pattern: (Account) + spaces + == (total assertion on virtual posting)
+            const document = new MockTextDocument(['    (Assets:Bank)  == $1000']);
+            const position = new vscode.Position(0, 27); // After "== $1000"
+
+            const result = analyzer.analyzePosition(document, position);
+
+            expect(result.lineContext).toBe(LineContext.Forbidden);
+            expect(result.suppressAll).toBe(true);
+        });
+
+        it('should suppress completions with tab separator before balance assertion', () => {
+            // Pattern: Account + tab + = (single tab as separator)
+            const document = new MockTextDocument(['    Account\t= $500']);
+            const position = new vscode.Position(0, 19); // After "= $500"
+
+            const result = analyzer.analyzePosition(document, position);
+
+            expect(result.lineContext).toBe(LineContext.Forbidden);
+            expect(result.suppressAll).toBe(true);
+        });
+
+        it('should allow commodity completion after balance assertion amount with single space', () => {
+            // Pattern: Account  =-106 | (balance assertion + amount + single space)
+            const document = new MockTextDocument(['    Активы:Альфа:Текущий                =-106 ']);
+            const position = new vscode.Position(0, 46); // After single space
+
+            const result = analyzer.analyzePosition(document, position);
+
+            expect(result.lineContext).toBe(LineContext.AfterAmount);
+            expect(result.allowedTypes).toContain('commodity');
+        });
+
+        it('should allow commodity completion after balance assertion with positive amount', () => {
+            const document = new MockTextDocument(['    Account  =+500 ']);
+            const position = new vscode.Position(0, 19);
+
+            const result = analyzer.analyzePosition(document, position);
+
+            expect(result.lineContext).toBe(LineContext.AfterAmount);
+            expect(result.allowedTypes).toContain('commodity');
+        });
+
+        it('should allow commodity completion after total balance assertion amount', () => {
+            // Pattern: Account  ==$1000 | (double equals)
+            const document = new MockTextDocument(['    Account  ==$1000 ']);
+            const position = new vscode.Position(0, 21);
+
+            const result = analyzer.analyzePosition(document, position);
+
+            expect(result.lineContext).toBe(LineContext.AfterAmount);
+            expect(result.allowedTypes).toContain('commodity');
+        });
+
+        it('should allow commodity completion after inclusive balance assertion amount', () => {
+            // Pattern: Account  =* 500 |
+            const document = new MockTextDocument(['    Account  =* 500 ']);
+            const position = new vscode.Position(0, 20);
+
+            const result = analyzer.analyzePosition(document, position);
+
+            expect(result.lineContext).toBe(LineContext.AfterAmount);
+            expect(result.allowedTypes).toContain('commodity');
+        });
+
+        it('should allow commodity completion after balance assertion with space before amount', () => {
+            // Pattern: Account  = -106 | (space after =)
+            const document = new MockTextDocument(['    Account  = -106 ']);
+            const position = new vscode.Position(0, 20);
+
+            const result = analyzer.analyzePosition(document, position);
+
+            expect(result.lineContext).toBe(LineContext.AfterAmount);
+            expect(result.allowedTypes).toContain('commodity');
+        });
+
+        it('should allow commodity completion after balance assertion with decimal amount', () => {
+            const document = new MockTextDocument(['    Account  =-106.50 ']);
+            const position = new vscode.Position(0, 22);
+
+            const result = analyzer.analyzePosition(document, position);
+
+            expect(result.lineContext).toBe(LineContext.AfterAmount);
+            expect(result.allowedTypes).toContain('commodity');
+        });
+
+        it('should allow commodity completion after unbalanced virtual posting balance assertion', () => {
+            // Pattern: (Account)  =-106 | (unbalanced virtual posting with balance assertion)
+            const document = new MockTextDocument(['    (Account)  =-106 ']);
+            const position = new vscode.Position(0, 21);
+
+            const result = analyzer.analyzePosition(document, position);
+
+            expect(result.lineContext).toBe(LineContext.AfterAmount);
+            expect(result.allowedTypes).toContain('commodity');
+        });
+
+        it('should allow commodity completion after balanced virtual posting balance assertion', () => {
+            // Pattern: [Account]  = $500 | (balanced virtual posting with balance assertion)
+            const document = new MockTextDocument(['    [Account]  =500 ']);
+            const position = new vscode.Position(0, 20);
+
+            const result = analyzer.analyzePosition(document, position);
+
+            expect(result.lineContext).toBe(LineContext.AfterAmount);
+            expect(result.allowedTypes).toContain('commodity');
+        });
+
+        it('should allow commodity completion after virtual posting with Cyrillic balance assertion', () => {
+            // Pattern: (Активы:Текущий)  =-106 | (Cyrillic virtual posting with balance assertion)
+            const document = new MockTextDocument(['    (Активы:Текущий)  =-106 ']);
+            const position = new vscode.Position(0, 28);
+
+            const result = analyzer.analyzePosition(document, position);
+
+            expect(result.lineContext).toBe(LineContext.AfterAmount);
+            expect(result.allowedTypes).toContain('commodity');
+        });
+    });
+
+    describe('Negative amounts in forbidden zone', () => {
+        it('should suppress completions after negative whole number amount with 2+ spaces', () => {
+            // Pattern: Account + spaces + negative amount + 2 spaces (forbidden zone)
+            const document = new MockTextDocument(['    Активы:Альфа:Текущий                -106  ']);
+            const position = new vscode.Position(0, 46); // End of line after 2 spaces
+
+            const result = analyzer.analyzePosition(document, position);
+
+            expect(result.lineContext).toBe(LineContext.Forbidden);
+            expect(result.suppressAll).toBe(true);
+        });
+
+        it('should allow commodity completion after negative whole number with single space', () => {
+            // Pattern: Account + spaces + negative amount + 1 space (commodity zone)
+            const document = new MockTextDocument(['    Активы:Альфа:Текущий                -106 ']);
+            const position = new vscode.Position(0, 45); // End of line after 1 space
+
+            const result = analyzer.analyzePosition(document, position);
+
+            expect(result.lineContext).toBe(LineContext.AfterAmount);
+            expect(result.allowedTypes).toContain('commodity');
+        });
+
+        it('should suppress completions after negative decimal amount (European format)', () => {
+            const document = new MockTextDocument(['    Account  -123,45  ']);
+            const position = new vscode.Position(0, 22); // End of line
+
+            const result = analyzer.analyzePosition(document, position);
+
+            expect(result.lineContext).toBe(LineContext.Forbidden);
+            expect(result.suppressAll).toBe(true);
+        });
+
+        it('should suppress completions after negative decimal amount (US format)', () => {
+            const document = new MockTextDocument(['    Account  -123.45  ']);
+            const position = new vscode.Position(0, 22); // End of line
+
+            const result = analyzer.analyzePosition(document, position);
+
+            expect(result.lineContext).toBe(LineContext.Forbidden);
+            expect(result.suppressAll).toBe(true);
+        });
+
+        it('should allow commodity completion after negative amount with single space', () => {
+            // Single space after amount = commodity completion zone
+            const document = new MockTextDocument(['    Account  -100 ']);
+            const position = new vscode.Position(0, 18); // After single space
+
+            const result = analyzer.analyzePosition(document, position);
+
+            expect(result.lineContext).toBe(LineContext.AfterAmount);
+            expect(result.allowedTypes).toContain('commodity');
+        });
+    });
+
     describe('Account validation - query starting with digit', () => {
         it('should suppress account completion when query starts with a digit', () => {
             const document = new MockTextDocument(['  123']);
@@ -500,6 +775,211 @@ describe('StrictPositionAnalyzer', () => {
             expect(result.lineContext).toBe(LineContext.InPosting);
             expect(result.suppressAll).toBe(false);
             expect(result.allowedTypes).toContain('account');
+        });
+    });
+
+    describe('Extended amount formats in forbidden zone', () => {
+        describe('positive sign amounts', () => {
+            it('should suppress completions after +100 with 2+ spaces', () => {
+                const document = new MockTextDocument(['    Account  +100  ']);
+                const position = new vscode.Position(0, 19);
+
+                const result = analyzer.analyzePosition(document, position);
+
+                expect(result.lineContext).toBe(LineContext.Forbidden);
+                expect(result.suppressAll).toBe(true);
+            });
+
+            it('should allow commodity completion after +100 with single space', () => {
+                const document = new MockTextDocument(['    Account  +100 ']);
+                const position = new vscode.Position(0, 18);
+
+                const result = analyzer.analyzePosition(document, position);
+
+                expect(result.lineContext).toBe(LineContext.AfterAmount);
+                expect(result.allowedTypes).toContain('commodity');
+            });
+
+            it('should suppress completions after +123.45 with 2+ spaces', () => {
+                const document = new MockTextDocument(['    Account  +123.45  ']);
+                const position = new vscode.Position(0, 22);
+
+                const result = analyzer.analyzePosition(document, position);
+
+                expect(result.lineContext).toBe(LineContext.Forbidden);
+                expect(result.suppressAll).toBe(true);
+            });
+        });
+
+        describe('scientific notation amounts', () => {
+            it('should suppress completions after 1E3 with 2+ spaces', () => {
+                const document = new MockTextDocument(['    Account  1E3  ']);
+                const position = new vscode.Position(0, 18);
+
+                const result = analyzer.analyzePosition(document, position);
+
+                expect(result.lineContext).toBe(LineContext.Forbidden);
+                expect(result.suppressAll).toBe(true);
+            });
+
+            it('should allow commodity completion after 1E3 with single space', () => {
+                const document = new MockTextDocument(['    Account  1E3 ']);
+                const position = new vscode.Position(0, 17);
+
+                const result = analyzer.analyzePosition(document, position);
+
+                expect(result.lineContext).toBe(LineContext.AfterAmount);
+                expect(result.allowedTypes).toContain('commodity');
+            });
+
+            it('should suppress completions after 1e-6 with 2+ spaces', () => {
+                const document = new MockTextDocument(['    Account  1e-6  ']);
+                const position = new vscode.Position(0, 19);
+
+                const result = analyzer.analyzePosition(document, position);
+
+                expect(result.lineContext).toBe(LineContext.Forbidden);
+                expect(result.suppressAll).toBe(true);
+            });
+
+            it('should allow commodity completion after 1E+3 with single space', () => {
+                const document = new MockTextDocument(['    Account  1E+3 ']);
+                const position = new vscode.Position(0, 18);
+
+                const result = analyzer.analyzePosition(document, position);
+
+                expect(result.lineContext).toBe(LineContext.AfterAmount);
+                expect(result.allowedTypes).toContain('commodity');
+            });
+
+            it('should handle scientific notation with decimal', () => {
+                const document = new MockTextDocument(['    Account  1.5E3 ']);
+                const position = new vscode.Position(0, 19);
+
+                const result = analyzer.analyzePosition(document, position);
+
+                expect(result.lineContext).toBe(LineContext.AfterAmount);
+                expect(result.allowedTypes).toContain('commodity');
+            });
+        });
+
+        describe('trailing decimal amounts', () => {
+            it('should suppress completions after 10. with 2+ spaces', () => {
+                const document = new MockTextDocument(['    Account  10.  ']);
+                const position = new vscode.Position(0, 18);
+
+                const result = analyzer.analyzePosition(document, position);
+
+                expect(result.lineContext).toBe(LineContext.Forbidden);
+                expect(result.suppressAll).toBe(true);
+            });
+
+            it('should allow commodity completion after 10. with single space', () => {
+                const document = new MockTextDocument(['    Account  10. ']);
+                const position = new vscode.Position(0, 17);
+
+                const result = analyzer.analyzePosition(document, position);
+
+                expect(result.lineContext).toBe(LineContext.AfterAmount);
+                expect(result.allowedTypes).toContain('commodity');
+            });
+        });
+
+        describe('currency prefix amounts', () => {
+            it('should suppress completions after $100 with 2+ spaces', () => {
+                const document = new MockTextDocument(['    Account  $100  ']);
+                const position = new vscode.Position(0, 19);
+
+                const result = analyzer.analyzePosition(document, position);
+
+                expect(result.lineContext).toBe(LineContext.Forbidden);
+                expect(result.suppressAll).toBe(true);
+            });
+
+            it('should suppress completions after -$100 with 2+ spaces', () => {
+                const document = new MockTextDocument(['    Account  -$100  ']);
+                const position = new vscode.Position(0, 20);
+
+                const result = analyzer.analyzePosition(document, position);
+
+                expect(result.lineContext).toBe(LineContext.Forbidden);
+                expect(result.suppressAll).toBe(true);
+            });
+
+            it('should suppress completions after $-100 with 2+ spaces', () => {
+                const document = new MockTextDocument(['    Account  $-100  ']);
+                const position = new vscode.Position(0, 20);
+
+                const result = analyzer.analyzePosition(document, position);
+
+                expect(result.lineContext).toBe(LineContext.Forbidden);
+                expect(result.suppressAll).toBe(true);
+            });
+
+            it('should suppress completions after €100 with 2+ spaces', () => {
+                const document = new MockTextDocument(['    Account  €100  ']);
+                const position = new vscode.Position(0, 19);
+
+                const result = analyzer.analyzePosition(document, position);
+
+                expect(result.lineContext).toBe(LineContext.Forbidden);
+                expect(result.suppressAll).toBe(true);
+            });
+
+            it('should suppress completions after ₽100 with 2+ spaces', () => {
+                const document = new MockTextDocument(['    Account  ₽100  ']);
+                const position = new vscode.Position(0, 19);
+
+                const result = analyzer.analyzePosition(document, position);
+
+                expect(result.lineContext).toBe(LineContext.Forbidden);
+                expect(result.suppressAll).toBe(true);
+            });
+
+            it('should allow commodity completion after currency prefix amount with single space', () => {
+                // Currency-prefixed amounts typically don't need commodity completion
+                // but testing the pattern recognition
+                const document = new MockTextDocument(['    Account  $100 ']);
+                const position = new vscode.Position(0, 18);
+
+                const result = analyzer.analyzePosition(document, position);
+
+                // After $100 + space, should be AfterAmount context
+                expect(result.lineContext).toBe(LineContext.AfterAmount);
+                expect(result.allowedTypes).toContain('commodity');
+            });
+        });
+
+        describe('combined extended formats', () => {
+            it('should handle -$1,234.56 format', () => {
+                const document = new MockTextDocument(['    Account  -$1,234.56  ']);
+                const position = new vscode.Position(0, 25);
+
+                const result = analyzer.analyzePosition(document, position);
+
+                expect(result.lineContext).toBe(LineContext.Forbidden);
+                expect(result.suppressAll).toBe(true);
+            });
+
+            it('should handle $-1,234.56 format', () => {
+                const document = new MockTextDocument(['    Account  $-1,234.56  ']);
+                const position = new vscode.Position(0, 25);
+
+                const result = analyzer.analyzePosition(document, position);
+
+                expect(result.lineContext).toBe(LineContext.Forbidden);
+                expect(result.suppressAll).toBe(true);
+            });
+
+            it('should handle +1,234.56 grouped positive amount', () => {
+                const document = new MockTextDocument(['    Account  +1,234.56  ']);
+                const position = new vscode.Position(0, 24);
+
+                const result = analyzer.analyzePosition(document, position);
+
+                expect(result.lineContext).toBe(LineContext.Forbidden);
+                expect(result.suppressAll).toBe(true);
+            });
         });
     });
 });

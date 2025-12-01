@@ -138,10 +138,12 @@ The pipe `|` divides description into queryable `payee` and `note` fields.
 - **Account-Amount separator**: At least 2 spaces OR 1 tab required
 
 ```
-    expenses:food    $10.00     ; correct - 4 spaces before amount
+    expenses:food    $10.00     ; correct - 2+ spaces before amount
     expenses:food $10.00      ; correct - 1 tab before amount
-    expenses:food $10.00        ; WRONG - only 1 space before amount
+    expenses:food $10.00        ; WRONG - only 1 space, amount parsed as part of account name!
 ```
+
+**Critical:** The two-space (or tab) delimiter between account and amount is essential. With only one space, hledger will misparse the amount as part of the account name.
 
 ### Inferred Amounts
 
@@ -163,13 +165,44 @@ Individual postings can have their own status:
     ! expenses:pending    $100    ; Pending
 ```
 
+### Transaction Balancing
+
+All posting amounts in a transaction must sum to zero (within balancing precision).
+
+**Balancing precision** (since hledger 1.50):
+
+- Inferred from the highest decimal precision used in each commodity within the transaction
+- Cost amounts don't affect balancing precision
+- Example: if one posting uses `$1.00` and another `$1.5`, precision is 2 decimals
+
+**One amount can be omitted:**
+
+- hledger infers the missing amount to balance the transaction
+- Only ONE posting can have an omitted amount
+
+```
+2024-01-15 Example
+    expenses:food    $10.00
+    assets:cash              ; Inferred as $-10.00
+```
+
 ---
 
 ## Amounts and Commodities
 
 ### Amount Structure
 
-`[SIGN] [COMMODITY] QUANTITY [COMMODITY]`
+`[SIGN] [COMMODITY] [SIGN] QUANTITY [COMMODITY]`
+
+**Sign placement:** The minus sign can appear before the commodity, after the commodity, or both positions are valid:
+
+```
+-$100       ; Sign before commodity
+$-100       ; Sign after commodity (before quantity)
+-100 USD    ; Sign before quantity
+```
+
+All three forms are equivalent and represent negative $100.
 
 ### Quantity Formats
 
@@ -181,8 +214,13 @@ Individual postings can have their own status:
 | With grouping | `1,000.00` | US style |
 | European grouping | `1.000,00` | European style |
 | Space grouping | `1 000.00` | International |
-| Scientific | `1E-6` | Scientific notation |
+| Indian grouping | `1,00,00,000.00` | Lakh/crore style |
+| Scientific | `1E-6` | Scientific notation (also `EUR 1E3`) |
 | Negative | `-100` | Explicit sign |
+| Positive | `+100` | Explicit plus sign (optional) |
+| Trailing decimal | `10.` | Disambiguates integer from decimal |
+
+**Empty commodity:** Bare numbers without commodity symbol default to empty commodity (`""`).
 
 ### Commodity Placement
 
@@ -201,6 +239,14 @@ $100        ; Symbol before, no space
 | Code | `USD`, `EUR`, `BTC` | Uppercase codes |
 | Lowercase | `hours`, `units` | Lowercase names |
 | Quoted | `"chocolate bars"` | Multi-word or special chars |
+| Quoted special | `"ACME Inc."` | Contains period or other special chars |
+
+**Quoted commodities:** Use double quotes when commodity name contains spaces, periods, or other special characters:
+
+```
+3 "green apples"
+10 "ACME Inc." @ $50
+```
 
 ### Decimal Mark Disambiguation
 
@@ -221,10 +267,12 @@ The character NOT used as decimal mark can separate digit groups:
 
 ### Cost Notation
 
+Costs record the exchange rate at the time of a transaction. This differs from market prices (`P` directive) which track value over time.
+
 **Per-unit cost:**
 
 ```
-assets:stocks    10 AAPL @ $150     ; 10 shares at $150 each
+assets:stocks    10 AAPL @ $150     ; 10 shares at $150 each = $1500 total
 ```
 
 **Total cost:**
@@ -235,11 +283,27 @@ assets:stocks    10 AAPL @@ $1500   ; 10 shares for $1500 total
 
 **Inferred cost:**
 
+When exactly two commodities are used without explicit cost notation, hledger infers the cost:
+
 ```
 2024-01-15
     assets:euros     €100
-    assets:dollars  $-135           ; Cost inferred from balance
+    assets:dollars  $-135           ; Cost inferred as €100 @@ $135
 ```
+
+**Cost reporting:**
+
+- Use `-B/--cost` flag to convert amounts to their cost basis
+- Costs are normally positive amounts (though not required)
+- Cost amounts display with full decimal precision
+
+**Cost vs Market Price:**
+
+| Feature | Cost (`@`/`@@`) | Market Price (`P`) |
+|---------|-----------------|-------------------|
+| Where | In transaction posting | Separate directive |
+| When | Records historical exchange rate | Declares price at a point in time |
+| Use | Track purchase price | Report current value with `-V` |
 
 ---
 
@@ -413,6 +477,28 @@ assets            $0       =* $10000
 assets            $0       ==* $10000
 ```
 
+### Balance Assertion Without Amount
+
+Postings can have a balance assertion without an explicit amount. The posting contributes zero to the transaction but still validates the account balance:
+
+```
+; Balance assertion only (no amount)
+assets:checking           = $5000
+assets:checking           == $5000
+assets                    =* $10000
+assets                    ==* $10000
+
+; Compact format (no space after =)
+assets:checking           =$5000
+assets:checking           =$-1775.30
+```
+
+**Use cases:**
+
+- Verifying balance at a point in time without affecting transaction
+- Reconciliation checkpoints
+- Opening balance verification
+
 ### Balance Assignment
 
 Use `:=` to set balance (compute posting amount):
@@ -425,12 +511,25 @@ assets:checking    $0    := $5000    ; Sets balance to $5000
 
 - Checked in **date order** (not parse order)
 - **Enabled by default**; disable with `-I/--ignore-assertions`
-- **Include virtual postings** (not affected by `-R`)
+- **Include virtual postings** (not affected by `-R` flag or `real:` query)
 - **Work across include files** when using `include` directive
+- **Cost amounts in assertions are ignored** - don't affect whether assertion passes
+- **Balancing precision**: Since hledger 1.50, inferred from highest decimal precision per commodity in each transaction
+
+### Balance Assertions and Auto Postings
+
+**Warning:** Balance assertions ARE affected by `--auto` flag, which generates auto postings that can alter account balances.
+
+To avoid fragile assertions:
+
+- Either consistently use `--auto` with files containing balance assertions
+- Or avoid balance assertions on accounts affected by auto posting rules
 
 ---
 
 ## Virtual Postings
+
+Virtual postings are indicated by enclosing the **full** account name in parentheses or brackets. Parentheses or brackets *internal* to the account name have no special meaning.
 
 ### Unbalanced Virtual Postings (Parentheses)
 
@@ -441,9 +540,16 @@ assets:checking    $0    := $5000    ; Sets balance to $5000
 
 **Properties:**
 
-- NOT included in transaction balance check
+- **NOT required to balance** - exempt from the rule that postings must sum to zero
 - Excluded by `--real/-R` flag
 - Excluded by `real:1` query
+- With no amount, always infers zero amount
+
+**Use cases:**
+
+- Setting opening balances without equity account
+- Tracking notes or metadata that don't affect balances
+- One-off adjustments
 
 ### Balanced Virtual Postings (Brackets)
 
@@ -457,15 +563,30 @@ assets:checking    $0    := $5000    ; Sets balance to $5000
 
 **Properties:**
 
-- Must balance to zero (separately from real postings)
+- **Must balance to zero** (separately from real postings)
+- Bracketed postings balance among themselves
 - Excluded by `--real/-R` flag
 - Excluded by `real:1` query
 
-### Use Cases
+**Use cases:**
 
-- Setting opening balances without equity account
-- Budget envelope tracking
-- Tracking allocations without affecting real balances
+- Budget envelope tracking with balance requirement
+- Double-entry tracking alongside real transactions
+
+### Complete Example
+
+```
+2024-01-15 Buy food with cash, update budget envelopes
+    assets:cash                      $-10   ; <- real postings balance
+    expenses:food                     $10   ; <-
+    [assets:checking:budget:food]   $-10    ; <- balanced virtual postings balance
+    [assets:checking:available]      $10    ; <-
+    (tracking:purchase)               $1    ; <- unbalanced, not required to balance
+```
+
+### Balance Assertions and Virtual Postings
+
+**Important:** Balance assertions always consider BOTH real and virtual postings. They are NOT affected by `--real/-R` flag or `real:` query.
 
 ---
 
@@ -816,10 +937,14 @@ status:         ; Unmarked only
 ### Tag Queries
 
 ```
-tag:project
-tag:project=alpha
-tag:date=2024
+tag:project              ; Has tag named "project"
+tag:project=alpha        ; Tag "project" with value "alpha"
+tag:date=2024            ; Tag "date" containing "2024"
+tag:.=202[1-3]           ; Any tag with value matching regex 202[1-3]
+tag:project=             ; Tag "project" with empty value
 ```
+
+Tag queries support regex patterns for flexible matching.
 
 ### Payee and Note Queries
 
@@ -1007,6 +1132,8 @@ Virtual posting with no amount infers zero:
 (tracking:category)        ; Infers $0
 ```
 
+**Note:** Unbalanced virtual postings with no amount always infer zero amount.
+
 ### Scientific Notation
 
 ```
@@ -1025,6 +1152,14 @@ Accounts can hold multiple commodities:
     assets:wallet    0.01 BTC
     equity:opening
 ```
+
+**In reports:** hledger combines single-commodity amounts into multi-commodity display:
+
+```
+1 USD, 2 EUR, 3.456 TSLA
+```
+
+**Note:** You cannot write multi-commodity amounts directly in journal files - only single commodities per posting.
 
 ### Lot Prices (Ledger compatibility)
 
