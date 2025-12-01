@@ -589,6 +589,70 @@ describe('StrictPositionAnalyzer', () => {
             expect(result.lineContext).toBe(LineContext.Forbidden);
             expect(result.suppressAll).toBe(true);
         });
+
+        it('should allow commodity completion after balance assertion amount with single space', () => {
+            // Pattern: Account  =-106 | (balance assertion + amount + single space)
+            const document = new MockTextDocument(['    Активы:Альфа:Текущий                =-106 ']);
+            const position = new vscode.Position(0, 46); // After single space
+
+            const result = analyzer.analyzePosition(document, position);
+
+            expect(result.lineContext).toBe(LineContext.AfterAmount);
+            expect(result.allowedTypes).toContain('commodity');
+        });
+
+        it('should allow commodity completion after balance assertion with positive amount', () => {
+            const document = new MockTextDocument(['    Account  =+500 ']);
+            const position = new vscode.Position(0, 19);
+
+            const result = analyzer.analyzePosition(document, position);
+
+            expect(result.lineContext).toBe(LineContext.AfterAmount);
+            expect(result.allowedTypes).toContain('commodity');
+        });
+
+        it('should allow commodity completion after total balance assertion amount', () => {
+            // Pattern: Account  ==$1000 | (double equals)
+            const document = new MockTextDocument(['    Account  ==$1000 ']);
+            const position = new vscode.Position(0, 21);
+
+            const result = analyzer.analyzePosition(document, position);
+
+            expect(result.lineContext).toBe(LineContext.AfterAmount);
+            expect(result.allowedTypes).toContain('commodity');
+        });
+
+        it('should allow commodity completion after inclusive balance assertion amount', () => {
+            // Pattern: Account  =* 500 |
+            const document = new MockTextDocument(['    Account  =* 500 ']);
+            const position = new vscode.Position(0, 20);
+
+            const result = analyzer.analyzePosition(document, position);
+
+            expect(result.lineContext).toBe(LineContext.AfterAmount);
+            expect(result.allowedTypes).toContain('commodity');
+        });
+
+        it('should allow commodity completion after balance assertion with space before amount', () => {
+            // Pattern: Account  = -106 | (space after =)
+            const document = new MockTextDocument(['    Account  = -106 ']);
+            const position = new vscode.Position(0, 20);
+
+            const result = analyzer.analyzePosition(document, position);
+
+            expect(result.lineContext).toBe(LineContext.AfterAmount);
+            expect(result.allowedTypes).toContain('commodity');
+        });
+
+        it('should allow commodity completion after balance assertion with decimal amount', () => {
+            const document = new MockTextDocument(['    Account  =-106.50 ']);
+            const position = new vscode.Position(0, 22);
+
+            const result = analyzer.analyzePosition(document, position);
+
+            expect(result.lineContext).toBe(LineContext.AfterAmount);
+            expect(result.allowedTypes).toContain('commodity');
+        });
     });
 
     describe('Negative amounts in forbidden zone', () => {

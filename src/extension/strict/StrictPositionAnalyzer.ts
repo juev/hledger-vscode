@@ -298,7 +298,14 @@ export class StrictPositionAnalyzer {
                 return LineContext.AfterAmount;
             }
             
-            // Priority 2c: Check balance assertion context - suppress completions
+            // Priority 2c: Check balance assertion with amount + single space (commodity completion)
+            // Pattern: Account  =-106 | or Account  = $500 |
+            // This must be checked BEFORE the general balance assertion context
+            if (this.isAfterBalanceAssertionAmount(beforeCursor)) {
+                return LineContext.AfterAmount;
+            }
+
+            // Priority 2d: Check balance assertion context - suppress completions
             // Must be checked before falling back to InPosting
             if (this.isInBalanceAssertionContext(beforeCursor)) {
                 return LineContext.Forbidden;
@@ -380,6 +387,29 @@ export class StrictPositionAnalyzer {
         // Separator: hledger requires 2+ spaces OR single tab between account and amount/assertion
         const balanceAssertionPattern = /^\s+[(\[]?[\p{L}][\p{L}\p{N}:_\s-]*[)\]]?(\s{2,}|\t)={1,2}\*?/u;
         return balanceAssertionPattern.test(beforeCursor);
+    }
+
+    /**
+     * Determines if cursor is after a balance assertion amount with a single trailing space.
+     * This indicates the user may want to add a commodity symbol.
+     *
+     * Patterns matched:
+     * - Account  =-106 | (balance assertion with amount + space)
+     * - Account  = $500 | (balance assertion with currency + amount + space)
+     * - Account  ==$1000 | (total assertion with amount + space)
+     * - Account  =* 500 | (inclusive assertion with amount + space)
+     *
+     * Supports all hledger amount formats: signs, scientific notation, currency prefixes.
+     */
+    private isAfterBalanceAssertionAmount(beforeCursor: string): boolean {
+        // Pattern: account + separator + assertion marker + optional space + amount + single trailing space
+        // Account: Unicode letters, digits, colons, underscores, hyphens
+        // Separator: 2+ spaces OR tab
+        // Assertion: = or == with optional * for inclusive
+        // Amount: [sign]? [currency]? [sign]? number [decimal]? [scientific]?
+        // Must end with exactly one space (for commodity completion)
+        const pattern = /^\s+[\p{L}][\p{L}\p{N}:_\s-]*(\s{2,}|\t)={1,2}\*?\s*[+-]?[\p{Sc}]?[+-]?\d+(?:[.,]\d*)?(?:[Ee][+-]?\d+)?\s$/u;
+        return pattern.test(beforeCursor);
     }
 
     /**
