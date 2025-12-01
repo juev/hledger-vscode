@@ -24,6 +24,8 @@ These rules are essential when implementing validation or completion features:
 
 6. **Costs in assertions**: Cost amounts (`@`) in balance assertions are ignored.
 
+For complete syntax reference, see [docs/hledger.md](docs/hledger.md).
+
 ## Project Overview
 
 This is a Visual Studio Code extension for hledger (plain text accounting) that provides:

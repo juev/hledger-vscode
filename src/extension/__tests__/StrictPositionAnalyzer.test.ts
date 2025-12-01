@@ -578,6 +578,17 @@ describe('StrictPositionAnalyzer', () => {
             expect(result.lineContext).toBe(LineContext.Forbidden);
             expect(result.suppressAll).toBe(true);
         });
+
+        it('should suppress completions with tab separator before balance assertion', () => {
+            // Pattern: Account + tab + = (single tab as separator)
+            const document = new MockTextDocument(['    Account\t= $500']);
+            const position = new vscode.Position(0, 19); // After "= $500"
+
+            const result = analyzer.analyzePosition(document, position);
+
+            expect(result.lineContext).toBe(LineContext.Forbidden);
+            expect(result.suppressAll).toBe(true);
+        });
     });
 
     describe('Account validation - query starting with digit', () => {

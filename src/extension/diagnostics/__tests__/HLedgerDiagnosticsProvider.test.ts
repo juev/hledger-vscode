@@ -786,6 +786,48 @@ account Assets
             const amountDiags = diagnostics?.filter(d => d.message.includes('amount')) ?? [];
             expect(amountDiags.length).toBe(0);
         });
+
+        test('accepts balance assertion with space before negative amount', () => {
+            const content = `
+2024-01-01 Test
+    Assets:Checking  = -$500
+    Income:Salary
+`;
+            config.parseContent(content, '/test');
+
+            const document = new MockTextDocument(content.split('\n'), {
+                uri: vscode.Uri.file('/test/test.journal'),
+                languageId: 'hledger'
+            });
+
+            provider['validateDocument'](document);
+
+            const diagnostics = provider.diagnosticCollection.get(document.uri);
+            const amountDiags = diagnostics?.filter(d => d.message.includes('amount')) ?? [];
+            expect(amountDiags.length).toBe(0);
+        });
+
+        test('rejects balance assertion with explicit positive sign in non-scientific notation', () => {
+            // Explicit + is only valid in scientific notation (E+3), not regular amounts
+            const content = `
+2024-01-01 Test
+    Assets:Checking  =$+500
+    Income:Salary
+`;
+            config.parseContent(content, '/test');
+
+            const document = new MockTextDocument(content.split('\n'), {
+                uri: vscode.Uri.file('/test/test.journal'),
+                languageId: 'hledger'
+            });
+
+            provider['validateDocument'](document);
+
+            const diagnostics = provider.diagnosticCollection.get(document.uri);
+            const amountDiag = diagnostics?.find(d => d.message.includes('amount'));
+            expect(amountDiag).toBeDefined();
+            expect(amountDiag?.severity).toBe(vscode.DiagnosticSeverity.Error);
+        });
     });
 
     describe('Document Events', () => {

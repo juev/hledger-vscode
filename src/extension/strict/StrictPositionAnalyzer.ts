@@ -369,13 +369,16 @@ export class StrictPositionAnalyzer {
      * Also supports virtual postings:
      * - (Account) - unbalanced virtual posting
      * - [Account] - balanced virtual posting
+     *
+     * Separator: Two or more spaces OR a single tab (hledger standard delimiter)
      */
     private isInBalanceAssertionContext(beforeCursor: string): boolean {
         // Pattern matches: indentation + optional virtual posting brackets + account name +
-        // optional closing bracket + two or more spaces + assertion marker (=, ==, =*, ==*)
+        // optional closing bracket + separator (2+ spaces OR tab) + assertion marker (=, ==, =*, ==*)
         // Account name: Unicode letters, digits, colons, underscores, hyphens, spaces (for multi-word accounts)
         // Virtual postings: (Account) or [Account]
-        const balanceAssertionPattern = /^\s+[(\[]?[\p{L}][\p{L}\p{N}:_\s-]*[)\]]?\s{2,}={1,2}\*?/u;
+        // Separator: hledger requires 2+ spaces OR single tab between account and amount/assertion
+        const balanceAssertionPattern = /^\s+[(\[]?[\p{L}][\p{L}\p{N}:_\s-]*[)\]]?(\s{2,}|\t)={1,2}\*?/u;
         return balanceAssertionPattern.test(beforeCursor);
     }
 

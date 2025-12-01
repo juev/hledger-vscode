@@ -205,15 +205,24 @@ export class HLedgerDiagnosticsProvider implements vscode.Disposable {
             return undefined;
         }
 
-        // Valid amount patterns:
-        // -$10.00, $-10.00, $10.00, 10.00 USD, -10.00 USD, 10.00, ₽100.00, 1,000.00
-        // Scientific notation: 1E-6, 1E3, EUR 1E3
-        // Quoted commodities: 3 "green apples", 10 "ACME Inc."
-        // Balance assertions without amount: =$500, = $500, ==$500, =* $500, ==* $500
-        // Balance assignment: := $500
-        // Amount with balance assertion: $100 = $500
-        // Amount with cost: 10 AAPL @ $150
-        const validAmountPattern = /^(={1,2}\*?\s*|:=\s*)?-?[\p{Sc}\p{L}]*\s*-?[\p{N},.Ee+-]+\s*[\p{Sc}\p{L}]*(\s*"[^"]+")?\s*(\s*[@=:].*)?$/u;
+/**
+         * Validates amount format in hledger postings.
+         *
+         * Supported patterns:
+         * - Basic amounts: -$10.00, $-10.00, $10.00, 10.00 USD, -10.00 USD, 10.00
+         * - Unicode currencies: ₽100.00, €50.00
+         * - Grouped numbers: 1,000.00 (with , or . or space as group separator)
+         * - Scientific notation: 1E-6, 1E3, EUR 1E3 (E/e followed by optional single sign and digits)
+         * - Quoted commodities: 3 "green apples", 10 "ACME Inc."
+         * - Balance assertions without amount: =$500, = $500, ==$500, =* $500, ==* $500
+         * - Balance assignment: := $500
+         * - Amount with balance assertion: $100 = $500
+         * - Amount with cost: 10 AAPL @ $150
+         *
+         * Number structure requires at least one digit. Scientific notation must follow
+         * the pattern: E or e, optional single sign (+/-), then digits.
+         */
+        const validAmountPattern = /^(={1,2}\*?\s*|:=\s*)?-?[\p{Sc}\p{L}]*\s*-?[\p{N},.]+([Ee][+-]?[\p{N}]+)?\s*[\p{Sc}\p{L}]*(\s*"[^"]+")?\s*(\s*[@=:].*)?$/u;
         if (!validAmountPattern.test(amountPart)) {
             const amountStartPos = lineText.indexOf(amountPart);
             const range = new vscode.Range(
