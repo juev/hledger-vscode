@@ -1,5 +1,26 @@
 # Change Log
 
+## [0.4.2] - 2025-12-01
+
+### Added
+- Add support for commodity completion after virtual postings
+- Add commodity completion after balance assertion amounts
+- Add full hledger amount format support for completion context
+- Add balance assertion context suppression to StrictPositionAnalyzer
+
+### Changed
+- Enhance amount validation in HLedgerDiagnosticsProvider to support explicit positive signs
+- Enhance amount validation in HLedgerDiagnosticsProvider and expand test coverage
+- Enhance hledger documentation with critical syntax rules and clarifications
+- Enhance hledger documentation and validation logic
+- Enhance CLAUDE.md documentation with comprehensive project details
+
+### Fixed
+- Fix negative amounts not triggering commodity completion
+- Fix code review issues: tab separator, regex validation, docs
+- Fix balance assertion detection for virtual postings
+
+
 ## [0.4.1] - 2025-11-29
 
 ### Changed
