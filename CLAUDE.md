@@ -6,6 +6,24 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **Important:** Project documentation is located in the `docs/` directory. Always consult `docs/hledger.md` first for hledger format reference and feature specifications. For questions not covered in local docs, refer to the [official hledger documentation](https://hledger.org/hledger.html).
 
+### Critical hledger Syntax Rules (for validation/completion development)
+
+These rules are essential when implementing validation or completion features:
+
+1. **Two-space delimiter**: Account and amount MUST be separated by 2+ spaces or tab. Single space causes amount to be parsed as part of account name.
+
+2. **Balance assertions without amount**: Valid syntax - posting can have `= $500` without an amount before it. The posting contributes zero to transaction.
+
+3. **Virtual postings**:
+   - `()` = **Unbalanced** virtual (not required to balance)
+   - `[]` = **Balanced** virtual (must balance among themselves)
+
+4. **Sign placement**: `-$100`, `$-100`, and `-100 USD` are all valid and equivalent.
+
+5. **Balance assertions and auto postings**: Assertions ARE affected by `--auto` flag.
+
+6. **Costs in assertions**: Cost amounts (`@`) in balance assertions are ignored.
+
 ## Project Overview
 
 This is a Visual Studio Code extension for hledger (plain text accounting) that provides:
