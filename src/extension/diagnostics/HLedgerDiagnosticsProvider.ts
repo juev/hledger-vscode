@@ -207,8 +207,10 @@ export class HLedgerDiagnosticsProvider implements vscode.Disposable {
 
         // Valid amount patterns:
         // -$10.00, $-10.00, $10.00, 10.00 USD, -10.00 USD, 10.00, ₽100.00, 1,000.00
-        // Allows: optional minus before or after commodity, digits with , and ., optional commodity before/after
-        const validAmountPattern = /^-?[\p{Sc}\p{L}]*\s*-?[\p{N},.]+\s*[\p{Sc}\p{L}]*(\s*[@=].*)?$/u;
+        // Balance assertions without amount: =$500, = $500, ==$500, =* $500, ==* $500
+        // Amount with balance assertion: $100 = $500
+        // Amount with cost: 10 AAPL @ $150
+        const validAmountPattern = /^(={1,2}\*?\s*)?-?[\p{Sc}\p{L}]*\s*-?[\p{N},.]+\s*[\p{Sc}\p{L}]*(\s*[@=].*)?$/u;
         if (!validAmountPattern.test(amountPart)) {
             const amountStartPos = lineText.indexOf(amountPart);
             const range = new vscode.Range(

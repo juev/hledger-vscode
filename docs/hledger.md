@@ -169,7 +169,17 @@ Individual postings can have their own status:
 
 ### Amount Structure
 
-`[SIGN] [COMMODITY] QUANTITY [COMMODITY]`
+`[SIGN] [COMMODITY] [SIGN] QUANTITY [COMMODITY]`
+
+**Sign placement:** The minus sign can appear before the commodity, after the commodity, or both positions are valid:
+
+```
+-$100       ; Sign before commodity
+$-100       ; Sign after commodity (before quantity)
+-100 USD    ; Sign before quantity
+```
+
+All three forms are equivalent and represent negative $100.
 
 ### Quantity Formats
 
@@ -412,6 +422,28 @@ assets            $0       =* $10000
 ; Total with subaccounts
 assets            $0       ==* $10000
 ```
+
+### Balance Assertion Without Amount
+
+Postings can have a balance assertion without an explicit amount. The posting contributes zero to the transaction but still validates the account balance:
+
+```
+; Balance assertion only (no amount)
+assets:checking           = $5000
+assets:checking           == $5000
+assets                    =* $10000
+assets                    ==* $10000
+
+; Compact format (no space after =)
+assets:checking           =$5000
+assets:checking           =$-1775.30
+```
+
+**Use cases:**
+
+- Verifying balance at a point in time without affecting transaction
+- Reconciliation checkpoints
+- Opening balance verification
 
 ### Balance Assignment
 

@@ -522,6 +522,166 @@ account Assets
             const amountDiags = diagnostics?.filter(d => d.message.includes('amount')) ?? [];
             expect(amountDiags.length).toBe(0);
         });
+
+        test('accepts balance assertion only (compact format)', () => {
+            const content = `
+2024-01-01 Test
+    Assets:Checking  =$500
+    Income:Salary
+`;
+            config.parseContent(content, '/test');
+
+            const document = new MockTextDocument(content.split('\n'), {
+                uri: vscode.Uri.file('/test/test.journal'),
+                languageId: 'hledger'
+            });
+
+            provider['validateDocument'](document);
+
+            const diagnostics = provider.diagnosticCollection.get(document.uri);
+            const amountDiags = diagnostics?.filter(d => d.message.includes('amount')) ?? [];
+            expect(amountDiags.length).toBe(0);
+        });
+
+        test('accepts balance assertion only (with space)', () => {
+            const content = `
+2024-01-01 Test
+    Assets:Checking  = $500
+    Income:Salary
+`;
+            config.parseContent(content, '/test');
+
+            const document = new MockTextDocument(content.split('\n'), {
+                uri: vscode.Uri.file('/test/test.journal'),
+                languageId: 'hledger'
+            });
+
+            provider['validateDocument'](document);
+
+            const diagnostics = provider.diagnosticCollection.get(document.uri);
+            const amountDiags = diagnostics?.filter(d => d.message.includes('amount')) ?? [];
+            expect(amountDiags.length).toBe(0);
+        });
+
+        test('accepts balance assertion with negative amount', () => {
+            const content = `
+2024-01-01 Test
+    Assets:Checking  =$-1775.30
+    Expenses:Food
+`;
+            config.parseContent(content, '/test');
+
+            const document = new MockTextDocument(content.split('\n'), {
+                uri: vscode.Uri.file('/test/test.journal'),
+                languageId: 'hledger'
+            });
+
+            provider['validateDocument'](document);
+
+            const diagnostics = provider.diagnosticCollection.get(document.uri);
+            const amountDiags = diagnostics?.filter(d => d.message.includes('amount')) ?? [];
+            expect(amountDiags.length).toBe(0);
+        });
+
+        test('accepts amount with balance assertion', () => {
+            const content = `
+2024-01-01 Test
+    Assets:Checking  $100 = $500
+    Expenses:Food
+`;
+            config.parseContent(content, '/test');
+
+            const document = new MockTextDocument(content.split('\n'), {
+                uri: vscode.Uri.file('/test/test.journal'),
+                languageId: 'hledger'
+            });
+
+            provider['validateDocument'](document);
+
+            const diagnostics = provider.diagnosticCollection.get(document.uri);
+            const amountDiags = diagnostics?.filter(d => d.message.includes('amount')) ?? [];
+            expect(amountDiags.length).toBe(0);
+        });
+
+        test('accepts total balance assertion (double equals)', () => {
+            const content = `
+2024-01-01 Test
+    Assets:Checking  == $500
+    Income:Salary
+`;
+            config.parseContent(content, '/test');
+
+            const document = new MockTextDocument(content.split('\n'), {
+                uri: vscode.Uri.file('/test/test.journal'),
+                languageId: 'hledger'
+            });
+
+            provider['validateDocument'](document);
+
+            const diagnostics = provider.diagnosticCollection.get(document.uri);
+            const amountDiags = diagnostics?.filter(d => d.message.includes('amount')) ?? [];
+            expect(amountDiags.length).toBe(0);
+        });
+
+        test('accepts inclusive balance assertion', () => {
+            const content = `
+2024-01-01 Test
+    Assets:Checking  =* $500
+    Income:Salary
+`;
+            config.parseContent(content, '/test');
+
+            const document = new MockTextDocument(content.split('\n'), {
+                uri: vscode.Uri.file('/test/test.journal'),
+                languageId: 'hledger'
+            });
+
+            provider['validateDocument'](document);
+
+            const diagnostics = provider.diagnosticCollection.get(document.uri);
+            const amountDiags = diagnostics?.filter(d => d.message.includes('amount')) ?? [];
+            expect(amountDiags.length).toBe(0);
+        });
+
+        test('accepts total inclusive balance assertion', () => {
+            const content = `
+2024-01-01 Test
+    Assets:Checking  ==* $500
+    Income:Salary
+`;
+            config.parseContent(content, '/test');
+
+            const document = new MockTextDocument(content.split('\n'), {
+                uri: vscode.Uri.file('/test/test.journal'),
+                languageId: 'hledger'
+            });
+
+            provider['validateDocument'](document);
+
+            const diagnostics = provider.diagnosticCollection.get(document.uri);
+            const amountDiags = diagnostics?.filter(d => d.message.includes('amount')) ?? [];
+            expect(amountDiags.length).toBe(0);
+        });
+
+        test('accepts amount with cost notation', () => {
+            const content = `
+2024-01-01 Test
+    Assets:Stocks  10 AAPL @ $150
+    Assets:Checking
+`;
+            config.parseContent(content, '/test');
+
+            const document = new MockTextDocument(content.split('\n'), {
+                uri: vscode.Uri.file('/test/test.journal'),
+                languageId: 'hledger'
+            });
+
+            provider['validateDocument'](document);
+
+            const diagnostics = provider.diagnosticCollection.get(document.uri);
+            const amountDiags = diagnostics?.filter(d => d.message.includes('amount')) ?? [];
+            expect(amountDiags.length).toBe(0);
+        });
     });
 
     describe('Document Events', () => {
