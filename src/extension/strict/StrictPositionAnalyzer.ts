@@ -298,7 +298,13 @@ export class StrictPositionAnalyzer {
                 return LineContext.AfterAmount;
             }
             
-            // Priority 2c: Default to account completion for other indented contexts
+            // Priority 2c: Check balance assertion context - suppress completions
+            // Must be checked before falling back to InPosting
+            if (this.isInBalanceAssertionContext(beforeCursor)) {
+                return LineContext.Forbidden;
+            }
+
+            // Priority 2d: Default to account completion for other indented contexts
             return LineContext.InPosting;
         }
         
@@ -348,6 +354,26 @@ export class StrictPositionAnalyzer {
         return false;
     }
     
+    /**
+     * Determines if cursor is in a balance assertion context.
+     * Balance assertions use = or == markers, optionally with * for inclusive assertions.
+     * Completions should be suppressed in this context.
+     *
+     * Patterns matched:
+     * - account + spaces + = (single assertion)
+     * - account + spaces + == (total assertion)
+     * - account + spaces + =* (inclusive assertion)
+     * - account + spaces + ==* (total inclusive assertion)
+     * - Any of above followed by amounts, spaces, currency symbols
+     */
+    private isInBalanceAssertionContext(beforeCursor: string): boolean {
+        // Pattern matches: indentation + account name + two or more spaces + assertion marker (=, ==, =*, ==*)
+        // followed by optional amount/currency content
+        // Account name: Unicode letters, digits, colons, underscores, hyphens, spaces (for multi-word accounts)
+        const balanceAssertionPattern = /^\s+[\p{L}][\p{L}\p{N}:_\s-]*\s{2,}={1,2}\*?/u;
+        return balanceAssertionPattern.test(beforeCursor);
+    }
+
     /**
      * Determines if cursor is in a forbidden zone - after amount + two or more spaces
      * Uses a simpler approach that checks for amount patterns followed by multiple spaces

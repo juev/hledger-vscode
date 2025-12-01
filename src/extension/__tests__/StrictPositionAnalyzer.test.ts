@@ -468,6 +468,85 @@ describe('StrictPositionAnalyzer', () => {
         });
     });
 
+    describe('Balance assertion context suppression', () => {
+        it('should suppress completions after balance assertion marker without amount', () => {
+            // Pattern: Account + spaces + =$ (balance assertion start)
+            const document = new MockTextDocument(['    Расходы:Красота и здоровье          =$']);
+            const position = new vscode.Position(0, 42); // After =$
+
+            const result = analyzer.analyzePosition(document, position);
+
+            expect(result.lineContext).toBe(LineContext.Forbidden);
+            expect(result.suppressAll).toBe(true);
+        });
+
+        it('should suppress completions after balance assertion with space', () => {
+            // Pattern: Account + spaces + = + space
+            const document = new MockTextDocument(['    Account          = $']);
+            const position = new vscode.Position(0, 24); // After "= $"
+
+            const result = analyzer.analyzePosition(document, position);
+
+            expect(result.lineContext).toBe(LineContext.Forbidden);
+            expect(result.suppressAll).toBe(true);
+        });
+
+        it('should suppress completions after total assertion with amount', () => {
+            // Pattern: Account + spaces + ==amount
+            const document = new MockTextDocument(['    Account          ==$500']);
+            const position = new vscode.Position(0, 27); // After "==$500"
+
+            const result = analyzer.analyzePosition(document, position);
+
+            expect(result.lineContext).toBe(LineContext.Forbidden);
+            expect(result.suppressAll).toBe(true);
+        });
+
+        it('should suppress completions after inclusive assertion marker', () => {
+            // Pattern: Account + spaces + =* + space
+            const document = new MockTextDocument(['    Account          =* $']);
+            const position = new vscode.Position(0, 25); // After "=* $"
+
+            const result = analyzer.analyzePosition(document, position);
+
+            expect(result.lineContext).toBe(LineContext.Forbidden);
+            expect(result.suppressAll).toBe(true);
+        });
+
+        it('should suppress completions when positioned between amount and balance assertion', () => {
+            // Pattern: Account + amount + spaces + = + amount
+            const document = new MockTextDocument(['    Account    $100  = $500']);
+            const position = new vscode.Position(0, 27); // After the balance assertion
+
+            const result = analyzer.analyzePosition(document, position);
+
+            expect(result.lineContext).toBe(LineContext.Forbidden);
+            expect(result.suppressAll).toBe(true);
+        });
+
+        it('should suppress completions for total inclusive assertion', () => {
+            // Pattern: Account + spaces + ==*
+            const document = new MockTextDocument(['    Account          ==* $100']);
+            const position = new vscode.Position(0, 29); // After "==* $100"
+
+            const result = analyzer.analyzePosition(document, position);
+
+            expect(result.lineContext).toBe(LineContext.Forbidden);
+            expect(result.suppressAll).toBe(true);
+        });
+
+        it('should allow account completion before balance assertion marker', () => {
+            // Cursor is still in account name area, not after =
+            const document = new MockTextDocument(['    Account']);
+            const position = new vscode.Position(0, 11); // Still in account name
+
+            const result = analyzer.analyzePosition(document, position);
+
+            expect(result.lineContext).toBe(LineContext.InPosting);
+            expect(result.allowedTypes).toContain('account');
+        });
+    });
+
     describe('Account validation - query starting with digit', () => {
         it('should suppress account completion when query starts with a digit', () => {
             const document = new MockTextDocument(['  123']);
