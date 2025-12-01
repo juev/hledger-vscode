@@ -139,16 +139,24 @@ export class NumberFormatService {
     /**
      * Creates a regex pattern for matching amounts in the specified format.
      * Uses Unicode-aware patterns for international number support.
-     * 
+     *
+     * Supports hledger amount formats:
+     * - Sign placement: -100, +100, $-100, -$100
+     * - Scientific notation: 1E3, 1e-6, 1E+3
+     * - Trailing decimal: 10. (disambiguates integer from decimal)
+     * - Currency symbols: $100, €100, ₽100
+     *
      * @param format The number format to create a pattern for
      * @returns RegExp pattern that matches numbers in the specified format
-     * 
+     *
      * @example
      * ```typescript
      * const service = new NumberFormatService();
      * const usFormat = { decimalMark: '.', groupSeparator: ',', decimalPlaces: 2, useGrouping: true };
      * const pattern = service.createAmountPattern(usFormat);
      * console.log(pattern.test("1,234.56")); // true
+     * console.log(pattern.test("$-1,234.56")); // true
+     * console.log(pattern.test("1E3")); // true
      * ```
      */
     createAmountPattern(format: NumberFormat): RegExp {
@@ -159,7 +167,7 @@ export class NumberFormatService {
         }
 
         const { decimalMark, groupSeparator, useGrouping } = format;
-        
+
         // Escape special regex characters
         const escapeRegex = (char: string): string => {
             return char.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -168,24 +176,33 @@ export class NumberFormatService {
         const escapedDecimalMark = escapeRegex(decimalMark);
         const escapedGroupSeparator = useGrouping && groupSeparator ? escapeRegex(groupSeparator) : '';
 
+        // Extended pattern components for hledger amount formats
+        // Sign can appear before currency or after currency (before number)
+        const signPattern = '[+-]?';
+        // Currency symbols: Unicode currency symbols (Sc category)
+        const currencyPattern = '[\\p{Sc}]?';
+        // Scientific notation: E or e followed by optional sign and digits
+        const scientificPattern = '(?:[Ee][+-]?\\p{N}+)?';
+
         let pattern: string;
 
         if (useGrouping && groupSeparator) {
             // Pattern for grouped numbers with Unicode digit support
-            // Matches: 1,234.56 or 1 234,56 or -1,234.56 depending on format
+            // Matches: 1,234.56 or 1 234,56 or -$1,234.56 depending on format
             // Support crypto amounts with many decimal places (up to 12)
-            // Optional leading minus sign for negative amounts
+            // Pattern: [sign]? [currency]? [sign]? grouped_number [decimal]? [scientific]?
             const groupPattern = `\\p{N}{1,3}(?:${escapedGroupSeparator}\\p{N}{3})*`;
-            const decimalPattern = `(?:${escapedDecimalMark}\\p{N}{1,12})?`;
-            pattern = `^-?${groupPattern}${decimalPattern}$`;
+            // Decimal part: optional, allows trailing decimal (10.) or decimal with digits
+            const decimalPattern = `(?:${escapedDecimalMark}\\p{N}{0,12})?`;
+            pattern = `^${signPattern}${currencyPattern}${signPattern}${groupPattern}${decimalPattern}${scientificPattern}$`;
         } else {
             // Pattern for simple numbers without grouping
-            // Matches: 1234.56 or 1234,56 or -1234.56 depending on decimal mark
-            // Support crypto amounts with many decimal places (up to 12)
-            // Optional leading minus sign for negative amounts
+            // Matches: 1234.56 or $-1234.56 or 1E3 depending on format
+            // Pattern: [sign]? [currency]? [sign]? integer [decimal]? [scientific]?
             const integerPattern = '\\p{N}+';
-            const decimalPattern = `(?:${escapedDecimalMark}\\p{N}{1,12})?`;
-            pattern = `^-?${integerPattern}${decimalPattern}$`;
+            // Decimal part: optional, allows trailing decimal (10.) or decimal with digits
+            const decimalPattern = `(?:${escapedDecimalMark}\\p{N}{0,12})?`;
+            pattern = `^${signPattern}${currencyPattern}${signPattern}${integerPattern}${decimalPattern}${scientificPattern}$`;
         }
 
         const regex = new RegExp(pattern, 'u');

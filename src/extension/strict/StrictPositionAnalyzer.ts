@@ -385,30 +385,43 @@ export class StrictPositionAnalyzer {
     /**
      * Determines if cursor is in a forbidden zone - after amount + two or more spaces
      * Uses a simpler approach that checks for amount patterns followed by multiple spaces
+     *
+     * Supports extended hledger amount formats:
+     * - Sign placement: -100, +100, $-100, -$100
+     * - Scientific notation: 1E3, 1e-6, 1E+3
+     * - Trailing decimal: 10. (disambiguates integer from decimal)
+     * - Currency symbols: $100, €100, ₽100
      */
     private isForbiddenZoneContext(beforeCursor: string): boolean {
-        // Simple patterns for common amount formats followed by two or more spaces
-        // All patterns support optional leading minus sign for negative amounts
+        // Extended patterns for amount formats followed by two or more spaces
+        // Pattern components:
+        // - [+-]? - optional leading sign
+        // - [\p{Sc}]? - optional currency symbol (Unicode currency category)
+        // - [+-]? - optional sign after currency
+        // - Number patterns (various formats)
+        // - Scientific notation: (?:[Ee][+-]?\d+)?
+        // - \s{2,} - two or more spaces (forbidden zone marker)
+
         const forbiddenPatterns = [
-            // US format: -123.45 or 123.45 + two or more spaces
-            /-?\d+\.\d+\s{2,}/u,
-            // European format: -123,45 or 123,45 + two or more spaces
-            /-?\d+,\d+\s{2,}/u,
-            // Whole numbers: -123 or 123 + two or more spaces
-            /-?\d+\s{2,}/u,
-            // Grouped US format: -1,234.56 or 1,234.56 + two or more spaces
-            /-?\d{1,3}(?:,\d{3})*\.\d+\s{2,}/u,
-            // Grouped European format: -1.234,56 or 1.234,56 or 1 234,56 + two or more spaces
-            /-?\d{1,3}(?:[.\s]\d{3})*,\d+\s{2,}/u,
+            // US format with decimal: [sign]? [currency]? [sign]? digits.digits [scientific]? + 2+ spaces
+            /[+-]?[\p{Sc}]?[+-]?\d+\.\d*(?:[Ee][+-]?\d+)?\s{2,}/u,
+            // European format: [sign]? [currency]? [sign]? digits,digits [scientific]? + 2+ spaces
+            /[+-]?[\p{Sc}]?[+-]?\d+,\d+(?:[Ee][+-]?\d+)?\s{2,}/u,
+            // Whole numbers or scientific without decimal: [sign]? [currency]? [sign]? digits [scientific]? + 2+ spaces
+            /[+-]?[\p{Sc}]?[+-]?\d+(?:[Ee][+-]?\d+)?\s{2,}/u,
+            // Grouped US format: [sign]? [currency]? [sign]? grouped.decimal [scientific]? + 2+ spaces
+            /[+-]?[\p{Sc}]?[+-]?\d{1,3}(?:,\d{3})*\.\d*(?:[Ee][+-]?\d+)?\s{2,}/u,
+            // Grouped European format: [sign]? [currency]? [sign]? grouped,decimal [scientific]? + 2+ spaces
+            /[+-]?[\p{Sc}]?[+-]?\d{1,3}(?:[.\s]\d{3})*,\d+(?:[Ee][+-]?\d+)?\s{2,}/u,
         ];
-        
+
         // Test each pattern
         for (const pattern of forbiddenPatterns) {
             if (pattern.test(beforeCursor)) {
                 return true;
             }
         }
-        
+
         return false;
     }
 
