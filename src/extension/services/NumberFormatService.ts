@@ -56,6 +56,10 @@ export interface ParsedAmount {
 /**
  * Default number formats for common international conventions.
  * These represent the most widely used formatting patterns globally.
+ *
+ * Note: Indian numbering (1,00,00,000.00) uses non-uniform grouping (3,2,2...)
+ * which is handled by the flexible amount validation regex in HLedgerDiagnosticsProvider,
+ * not by this service's pattern generation.
  */
 export const DEFAULT_NUMBER_FORMATS: readonly NumberFormat[] = [
     // US/UK format: 1,234.56
