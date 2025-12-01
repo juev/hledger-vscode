@@ -442,6 +442,86 @@ account Assets
             expect(amountDiags.length).toBe(0);
         });
 
+        test('accepts positive amounts with explicit plus sign', () => {
+            const content = `
+2024-01-01 Test
+    Expenses:Food  +$10.00
+    Assets:Cash
+`;
+            config.parseContent(content, '/test');
+
+            const document = new MockTextDocument(content.split('\n'), {
+                uri: vscode.Uri.file('/test/test.journal'),
+                languageId: 'hledger'
+            });
+
+            provider['validateDocument'](document);
+
+            const diagnostics = provider.diagnosticCollection.get(document.uri);
+            const amountDiags = diagnostics?.filter(d => d.message.includes('amount')) ?? [];
+            expect(amountDiags.length).toBe(0);
+        });
+
+        test('accepts positive amounts with plus sign after commodity', () => {
+            const content = `
+2024-01-01 Test
+    Expenses:Food  $+10.00
+    Assets:Cash
+`;
+            config.parseContent(content, '/test');
+
+            const document = new MockTextDocument(content.split('\n'), {
+                uri: vscode.Uri.file('/test/test.journal'),
+                languageId: 'hledger'
+            });
+
+            provider['validateDocument'](document);
+
+            const diagnostics = provider.diagnosticCollection.get(document.uri);
+            const amountDiags = diagnostics?.filter(d => d.message.includes('amount')) ?? [];
+            expect(amountDiags.length).toBe(0);
+        });
+
+        test('accepts positive amounts with suffix commodity', () => {
+            const content = `
+2024-01-01 Test
+    Expenses:Food  +10.00 USD
+    Assets:Cash
+`;
+            config.parseContent(content, '/test');
+
+            const document = new MockTextDocument(content.split('\n'), {
+                uri: vscode.Uri.file('/test/test.journal'),
+                languageId: 'hledger'
+            });
+
+            provider['validateDocument'](document);
+
+            const diagnostics = provider.diagnosticCollection.get(document.uri);
+            const amountDiags = diagnostics?.filter(d => d.message.includes('amount')) ?? [];
+            expect(amountDiags.length).toBe(0);
+        });
+
+        test('accepts positive grouped amounts', () => {
+            const content = `
+2024-01-01 Test
+    Expenses:Food  +1,234.56
+    Assets:Cash
+`;
+            config.parseContent(content, '/test');
+
+            const document = new MockTextDocument(content.split('\n'), {
+                uri: vscode.Uri.file('/test/test.journal'),
+                languageId: 'hledger'
+            });
+
+            provider['validateDocument'](document);
+
+            const diagnostics = provider.diagnosticCollection.get(document.uri);
+            const amountDiags = diagnostics?.filter(d => d.message.includes('amount')) ?? [];
+            expect(amountDiags.length).toBe(0);
+        });
+
         test('accepts amounts with commas', () => {
             const content = `
 2024-01-01 Test
@@ -807,8 +887,8 @@ account Assets
             expect(amountDiags.length).toBe(0);
         });
 
-        test('rejects balance assertion with explicit positive sign in non-scientific notation', () => {
-            // Explicit + is only valid in scientific notation (E+3), not regular amounts
+        test('accepts balance assertion with explicit positive sign', () => {
+            // Explicit + is valid in hledger amounts: +100, $+100, +$100
             const content = `
 2024-01-01 Test
     Assets:Checking  =$+500
@@ -824,9 +904,8 @@ account Assets
             provider['validateDocument'](document);
 
             const diagnostics = provider.diagnosticCollection.get(document.uri);
-            const amountDiag = diagnostics?.find(d => d.message.includes('amount'));
-            expect(amountDiag).toBeDefined();
-            expect(amountDiag?.severity).toBe(vscode.DiagnosticSeverity.Error);
+            const amountDiags = diagnostics?.filter(d => d.message.includes('amount')) ?? [];
+            expect(amountDiags.length).toBe(0);
         });
     });
 
