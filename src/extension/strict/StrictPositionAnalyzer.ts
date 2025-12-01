@@ -365,12 +365,17 @@ export class StrictPositionAnalyzer {
      * - account + spaces + =* (inclusive assertion)
      * - account + spaces + ==* (total inclusive assertion)
      * - Any of above followed by amounts, spaces, currency symbols
+     *
+     * Also supports virtual postings:
+     * - (Account) - unbalanced virtual posting
+     * - [Account] - balanced virtual posting
      */
     private isInBalanceAssertionContext(beforeCursor: string): boolean {
-        // Pattern matches: indentation + account name + two or more spaces + assertion marker (=, ==, =*, ==*)
-        // followed by optional amount/currency content
+        // Pattern matches: indentation + optional virtual posting brackets + account name +
+        // optional closing bracket + two or more spaces + assertion marker (=, ==, =*, ==*)
         // Account name: Unicode letters, digits, colons, underscores, hyphens, spaces (for multi-word accounts)
-        const balanceAssertionPattern = /^\s+[\p{L}][\p{L}\p{N}:_\s-]*\s{2,}={1,2}\*?/u;
+        // Virtual postings: (Account) or [Account]
+        const balanceAssertionPattern = /^\s+[(\[]?[\p{L}][\p{L}\p{N}:_\s-]*[)\]]?\s{2,}={1,2}\*?/u;
         return balanceAssertionPattern.test(beforeCursor);
     }
 

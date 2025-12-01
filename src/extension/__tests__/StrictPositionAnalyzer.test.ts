@@ -545,6 +545,39 @@ describe('StrictPositionAnalyzer', () => {
             expect(result.lineContext).toBe(LineContext.InPosting);
             expect(result.allowedTypes).toContain('account');
         });
+
+        it('should suppress completions for unbalanced virtual posting with balance assertion', () => {
+            // Pattern: (Account) + spaces + = (unbalanced virtual posting)
+            const document = new MockTextDocument(['    (Assets:Checking)  = $500']);
+            const position = new vscode.Position(0, 29); // After "= $500"
+
+            const result = analyzer.analyzePosition(document, position);
+
+            expect(result.lineContext).toBe(LineContext.Forbidden);
+            expect(result.suppressAll).toBe(true);
+        });
+
+        it('should suppress completions for balanced virtual posting with balance assertion', () => {
+            // Pattern: [Account] + spaces + = (balanced virtual posting)
+            const document = new MockTextDocument(['    [Budget:Food]  = $500']);
+            const position = new vscode.Position(0, 25); // After "= $500"
+
+            const result = analyzer.analyzePosition(document, position);
+
+            expect(result.lineContext).toBe(LineContext.Forbidden);
+            expect(result.suppressAll).toBe(true);
+        });
+
+        it('should suppress completions for virtual posting with total assertion', () => {
+            // Pattern: (Account) + spaces + == (total assertion on virtual posting)
+            const document = new MockTextDocument(['    (Assets:Bank)  == $1000']);
+            const position = new vscode.Position(0, 27); // After "== $1000"
+
+            const result = analyzer.analyzePosition(document, position);
+
+            expect(result.lineContext).toBe(LineContext.Forbidden);
+            expect(result.suppressAll).toBe(true);
+        });
     });
 
     describe('Account validation - query starting with digit', () => {
