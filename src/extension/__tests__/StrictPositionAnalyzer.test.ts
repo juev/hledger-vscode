@@ -653,6 +653,39 @@ describe('StrictPositionAnalyzer', () => {
             expect(result.lineContext).toBe(LineContext.AfterAmount);
             expect(result.allowedTypes).toContain('commodity');
         });
+
+        it('should allow commodity completion after unbalanced virtual posting balance assertion', () => {
+            // Pattern: (Account)  =-106 | (unbalanced virtual posting with balance assertion)
+            const document = new MockTextDocument(['    (Account)  =-106 ']);
+            const position = new vscode.Position(0, 21);
+
+            const result = analyzer.analyzePosition(document, position);
+
+            expect(result.lineContext).toBe(LineContext.AfterAmount);
+            expect(result.allowedTypes).toContain('commodity');
+        });
+
+        it('should allow commodity completion after balanced virtual posting balance assertion', () => {
+            // Pattern: [Account]  = $500 | (balanced virtual posting with balance assertion)
+            const document = new MockTextDocument(['    [Account]  =500 ']);
+            const position = new vscode.Position(0, 20);
+
+            const result = analyzer.analyzePosition(document, position);
+
+            expect(result.lineContext).toBe(LineContext.AfterAmount);
+            expect(result.allowedTypes).toContain('commodity');
+        });
+
+        it('should allow commodity completion after virtual posting with Cyrillic balance assertion', () => {
+            // Pattern: (Активы:Текущий)  =-106 | (Cyrillic virtual posting with balance assertion)
+            const document = new MockTextDocument(['    (Активы:Текущий)  =-106 ']);
+            const position = new vscode.Position(0, 28);
+
+            const result = analyzer.analyzePosition(document, position);
+
+            expect(result.lineContext).toBe(LineContext.AfterAmount);
+            expect(result.allowedTypes).toContain('commodity');
+        });
     });
 
     describe('Negative amounts in forbidden zone', () => {
