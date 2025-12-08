@@ -46,9 +46,9 @@ describe('TransactionGenerator', () => {
 
             expect(result.errors).toHaveLength(0);
             expect(result.transactions).toHaveLength(1);
-            expect(result.transactions[0].date).toBe('2024-01-15');
-            expect(result.transactions[0].description).toBe('Grocery Store');
-            expect(result.transactions[0].amount).toBe(-50);
+            expect(result.transactions[0]!.date).toBe('2024-01-15');
+            expect(result.transactions[0]!.description).toBe('Grocery Store');
+            expect(result.transactions[0]!.amount).toBe(-50);
         });
 
         it('should generate multiple transactions', () => {
@@ -87,8 +87,8 @@ describe('TransactionGenerator', () => {
             const result = generator.generate(data);
 
             expect(result.errors).toHaveLength(1);
-            expect(result.errors[0].fatal).toBe(true);
-            expect(result.errors[0].message).toContain('date');
+            expect(result.errors[0]!.fatal).toBe(true);
+            expect(result.errors[0]!.message).toContain('date');
         });
 
         it('should fail if amount column is missing', () => {
@@ -104,7 +104,7 @@ describe('TransactionGenerator', () => {
             const result = generator.generate(data);
 
             expect(result.errors).toHaveLength(1);
-            expect(result.errors[0].fatal).toBe(true);
+            expect(result.errors[0]!.fatal).toBe(true);
         });
     });
 
@@ -127,8 +127,8 @@ describe('TransactionGenerator', () => {
             const result = generator.generate(data);
 
             expect(result.transactions).toHaveLength(2);
-            expect(result.transactions[0].amount).toBe(-50); // Debit is negative
-            expect(result.transactions[1].amount).toBe(100); // Credit is positive
+            expect(result.transactions[0]!.amount).toBe(-50); // Debit is negative
+            expect(result.transactions[1]!.amount).toBe(100); // Credit is positive
         });
     });
 
@@ -146,7 +146,7 @@ describe('TransactionGenerator', () => {
 
             const result = generator.generate(data);
 
-            expect(result.transactions[0].amount).toBeCloseTo(-1234.56);
+            expect(result.transactions[0]!.amount).toBeCloseTo(-1234.56);
         });
 
         it('should handle EU format (1.234,56)', () => {
@@ -162,7 +162,7 @@ describe('TransactionGenerator', () => {
 
             const result = generator.generate(data);
 
-            expect(result.transactions[0].amount).toBeCloseTo(-1234.56);
+            expect(result.transactions[0]!.amount).toBeCloseTo(-1234.56);
         });
 
         it('should handle currency symbols', () => {
@@ -178,7 +178,7 @@ describe('TransactionGenerator', () => {
 
             const result = generator.generate(data);
 
-            expect(result.transactions[0].amount).toBe(50);
+            expect(result.transactions[0]!.amount).toBe(50);
         });
 
         it('should handle accounting notation (parentheses for negative)', () => {
@@ -194,7 +194,7 @@ describe('TransactionGenerator', () => {
 
             const result = generator.generate(data);
 
-            expect(result.transactions[0].amount).toBe(-50);
+            expect(result.transactions[0]!.amount).toBe(-50);
         });
     });
 
@@ -216,7 +216,7 @@ describe('TransactionGenerator', () => {
 
             const result = invertingGenerator.generate(data);
 
-            expect(result.transactions[0].amount).toBe(-50);
+            expect(result.transactions[0]!.amount).toBe(-50);
         });
     });
 
@@ -235,8 +235,8 @@ describe('TransactionGenerator', () => {
 
             const result = generator.generate(data);
 
-            expect(result.transactions[0].sourceAccount.source).toBe('category');
-            expect(result.transactions[0].sourceAccount.account).toBe('expenses:food:groceries');
+            expect(result.transactions[0]!.sourceAccount.source).toBe('category');
+            expect(result.transactions[0]!.sourceAccount.account).toBe('expenses:food:groceries');
         });
 
         it('should resolve account from merchant pattern', () => {
@@ -252,8 +252,8 @@ describe('TransactionGenerator', () => {
 
             const result = generator.generate(data);
 
-            expect(result.transactions[0].sourceAccount.source).toBe('pattern');
-            expect(result.transactions[0].sourceAccount.account).toBe('expenses:shopping:amazon');
+            expect(result.transactions[0]!.sourceAccount.source).toBe('pattern');
+            expect(result.transactions[0]!.sourceAccount.account).toBe('expenses:shopping:amazon');
         });
 
         it('should resolve account from amount sign', () => {
@@ -272,10 +272,10 @@ describe('TransactionGenerator', () => {
 
             const result = generator.generate(data);
 
-            expect(result.transactions[0].sourceAccount.source).toBe('sign');
-            expect(result.transactions[0].sourceAccount.account).toBe('expenses:unknown');
-            expect(result.transactions[1].sourceAccount.source).toBe('sign');
-            expect(result.transactions[1].sourceAccount.account).toBe('income:unknown');
+            expect(result.transactions[0]!.sourceAccount.source).toBe('sign');
+            expect(result.transactions[0]!.sourceAccount.account).toBe('expenses:unknown');
+            expect(result.transactions[1]!.sourceAccount.source).toBe('sign');
+            expect(result.transactions[1]!.sourceAccount.account).toBe('income:unknown');
         });
     });
 
@@ -294,8 +294,8 @@ describe('TransactionGenerator', () => {
 
             const result = generator.generate(data);
 
-            expect(result.transactions[0].currency).toBe('EUR');
-            expect(result.transactions[0].amountFormatted).toContain('EUR');
+            expect(result.transactions[0]!.currency).toBe('EUR');
+            expect(result.transactions[0]!.amountFormatted).toContain('EUR');
         });
     });
 
@@ -314,7 +314,7 @@ describe('TransactionGenerator', () => {
 
             const result = generator.generate(data);
 
-            expect(result.transactions[0].memo).toBe('Weekly groceries');
+            expect(result.transactions[0]!.memo).toBe('Weekly groceries');
         });
 
         it('should include reference from reference column', () => {
@@ -331,7 +331,7 @@ describe('TransactionGenerator', () => {
 
             const result = generator.generate(data);
 
-            expect(result.transactions[0].reference).toBe('REF123');
+            expect(result.transactions[0]!.reference).toBe('REF123');
         });
     });
 
@@ -453,7 +453,7 @@ describe('TransactionGenerator', () => {
             );
 
             const result = generator.generate(data);
-            const formatted = generator.formatTransaction(result.transactions[0]);
+            const formatted = generator.formatTransaction(result.transactions[0]!);
 
             expect(formatted).toContain('2024-01-15');
             expect(formatted).toContain('Grocery Store');
@@ -474,7 +474,7 @@ describe('TransactionGenerator', () => {
             );
 
             const result = generator.generate(data);
-            const formatted = generator.formatTransaction(result.transactions[0]);
+            const formatted = generator.formatTransaction(result.transactions[0]!);
 
             expect(formatted).toContain('(REF123)');
         });
@@ -492,7 +492,7 @@ describe('TransactionGenerator', () => {
             );
 
             const result = generator.generate(data);
-            const formatted = generator.formatTransaction(result.transactions[0]);
+            const formatted = generator.formatTransaction(result.transactions[0]!);
 
             expect(formatted).toContain('; Weekly groceries');
         });
@@ -509,7 +509,7 @@ describe('TransactionGenerator', () => {
             );
 
             const result = generator.generate(data);
-            const formatted = generator.formatTransaction(result.transactions[0], true);
+            const formatted = generator.formatTransaction(result.transactions[0]!, true);
 
             expect(formatted).toContain('matched:');
         });
@@ -526,7 +526,7 @@ describe('TransactionGenerator', () => {
             );
 
             const result = generator.generate(data);
-            const formatted = generator.formatTransaction(result.transactions[0], false);
+            const formatted = generator.formatTransaction(result.transactions[0]!, false);
 
             expect(formatted).not.toContain('matched:');
         });
@@ -608,7 +608,7 @@ describe('TransactionGenerator', () => {
 
             const result = generator.generate(data);
 
-            expect(result.transactions[0].description).toBe('Store Name');
+            expect(result.transactions[0]!.description).toBe('Store Name');
         });
     });
 
@@ -632,8 +632,8 @@ describe('TransactionGenerator', () => {
 
             const result = customGenerator.generate(data);
 
-            expect(result.transactions[0].sourceAccount.account).toBe('expenses:misc');
-            expect(result.transactions[0].targetAccount).toBe('assets:bank');
+            expect(result.transactions[0]!.sourceAccount.account).toBe('expenses:misc');
+            expect(result.transactions[0]!.targetAccount).toBe('assets:bank');
         });
     });
 });

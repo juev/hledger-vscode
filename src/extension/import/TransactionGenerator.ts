@@ -489,11 +489,6 @@ export class TransactionGenerator {
             lines.push(`    ; ${tx.memo}`);
         }
 
-        // First posting (expense/income account with amount)
-        const accountWithAnnotation = includeAnnotations
-            ? AccountResolver.formatWithAnnotation(tx.sourceAccount, true)
-            : tx.sourceAccount.account;
-
         // Calculate padding for alignment
         const accountPart = `    ${tx.sourceAccount.account}`;
         const padding = Math.max(4, 52 - accountPart.length - tx.amountFormatted.length);

@@ -69,8 +69,8 @@ describe('TabularDataParser', () => {
             if (result.success) {
                 expect(result.value.headers).toEqual(['Date', 'Description', 'Amount']);
                 expect(result.value.rows).toHaveLength(2);
-                expect(result.value.rows[0].cells).toEqual(['2024-01-15', 'Grocery Store', '50.00']);
-                expect(result.value.rows[0].lineNumber).toBe(2);
+                expect(result.value.rows[0]!.cells).toEqual(['2024-01-15', 'Grocery Store', '50.00']);
+                expect(result.value.rows[0]!.lineNumber).toBe(2);
             }
         });
 
@@ -82,7 +82,7 @@ describe('TabularDataParser', () => {
             const result = parser.parse(content);
             expect(result.success).toBe(true);
             if (result.success) {
-                expect(result.value.rows[0].cells[1]).toBe('Coffee, Bakery');
+                expect(result.value.rows[0]!.cells[1]).toBe('Coffee, Bakery');
             }
         });
 
@@ -93,7 +93,7 @@ describe('TabularDataParser', () => {
             const result = parser.parse(content);
             expect(result.success).toBe(true);
             if (result.success) {
-                expect(result.value.rows[0].cells[1]).toBe('John "The Boss" Smith');
+                expect(result.value.rows[0]!.cells[1]).toBe('John "The Boss" Smith');
             }
         });
 
@@ -105,8 +105,8 @@ describe('TabularDataParser', () => {
             const result = parser.parse(content);
             expect(result.success).toBe(true);
             if (result.success) {
-                expect(result.value.rows[0].cells).toEqual(['2024-01-15', 'Grocery Store', '50.00', '']);
-                expect(result.value.rows[1].cells).toEqual(['2024-01-16', '', '30.00', 'Gas']);
+                expect(result.value.rows[0]!.cells).toEqual(['2024-01-15', 'Grocery Store', '50.00', '']);
+                expect(result.value.rows[1]!.cells).toEqual(['2024-01-16', '', '30.00', 'Gas']);
             }
         });
 
@@ -130,7 +130,7 @@ describe('TabularDataParser', () => {
             const result = parser.parse(content);
             expect(result.success).toBe(true);
             if (result.success) {
-                expect(result.value.rows[0].cells).toEqual(['2024-01-15', 'Grocery Store', '50.00']);
+                expect(result.value.rows[0]!.cells).toEqual(['2024-01-15', 'Grocery Store', '50.00']);
             }
         });
 
@@ -193,7 +193,7 @@ describe('TabularDataParser', () => {
             expect(result.success).toBe(true);
             if (result.success) {
                 expect(result.value.headers).toEqual(['Дата', 'Описание', 'Сумма']);
-                expect(result.value.rows[0].cells[1]).toBe('Продукты');
+                expect(result.value.rows[0]!.cells[1]).toBe('Продукты');
             }
         });
     });
