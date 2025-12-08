@@ -139,6 +139,19 @@ export function activate(context: vscode.ExtensionContext): void {
             })
         );
 
+        // Register import commands
+        context.subscriptions.push(
+            vscode.commands.registerCommand('hledger.import.fromSelection', async () => {
+                await services.importCommands.importFromSelection();
+            })
+        );
+
+        context.subscriptions.push(
+            vscode.commands.registerCommand('hledger.import.fromFile', async () => {
+                await services.importCommands.importFromFile();
+            })
+        );
+
 
         // Extension activation complete
 

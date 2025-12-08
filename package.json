@@ -96,6 +96,47 @@
           "type": "boolean",
           "default": true,
           "description": "Enable diagnostics validation for hledger files (account checks, tag format, amount format)"
+        },
+        "hledger.import.defaultDebitAccount": {
+          "type": "string",
+          "default": "expenses:unknown",
+          "description": "Default account name for debit (expense) entries when importing CSV/TSV"
+        },
+        "hledger.import.defaultCreditAccount": {
+          "type": "string",
+          "default": "income:unknown",
+          "description": "Default account name for credit (income) entries when importing CSV/TSV"
+        },
+        "hledger.import.defaultBalancingAccount": {
+          "type": "string",
+          "default": "TODO:account",
+          "description": "Default account name for balancing posting when importing CSV/TSV"
+        },
+        "hledger.import.dateFormat": {
+          "type": "string",
+          "enum": ["auto", "YYYY-MM-DD", "YYYY/MM/DD", "DD/MM/YYYY", "MM/DD/YYYY", "DD.MM.YYYY", "DD-MM-YYYY"],
+          "default": "auto",
+          "description": "Expected date format in import data. Use 'auto' for automatic detection"
+        },
+        "hledger.import.invertAmounts": {
+          "type": "boolean",
+          "default": false,
+          "description": "Invert amount signs when importing (useful for some bank exports)"
+        },
+        "hledger.import.useJournalHistory": {
+          "type": "boolean",
+          "default": true,
+          "description": "Use existing journal transactions to auto-detect accounts for similar payees"
+        },
+        "hledger.import.merchantPatterns": {
+          "type": "object",
+          "default": {},
+          "description": "Custom merchant patterns for account detection. Keys are regex patterns, values are account names. Example: {\"AMAZON|AMZN\": \"expenses:shopping\"}"
+        },
+        "hledger.import.categoryMapping": {
+          "type": "object",
+          "default": {},
+          "description": "Custom category to account mapping. Keys are category names (case-insensitive), values are account names. Example: {\"Groceries\": \"expenses:food:groceries\"}"
         }
       }
     },
@@ -187,6 +228,16 @@
         "title": "HLedger: Insert Income Statement",
         "category": "HLedger",
         "when": "editorTextFocus && editorLangId == hledger"
+      },
+      {
+        "command": "hledger.import.fromSelection",
+        "title": "HLedger: Import Selected Tabular Data",
+        "category": "HLedger"
+      },
+      {
+        "command": "hledger.import.fromFile",
+        "title": "HLedger: Import Tabular Data from File",
+        "category": "HLedger"
       }
     ],
     "keybindings": [
