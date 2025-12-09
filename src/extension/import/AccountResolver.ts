@@ -3,6 +3,7 @@
  * Determines hledger accounts from CSV data automatically
  */
 
+import * as vscode from 'vscode';
 import {
     AccountResolution,
     AccountResolutionSource,
@@ -10,6 +11,23 @@ import {
     BUILTIN_CATEGORY_MAPPING,
     BUILTIN_MERCHANT_PATTERNS,
 } from './types';
+
+/**
+ * Confidence thresholds for account resolution strategies.
+ * Higher values indicate more reliable detection methods.
+ */
+const CONFIDENCE = {
+    /** Direct category match from CSV column */
+    CATEGORY_EXACT: 0.95,
+    /** Partial category match (contains/contained by) */
+    CATEGORY_PARTIAL: 0.8,
+    /** Merchant pattern regex match */
+    MERCHANT_PATTERN: 0.85,
+    /** Fallback: amount sign heuristic (positive=income, negative=expense) */
+    AMOUNT_SIGN: 0.5,
+    /** Default placeholder when no strategy matches */
+    DEFAULT: 0,
+} as const;
 
 /**
  * Cache for compiled regex patterns to avoid recompilation
@@ -94,7 +112,7 @@ export class AccountResolver {
         // Strategy 4: Default placeholder
         return {
             account: this.defaultPlaceholder,
-            confidence: 0,
+            confidence: CONFIDENCE.DEFAULT,
             source: 'default',
         };
     }
@@ -110,7 +128,7 @@ export class AccountResolver {
         if (directMatch) {
             return {
                 account: directMatch,
-                confidence: 0.95,
+                confidence: CONFIDENCE.CATEGORY_EXACT,
                 source: 'category',
             };
         }
@@ -120,7 +138,7 @@ export class AccountResolver {
             if (normalizedCategory.includes(key) || key.includes(normalizedCategory)) {
                 return {
                     account,
-                    confidence: 0.8,
+                    confidence: CONFIDENCE.CATEGORY_PARTIAL,
                     source: 'category',
                 };
             }
@@ -139,7 +157,7 @@ export class AccountResolver {
             if (regex.test(normalizedDescription)) {
                 return {
                     account,
-                    confidence: 0.85,
+                    confidence: CONFIDENCE.MERCHANT_PATTERN,
                     source: 'pattern',
                 };
             }
@@ -155,20 +173,20 @@ export class AccountResolver {
         if (amount > 0) {
             return {
                 account: this.defaultCreditAccount,
-                confidence: 0.5,
+                confidence: CONFIDENCE.AMOUNT_SIGN,
                 source: 'sign',
             };
         } else if (amount < 0) {
             return {
                 account: this.defaultDebitAccount,
-                confidence: 0.5,
+                confidence: CONFIDENCE.AMOUNT_SIGN,
                 source: 'sign',
             };
         }
 
         return {
             account: this.defaultPlaceholder,
-            confidence: 0,
+            confidence: CONFIDENCE.DEFAULT,
             source: 'default',
         };
     }
@@ -199,9 +217,11 @@ export class AccountResolver {
                     regex: new RegExp(pattern, 'i'),
                     account,
                 });
-            } catch {
-                // Skip invalid regex patterns
-                console.warn(`Invalid user pattern: ${pattern}`);
+            } catch (error) {
+                // Notify user about invalid pattern in their configuration
+                vscode.window.showWarningMessage(
+                    `Invalid merchant pattern "${pattern}": ${error instanceof Error ? error.message : 'Invalid regex'}. Pattern will be ignored.`
+                );
             }
         }
 
