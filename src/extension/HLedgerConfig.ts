@@ -44,6 +44,18 @@ export class HLedgerConfig {
     getConfigForDocument(document: vscode.TextDocument): void {
         const filePath = document.uri.fsPath;
 
+        // Only scan workspace for real files on disk (file:// scheme)
+        // Virtual documents (untitled, vscode-notebook, output, custom schemes)
+        // don't have real file paths - path.dirname returns "." which would
+        // scan from current working directory (potentially root filesystem)
+        if (document.uri.scheme !== 'file') {
+            // For virtual documents, only parse the document content itself
+            const currentContent = document.getText();
+            const currentData = this.parser.parseContent(currentContent, filePath);
+            this.data = currentData;
+            return;
+        }
+
         // Determine project path
         let projectPath: string;
         const workspaceFolder = vscode.workspace.getWorkspaceFolder(document.uri);
@@ -52,6 +64,16 @@ export class HLedgerConfig {
         } else {
             // No workspace, use directory of the file
             projectPath = path.dirname(filePath);
+
+            // Safety check: ensure path is absolute and reasonable
+            // Even for file:// scheme, path could be malformed
+            if (!path.isAbsolute(projectPath) || projectPath === '/' || projectPath === '.') {
+                // Fallback: only parse document content without workspace scan
+                const currentContent = document.getText();
+                const currentData = this.parser.parseContent(currentContent, filePath);
+                this.data = currentData;
+                return;
+            }
         }
 
         // Get cached data or parse workspace with incremental cache support
