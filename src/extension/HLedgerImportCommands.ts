@@ -180,8 +180,10 @@ export class HLedgerImportCommands implements vscode.Disposable {
     private getImportOptions(): ImportOptions {
         const config = vscode.workspace.getConfiguration('hledger.import');
 
-        // Get dateFormat - only include if explicitly set (not undefined)
-        const dateFormat = config.get<ImportOptions['dateFormat']>('dateFormat');
+        const dateFormat = config.get<ImportOptions['dateFormat']>(
+            'dateFormat',
+            DEFAULT_IMPORT_OPTIONS.dateFormat
+        );
 
         const options: ImportOptions = {
             defaultDebitAccount: config.get(
