@@ -52,14 +52,24 @@ export class TabularDataParser {
         const normalizedContent = content.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
         const lines = normalizedContent.split('\n');
 
-        // Filter empty lines if configured
-        const nonEmptyLines = this.options.skipEmptyRows
-            ? lines.filter((line) => line.trim().length > 0)
-            : lines;
+        // Track original line numbers before filtering
+        // Each entry is { line: string, originalLineNumber: number }
+        const linesWithNumbers = lines.map((line, index) => ({
+            line,
+            originalLineNumber: index + 1,
+        }));
 
-        if (nonEmptyLines.length === 0) {
+        // Filter empty lines if configured, preserving original line numbers
+        const nonEmptyLinesWithNumbers = this.options.skipEmptyRows
+            ? linesWithNumbers.filter((entry) => entry.line.trim().length > 0)
+            : linesWithNumbers;
+
+        if (nonEmptyLinesWithNumbers.length === 0) {
             return failure('No data lines found');
         }
+
+        // Extract just the lines for delimiter detection
+        const nonEmptyLines = nonEmptyLinesWithNumbers.map((entry) => entry.line);
 
         // Detect delimiter if not specified
         const detectedDelimiter = delimiter ?? this.detectDelimiter(nonEmptyLines);
@@ -67,43 +77,44 @@ export class TabularDataParser {
             return failure('Could not detect delimiter');
         }
 
-        // Parse all lines
-        const parsedLines: string[][] = [];
-        for (let i = 0; i < nonEmptyLines.length; i++) {
-            const line = nonEmptyLines[i];
-            if (line === undefined) continue;
-            const result = this.parseLine(line, detectedDelimiter);
+        // Parse all lines, tracking original line numbers
+        const parsedLinesWithNumbers: Array<{ cells: string[]; originalLineNumber: number }> = [];
+        for (const entry of nonEmptyLinesWithNumbers) {
+            const result = this.parseLine(entry.line, detectedDelimiter);
             if (result.success === false) {
-                return failure(`Error parsing line ${i + 1}: ${result.error}`);
+                return failure(`Error parsing line ${entry.originalLineNumber}: ${result.error}`);
             }
-            parsedLines.push(result.value);
+            parsedLinesWithNumbers.push({
+                cells: result.value,
+                originalLineNumber: entry.originalLineNumber,
+            });
         }
 
         // Extract headers and rows
         let headers: string[] = [];
         let dataRows: ParsedRow[] = [];
 
-        if (this.options.hasHeader && parsedLines.length > 0) {
-            const firstLine = parsedLines[0];
-            if (firstLine === undefined) {
+        if (this.options.hasHeader && parsedLinesWithNumbers.length > 0) {
+            const firstEntry = parsedLinesWithNumbers[0];
+            if (firstEntry === undefined) {
                 return failure('No header line found');
             }
             headers = this.options.trimCells
-                ? firstLine.map((h) => h.trim())
-                : firstLine;
+                ? firstEntry.cells.map((h) => h.trim())
+                : firstEntry.cells;
 
-            dataRows = parsedLines.slice(1).map((cells, index) => ({
-                cells: this.options.trimCells ? cells.map((c) => c.trim()) : cells,
-                lineNumber: index + 2, // +2 because 1-indexed and skip header
+            dataRows = parsedLinesWithNumbers.slice(1).map((entry) => ({
+                cells: this.options.trimCells ? entry.cells.map((c) => c.trim()) : entry.cells,
+                lineNumber: entry.originalLineNumber,
             }));
         } else {
             // Generate column headers
-            const maxColumns = Math.max(...parsedLines.map((l) => l.length));
+            const maxColumns = Math.max(...parsedLinesWithNumbers.map((e) => e.cells.length));
             headers = Array.from({ length: maxColumns }, (_, i) => `Column${i + 1}`);
 
-            dataRows = parsedLines.map((cells, index) => ({
-                cells: this.options.trimCells ? cells.map((c) => c.trim()) : cells,
-                lineNumber: index + 1,
+            dataRows = parsedLinesWithNumbers.map((entry) => ({
+                cells: this.options.trimCells ? entry.cells.map((c) => c.trim()) : entry.cells,
+                lineNumber: entry.originalLineNumber,
             }));
         }
 

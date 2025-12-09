@@ -123,6 +123,78 @@ describe('TabularDataParser', () => {
             }
         });
 
+        it('should preserve original line numbers when skipping empty rows', () => {
+            const content = `Date,Description,Amount
+2024-01-15,First Row,10.00
+
+2024-01-16,Third Row,20.00
+
+2024-01-17,Fifth Row,30.00`;
+
+            const result = parser.parse(content);
+            expect(result.success).toBe(true);
+            if (result.success) {
+                expect(result.value.rows).toHaveLength(3);
+                // Line numbers should reflect original file positions
+                // Line 1: header, Line 2: First Row, Line 3: empty, Line 4: Third Row, Line 5: empty, Line 6: Fifth Row
+                expect(result.value.rows[0]!.lineNumber).toBe(2);
+                expect(result.value.rows[1]!.lineNumber).toBe(4);
+                expect(result.value.rows[2]!.lineNumber).toBe(6);
+            }
+        });
+
+        it('should have correct line numbers without empty rows', () => {
+            const content = `Date,Description,Amount
+2024-01-15,First Row,10.00
+2024-01-16,Second Row,20.00
+2024-01-17,Third Row,30.00`;
+
+            const result = parser.parse(content);
+            expect(result.success).toBe(true);
+            if (result.success) {
+                expect(result.value.rows).toHaveLength(3);
+                expect(result.value.rows[0]!.lineNumber).toBe(2);
+                expect(result.value.rows[1]!.lineNumber).toBe(3);
+                expect(result.value.rows[2]!.lineNumber).toBe(4);
+            }
+        });
+
+        it('should have correct line numbers with multiple consecutive empty rows', () => {
+            const content = `Date,Description,Amount
+2024-01-15,First Row,10.00
+
+
+
+2024-01-16,Fifth Row,20.00`;
+
+            const result = parser.parse(content);
+            expect(result.success).toBe(true);
+            if (result.success) {
+                expect(result.value.rows).toHaveLength(2);
+                expect(result.value.rows[0]!.lineNumber).toBe(2);
+                expect(result.value.rows[1]!.lineNumber).toBe(6);
+            }
+        });
+
+        it('should preserve original line numbers without header when skipping empty rows', () => {
+            const noHeaderParser = new TabularDataParser({ hasHeader: false });
+            const content = `2024-01-15,First Row,10.00
+
+2024-01-16,Third Row,20.00
+
+2024-01-17,Fifth Row,30.00`;
+
+            const result = noHeaderParser.parse(content);
+            expect(result.success).toBe(true);
+            if (result.success) {
+                expect(result.value.rows).toHaveLength(3);
+                // Without header, line 1 is data
+                expect(result.value.rows[0]!.lineNumber).toBe(1);
+                expect(result.value.rows[1]!.lineNumber).toBe(3);
+                expect(result.value.rows[2]!.lineNumber).toBe(5);
+            }
+        });
+
         it('should trim cell values when configured', () => {
             const content = `Date,Description,Amount
   2024-01-15  ,  Grocery Store  ,  50.00  `;
