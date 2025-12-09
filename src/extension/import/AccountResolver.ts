@@ -52,6 +52,7 @@ export class AccountResolver {
     private readonly defaultDebitAccount: string;
     private readonly defaultCreditAccount: string;
     private readonly defaultPlaceholder: string;
+    private readonly partialMatchCache = new Map<string, AccountResolution | null>();
 
     constructor(options: ImportOptions) {
         // Build category mapping (case-insensitive)
@@ -123,7 +124,7 @@ export class AccountResolver {
     private resolveFromCategory(category: string): AccountResolution | null {
         const normalizedCategory = category.toLowerCase().trim();
 
-        // Direct match
+        // Direct match (no cache needed - Map.get is O(1))
         const directMatch = this.categoryMapping.get(normalizedCategory);
         if (directMatch) {
             return {
@@ -133,17 +134,26 @@ export class AccountResolver {
             };
         }
 
+        // Check partial match cache
+        if (this.partialMatchCache.has(normalizedCategory)) {
+            return this.partialMatchCache.get(normalizedCategory) ?? null;
+        }
+
         // Partial match (category contains key or key contains category)
         for (const [key, account] of this.categoryMapping) {
             if (normalizedCategory.includes(key) || key.includes(normalizedCategory)) {
-                return {
+                const result: AccountResolution = {
                     account,
                     confidence: CONFIDENCE.CATEGORY_PARTIAL,
                     source: 'category',
                 };
+                this.partialMatchCache.set(normalizedCategory, result);
+                return result;
             }
         }
 
+        // Cache miss (no partial match found)
+        this.partialMatchCache.set(normalizedCategory, null);
         return null;
     }
 

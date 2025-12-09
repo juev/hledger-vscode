@@ -198,6 +198,32 @@ describe('AccountResolver', () => {
         });
     });
 
+    describe('partial match caching', () => {
+        it('should return same result for repeated category lookups', () => {
+            const result1 = resolver.resolve('test', 'food & drinks');
+            const result2 = resolver.resolve('test', 'food & drinks');
+
+            expect(result1).toEqual(result2);
+            expect(result1.source).toBe('category');
+        });
+
+        it('should cache null results for non-matching categories', () => {
+            const result1 = resolver.resolve('test', 'xyznonexistent');
+            const result2 = resolver.resolve('test', 'xyznonexistent');
+
+            expect(result1.source).toBe('default');
+            expect(result2.source).toBe('default');
+        });
+
+        it('should handle whitespace normalization in cache', () => {
+            const result1 = resolver.resolve('test', '  food  ');
+            const result2 = resolver.resolve('test', 'food');
+
+            expect(result1.account).toBe(result2.account);
+            expect(result1.source).toBe('category');
+        });
+    });
+
     describe('static helpers', () => {
         it('should describe resolution sources', () => {
             expect(AccountResolver.describeSource('category')).toBe('category column');
