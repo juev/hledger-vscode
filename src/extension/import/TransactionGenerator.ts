@@ -68,14 +68,11 @@ export class TransactionGenerator {
                 if (error.fatal) {
                     errors.push(error);
                 } else {
-                    const warning: ImportWarning = {
+                    warnings.push({
                         lineNumber: error.lineNumber,
                         message: error.message,
-                    };
-                    if (error.field !== undefined) {
-                        (warning as { field: string }).field = error.field;
-                    }
-                    warnings.push(warning);
+                        ...(error.field !== undefined && { field: error.field }),
+                    });
                 }
             }
         }
@@ -335,8 +332,10 @@ export class TransactionGenerator {
      * Get cell value from row
      */
     private getCellValue(row: ParsedRow, index: number): string {
-        const value = index >= 0 && index < row.cells.length ? row.cells[index] : undefined;
-        return value !== undefined ? value.trim() : '';
+        if (index < 0 || index >= row.cells.length) {
+            return '';
+        }
+        return row.cells[index]?.trim() ?? '';
     }
 
     /**

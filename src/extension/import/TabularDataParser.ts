@@ -144,7 +144,10 @@ export class TabularDataParser {
             for (const delimiter of delimiters) {
                 // Count occurrences outside of quoted strings
                 const count = this.countDelimiterOccurrences(line, delimiter);
-                counts.get(delimiter)!.push(count);
+                const delimiterCounts = counts.get(delimiter);
+                if (delimiterCounts) {
+                    delimiterCounts.push(count);
+                }
             }
         }
 

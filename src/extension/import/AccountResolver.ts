@@ -192,6 +192,26 @@ export class AccountResolver {
     }
 
     /**
+     * Validate regex pattern for safety (prevent ReDoS attacks)
+     * Rejects patterns with nested quantifiers that can cause catastrophic backtracking
+     */
+    private validateRegexSafety(pattern: string): boolean {
+        // Reject patterns with dangerous constructs (nested quantifiers)
+        // Examples: (a+)+, (a*)+, (a+){n}, (a+)*, etc.
+        const dangerousPattern = /\([^)]*[+*]\)[+*{]/;
+        if (dangerousPattern.test(pattern)) {
+            return false;
+        }
+
+        // Limit pattern length to prevent complexity attacks
+        if (pattern.length > 200) {
+            return false;
+        }
+
+        return true;
+    }
+
+    /**
      * Compile regex patterns for merchant matching
      */
     private compilePatterns(userPatterns: Record<string, string>): PatternCache[] {
@@ -212,6 +232,15 @@ export class AccountResolver {
 
         // Add user patterns (they can override built-in by coming later)
         for (const [pattern, account] of Object.entries(userPatterns)) {
+            // Validate pattern safety before compilation
+            if (!this.validateRegexSafety(pattern)) {
+                vscode.window.showWarningMessage(
+                    `Potentially unsafe merchant pattern "${pattern}" rejected. ` +
+                    `Pattern contains nested quantifiers or is too complex.`
+                );
+                continue;
+            }
+
             try {
                 patterns.push({
                     regex: new RegExp(pattern, 'i'),

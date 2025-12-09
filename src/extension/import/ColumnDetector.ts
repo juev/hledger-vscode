@@ -185,7 +185,7 @@ export class ColumnDetector {
         for (let i = 0; i < headers.length; i++) {
             const header = headers[i];
             // Skip undefined or empty headers - rely on content analysis
-            if (header === undefined || header.trim() === '') continue;
+            if (!header?.trim()) continue;
 
             // First try header matching
             const headerMatch = this.matchHeader(header);
