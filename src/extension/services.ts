@@ -43,7 +43,7 @@ export interface ExtensionServices extends vscode.Disposable {
  * 4. HLedgerConfig (depends on Parser and Cache)
  * 5. HLedgerCliService (no dependencies)
  * 6. HLedgerCliCommands (depends on CliService)
- * 7. HLedgerImportCommands (no dependencies)
+ * 7. HLedgerImportCommands (depends on HLedgerConfig for journal history)
  *
  * Disposal happens in reverse order to ensure clean shutdown.
  *
@@ -68,7 +68,7 @@ export function createServices(): ExtensionServices {
     const config = new HLedgerConfig(parser, cache);
     const cliService = new HLedgerCliService();
     const cliCommands = new HLedgerCliCommands(cliService);
-    const importCommands = new HLedgerImportCommands();
+    const importCommands = new HLedgerImportCommands(config);
 
     return {
         config,

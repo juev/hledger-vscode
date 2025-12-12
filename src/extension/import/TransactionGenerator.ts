@@ -343,6 +343,11 @@ export class TransactionGenerator {
      * Parse amount string to number
      */
     private parseAmountString(amountStr: string): number | null {
+        // Prevent DoS via extremely long strings in malformed CSV data
+        if (amountStr.length > 100) {
+            return null;
+        }
+
         // Remove currency symbols and whitespace
         let cleaned = amountStr.replace(/[$€£¥₽₴₸₹\s]/g, '').trim();
 
