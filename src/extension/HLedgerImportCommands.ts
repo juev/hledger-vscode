@@ -147,17 +147,27 @@ export class HLedgerImportCommands implements vscode.Disposable {
                                 payeeHistory = historyData;
                             }
                         } catch (error) {
-                            // Log error to console for debugging with full error details
-                            console.error(
-                                'Failed to load payee account history from journal. Import will continue without history-based account resolution.',
-                                error
-                            );
+                            // Differentiate expected vs unexpected failures
+                            const isExpectedFailure =
+                                error instanceof Error &&
+                                (error.message.includes('no journal') ||
+                                    error.message.includes('not found') ||
+                                    error.message.includes('ENOENT'));
 
-                            // Show warning notification to user with clear, non-technical message
-                            await vscode.window.showWarningMessage(
-                                'Could not load journal account history for import. Account resolution will use patterns and category mapping instead.',
-                                'OK'
-                            );
+                            if (!isExpectedFailure) {
+                                // Log unexpected errors for debugging
+                                console.error(
+                                    'Failed to load payee account history from journal.',
+                                    error
+                                );
+
+                                // Only show warning for unexpected failures
+                                await vscode.window.showWarningMessage(
+                                    'Could not load journal account history. Account resolution will use patterns and category mapping instead.',
+                                    'OK'
+                                );
+                            }
+                            // For expected failures (no journal), continue silently
                         }
                     }
 

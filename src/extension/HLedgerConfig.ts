@@ -62,11 +62,29 @@ export class HLedgerConfig {
         if (workspaceFolder) {
             projectPath = workspaceFolder.uri.fsPath;
         } else {
+            // Validate filePath before calling path.dirname()
+            // Even for file:// scheme, fsPath could be malformed
+            if (
+                !filePath ||
+                typeof filePath !== 'string' ||
+                !path.isAbsolute(filePath) ||
+                filePath === '/' ||
+                filePath === '.'
+            ) {
+                // Fallback for malformed file:// paths
+                const currentContent = document.getText();
+                const currentData = this.parser.parseContent(
+                    currentContent,
+                    filePath || 'untitled'
+                );
+                this.data = currentData;
+                return;
+            }
+
             // No workspace, use directory of the file
             projectPath = path.dirname(filePath);
 
-            // Safety check: ensure path is absolute and reasonable
-            // Even for file:// scheme, path could be malformed
+            // Safety check: ensure derived path is absolute and reasonable
             if (!path.isAbsolute(projectPath) || projectPath === '/' || projectPath === '.') {
                 // Fallback: only parse document content without workspace scan
                 const currentContent = document.getText();

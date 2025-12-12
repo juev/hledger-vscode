@@ -179,7 +179,17 @@ export class TabularDataParser {
     }
 
     /**
-     * Count delimiter occurrences outside of quoted strings
+     * Count delimiter occurrences outside of quoted strings.
+     *
+     * Uses single-pass state machine for quote tracking to correctly handle
+     * delimiters that appear inside quoted fields (RFC 4180 compliant).
+     *
+     * @param line - The line to analyze
+     * @param delimiter - The delimiter character to count
+     * @returns Number of unquoted delimiter occurrences
+     *
+     * @complexity O(n) where n is line length - single pass through string
+     * @memory O(1) - no allocations, only primitive state variables
      */
     private countDelimiterOccurrences(line: string, delimiter: Delimiter): number {
         let count = 0;

@@ -308,6 +308,12 @@ Uses modern TypeScript with branded types for type safety:
   - **Auto-delimiter Detection**: Supports comma, tab, semicolon, pipe delimiters
   - **Multi-language Headers**: English and Russian column name recognition
   - **Smart Account Resolution**: Journal history (payee→account), category mapping, merchant patterns, amount sign heuristics
+  - **Security & Performance**:
+    - **ReDoS Protection**: AccountResolver validates patterns (max 100 chars, no nested quantifiers)
+    - **DoS Protection**: parseAmountString rejects strings > 100 characters
+    - **Memory Safety**: LRU cache with 100-entry limit (~5KB footprint)
+    - **Input Validation**: File paths sanitized against command injection
+    - **Complexity**: O(n) linear parsing, no algorithmic attacks possible
 - **Multi-language Support**: Full Unicode support including Cyrillic characters
 
 ## Configuration Settings

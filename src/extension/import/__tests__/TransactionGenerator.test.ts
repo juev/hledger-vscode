@@ -440,6 +440,101 @@ describe('TransactionGenerator', () => {
         });
     });
 
+    describe('parseAmountString DoS protection', () => {
+        it('should accept amount strings up to 100 characters', () => {
+            // Create a valid amount string at exactly 100 characters
+            // Format: -1234567890.00 with padding zeros to reach 100 chars
+            const amount100 = '1' + '0'.repeat(96) + '.00'; // Exactly 100 chars
+            expect(amount100.length).toBe(100);
+
+            const data = createData(
+                ['Date', 'Description', 'Amount'],
+                [['2024-01-15', 'Test Purchase', amount100]],
+                createMappings([
+                    { type: 'date', index: 0 },
+                    { type: 'description', index: 1 },
+                    { type: 'amount', index: 2 },
+                ])
+            );
+
+            const result = generator.generate(data);
+
+            expect(result.transactions).toHaveLength(1);
+            expect(result.transactions[0]!.amount).toBeGreaterThan(0);
+        });
+
+        it('should reject amount strings over 100 characters', () => {
+            // Create an amount string over 100 characters
+            const amount101 = '1' + '0'.repeat(97) + '.00'; // 101 chars
+            expect(amount101.length).toBe(101);
+
+            const data = createData(
+                ['Date', 'Description', 'Amount'],
+                [['2024-01-15', 'Test Purchase', amount101]],
+                createMappings([
+                    { type: 'date', index: 0 },
+                    { type: 'description', index: 1 },
+                    { type: 'amount', index: 2 },
+                ])
+            );
+
+            const result = generator.generate(data);
+
+            // Row should be skipped due to invalid amount
+            expect(result.transactions).toHaveLength(0);
+            expect(result.warnings.length).toBeGreaterThan(0);
+            expect(result.warnings.some(w => w.message.includes('Invalid amount'))).toBe(true);
+        });
+
+        it('should reject extremely long strings for DoS protection', () => {
+            // Simulate malicious input with very long string
+            const maliciousAmount = '1'.repeat(10000);
+
+            const data = createData(
+                ['Date', 'Description', 'Amount'],
+                [['2024-01-15', 'Test Purchase', maliciousAmount]],
+                createMappings([
+                    { type: 'date', index: 0 },
+                    { type: 'description', index: 1 },
+                    { type: 'amount', index: 2 },
+                ])
+            );
+
+            const result = generator.generate(data);
+
+            // Row should be skipped - DoS protection triggers
+            expect(result.transactions).toHaveLength(0);
+            expect(result.warnings.length).toBeGreaterThan(0);
+        });
+
+        it('should parse normal length amounts correctly', () => {
+            const normalAmounts = [
+                { input: '$1,234.56', expected: 1234.56 },
+                { input: '-1234.56', expected: -1234.56 },
+                { input: '1 234,56', expected: 1234.56 },
+                { input: '(50.00)', expected: -50 },
+                { input: '€99.99', expected: 99.99 },
+            ];
+
+            for (const { input, expected } of normalAmounts) {
+                const data = createData(
+                    ['Date', 'Description', 'Amount'],
+                    [['2024-01-15', 'Test', input]],
+                    createMappings([
+                        { type: 'date', index: 0 },
+                        { type: 'description', index: 1 },
+                        { type: 'amount', index: 2 },
+                    ])
+                );
+
+                const result = generator.generate(data);
+
+                expect(result.transactions).toHaveLength(1);
+                expect(result.transactions[0]!.amount).toBeCloseTo(expected);
+            }
+        });
+    });
+
     describe('formatting', () => {
         it('should format transaction as hledger entry', () => {
             const data = createData(

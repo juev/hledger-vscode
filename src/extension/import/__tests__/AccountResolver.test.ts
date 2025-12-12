@@ -325,15 +325,15 @@ describe('AccountResolver', () => {
             expect(result.source).not.toBe('pattern');
         });
 
-        it('should reject patterns longer than 200 characters', () => {
-            const longPattern = 'a'.repeat(201);
+        it('should reject patterns longer than 100 characters', () => {
+            const longPattern = 'a'.repeat(101);
             const customResolver = new AccountResolver({
                 ...DEFAULT_IMPORT_OPTIONS,
                 merchantPatterns: {
                     [longPattern]: 'expenses:test',
                 },
             });
-            const result = customResolver.resolve('a'.repeat(201));
+            const result = customResolver.resolve('a'.repeat(101));
             expect(result.source).not.toBe('pattern');
         });
 
@@ -359,6 +359,50 @@ describe('AccountResolver', () => {
             const result = customResolver.resolve('SHOP_ONE');
             expect(result.source).toBe('pattern');
             expect(result.account).toBe('expenses:test');
+        });
+    });
+
+    describe('ReDoS protection edge cases', () => {
+        it('should accept patterns at exactly 100 characters', () => {
+            const pattern100 = 'A'.repeat(100);
+            const customResolver = new AccountResolver({
+                ...DEFAULT_IMPORT_OPTIONS,
+                merchantPatterns: { [pattern100]: 'expenses:test' },
+            });
+
+            const result = customResolver.resolve('A'.repeat(100));
+            expect(result.source).toBe('pattern');
+            expect(result.account).toBe('expenses:test');
+        });
+
+        it('should reject patterns over 100 characters', () => {
+            const pattern101 = 'A'.repeat(101);
+            const customResolver = new AccountResolver({
+                ...DEFAULT_IMPORT_OPTIONS,
+                merchantPatterns: { [pattern101]: 'expenses:test' },
+            });
+
+            const result = customResolver.resolve('A'.repeat(101));
+            expect(result.source).not.toBe('pattern');
+        });
+
+        it('should still work with valid short patterns after rejecting long ones', () => {
+            const longPattern = 'B'.repeat(150);
+            const shortPattern = 'VALID_STORE';
+            const customResolver = new AccountResolver({
+                ...DEFAULT_IMPORT_OPTIONS,
+                merchantPatterns: {
+                    [longPattern]: 'expenses:rejected',
+                    [shortPattern]: 'expenses:accepted',
+                },
+            });
+
+            const longResult = customResolver.resolve('B'.repeat(150));
+            expect(longResult.source).not.toBe('pattern');
+
+            const shortResult = customResolver.resolve('VALID_STORE_123');
+            expect(shortResult.source).toBe('pattern');
+            expect(shortResult.account).toBe('expenses:accepted');
         });
     });
 

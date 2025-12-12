@@ -374,6 +374,11 @@ export class TransactionGenerator {
      * parseAmountString('(1,234.56)')    // → -1234.56 (accounting notation)
      * parseAmountString('$1,234.56')     // → 1234.56 (currency removed)
      * parseAmountString('1234')          // → 1234 (integer)
+     *
+     * @complexity O(n) where n is string length - single pass for cleaning and normalization
+     * @memory O(1) - no allocations beyond result string
+     * @security No nested loops or backtracking, safe from algorithmic complexity attacks.
+     *           DoS protection: rejects strings > 100 characters.
      */
     private parseAmountString(amountStr: string): number | null {
         // Prevent DoS via extremely long strings in malformed CSV data

@@ -109,6 +109,11 @@ export class AccountResolver {
     private readonly defaultDebitAccount: string;
     private readonly defaultCreditAccount: string;
     private readonly defaultPlaceholder: string;
+    /**
+     * Partial match cache: 100 entries supports ~100 unique categories per import session.
+     * At ~50 bytes/entry (key + value reference), max memory footprint is ~5KB.
+     * This balances memory efficiency with high cache hit rates for typical imports.
+     */
     private readonly partialMatchCache = new LRUCache<string, AccountResolution | null>(100);
     private readonly payeeHistory: PayeeAccountHistory | null;
     private readonly useHistory: boolean;
@@ -423,8 +428,10 @@ export class AccountResolver {
      * - Exponential patterns: (a|b|ab)+
      */
     private validateRegexSafety(pattern: string): boolean {
-        // Limit pattern length to prevent complexity attacks
-        if (pattern.length > 200) {
+        // Limit pattern length to prevent ReDoS complexity attacks.
+        // 100 chars is sufficient for merchant patterns like "AMAZON|AMZN|WHOLE\s*FOODS"
+        // while reducing attack surface from user-provided configuration.
+        if (pattern.length > 100) {
             return false;
         }
 
