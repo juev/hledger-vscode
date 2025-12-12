@@ -141,9 +141,23 @@ export class HLedgerImportCommands implements vscode.Disposable {
                     // Get payee-account history from journal (if available and enabled)
                     let payeeHistory: PayeeAccountHistory | undefined;
                     if (options.useJournalHistory !== false && this.config) {
-                        const historyData = this.config.getPayeeAccountHistory();
-                        if (historyData) {
-                            payeeHistory = historyData;
+                        try {
+                            const historyData = this.config.getPayeeAccountHistory();
+                            if (historyData) {
+                                payeeHistory = historyData;
+                            }
+                        } catch (error) {
+                            // Log error to console for debugging with full error details
+                            console.error(
+                                'Failed to load payee account history from journal. Import will continue without history-based account resolution.',
+                                error
+                            );
+
+                            // Show warning notification to user with clear, non-technical message
+                            await vscode.window.showWarningMessage(
+                                'Could not load journal account history for import. Account resolution will use patterns and category mapping instead.',
+                                'OK'
+                            );
                         }
                     }
 

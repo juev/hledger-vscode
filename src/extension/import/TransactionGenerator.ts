@@ -340,7 +340,40 @@ export class TransactionGenerator {
     }
 
     /**
-     * Parse amount string to number
+     * Parse amount string to a numeric value, handling multiple international number formats.
+     *
+     * Supports the following input formats:
+     * - **US format**: `1,234.56` or `-1,234.56` (comma as thousand separator, period as decimal)
+     * - **EU format**: `1.234,56` or `-1.234,56` (period as thousand separator, comma as decimal)
+     * - **Accounting notation**: `(1,234.56)` represents a negative amount
+     * - **Sign placement**: `+1234`, `-1234`, `$1234`, `€1234`, `₽1234`
+     * - **Currency symbols**: `$1234`, `€1234`, `£1234`, `¥1234`, `₽1234`, `₴1234`, `₸1234`, `₹1234` (ignored during parsing)
+     * - **Integer amounts**: `1234` (no decimal separator)
+     *
+     * Parsing rules:
+     * 1. Strips all leading/trailing whitespace
+     * 2. Removes all currency symbols (dollar, euro, pound, yen, etc.)
+     * 3. Detects negative amounts via parentheses notation (e.g., `(100)` → -100)
+     * 4. Determines decimal separator by checking which appears last (. or ,):
+     *    - If period appears last → US format (remove commas)
+     *    - If comma appears last → EU format (remove periods, convert comma to period)
+     *    - If only comma present → heuristic check (≤2 digits after comma means decimal, else thousand separator)
+     *    - If only period present → treated as decimal separator
+     * 5. Applies explicit signs (`+`/`-`) and accounting notation signs
+     *
+     * @param {string} amountStr - The amount string to parse (e.g., `$1,234.56`, `1.234,56`, `(100)`)
+     * @returns {number | null} The parsed numeric value, or null if parsing fails. Returns null for:
+     *   - Strings longer than 100 characters (DoS protection)
+     *   - Malformed amounts that cannot be parsed as valid numbers
+     *   - Empty strings or strings containing only non-numeric characters
+     *
+     * @example
+     * parseAmountString('1,234.56')      // → 1234.56
+     * parseAmountString('-1,234.56')     // → -1234.56
+     * parseAmountString('1.234,56')      // → 1234.56 (EU format)
+     * parseAmountString('(1,234.56)')    // → -1234.56 (accounting notation)
+     * parseAmountString('$1,234.56')     // → 1234.56 (currency removed)
+     * parseAmountString('1234')          // → 1234 (integer)
      */
     private parseAmountString(amountStr: string): number | null {
         // Prevent DoS via extremely long strings in malformed CSV data

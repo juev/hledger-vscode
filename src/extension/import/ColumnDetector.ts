@@ -229,12 +229,13 @@ export class ColumnDetector {
     }
 
     /**
-     * Match header against known patterns
+     * Match header against known patterns with tiered confidence scoring
+     * Priority: exact regex (0.95) > word boundary (0.75) > substring (0.55)
      */
     private matchHeader(header: string): { type: ColumnType; confidence: number } {
         const normalizedHeader = header.trim();
 
-        // Try exact match first
+        // Try exact regex match first (highest confidence)
         for (const [type, patterns] of Object.entries(this.patterns)) {
             for (const pattern of patterns) {
                 if (pattern.test(normalizedHeader)) {
@@ -243,13 +244,14 @@ export class ColumnDetector {
             }
         }
 
-        // Try partial match (header contains keyword)
-        const lowerHeader = normalizedHeader.toLowerCase();
+        // Keywords for partial matching (English and Russian)
         const keywords: Record<string, ColumnType> = {
             date: 'date',
+            дата: 'date',
             время: 'date',
             time: 'date',
             desc: 'description',
+            описание: 'description',
             narr: 'description',
             amount: 'amount',
             sum: 'amount',
@@ -274,13 +276,49 @@ export class ColumnDetector {
             vendor: 'payee',
         };
 
+        const lowerHeader = normalizedHeader.toLowerCase();
+
+        // Try word boundary match (medium confidence)
+        for (const [keyword, type] of Object.entries(keywords)) {
+            if (this.matchesAtWordBoundary(lowerHeader, keyword)) {
+                return { type, confidence: 0.75 };
+            }
+        }
+
+        // Fall back to substring match (lower confidence)
         for (const [keyword, type] of Object.entries(keywords)) {
             if (lowerHeader.includes(keyword)) {
-                return { type, confidence: 0.7 };
+                return { type, confidence: 0.55 };
             }
         }
 
         return { type: 'unknown', confidence: 0 };
+    }
+
+    /**
+     * Check if keyword appears at word boundary in header
+     * Word boundaries: start/end of string, underscore, hyphen, space, digit-to-letter transition
+     */
+    private matchesAtWordBoundary(header: string, keyword: string): boolean {
+        // Build regex pattern with word boundary support for both Latin and Cyrillic
+        // Standard \b doesn't work well with Cyrillic, so we use custom boundary detection
+        const escapedKeyword = keyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+        // Define word boundary characters (non-alphanumeric separators)
+        const boundaryChars = '[\\s_\\-\\.\\,\\;\\:\\/\\|\\(\\)\\[\\]\\{\\}]';
+
+        // Pattern matches keyword at:
+        // 1. Start of string followed by keyword
+        // 2. Keyword followed by end of string
+        // 3. Keyword surrounded by boundary characters
+        const patterns = [
+            new RegExp(`^${escapedKeyword}${boundaryChars}`, 'i'),
+            new RegExp(`${boundaryChars}${escapedKeyword}$`, 'i'),
+            new RegExp(`^${escapedKeyword}$`, 'i'),
+            new RegExp(`${boundaryChars}${escapedKeyword}${boundaryChars}`, 'i'),
+        ];
+
+        return patterns.some((pattern) => pattern.test(header));
     }
 
     /**

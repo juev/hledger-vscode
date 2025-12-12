@@ -226,4 +226,106 @@ describe('ColumnDetector', () => {
             expect(dateMappings).toHaveLength(1);
         });
     });
+
+    describe('word boundary matching', () => {
+        it('should give high confidence for exact regex match', () => {
+            const headers = ['Date', 'Description', 'Amount'];
+            const mappings = detector.detectColumns(headers, []);
+
+            const dateMapping = mappings.find(m => m.type === 'date');
+            expect(dateMapping?.confidence).toBe(0.95);
+        });
+
+        it('should give medium confidence for word boundary match', () => {
+            // Using headers that do NOT match exact regex patterns
+            // but have keywords at word boundaries
+            const headers = ['MY_DATE_FIELD', 'THE_DESC_INFO', 'TOTAL_AMOUNT_VAL'];
+            const mappings = detector.detectColumns(headers, []);
+
+            // Word boundary match should have confidence 0.75
+            const dateMapping = mappings.find(m => m.type === 'date');
+            expect(dateMapping?.confidence).toBe(0.75);
+        });
+
+        it('should give lower confidence for substring match', () => {
+            // Headers with keywords embedded without word boundaries
+            const headers = ['MYDATEFIELD', 'FULLDESCRIPTION', 'TOTALAMOUNT'];
+            const mappings = detector.detectColumns(headers, []);
+
+            // Substring match should have confidence 0.55
+            const descMapping = mappings.find(m => m.type === 'description');
+            expect(descMapping?.confidence).toBe(0.55);
+        });
+
+        it('should not match DESCRIPTION as DESC with high confidence', () => {
+            // This is the false positive case: "DESCRIPTION" contains "DESC"
+            // but should NOT match DESC keyword with word boundary
+            const headers = ['DESCRIPTION'];
+            const mappings = detector.detectColumns(headers, []);
+
+            const descMapping = mappings.find(m => m.type === 'description');
+            // Should match via exact regex pattern (description), not DESC substring
+            expect(descMapping).toBeDefined();
+            expect(descMapping?.confidence).toBe(0.95);
+        });
+
+        it('should match DESC as word boundary with medium confidence', () => {
+            // "DESC_COLUMN" contains "DESC" at word boundary
+            const headers = ['DESC_COLUMN'];
+            const mappings = detector.detectColumns(headers, []);
+
+            const descMapping = mappings.find(m => m.type === 'description');
+            expect(descMapping).toBeDefined();
+            expect(descMapping?.confidence).toBe(0.75);
+        });
+
+        it('should handle Russian word boundaries correctly', () => {
+            // Russian keywords at word boundaries (not matching exact regex)
+            const headers = ['МОЯ_ДАТА_ПОЛЕ', 'ОПИСАНИЕ_ДАННЫЕ', 'ИТОГО_СУММА_ПЛАТЕЖ'];
+            const mappings = detector.detectColumns(headers, []);
+
+            const dateMapping = mappings.find(m => m.type === 'date');
+            expect(dateMapping).toBeDefined();
+            // Word boundary match for дата
+            expect(dateMapping?.confidence).toBe(0.75);
+        });
+
+        it('should prefer exact match over word boundary match', () => {
+            // "Date" should get 0.95 from exact regex, not 0.75 from word boundary
+            const headers = ['Date'];
+            const mappings = detector.detectColumns(headers, []);
+
+            const dateMapping = mappings.find(m => m.type === 'date');
+            expect(dateMapping?.confidence).toBe(0.95);
+        });
+
+        it('should prefer word boundary over substring match', () => {
+            // "MY_AMOUNT_FIELD" has "amount" at word boundary
+            // "MYAMOUNTFIELD" has "amount" as substring only
+            // When both map to same type, conflict resolution keeps higher confidence
+            const headers = ['MY_AMOUNT_FIELD', 'MYAMOUNTFIELD'];
+            const mappings = detector.detectColumns(headers, []);
+
+            const wordBoundaryMapping = mappings.find(m => m.headerName === 'MY_AMOUNT_FIELD');
+            const substringMapping = mappings.find(m => m.headerName === 'MYAMOUNTFIELD');
+
+            // Word boundary match should have higher confidence
+            expect(wordBoundaryMapping?.confidence).toBe(0.75);
+            expect(wordBoundaryMapping?.type).toBe('amount');
+
+            // Substring match gets demoted to unknown due to conflict resolution
+            // (only one column can have the 'amount' type)
+            expect(substringMapping?.type).toBe('unknown');
+        });
+
+        it('should give substring confidence when no conflict exists', () => {
+            // Single header with substring match only
+            const headers = ['MYAMOUNTFIELD'];
+            const mappings = detector.detectColumns(headers, []);
+
+            const amountMapping = mappings.find(m => m.type === 'amount');
+            expect(amountMapping).toBeDefined();
+            expect(amountMapping?.confidence).toBe(0.55);
+        });
+    });
 });

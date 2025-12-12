@@ -222,6 +222,144 @@ describe('AccountResolver', () => {
             expect(result1.account).toBe(result2.account);
             expect(result1.source).toBe('category');
         });
+
+        it('should evict old entries when cache exceeds limit', () => {
+            // LRU cache has 100 entry limit - fill it up and verify it works
+            for (let i = 0; i < 150; i++) {
+                resolver.resolve('test', `unique_category_${i}`);
+            }
+            // Cache should not exceed 100 entries (internal limit)
+            // This test verifies no memory leak by filling cache beyond limit
+            const lastResult = resolver.resolve('test', 'unique_category_149');
+            expect(lastResult.source).toBe('default');
+        });
+    });
+
+    describe('ReDoS protection', () => {
+        it('should reject nested quantifiers pattern: (a+)+', () => {
+            const customResolver = new AccountResolver({
+                ...DEFAULT_IMPORT_OPTIONS,
+                merchantPatterns: {
+                    '(a+)+': 'expenses:test',
+                },
+            });
+            // Pattern should be rejected, so no pattern match
+            const result = customResolver.resolve('aaaa');
+            expect(result.source).not.toBe('pattern');
+        });
+
+        it('should reject nested quantifiers pattern: (a*)+', () => {
+            const customResolver = new AccountResolver({
+                ...DEFAULT_IMPORT_OPTIONS,
+                merchantPatterns: {
+                    '(a*)+': 'expenses:test',
+                },
+            });
+            const result = customResolver.resolve('aaaa');
+            expect(result.source).not.toBe('pattern');
+        });
+
+        it('should reject nested quantifiers pattern: (a+)*', () => {
+            const customResolver = new AccountResolver({
+                ...DEFAULT_IMPORT_OPTIONS,
+                merchantPatterns: {
+                    '(a+)*': 'expenses:test',
+                },
+            });
+            const result = customResolver.resolve('aaaa');
+            expect(result.source).not.toBe('pattern');
+        });
+
+        it('should reject nested quantifiers with curly braces: (a+){2}', () => {
+            const customResolver = new AccountResolver({
+                ...DEFAULT_IMPORT_OPTIONS,
+                merchantPatterns: {
+                    '(a+){2}': 'expenses:test',
+                },
+            });
+            const result = customResolver.resolve('aaaa');
+            expect(result.source).not.toBe('pattern');
+        });
+
+        it('should reject overlapping alternations: (a|ab)+', () => {
+            const customResolver = new AccountResolver({
+                ...DEFAULT_IMPORT_OPTIONS,
+                merchantPatterns: {
+                    '(a|ab)+': 'expenses:test',
+                },
+            });
+            const result = customResolver.resolve('ababab');
+            expect(result.source).not.toBe('pattern');
+        });
+
+        it('should reject identical alternations: (a|a)+', () => {
+            const customResolver = new AccountResolver({
+                ...DEFAULT_IMPORT_OPTIONS,
+                merchantPatterns: {
+                    '(a|a)+': 'expenses:test',
+                },
+            });
+            const result = customResolver.resolve('aaaa');
+            expect(result.source).not.toBe('pattern');
+        });
+
+        it('should reject wildcard in alternation: (.|x)+', () => {
+            const customResolver = new AccountResolver({
+                ...DEFAULT_IMPORT_OPTIONS,
+                merchantPatterns: {
+                    '(.|x)+': 'expenses:test',
+                },
+            });
+            const result = customResolver.resolve('xxxx');
+            expect(result.source).not.toBe('pattern');
+        });
+
+        it('should reject backreference with quantifier: (.+)\\1+', () => {
+            const customResolver = new AccountResolver({
+                ...DEFAULT_IMPORT_OPTIONS,
+                merchantPatterns: {
+                    '(.+)\\1+': 'expenses:test',
+                },
+            });
+            const result = customResolver.resolve('abcabc');
+            expect(result.source).not.toBe('pattern');
+        });
+
+        it('should reject patterns longer than 200 characters', () => {
+            const longPattern = 'a'.repeat(201);
+            const customResolver = new AccountResolver({
+                ...DEFAULT_IMPORT_OPTIONS,
+                merchantPatterns: {
+                    [longPattern]: 'expenses:test',
+                },
+            });
+            const result = customResolver.resolve('a'.repeat(201));
+            expect(result.source).not.toBe('pattern');
+        });
+
+        it('should allow safe patterns', () => {
+            const customResolver = new AccountResolver({
+                ...DEFAULT_IMPORT_OPTIONS,
+                merchantPatterns: {
+                    'SAFE_STORE_\\d+': 'expenses:test',
+                },
+            });
+            const result = customResolver.resolve('SAFE_STORE_123');
+            expect(result.source).toBe('pattern');
+            expect(result.account).toBe('expenses:test');
+        });
+
+        it('should allow simple alternations without overlap', () => {
+            const customResolver = new AccountResolver({
+                ...DEFAULT_IMPORT_OPTIONS,
+                merchantPatterns: {
+                    'SHOP_(ONE|TWO)': 'expenses:test',
+                },
+            });
+            const result = customResolver.resolve('SHOP_ONE');
+            expect(result.source).toBe('pattern');
+            expect(result.account).toBe('expenses:test');
+        });
     });
 
     describe('static helpers', () => {

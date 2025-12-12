@@ -46,6 +46,54 @@ interface PatternCache {
 }
 
 /**
+ * LRU cache with size limit and eviction
+ * Follows the pattern from StrictPositionAnalyzer.RegexCache
+ */
+class LRUCache<K, V> {
+    private readonly maxSize: number;
+    private cache = new Map<K, V>();
+
+    constructor(maxSize: number) {
+        this.maxSize = maxSize;
+    }
+
+    get(key: K): V | undefined {
+        const value = this.cache.get(key);
+        if (value !== undefined) {
+            // Move to end for LRU behavior
+            this.cache.delete(key);
+            this.cache.set(key, value);
+        }
+        return value;
+    }
+
+    has(key: K): boolean {
+        return this.cache.has(key);
+    }
+
+    set(key: K, value: V): void {
+        if (this.cache.has(key)) {
+            this.cache.delete(key);
+        } else if (this.cache.size >= this.maxSize) {
+            // Evict least recently used (first item)
+            const iterator = this.cache.keys().next();
+            if (!iterator.done && iterator.value !== undefined) {
+                this.cache.delete(iterator.value);
+            }
+        }
+        this.cache.set(key, value);
+    }
+
+    clear(): void {
+        this.cache.clear();
+    }
+
+    size(): number {
+        return this.cache.size;
+    }
+}
+
+/**
  * Account resolver with smart detection strategies
  *
  * Resolution priority:
@@ -61,7 +109,7 @@ export class AccountResolver {
     private readonly defaultDebitAccount: string;
     private readonly defaultCreditAccount: string;
     private readonly defaultPlaceholder: string;
-    private readonly partialMatchCache = new Map<string, AccountResolution | null>();
+    private readonly partialMatchCache = new LRUCache<string, AccountResolution | null>(100);
     private readonly payeeHistory: PayeeAccountHistory | null;
     private readonly useHistory: boolean;
     private readonly fuzzyMatcher: SimpleFuzzyMatcher;
@@ -368,22 +416,150 @@ export class AccountResolver {
 
     /**
      * Validate regex pattern for safety (prevent ReDoS attacks)
-     * Rejects patterns with nested quantifiers that can cause catastrophic backtracking
+     * Rejects patterns with constructs that can cause catastrophic backtracking:
+     * - Nested quantifiers: (a+)+, (a*)+, (a+)*, (a*)*
+     * - Overlapping alternations with quantifiers: (a|a)+, (a|ab)+
+     * - Backreferences with quantifiers: (.+)\1+
+     * - Exponential patterns: (a|b|ab)+
      */
     private validateRegexSafety(pattern: string): boolean {
-        // Reject patterns with dangerous constructs (nested quantifiers)
-        // Examples: (a+)+, (a*)+, (a+){n}, (a+)*, etc.
-        const dangerousPattern = /\([^)]*[+*]\)[+*{]/;
-        if (dangerousPattern.test(pattern)) {
-            return false;
-        }
-
         // Limit pattern length to prevent complexity attacks
         if (pattern.length > 200) {
             return false;
         }
 
+        // Check for dangerous ReDoS patterns
+        if (this.hasNestedQuantifiers(pattern)) {
+            return false;
+        }
+
+        if (this.hasOverlappingAlternations(pattern)) {
+            return false;
+        }
+
+        if (this.hasBackreferenceWithQuantifier(pattern)) {
+            return false;
+        }
+
         return true;
+    }
+
+    /**
+     * Detect nested quantifiers: (a+)+, (a*)+, (a+)*, (a*)*, (a+){n}, etc.
+     * These cause exponential backtracking on non-matching input.
+     */
+    private hasNestedQuantifiers(pattern: string): boolean {
+        // Pattern: group with quantifier inside, followed by another quantifier
+        // Matches: (a+)+, (a*)+, (a+)*, (a*)*, (a+){2}, etc.
+        // Also catches nested groups: ((a)+)+
+        const nestedQuantifierPattern = /\([^)]*[+*}]\)[+*{]/;
+        if (nestedQuantifierPattern.test(pattern)) {
+            return true;
+        }
+
+        // Check for quantified groups containing quantified content
+        // Matches patterns like: (a{2,})+, (.+)+, (.*)+
+        const quantifiedGroupContent = /\([^)]*\{[^}]*\}\)[+*{]|\([^)]*[.][+*]\)[+*{]/;
+        if (quantifiedGroupContent.test(pattern)) {
+            return true;
+        }
+
+        return false;
+    }
+
+    /**
+     * Detect overlapping alternations with quantifiers: (a|a)+, (a|ab)+, (.|a)+
+     * These create ambiguous matches that cause exponential backtracking.
+     */
+    private hasOverlappingAlternations(pattern: string): boolean {
+        // Find all groups with alternations followed by quantifiers
+        const groupWithAltAndQuantifier = /\(([^)]+)\)[+*{]/g;
+        let match: RegExpExecArray | null;
+
+        while ((match = groupWithAltAndQuantifier.exec(pattern)) !== null) {
+            const groupContent = match[1];
+            if (groupContent === undefined) continue;
+
+            // Check if group contains alternation
+            if (!groupContent.includes('|')) {
+                continue;
+            }
+
+            // Extract alternatives
+            const alternatives = groupContent.split('|');
+            if (alternatives.length < 2) continue;
+
+            // Check for overlapping patterns
+            if (this.hasOverlappingPatterns(alternatives)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Check if any alternatives overlap (one is prefix/suffix of another,
+     * or they share common prefixes, or one is a wildcard).
+     */
+    private hasOverlappingPatterns(alternatives: string[]): boolean {
+        for (let i = 0; i < alternatives.length; i++) {
+            const alt1 = alternatives[i];
+            if (alt1 === undefined) continue;
+
+            // Wildcard patterns like . or .* match everything
+            if (alt1 === '.' || alt1 === '.*' || alt1 === '.+') {
+                return true;
+            }
+
+            for (let j = i + 1; j < alternatives.length; j++) {
+                const alt2 = alternatives[j];
+                if (alt2 === undefined) continue;
+
+                // Identical alternatives
+                if (alt1 === alt2) {
+                    return true;
+                }
+
+                // One is prefix of another: (a|ab) - "a" matches prefix of "ab"
+                if (alt1.startsWith(alt2) || alt2.startsWith(alt1)) {
+                    return true;
+                }
+
+                // One is suffix of another: (b|ab)
+                if (alt1.endsWith(alt2) || alt2.endsWith(alt1)) {
+                    return true;
+                }
+
+                // Check for common prefix with optional suffix: (ab|ac)
+                // This is less dangerous but still problematic with quantifiers
+                const minLen = Math.min(alt1.length, alt2.length);
+                let commonPrefixLen = 0;
+                for (let k = 0; k < minLen; k++) {
+                    if (alt1[k] === alt2[k]) {
+                        commonPrefixLen++;
+                    } else {
+                        break;
+                    }
+                }
+                // More than half of the shorter string is common prefix
+                if (commonPrefixLen > minLen / 2 && commonPrefixLen > 0) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Detect backreferences followed by quantifiers: (.+)\1+, (.*)\1*
+     * These can cause exponential backtracking on non-matching input.
+     */
+    private hasBackreferenceWithQuantifier(pattern: string): boolean {
+        // Pattern: backreference (\1, \2, etc.) followed by quantifier
+        const backreferenceWithQuantifier = /\\[1-9][0-9]*[+*{]/;
+        return backreferenceWithQuantifier.test(pattern);
     }
 
     /**
