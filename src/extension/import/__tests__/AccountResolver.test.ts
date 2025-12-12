@@ -14,7 +14,7 @@ describe('AccountResolver', () => {
 
             expect(result.account).toBe('expenses:food:groceries');
             expect(result.source).toBe('category');
-            expect(result.confidence).toBeGreaterThan(0.8);
+            expect(result.confidence).toBeGreaterThanOrEqual(0.8);
         });
 
         it('should resolve case-insensitively', () => {

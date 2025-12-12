@@ -8,21 +8,29 @@ import {
     AccountResolution,
     AccountResolutionSource,
     ImportOptions,
+    PayeeAccountHistory,
     BUILTIN_CATEGORY_MAPPING,
     BUILTIN_MERCHANT_PATTERNS,
 } from './types';
+import { SimpleFuzzyMatcher, FuzzyMatch } from '../SimpleFuzzyMatcher';
+import { AccountName, PayeeName } from '../types';
 
 /**
  * Confidence thresholds for account resolution strategies.
  * Higher values indicate more reliable detection methods.
+ * History from user's journal takes highest priority.
  */
 const CONFIDENCE = {
-    /** Direct category match from CSV column */
-    CATEGORY_EXACT: 0.95,
+    /** Exact payee match from journal history - highest confidence */
+    HISTORY_EXACT: 0.95,
+    /** Fuzzy payee match from journal history */
+    HISTORY_FUZZY: 0.85,
+    /** Direct category match from CSV column (demoted below history) */
+    CATEGORY_EXACT: 0.80,
     /** Partial category match (contains/contained by) */
-    CATEGORY_PARTIAL: 0.8,
+    CATEGORY_PARTIAL: 0.75,
     /** Merchant pattern regex match */
-    MERCHANT_PATTERN: 0.85,
+    MERCHANT_PATTERN: 0.70,
     /** Fallback: amount sign heuristic (positive=income, negative=expense) */
     AMOUNT_SIGN: 0.5,
     /** Default placeholder when no strategy matches */
@@ -41,10 +49,11 @@ interface PatternCache {
  * Account resolver with smart detection strategies
  *
  * Resolution priority:
- * 1. Category column mapping (if category provided)
- * 2. Merchant pattern matching (regex against description)
- * 3. Amount sign heuristic (positive = income, negative = expense)
- * 4. Default placeholder (TODO:account)
+ * 1. Journal history (if history provided and enabled)
+ * 2. Category column mapping (if category provided)
+ * 3. Merchant pattern matching (regex against description)
+ * 4. Amount sign heuristic (positive = income, negative = expense)
+ * 5. Default placeholder (TODO:account)
  */
 export class AccountResolver {
     private readonly categoryMapping: Map<string, string>;
@@ -53,8 +62,11 @@ export class AccountResolver {
     private readonly defaultCreditAccount: string;
     private readonly defaultPlaceholder: string;
     private readonly partialMatchCache = new Map<string, AccountResolution | null>();
+    private readonly payeeHistory: PayeeAccountHistory | null;
+    private readonly useHistory: boolean;
+    private readonly fuzzyMatcher: SimpleFuzzyMatcher;
 
-    constructor(options: ImportOptions) {
+    constructor(options: ImportOptions, payeeHistory?: PayeeAccountHistory) {
         // Build category mapping (case-insensitive)
         this.categoryMapping = new Map();
 
@@ -74,6 +86,11 @@ export class AccountResolver {
         this.defaultDebitAccount = options.defaultDebitAccount;
         this.defaultCreditAccount = options.defaultCreditAccount;
         this.defaultPlaceholder = options.defaultBalancingAccount;
+
+        // Initialize history-based resolution
+        this.payeeHistory = payeeHistory ?? null;
+        this.useHistory = options.useJournalHistory !== false && this.payeeHistory !== null;
+        this.fuzzyMatcher = new SimpleFuzzyMatcher();
     }
 
     /**
@@ -89,7 +106,15 @@ export class AccountResolver {
         category?: string,
         amount?: number
     ): AccountResolution {
-        // Strategy 1: Category mapping (highest confidence)
+        // Strategy 1: Journal history (highest priority)
+        if (this.useHistory && description) {
+            const historyResult = this.resolveFromHistory(description);
+            if (historyResult) {
+                return historyResult;
+            }
+        }
+
+        // Strategy 2: Category mapping
         if (category) {
             const categoryResult = this.resolveFromCategory(category);
             if (categoryResult) {
@@ -97,7 +122,7 @@ export class AccountResolver {
             }
         }
 
-        // Strategy 2: Merchant pattern matching
+        // Strategy 3: Merchant pattern matching
         if (description) {
             const patternResult = this.resolveFromPattern(description);
             if (patternResult) {
@@ -105,17 +130,157 @@ export class AccountResolver {
             }
         }
 
-        // Strategy 3: Amount sign heuristic
+        // Strategy 4: Amount sign heuristic
         if (amount !== undefined) {
             return this.resolveFromAmount(amount);
         }
 
-        // Strategy 4: Default placeholder
+        // Strategy 5: Default placeholder
         return {
             account: this.defaultPlaceholder,
             confidence: CONFIDENCE.DEFAULT,
             source: 'default',
         };
+    }
+
+    /**
+     * Resolve account from journal history.
+     * Tries exact match first, then fuzzy matching.
+     */
+    private resolveFromHistory(description: string): AccountResolution | null {
+        if (!this.payeeHistory) {
+            return null;
+        }
+
+        // Normalize description for matching
+        const normalizedDesc = description.normalize('NFC');
+
+        // Try exact match first (case-insensitive)
+        const exactResult = this.findExactPayeeMatch(normalizedDesc);
+        if (exactResult) {
+            return exactResult;
+        }
+
+        // Try fuzzy match
+        return this.findFuzzyPayeeMatch(normalizedDesc);
+    }
+
+    /**
+     * Find exact payee match from history (case-insensitive).
+     */
+    private findExactPayeeMatch(description: string): AccountResolution | null {
+        if (!this.payeeHistory) {
+            return null;
+        }
+
+        const descLower = description.toLowerCase();
+
+        for (const [payee, accounts] of this.payeeHistory.payeeAccounts) {
+            const payeeLower = payee.toLowerCase();
+            if (payeeLower === descLower) {
+                const bestAccount = this.selectBestAccount(payee, accounts);
+                return {
+                    account: bestAccount,
+                    confidence: CONFIDENCE.HISTORY_EXACT,
+                    source: 'history',
+                };
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Find fuzzy payee match from history.
+     * Uses SimpleFuzzyMatcher to find partial matches.
+     */
+    private findFuzzyPayeeMatch(description: string): AccountResolution | null {
+        if (!this.payeeHistory) {
+            return null;
+        }
+
+        const payees = Array.from(this.payeeHistory.payeeAccounts.keys());
+        if (payees.length === 0) {
+            return null;
+        }
+
+        // Check if description contains any payee or payee contains description
+        const descLower = description.toLowerCase();
+
+        for (const payee of payees) {
+            const payeeLower = payee.toLowerCase();
+
+            // Description contains payee (e.g., "AMAZON.COM*123" contains "Amazon")
+            if (descLower.includes(payeeLower) || payeeLower.includes(descLower)) {
+                const accounts = this.payeeHistory.payeeAccounts.get(payee);
+                if (accounts) {
+                    const bestAccount = this.selectBestAccount(payee, accounts);
+                    return {
+                        account: bestAccount,
+                        confidence: CONFIDENCE.HISTORY_FUZZY,
+                        source: 'history',
+                    };
+                }
+            }
+        }
+
+        // Use fuzzy matcher for more flexible matching
+        const matches: FuzzyMatch<PayeeName>[] = this.fuzzyMatcher.match(
+            description,
+            payees as PayeeName[],
+            { maxResults: 1 }
+        );
+
+        if (matches.length > 0 && matches[0] && matches[0].score > 0) {
+            const matchedPayee = matches[0].item;
+            const accounts = this.payeeHistory?.payeeAccounts.get(matchedPayee);
+            if (accounts) {
+                const bestAccount = this.selectBestAccount(matchedPayee, accounts);
+                return {
+                    account: bestAccount,
+                    confidence: CONFIDENCE.HISTORY_FUZZY,
+                    source: 'history',
+                };
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Select the best account from a set of accounts for a payee.
+     * Prioritizes by usage frequency, then alphabetically.
+     */
+    private selectBestAccount(
+        payee: PayeeName,
+        accounts: ReadonlySet<AccountName>
+    ): AccountName {
+        if (accounts.size === 0) {
+            return this.defaultPlaceholder as AccountName;
+        }
+
+        if (accounts.size === 1) {
+            // Size check guarantees element exists
+            return Array.from(accounts)[0]!;
+        }
+
+        // Sort by usage count descending, then alphabetically
+        const accountArray = Array.from(accounts);
+        accountArray.sort((a, b) => {
+            const keyA = `${payee}::${a}`;
+            const keyB = `${payee}::${b}`;
+            const usageA = this.payeeHistory?.pairUsage.get(keyA) ?? 0;
+            const usageB = this.payeeHistory?.pairUsage.get(keyB) ?? 0;
+
+            if (usageA !== usageB) {
+                return usageB - usageA; // Higher usage first
+            }
+
+            return a.localeCompare(b); // Alphabetically for ties
+        });
+
+        // Array has at least 2 elements (size > 1 check above)
+        return accountArray[0]!;
     }
 
     /**

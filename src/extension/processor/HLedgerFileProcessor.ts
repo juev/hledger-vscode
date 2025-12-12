@@ -620,6 +620,10 @@ export class HLedgerFileProcessor {
             payeeUsage: new Map(data.payeeUsage),
             tagUsage: new Map(data.tagUsage),
             commodityUsage: new Map(data.commodityUsage),
+            payeeAccounts: new Map(
+                Array.from(data.payeeAccounts.entries()).map(([k, v]) => [k, new Set(v)])
+            ),
+            payeeAccountPairUsage: new Map(data.payeeAccountPairUsage),
             commodityFormats: new Map(data.commodityFormats),
             decimalMark: data.decimalMark,
             defaultCommodity: data.defaultCommodity,
@@ -645,6 +649,8 @@ export class HLedgerFileProcessor {
             payeeUsage: mutableData.payeeUsage,
             tagUsage: mutableData.tagUsage,
             commodityUsage: mutableData.commodityUsage,
+            payeeAccounts: mutableData.payeeAccounts,
+            payeeAccountPairUsage: mutableData.payeeAccountPairUsage,
             commodityFormats: mutableData.commodityFormats,
             decimalMark: mutableData.decimalMark,
             defaultCommodity: mutableData.defaultCommodity,

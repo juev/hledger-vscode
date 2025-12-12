@@ -250,7 +250,7 @@ src/
     │   ├── TabularDataParser.ts       # CSV/TSV parser with auto-delimiter detection
     │   ├── ColumnDetector.ts          # Column type detection (multi-language)
     │   ├── DateParser.ts              # Date format detection and parsing
-    │   ├── AccountResolver.ts         # Smart account resolution (patterns + category)
+    │   ├── AccountResolver.ts         # Smart account resolution (history + patterns + category)
     │   ├── TransactionGenerator.ts    # hledger transaction generation
     │   ├── types.ts                   # Import type definitions
     │   └── __tests__/                 # Import module tests (5 test suites)
@@ -307,7 +307,7 @@ Uses modern TypeScript with branded types for type safety:
 - **CSV/TSV Import**: Convert tabular data to hledger format with intelligent column detection and account resolution
   - **Auto-delimiter Detection**: Supports comma, tab, semicolon, pipe delimiters
   - **Multi-language Headers**: English and Russian column name recognition
-  - **Smart Account Resolution**: Category mapping, merchant patterns, amount sign heuristics
+  - **Smart Account Resolution**: Journal history (payee→account), category mapping, merchant patterns, amount sign heuristics
 - **Multi-language Support**: Full Unicode support including Cyrillic characters
 
 ## Configuration Settings

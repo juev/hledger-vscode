@@ -15,6 +15,7 @@ import {
     ImportError,
     AccountResolution,
     AccountResolutionSource,
+    PayeeAccountHistory,
     DEFAULT_IMPORT_OPTIONS,
 } from './types';
 import { DateParser } from './DateParser';
@@ -29,10 +30,10 @@ export class TransactionGenerator {
     private readonly accountResolver: AccountResolver;
     private readonly options: ImportOptions;
 
-    constructor(options?: Partial<ImportOptions>) {
+    constructor(options?: Partial<ImportOptions>, payeeHistory?: PayeeAccountHistory) {
         this.options = { ...DEFAULT_IMPORT_OPTIONS, ...options };
         this.dateParser = new DateParser(this.options.dateFormat);
-        this.accountResolver = new AccountResolver(this.options);
+        this.accountResolver = new AccountResolver(this.options, payeeHistory);
     }
 
     /**

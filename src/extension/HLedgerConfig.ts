@@ -261,6 +261,20 @@ export class HLedgerConfig {
         return this.data?.aliases ?? new Map();
     }
 
+    // Payee-account history for import resolution
+    getPayeeAccountHistory(): {
+        payeeAccounts: ReadonlyMap<PayeeName, ReadonlySet<AccountName>>;
+        pairUsage: ReadonlyMap<string, UsageCount>;
+    } | null {
+        if (!this.data) {
+            return null;
+        }
+        return {
+            payeeAccounts: this.data.payeeAccounts,
+            pairUsage: this.data.payeeAccountPairUsage,
+        };
+    }
+
     // Context detection for completion
     getCompletionContext(document: vscode.TextDocument, position: vscode.Position): CompletionContext {
         const line = document.lineAt(position).text;

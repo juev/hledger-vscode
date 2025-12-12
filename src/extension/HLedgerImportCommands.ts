@@ -9,8 +9,10 @@ import {
     ColumnDetector,
     TransactionGenerator,
     ImportOptions,
+    PayeeAccountHistory,
     DEFAULT_IMPORT_OPTIONS,
 } from './import';
+import { HLedgerConfig } from './HLedgerConfig';
 
 /**
  * Import commands for converting tabular data to hledger format
@@ -18,10 +20,12 @@ import {
 export class HLedgerImportCommands implements vscode.Disposable {
     private readonly parser: TabularDataParser;
     private readonly columnDetector: ColumnDetector;
+    private readonly config: HLedgerConfig | null;
 
-    constructor() {
+    constructor(config?: HLedgerConfig) {
         this.parser = new TabularDataParser();
         this.columnDetector = new ColumnDetector();
+        this.config = config ?? null;
     }
 
     dispose(): void {
@@ -134,8 +138,17 @@ export class HLedgerImportCommands implements vscode.Disposable {
                     // Get import options from configuration
                     const options = this.getImportOptions();
 
+                    // Get payee-account history from journal (if available and enabled)
+                    let payeeHistory: PayeeAccountHistory | undefined;
+                    if (options.useJournalHistory !== false && this.config) {
+                        const historyData = this.config.getPayeeAccountHistory();
+                        if (historyData) {
+                            payeeHistory = historyData;
+                        }
+                    }
+
                     // Generate transactions
-                    const generator = new TransactionGenerator(options);
+                    const generator = new TransactionGenerator(options, payeeHistory);
                     const result = generator.generate(dataWithMappings);
 
                     // Check for fatal errors

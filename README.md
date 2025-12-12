@@ -20,33 +20,39 @@
 Transform your plain text accounting experience with powerful IDE capabilities:
 
 ### 🎯 **Smart Auto-completion**
+
 - **Context-aware** suggestions based on cursor position
 - **Frequency-based** prioritization for accounts and payees
 - Complete support for dates, accounts, payees, commodities, tags, and directives
 - Works as you type - no keyboard shortcuts needed
 
 ### 🎨 **Beautiful Syntax Highlighting**
+
 - **Dual-layer highlighting**: Fast TextMate grammar + optional semantic tokens
 - **Theme integration**: Adapts to your VS Code theme automatically
 - **Customizable colors** for all hledger elements
 
 ### ⚡ **Automatic Formatting**
+
 - **Smart alignment** for amounts and comments
 - **Format on save** - keep your journals tidy automatically
 - **Multi-currency support** with international number formats
 - Preserves balance assertions, virtual postings, and metadata
 
 ### 🔧 **Smart Editing**
+
 - **Auto-indent** for transactions and postings
 - **Smart Tab** key positions cursor at amount column
 - **Multi-language** Unicode support (Cyrillic, Asian languages, etc.)
 
 ### 📊 **CLI Integration**
+
 - Insert **balance sheets**, **income statements**, and **statistics** directly into journals
 - Automatic journal file detection
 - Results formatted as comments
 
 ### 🚀 **Performance**
+
 - **Project-based caching** for large journal files
 - **Incremental updates** - only reparse changed files
 - Efficient workspace parsing
@@ -56,12 +62,14 @@ Transform your plain text accounting experience with powerful IDE capabilities:
 ## 📦 Installation
 
 **Option 1: VS Code Marketplace** (Recommended)
+
 1. Open VS Code
 2. Press `Ctrl+Shift+X` (Extensions)
 3. Search for **"hledger"**
 4. Click **Install**
 
 **Option 2: Quick Install**
+
 - [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=evsyukov.hledger)
 - [Open VSX Registry](https://open-vsx.org/extension/evsyukov/hledger)
 
@@ -86,6 +94,7 @@ Transform your plain text accounting experience with powerful IDE capabilities:
 ```
 
 **Type and get instant suggestions:**
+
 - Start line with `2025` → Date completions
 - After date, type `Cof` → Payee completions
 - Indent and type `Exp` → Account completions
@@ -99,11 +108,13 @@ Transform your plain text accounting experience with powerful IDE capabilities:
 Insert hledger reports directly into your journals as formatted comments.
 
 **Available Commands** (via Command Palette `Ctrl+Shift+P`):
+
 - `HLedger: Insert Balance Report` - Balance sheet with assets/liabilities
 - `HLedger: Insert Income Statement` - Revenue and expense summary
 - `HLedger: Insert Statistics Report` - File stats and metrics
 
 **Example output:**
+
 ```hledger
 ; hledger bs - 2025-11-08
 ; ==================================================
@@ -126,11 +137,46 @@ Insert hledger reports directly into your journals as formatted comments.
 ```
 
 **Journal file resolution** (priority order):
+
 1. `LEDGER_FILE` environment variable (validated for security)
 2. `hledger.cli.journalFile` setting (validated for security)
 3. Current open file (trusted from VS Code)
 
 > **Security Note:** Paths from environment variables and configuration settings are validated to prevent command injection attacks. Shell metacharacters and inaccessible paths are rejected.
+
+---
+
+## 📥 CSV/TSV Import
+
+Import bank statements and transaction data from CSV/TSV files.
+
+**Available Commands** (via Command Palette `Ctrl+Shift+P`):
+
+- `HLedger: Import from CSV/TSV` - Import tabular data to hledger format
+
+**Features:**
+
+- **Auto-detection** of delimiters (comma, tab, semicolon, pipe)
+- **Smart column detection** with multi-language headers (English/Russian)
+- **Account resolution** via journal history, category mapping, and merchant patterns
+- **Date format detection** supports multiple formats (YYYY-MM-DD, DD.MM.YYYY, etc.)
+
+**Account Resolution Priority:**
+
+1. **Journal history** - Uses your existing transactions to match payees to accounts
+2. **Category mapping** - Maps CSV category column to hledger accounts
+3. **Merchant patterns** - Regex patterns for common merchants
+4. **Amount sign** - Fallback heuristic (positive=income, negative=expense)
+
+**Configuration:**
+
+```jsonc
+{
+  "hledger.import.useJournalHistory": true,  // Learn from existing transactions
+  "hledger.import.defaultDebitAccount": "expenses:unknown",
+  "hledger.import.defaultCreditAccount": "income:unknown"
+}
+```
 
 ---
 
@@ -202,6 +248,7 @@ Having issues? Check our comprehensive [**Troubleshooting Guide**](./TROUBLESHOO
 - 🎨 [Syntax highlighting issues](./TROUBLESHOOTING.md#no-colors--plain-text)
 
 **Quick fixes:**
+
 - Reload window: `Ctrl+Shift+P` → "Reload Window"
 - Manual completion: `Ctrl+Space`
 - Verify file extension: `.journal`, `.hledger`, or `.ledger`
@@ -213,6 +260,7 @@ Having issues? Check our comprehensive [**Troubleshooting Guide**](./TROUBLESHOO
 ## 📚 Learning Resources
 
 New to hledger?
+
 - [Official Tutorial](https://hledger.org/quickstart.html)
 - [Example Files](https://hledger.org/examples.html)
 - [Accounting Concepts](https://hledger.org/accounting.html)
@@ -223,6 +271,7 @@ New to hledger?
 ## 🤝 Contributing
 
 Contributions are welcome! Feel free to:
+
 - Report bugs and request features via [GitHub Issues](https://github.com/juev/hledger-vscode/issues)
 - Submit pull requests
 - Improve documentation

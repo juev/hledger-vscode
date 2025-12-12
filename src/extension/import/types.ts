@@ -2,6 +2,20 @@
  * Types and interfaces for tabular data import feature
  */
 
+import { AccountName, PayeeName, UsageCount } from '../types';
+
+/**
+ * Payee-to-account mapping from journal history.
+ * Tracks which accounts are used with each payee for import resolution.
+ */
+export interface PayeeAccountHistory {
+    /** Map of payee name to accounts used with that payee */
+    readonly payeeAccounts: ReadonlyMap<PayeeName, ReadonlySet<AccountName>>;
+
+    /** Usage frequency for payee-account pairs (for ranking). Key format: "payee::account" */
+    readonly pairUsage: ReadonlyMap<string, UsageCount>;
+}
+
 /** Supported delimiters for tabular data */
 export type Delimiter = '\t' | ',' | ';' | '|';
 

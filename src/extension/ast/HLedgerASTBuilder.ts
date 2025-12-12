@@ -30,6 +30,10 @@ interface MutableParsedHLedgerData {
     tagUsage: Map<TagName, UsageCount>;
     commodityUsage: Map<CommodityCode, UsageCount>;
 
+    // Payee-to-account mappings for import history
+    payeeAccounts: Map<PayeeName, Set<AccountName>>;
+    payeeAccountPairUsage: Map<string, UsageCount>;
+
     // Format information for number formatting and commodity display
     commodityFormats: Map<CommodityCode, CommodityFormat>;
     decimalMark: '.' | ',' | null;
@@ -59,6 +63,10 @@ export interface ParsedHLedgerData {
     readonly payeeUsage: ReadonlyMap<PayeeName, UsageCount>;
     readonly tagUsage: ReadonlyMap<TagName, UsageCount>;
     readonly commodityUsage: ReadonlyMap<CommodityCode, UsageCount>;
+
+    // Payee-to-account mappings for import history
+    readonly payeeAccounts: ReadonlyMap<PayeeName, ReadonlySet<AccountName>>;
+    readonly payeeAccountPairUsage: ReadonlyMap<string, UsageCount>;
 
     // Number format information
     readonly commodityFormats: ReadonlyMap<CommodityCode, CommodityFormat>;
@@ -198,6 +206,11 @@ export class HLedgerASTBuilder {
     private handlePostingToken(token: HLedgerToken, data: MutableParsedHLedgerData, context: BuildingContext): void {
         if (token.account) {
             this.addAccount(token.account, data);
+
+            // Track payee-account relationship for import history
+            if (context.inTransaction && context.transactionPayee) {
+                this.addPayeeAccountMapping(context.transactionPayee, token.account, data);
+            }
         }
 
         // Extract commodity from amount if present
@@ -374,6 +387,30 @@ export class HLedgerASTBuilder {
     }
 
     /**
+     * Adds a payee-account mapping for import history tracking.
+     * Uses double-colon separator to avoid conflicts with account names containing colons.
+     */
+    private addPayeeAccountMapping(
+        payee: PayeeName,
+        account: AccountName,
+        data: MutableParsedHLedgerData
+    ): void {
+        // Normalize payee for consistent matching
+        const normalizedPayee = payee.normalize('NFC') as PayeeName;
+
+        // Add account to payee's account set
+        if (!data.payeeAccounts.has(normalizedPayee)) {
+            data.payeeAccounts.set(normalizedPayee, new Set<AccountName>());
+        }
+        data.payeeAccounts.get(normalizedPayee)!.add(account);
+
+        // Increment usage count for this payee-account pair
+        const pairKey = `${normalizedPayee}::${account}`;
+        const currentCount = data.payeeAccountPairUsage.get(pairKey) || createUsageCount(0);
+        data.payeeAccountPairUsage.set(pairKey, createUsageCount(currentCount + 1));
+    }
+
+    /**
      * Merges data from another parsed data structure
      */
     public mergeData(target: MutableParsedHLedgerData, source: ParsedHLedgerData): void {
@@ -406,6 +443,18 @@ export class HLedgerASTBuilder {
         this.mergeUsageData(target.tagUsage, source.tagUsage);
         this.mergeUsageData(target.commodityUsage, source.commodityUsage);
         this.mergeUsageData(target.tagValueUsage, source.tagValueUsage);
+
+        // Merge payee-account history
+        source.payeeAccounts.forEach((accounts, payee) => {
+            if (!target.payeeAccounts.has(payee)) {
+                target.payeeAccounts.set(payee, new Set());
+            }
+            const targetAccounts = target.payeeAccounts.get(payee);
+            if (targetAccounts) {
+                accounts.forEach(account => targetAccounts.add(account));
+            }
+        });
+        this.mergeUsageData(target.payeeAccountPairUsage, source.payeeAccountPairUsage);
 
         // Update other properties
         if (source.defaultCommodity && !target.defaultCommodity) {
@@ -447,6 +496,8 @@ export class HLedgerASTBuilder {
             payeeUsage: new Map(),
             tagUsage: new Map(),
             commodityUsage: new Map(),
+            payeeAccounts: new Map(),
+            payeeAccountPairUsage: new Map(),
             commodityFormats: new Map(),
             decimalMark: null,
             defaultCommodity: null,
@@ -472,6 +523,8 @@ export class HLedgerASTBuilder {
             payeeUsage: data.payeeUsage,
             tagUsage: data.tagUsage,
             commodityUsage: data.commodityUsage,
+            payeeAccounts: data.payeeAccounts,
+            payeeAccountPairUsage: data.payeeAccountPairUsage,
             commodityFormats: data.commodityFormats,
             decimalMark: data.decimalMark,
             defaultCommodity: data.defaultCommodity,
