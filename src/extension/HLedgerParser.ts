@@ -38,6 +38,10 @@ interface MutableParsedHLedgerData {
     tagUsage: Map<TagName, UsageCount>;
     commodityUsage: Map<CommodityCode, UsageCount>;
 
+    // Payee-to-account mappings for import history
+    payeeAccounts: Map<PayeeName, Set<AccountName>>;
+    payeeAccountPairUsage: Map<string, UsageCount>;
+
     // Format information for number formatting and commodity display
     commodityFormats: Map<CommodityCode, CommodityFormat>;
     decimalMark: '.' | ',' | null;
@@ -68,6 +72,10 @@ export interface ParsedHLedgerData {
     readonly payeeUsage: ReadonlyMap<PayeeName, UsageCount>;
     readonly tagUsage: ReadonlyMap<TagName, UsageCount>;
     readonly commodityUsage: ReadonlyMap<CommodityCode, UsageCount>;
+
+    // Payee-to-account mappings for import history
+    readonly payeeAccounts: ReadonlyMap<PayeeName, ReadonlySet<AccountName>>;
+    readonly payeeAccountPairUsage: ReadonlyMap<string, UsageCount>;
 
     // Format information for number formatting and commodity display
     readonly commodityFormats: ReadonlyMap<CommodityCode, CommodityFormat>;
@@ -700,6 +708,10 @@ export class HLedgerParser {
             payeeUsage: new Map(source.payeeUsage),
             tagUsage: new Map(source.tagUsage),
             commodityUsage: new Map(source.commodityUsage),
+            payeeAccounts: new Map(
+                Array.from(source.payeeAccounts.entries()).map(([k, v]) => [k, new Set(v)])
+            ),
+            payeeAccountPairUsage: new Map(source.payeeAccountPairUsage),
             commodityFormats: new Map(source.commodityFormats),
             decimalMark: source.decimalMark,
             defaultCommodity: source.defaultCommodity,
@@ -727,31 +739,50 @@ export class HLedgerParser {
             values.forEach(value => target.tagValues.get(tag)!.add(value));
         });
 
-        // Merge usage maps
+        // Merge usage maps with overflow protection
         source.accountUsage.forEach((count, key) => {
             const existing = target.accountUsage.get(key) ?? createUsageCount(0);
-            target.accountUsage.set(key, createUsageCount(existing + count));
+            const newCount = Math.min(existing + count, Number.MAX_SAFE_INTEGER);
+            target.accountUsage.set(key, createUsageCount(newCount));
         });
 
         source.payeeUsage.forEach((count, key) => {
             const existing = target.payeeUsage.get(key) ?? createUsageCount(0);
-            target.payeeUsage.set(key, createUsageCount(existing + count));
+            const newCount = Math.min(existing + count, Number.MAX_SAFE_INTEGER);
+            target.payeeUsage.set(key, createUsageCount(newCount));
         });
 
         source.tagUsage.forEach((count, key) => {
             const existing = target.tagUsage.get(key) ?? createUsageCount(0);
-            target.tagUsage.set(key, createUsageCount(existing + count));
+            const newCount = Math.min(existing + count, Number.MAX_SAFE_INTEGER);
+            target.tagUsage.set(key, createUsageCount(newCount));
         });
 
         source.commodityUsage.forEach((count, key) => {
             const existing = target.commodityUsage.get(key) ?? createUsageCount(0);
-            target.commodityUsage.set(key, createUsageCount(existing + count));
+            const newCount = Math.min(existing + count, Number.MAX_SAFE_INTEGER);
+            target.commodityUsage.set(key, createUsageCount(newCount));
         });
 
-        // Merge tag value usage
+        // Merge tag value usage with overflow protection
         source.tagValueUsage.forEach((count, key) => {
             const existing = target.tagValueUsage.get(key) ?? createUsageCount(0);
-            target.tagValueUsage.set(key, createUsageCount(existing + count));
+            const newCount = Math.min(existing + count, Number.MAX_SAFE_INTEGER);
+            target.tagValueUsage.set(key, createUsageCount(newCount));
+        });
+
+        // Merge payee-account history
+        source.payeeAccounts.forEach((accounts, payee) => {
+            if (!target.payeeAccounts.has(payee)) {
+                target.payeeAccounts.set(payee, new Set<AccountName>());
+            }
+            accounts.forEach(account => target.payeeAccounts.get(payee)!.add(account));
+        });
+
+        source.payeeAccountPairUsage.forEach((count, key) => {
+            const existing = target.payeeAccountPairUsage.get(key) ?? createUsageCount(0);
+            const newCount = Math.min(existing + count, Number.MAX_SAFE_INTEGER);
+            target.payeeAccountPairUsage.set(key, createUsageCount(newCount));
         });
 
         // Merge commodity formats
@@ -790,6 +821,8 @@ export class HLedgerParser {
             payeeUsage: new Map<PayeeName, UsageCount>(),
             tagUsage: new Map<TagName, UsageCount>(),
             commodityUsage: new Map<CommodityCode, UsageCount>(),
+            payeeAccounts: new Map<PayeeName, Set<AccountName>>(),
+            payeeAccountPairUsage: new Map<string, UsageCount>(),
             commodityFormats: new Map<CommodityCode, CommodityFormat>(),
             decimalMark: null,
             defaultCommodity: null,

@@ -7,6 +7,7 @@ import { HLedgerParser } from './HLedgerParser';
 import { SimpleProjectCache } from './SimpleProjectCache';
 import { HLedgerCliService } from './services/HLedgerCliService';
 import { HLedgerCliCommands } from './HLedgerCliCommands';
+import { HLedgerImportCommands } from './HLedgerImportCommands';
 import { ErrorNotificationHandler } from './utils/ErrorNotificationHandler';
 
 /**
@@ -26,6 +27,9 @@ export interface ExtensionServices extends vscode.Disposable {
     /** Command handlers for CLI operations */
     readonly cliCommands: HLedgerCliCommands;
 
+    /** Command handlers for import operations */
+    readonly importCommands: HLedgerImportCommands;
+
     /** Error notification handler for user-facing messages */
     readonly errorHandler: ErrorNotificationHandler;
 }
@@ -39,6 +43,7 @@ export interface ExtensionServices extends vscode.Disposable {
  * 4. HLedgerConfig (depends on Parser and Cache)
  * 5. HLedgerCliService (no dependencies)
  * 6. HLedgerCliCommands (depends on CliService)
+ * 7. HLedgerImportCommands (depends on HLedgerConfig for journal history)
  *
  * Disposal happens in reverse order to ensure clean shutdown.
  *
@@ -63,11 +68,13 @@ export function createServices(): ExtensionServices {
     const config = new HLedgerConfig(parser, cache);
     const cliService = new HLedgerCliService();
     const cliCommands = new HLedgerCliCommands(cliService);
+    const importCommands = new HLedgerImportCommands(config);
 
     return {
         config,
         cliService,
         cliCommands,
+        importCommands,
         errorHandler,
 
         /**
@@ -76,6 +83,12 @@ export function createServices(): ExtensionServices {
          */
         dispose(): void {
             // Dispose in reverse order: top-down
+            try {
+                importCommands.dispose();
+            } catch (error) {
+                console.error('HLedger: Error disposing importCommands:', error);
+            }
+
             try {
                 cliCommands.dispose();
             } catch (error) {

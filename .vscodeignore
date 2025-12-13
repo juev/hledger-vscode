@@ -32,6 +32,7 @@ optimize-icon.js
 
 # Documentation (keep only README.md and LICENSE)
 docs/**
+examples/**
 CHANGELOG.md
 CLAUDE.md
 MIGRATION.md

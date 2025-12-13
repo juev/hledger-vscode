@@ -1,7 +1,9 @@
 import { HLedgerConfig } from '../main';
 import { createAccountName } from '../types';
+import * as vscode from 'vscode';
 import * as fs from 'fs';
 import * as path from 'path';
+import { MockTextDocument } from '../../__mocks__/vscode';
 
 jest.mock('fs');
 
@@ -200,6 +202,161 @@ account Assets:Bank
             
             // Verify that no data was parsed due to error
             expect(config.getAccounts()).toEqual([]);
+        });
+    });
+
+    describe('getConfigForDocument - virtual document handling', () => {
+        beforeEach(() => {
+            // Reset mocks for workspace scanning tests
+            (fs.existsSync as jest.Mock).mockReturnValue(false);
+            (fs.readdirSync as jest.Mock).mockReturnValue([]);
+        });
+
+        it('should not scan workspace for untitled documents', () => {
+            const content = `
+account Assets:TestAccount
+2025-01-15 Test
+    Assets:TestAccount  100
+`;
+            // Create untitled document (scheme !== 'file')
+            const untitledUri = {
+                scheme: 'untitled',
+                authority: '',
+                path: 'Untitled-1',
+                query: '',
+                fragment: '',
+                fsPath: 'Untitled-1',
+                with: jest.fn(),
+                toString: () => 'untitled:Untitled-1',
+                toJSON: () => ({ $mid: 1, fsPath: 'Untitled-1', path: 'Untitled-1', scheme: 'untitled' })
+            };
+
+            const document = new MockTextDocument(content.split('\n'), {
+                uri: untitledUri as vscode.Uri,
+                fileName: 'Untitled-1',
+                languageId: 'hledger',
+                isUntitled: true
+            });
+
+            // Mock workspace to return undefined (no workspace folder)
+            (vscode.workspace.getWorkspaceFolder as jest.Mock).mockReturnValue(undefined);
+
+            // Should not throw and should not call readdirSync (no workspace scanning)
+            config.getConfigForDocument(document);
+
+            // readdirSync should NOT be called because untitled docs skip workspace scanning
+            expect(fs.readdirSync).not.toHaveBeenCalled();
+
+            // But document content should still be parsed
+            expect(config.getAccounts()).toContain('Assets:TestAccount');
+        });
+
+        it('should not scan workspace for custom scheme documents', () => {
+            const content = `account Assets:CustomScheme`;
+
+            const customUri = {
+                scheme: 'vscode-notebook',
+                authority: '',
+                path: '/notebook/cell',
+                query: '',
+                fragment: '',
+                fsPath: '/notebook/cell',
+                with: jest.fn(),
+                toString: () => 'vscode-notebook:/notebook/cell',
+                toJSON: () => ({ $mid: 1, fsPath: '/notebook/cell', path: '/notebook/cell', scheme: 'vscode-notebook' })
+            };
+
+            const document = new MockTextDocument(content.split('\n'), {
+                uri: customUri as vscode.Uri,
+                fileName: '/notebook/cell',
+                languageId: 'hledger'
+            });
+
+            (vscode.workspace.getWorkspaceFolder as jest.Mock).mockReturnValue(undefined);
+
+            config.getConfigForDocument(document);
+
+            expect(fs.readdirSync).not.toHaveBeenCalled();
+            expect(config.getAccounts()).toContain('Assets:CustomScheme');
+        });
+
+        it('should not scan root directory even for file scheme', () => {
+            const content = `account Assets:RootFile`;
+
+            const rootUri = {
+                scheme: 'file',
+                authority: '',
+                path: '/file.journal',
+                query: '',
+                fragment: '',
+                fsPath: '/file.journal',
+                with: jest.fn(),
+                toString: () => 'file:///file.journal',
+                toJSON: () => ({ $mid: 1, fsPath: '/file.journal', path: '/file.journal', scheme: 'file' })
+            };
+
+            const document = new MockTextDocument(content.split('\n'), {
+                uri: rootUri as vscode.Uri,
+                fileName: '/file.journal',
+                languageId: 'hledger'
+            });
+
+            // No workspace folder, path.dirname('/file.journal') = '/'
+            (vscode.workspace.getWorkspaceFolder as jest.Mock).mockReturnValue(undefined);
+
+            config.getConfigForDocument(document);
+
+            // Should NOT scan root directory
+            expect(fs.readdirSync).not.toHaveBeenCalled();
+            expect(config.getAccounts()).toContain('Assets:RootFile');
+        });
+
+        it('should scan workspace for normal file documents', () => {
+            const content = `account Assets:NormalFile`;
+
+            const fileUri = {
+                scheme: 'file',
+                authority: '',
+                path: '/home/user/project/test.journal',
+                query: '',
+                fragment: '',
+                fsPath: '/home/user/project/test.journal',
+                with: jest.fn(),
+                toString: () => 'file:///home/user/project/test.journal',
+                toJSON: () => ({ $mid: 1, fsPath: '/home/user/project/test.journal', path: '/home/user/project/test.journal', scheme: 'file' })
+            };
+
+            const document = new MockTextDocument(content.split('\n'), {
+                uri: fileUri as vscode.Uri,
+                fileName: '/home/user/project/test.journal',
+                languageId: 'hledger'
+            });
+
+            // Mock workspace folder
+            const workspaceFolder = {
+                uri: {
+                    scheme: 'file',
+                    fsPath: '/home/user/project',
+                    path: '/home/user/project',
+                    authority: '',
+                    query: '',
+                    fragment: '',
+                    with: jest.fn(),
+                    toString: () => 'file:///home/user/project',
+                    toJSON: () => ({})
+                },
+                name: 'project',
+                index: 0
+            };
+            (vscode.workspace.getWorkspaceFolder as jest.Mock).mockReturnValue(workspaceFolder);
+            (fs.existsSync as jest.Mock).mockReturnValue(true);
+            (fs.readdirSync as jest.Mock).mockReturnValue([]);
+
+            config.getConfigForDocument(document);
+
+            // Should scan workspace for normal file documents
+            expect(fs.existsSync).toHaveBeenCalled();
+            expect(config.getAccounts()).toContain('Assets:NormalFile');
         });
     });
 });

@@ -246,6 +246,14 @@ src/
     │   └── __tests__/
     ├── utils/                         # Utilities
     │   └── ErrorNotificationHandler.ts
+    ├── import/                        # CSV/TSV import subsystem
+    │   ├── TabularDataParser.ts       # CSV/TSV parser with auto-delimiter detection
+    │   ├── ColumnDetector.ts          # Column type detection (multi-language)
+    │   ├── DateParser.ts              # Date format detection and parsing
+    │   ├── AccountResolver.ts         # Smart account resolution (history + patterns + category)
+    │   ├── TransactionGenerator.ts    # hledger transaction generation
+    │   ├── types.ts                   # Import type definitions
+    │   └── __tests__/                 # Import module tests (5 test suites)
     └── __tests__/                     # Test files (28+ test files)
 
 docs/
@@ -296,6 +304,16 @@ Uses modern TypeScript with branded types for type safety:
   - Detects malformed amounts
 - **Project-Based Caching**: Efficient workspace parsing with cache invalidation
 - **CLI Integration**: Direct integration with hledger CLI for reports and statistics
+- **CSV/TSV Import**: Convert tabular data to hledger format with intelligent column detection and account resolution
+  - **Auto-delimiter Detection**: Supports comma, tab, semicolon, pipe delimiters
+  - **Multi-language Headers**: English and Russian column name recognition
+  - **Smart Account Resolution**: Journal history (payee→account), category mapping, merchant patterns, amount sign heuristics
+  - **Security & Performance**:
+    - **ReDoS Protection**: AccountResolver validates patterns (max 100 chars, no nested quantifiers)
+    - **DoS Protection**: parseAmountString rejects strings > 100 characters
+    - **Memory Safety**: LRU cache with 100-entry limit (~5KB footprint)
+    - **Input Validation**: File paths sanitized against command injection
+    - **Complexity**: O(n) linear parsing, no algorithmic attacks possible
 - **Multi-language Support**: Full Unicode support including Cyrillic characters
 
 ## Configuration Settings

@@ -11,6 +11,14 @@ import { CompletionContext, AccountName, PayeeName, TagName, TagValue, Commodity
 // CompletionContext is now imported from types.ts
 export { CompletionContext } from './types';
 
+/**
+ * Result type for document path validation.
+ * Discriminated union enabling type-safe handling of valid vs invalid paths.
+ */
+type PathValidationResult =
+    | { valid: true; projectPath: string }
+    | { valid: false; reason: 'virtual-document' | 'malformed-path' | 'invalid-derived-path' };
+
 export class HLedgerConfig {
     // Pre-compiled regex patterns for performance optimization
     private static readonly PATTERNS = {
@@ -40,19 +48,65 @@ export class HLedgerConfig {
         this.cache = cache ?? new SimpleProjectCache();
     }
 
+    /**
+     * Validates document path and determines project path for workspace scanning.
+     * Handles three scenarios:
+     * 1. Virtual documents (non-file scheme) - cannot scan workspace
+     * 2. Malformed file paths - invalid or dangerous paths
+     * 3. Invalid derived paths - when path.dirname yields unusable result
+     */
+    private validateDocumentPath(document: vscode.TextDocument): PathValidationResult {
+        const filePath = document.uri.fsPath;
+
+        // Virtual documents (untitled, vscode-notebook, output, custom schemes)
+        // don't have real file paths - skip workspace scanning
+        if (document.uri.scheme !== 'file') {
+            return { valid: false, reason: 'virtual-document' };
+        }
+
+        // Check workspace folder first
+        const workspaceFolder = vscode.workspace.getWorkspaceFolder(document.uri);
+        if (workspaceFolder) {
+            return { valid: true, projectPath: workspaceFolder.uri.fsPath };
+        }
+
+        // Validate filePath before calling path.dirname()
+        // Even for file:// scheme, fsPath could be malformed
+        if (
+            !filePath ||
+            typeof filePath !== 'string' ||
+            !path.isAbsolute(filePath) ||
+            filePath === '/' ||
+            filePath === '.'
+        ) {
+            return { valid: false, reason: 'malformed-path' };
+        }
+
+        // No workspace, use directory of the file
+        const projectPath = path.dirname(filePath);
+
+        // Safety check: ensure derived path is absolute and reasonable
+        if (!path.isAbsolute(projectPath) || projectPath === '/' || projectPath === '.') {
+            return { valid: false, reason: 'invalid-derived-path' };
+        }
+
+        return { valid: true, projectPath };
+    }
+
     // Main method to get configuration for a document
     getConfigForDocument(document: vscode.TextDocument): void {
         const filePath = document.uri.fsPath;
+        const validationResult = this.validateDocumentPath(document);
 
-        // Determine project path
-        let projectPath: string;
-        const workspaceFolder = vscode.workspace.getWorkspaceFolder(document.uri);
-        if (workspaceFolder) {
-            projectPath = workspaceFolder.uri.fsPath;
-        } else {
-            // No workspace, use directory of the file
-            projectPath = path.dirname(filePath);
+        // For invalid paths, parse document content only without workspace scanning
+        if (!validationResult.valid) {
+            const currentContent = document.getText();
+            const effectivePath = filePath || 'untitled';
+            this.data = this.parser.parseContent(currentContent, effectivePath);
+            return;
         }
+
+        const projectPath = validationResult.projectPath;
 
         // Get cached data or parse workspace with incremental cache support
         const cacheKey = createCacheKey(projectPath);
@@ -237,6 +291,20 @@ export class HLedgerConfig {
     // Alias methods with enhanced type safety
     getAliases(): ReadonlyMap<AccountName, AccountName> {
         return this.data?.aliases ?? new Map();
+    }
+
+    // Payee-account history for import resolution
+    getPayeeAccountHistory(): {
+        payeeAccounts: ReadonlyMap<PayeeName, ReadonlySet<AccountName>>;
+        pairUsage: ReadonlyMap<string, UsageCount>;
+    } | null {
+        if (!this.data) {
+            return null;
+        }
+        return {
+            payeeAccounts: this.data.payeeAccounts,
+            pairUsage: this.data.payeeAccountPairUsage,
+        };
     }
 
     // Context detection for completion
