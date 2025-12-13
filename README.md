@@ -153,7 +153,10 @@ Insert hledger reports directly into your journals as formatted comments.
   "hledger.cli.journalFile": "",  // Uses LEDGER_FILE if empty
   
   // Optional: Enhanced syntax highlighting
-  "hledger.semanticHighlighting.enabled": false  // Enable for more precision
+  "hledger.semanticHighlighting.enabled": false,  // Enable for more precision
+
+  // Validation diagnostics
+  "hledger.diagnostics.enabled": true  // Disable to turn off validation warnings
 }
 ```
 
