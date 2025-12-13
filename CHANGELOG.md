@@ -1,5 +1,34 @@
 # Change Log
 
+## [0.4.3] - 2025-12-13
+
+### Added
+- feat: improve error handling and validation in import processing
+- feat: enhance security and performance in data processing
+- feat: improve error handling and caching in HLedgerImportCommands and AccountResolver
+- feat: enhance usage merging with overflow protection
+- feat: enhance account resolution with journal history tracking
+- feat: enhance document handling in HLedgerConfig
+- feat: implement partial match caching in AccountResolver
+- feat: enhance regex validation for merchant patterns
+- feat: add CSV/TSV import subsystem and example files
+- feat: preserve original line numbers in TabularDataParser
+- feat: implement CSV/TSV import functionality for hledger
+- Add tests for amount validation with trailing comments
+- Fix PR #44 review issues and add diagnostics toggle
+- Improves amount format validation - Add posting comment detection - Support quoted commodities in front - Support Indian numbering - Improve regex strictness (unicode decimals, prevents matching of e.g. 1,2,3,4) - Added capture groups for amount prefix/suffix - Dedicated balance assertion pattern and cost notation support
+
+### Changed
+- refactor: clean up TransactionGenerator and improve test assertions
+
+### Fixed
+- fix: set default date format in HLedgerImportCommands
+- Fix code review issues: performance and documentation
+
+### Other
+- chore(deps): bump jws from 3.2.2 to 3.2.3
+
+
 ## [0.4.2] - 2025-12-01
 
 ### Added
