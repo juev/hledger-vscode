@@ -307,6 +307,7 @@ Uses modern TypeScript with branded types for type safety:
 - `hledger.semanticHighlighting.enabled`: Enable/disable semantic tokens (default: false)
 - `hledger.cli.path`: Path to hledger executable (auto-detected if empty)
 - `hledger.cli.journalFile`: Path to main hledger journal file (uses LEDGER_FILE env var or current file if empty)
+- `hledger.diagnostics.enabled`: Enable/disable validation diagnostics on save/open (default: true)
 
 ## CLI Commands
 

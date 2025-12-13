@@ -541,7 +541,13 @@ export const workspace = {
         writeFile: jest.fn(),
     },
     getConfiguration: jest.fn(() => ({
-        get: jest.fn(() => ''),
+        get: jest.fn((key: string, defaultValue?: unknown) => {
+            // Return default value for boolean settings
+            if (defaultValue !== undefined) {
+                return defaultValue;
+            }
+            return '';
+        }),
         update: jest.fn(),
         has: jest.fn(() => false),
         inspect: jest.fn()

@@ -907,6 +907,249 @@ account Assets
             const amountDiags = diagnostics?.filter(d => d.message.includes('amount')) ?? [];
             expect(amountDiags.length).toBe(0);
         });
+
+        test('accepts space as grouping character', () => {
+            const content = `
+2024-01-01 Test
+    Assets:Bank  1 000.00 EUR
+    Assets:Cash  1 000 000.00
+    Expenses:Tax
+`;
+            config.parseContent(content, '/test');
+
+            const document = new MockTextDocument(content.split('\n'), {
+                uri: vscode.Uri.file('/test/test.journal'),
+                languageId: 'hledger'
+            });
+
+            provider['validateDocument'](document);
+
+            const diagnostics = provider.diagnosticCollection.get(document.uri);
+            const amountDiags = diagnostics?.filter(d => d.message.includes('amount')) ?? [];
+            expect(amountDiags.length).toBe(0);
+        });
+
+        test('accepts quoted commodities at start', () => {
+            const content = `
+2024-01-01 Test
+    Assets:Food  "Indian rupee" 10
+    Assets:Cash
+`;
+            config.parseContent(content, '/test');
+
+            const document = new MockTextDocument(content.split('\n'), {
+                uri: vscode.Uri.file('/test/test.journal'),
+                languageId: 'hledger'
+            });
+
+            provider['validateDocument'](document);
+
+            const diagnostics = provider.diagnosticCollection.get(document.uri);
+            const amountDiags = diagnostics?.filter(d => d.message.includes('amount')) ?? [];
+            expect(amountDiags.length).toBe(0);
+        });
+
+        test('accepts amount followed by comment', () => {
+            const content = `
+2024-01-01 Test
+    Expenses:Food  $10.00  ; grocery shopping
+    Assets:Cash
+`;
+            config.parseContent(content, '/test');
+
+            const document = new MockTextDocument(content.split('\n'), {
+                uri: vscode.Uri.file('/test/test.journal'),
+                languageId: 'hledger'
+            });
+
+            provider['validateDocument'](document);
+
+            const diagnostics = provider.diagnosticCollection.get(document.uri);
+            const amountDiags = diagnostics?.filter(d => d.message.includes('amount')) ?? [];
+            expect(amountDiags.length).toBe(0);
+        });
+
+        test('accepts negative amount followed by comment', () => {
+            const content = `
+2024-01-01 Test
+    Expenses:Food  $10.00
+    Assets:Cash  -$10.00  ; withdrawal
+`;
+            config.parseContent(content, '/test');
+
+            const document = new MockTextDocument(content.split('\n'), {
+                uri: vscode.Uri.file('/test/test.journal'),
+                languageId: 'hledger'
+            });
+
+            provider['validateDocument'](document);
+
+            const diagnostics = provider.diagnosticCollection.get(document.uri);
+            const amountDiags = diagnostics?.filter(d => d.message.includes('amount')) ?? [];
+            expect(amountDiags.length).toBe(0);
+        });
+
+        test('accepts amount with cost notation followed by comment', () => {
+            const content = `
+2024-01-01 Test
+    Assets:Stocks  10 AAPL @ $150  ; bought today
+    Assets:Cash
+`;
+            config.parseContent(content, '/test');
+
+            const document = new MockTextDocument(content.split('\n'), {
+                uri: vscode.Uri.file('/test/test.journal'),
+                languageId: 'hledger'
+            });
+
+            provider['validateDocument'](document);
+
+            const diagnostics = provider.diagnosticCollection.get(document.uri);
+            const amountDiags = diagnostics?.filter(d => d.message.includes('amount')) ?? [];
+            expect(amountDiags.length).toBe(0);
+        });
+
+        test('accepts balance assertion followed by comment', () => {
+            const content = `
+2024-01-01 Test
+    Assets:Checking  = $500  ; verify balance
+    Income:Salary
+`;
+            config.parseContent(content, '/test');
+
+            const document = new MockTextDocument(content.split('\n'), {
+                uri: vscode.Uri.file('/test/test.journal'),
+                languageId: 'hledger'
+            });
+
+            provider['validateDocument'](document);
+
+            const diagnostics = provider.diagnosticCollection.get(document.uri);
+            const amountDiags = diagnostics?.filter(d => d.message.includes('amount')) ?? [];
+            expect(amountDiags.length).toBe(0);
+        });
+
+        test('accepts amount with balance assertion followed by comment', () => {
+            const content = `
+2024-01-01 Test
+    Assets:Checking  $100 = $500  ; deposit and verify
+    Expenses:Food
+`;
+            config.parseContent(content, '/test');
+
+            const document = new MockTextDocument(content.split('\n'), {
+                uri: vscode.Uri.file('/test/test.journal'),
+                languageId: 'hledger'
+            });
+
+            provider['validateDocument'](document);
+
+            const diagnostics = provider.diagnosticCollection.get(document.uri);
+            const amountDiags = diagnostics?.filter(d => d.message.includes('amount')) ?? [];
+            expect(amountDiags.length).toBe(0);
+        });
+
+        test('accepts quoted commodity followed by comment', () => {
+            const content = `
+2024-01-01 Test
+    Assets:Food  3 "green apples"  ; from farmers market
+    Assets:Cash
+`;
+            config.parseContent(content, '/test');
+
+            const document = new MockTextDocument(content.split('\n'), {
+                uri: vscode.Uri.file('/test/test.journal'),
+                languageId: 'hledger'
+            });
+
+            provider['validateDocument'](document);
+
+            const diagnostics = provider.diagnosticCollection.get(document.uri);
+            const amountDiags = diagnostics?.filter(d => d.message.includes('amount')) ?? [];
+            expect(amountDiags.length).toBe(0);
+        });
+
+        test('accepts grouped amount followed by comment', () => {
+            const content = `
+2024-01-01 Test
+    Assets:Bank  $1,000.00  ; large deposit
+    Income:Salary
+`;
+            config.parseContent(content, '/test');
+
+            const document = new MockTextDocument(content.split('\n'), {
+                uri: vscode.Uri.file('/test/test.journal'),
+                languageId: 'hledger'
+            });
+
+            provider['validateDocument'](document);
+
+            const diagnostics = provider.diagnosticCollection.get(document.uri);
+            const amountDiags = diagnostics?.filter(d => d.message.includes('amount')) ?? [];
+            expect(amountDiags.length).toBe(0);
+        });
+
+        test('accepts comment with tag after amount', () => {
+            const content = `
+2024-01-01 Test
+    Expenses:Food  $10.00  ; category:groceries
+    Assets:Cash
+`;
+            config.parseContent(content, '/test');
+
+            const document = new MockTextDocument(content.split('\n'), {
+                uri: vscode.Uri.file('/test/test.journal'),
+                languageId: 'hledger'
+            });
+
+            provider['validateDocument'](document);
+
+            const diagnostics = provider.diagnosticCollection.get(document.uri);
+            const amountDiags = diagnostics?.filter(d => d.message.includes('amount')) ?? [];
+            expect(amountDiags.length).toBe(0);
+        });
+
+        test('rejects malformed amount even with valid comment', () => {
+            const content = `
+2024-01-01 Test
+    Expenses:Food  $10$50  ; invalid amount
+    Assets:Cash
+`;
+            config.parseContent(content, '/test');
+
+            const document = new MockTextDocument(content.split('\n'), {
+                uri: vscode.Uri.file('/test/test.journal'),
+                languageId: 'hledger'
+            });
+
+            provider['validateDocument'](document);
+
+            const diagnostics = provider.diagnosticCollection.get(document.uri);
+            const amountDiag = diagnostics?.find(d => d.severity === vscode.DiagnosticSeverity.Error);
+            expect(amountDiag).toBeDefined();
+            expect(amountDiag?.message).toContain('amount');
+        });
+
+        test('rejects invalid number grouping pattern', () => {
+            const content = `
+2024-01-01 Test
+    Expenses:Food  $1,2,3,4
+    Assets:Cash
+`;
+            config.parseContent(content, '/test');
+
+            const document = new MockTextDocument(content.split('\n'), {
+                uri: vscode.Uri.file('/test/test.journal'),
+                languageId: 'hledger'
+            });
+
+            provider['validateDocument'](document);
+
+            const diagnostics = provider.diagnosticCollection.get(document.uri);
+            const amountDiag = diagnostics?.find(d => d.severity === vscode.DiagnosticSeverity.Error);
+            expect(amountDiag).toBeDefined();
+            expect(amountDiag?.message).toContain('amount');
+        });
     });
 
     describe('Document Events', () => {
@@ -970,6 +1213,45 @@ account Assets:Cash
 
             const diagnostics = provider.diagnosticCollection.get(document.uri);
             expect(diagnostics).toBeUndefined();
+        });
+
+        test('skips validation when diagnostics disabled', () => {
+            // Mock config to return diagnostics.enabled = false
+            const mockGetConfiguration = vscode.workspace.getConfiguration as jest.Mock;
+            mockGetConfiguration.mockReturnValue({
+                get: jest.fn((key: string, defaultValue?: unknown) => {
+                    if (key === 'diagnostics.enabled') {
+                        return false;
+                    }
+                    return defaultValue;
+                })
+            });
+
+            // Content that would normally generate diagnostics (undefined account)
+            const content = `
+account Assets:Cash
+
+2024-01-01 Test
+    Expenses:Food  $10.00
+    Assets:Bank  -$10.00
+`;
+            config.parseContent(content, '/test');
+
+            const document = new MockTextDocument(content.split('\n'), {
+                uri: vscode.Uri.file('/test/test.journal'),
+                languageId: 'hledger'
+            });
+
+            provider['validateDocument'](document);
+
+            const diagnostics = provider.diagnosticCollection.get(document.uri);
+            // When disabled, no diagnostics should be produced
+            expect(diagnostics).toBeUndefined();
+
+            // Restore default mock behavior
+            mockGetConfiguration.mockReturnValue({
+                get: jest.fn((_key: string, defaultValue?: unknown) => defaultValue)
+            });
         });
     });
 

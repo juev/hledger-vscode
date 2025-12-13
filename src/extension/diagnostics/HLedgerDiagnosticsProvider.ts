@@ -16,6 +16,57 @@ export enum HLedgerDiagnosticCode {
  * Validates account definitions, tag format, and amount format.
  */
 export class HLedgerDiagnosticsProvider implements vscode.Disposable {
+    /**
+     * Validates amount format in hledger postings.
+     * Built once at class load time for performance.
+     *
+     * Supported patterns:
+     * - Basic amounts: -$10.00, $-10.00, $10.00, +$10.00, $+10.00, 10.00 USD, -10.00 USD, +10.00 USD, 10.00
+     * - Unicode currencies: ₽100.00, €50.00
+     * - Grouped numbers: 1,000.00 (with , or . or space as group separator)
+     * - Scientific notation: 1E-6, 1E3, EUR 1E3 (E/e followed by optional single sign and digits)
+     * - Quoted commodities: 3 "green apples", "Indian rupee" 10
+     * - Balance assertions without amount: =$500, = $500, ==$500, =* $500, ==* $500
+     * - Balance assignment: := $500
+     * - Amount with balance assertion: $100 = $500
+     * - Amount with cost: 10 AAPL @ $150
+     * - Indian numbering systems
+     * - Space as grouping character
+     *
+     * Number structure requires at least one digit. Scientific notation must follow
+     * the pattern: E or e, optional single sign (+/-), then digits.
+     * Sign can be + or - and can appear before or after the commodity symbol.
+     */
+    private static readonly VALID_AMOUNT_PATTERN: RegExp = (() => {
+        const DECIMAL_DIGITS = '\\p{Nd}';
+        const GROUP_SEP = '[,. ]';
+
+        // Number grouping patterns:
+        // - Indian: 1,00,00,000 (1-2 digits, then groups of 2, optional final group of 3)
+        // - Standard: 1,000,000 (1-3 digits, then groups of 3)
+        // - Simple: 12345 (no grouping)
+        const NUMBER_GROUPS = [
+            `${DECIMAL_DIGITS}{1,2}(?:${GROUP_SEP}${DECIMAL_DIGITS}{2})+(?:${GROUP_SEP}${DECIMAL_DIGITS}{3})*`,
+            `${DECIMAL_DIGITS}{1,3}(?:${GROUP_SEP}${DECIMAL_DIGITS}{3})+`,
+            `${DECIMAL_DIGITS}+`
+        ].join('|');
+
+        // Full number with optional decimal and scientific notation
+        const FULL_NUMBER = `(?:${NUMBER_GROUPS})(?:[.,]${DECIMAL_DIGITS}*)?(?:[eE][+-]?${DECIMAL_DIGITS}+)?`;
+
+        // Commodity pattern (quoted or unquoted)
+        const COMMODITY = `(?:"[^"]+"|[\\p{Sc}\\p{L}]*)`;
+
+        // Sign pattern
+        const SIGN = '[+-]?';
+
+        // Amount pattern: optional sign, commodity, sign, number, commodity
+        const AMOUNT = `${SIGN}\\s*${COMMODITY}\\s*${SIGN}(${FULL_NUMBER})\\s*${COMMODITY}`;
+
+        const patternString = `^(={1,2}\\*?\\s*|:=\\s*)?${AMOUNT}(?:\\s*@{1,2}\\s*${AMOUNT})?\\s*(?:={1,2}\\*?\\s*${AMOUNT})?$`;
+        return new RegExp(patternString, 'u');
+    })();
+
     public readonly diagnosticCollection: vscode.DiagnosticCollection;
     private disposables: vscode.Disposable[] = [];
 
@@ -40,6 +91,14 @@ export class HLedgerDiagnosticsProvider implements vscode.Disposable {
     }
 
     private validateDocument(document: vscode.TextDocument): void {
+        const vsconfig = vscode.workspace.getConfiguration('hledger');
+        const diagnosticsEnabled = vsconfig.get<boolean>('diagnostics.enabled', true);
+
+        if (!diagnosticsEnabled) {
+            this.diagnosticCollection.delete(document.uri);
+            return;
+        }
+
         this.config.getConfigForDocument(document);
 
         const definedAccounts = new Set(this.config.getDefinedAccounts());
@@ -205,28 +264,7 @@ export class HLedgerDiagnosticsProvider implements vscode.Disposable {
             return undefined;
         }
 
-/**
-         * Validates amount format in hledger postings.
-         *
-         * Supported patterns:
-         * - Basic amounts: -$10.00, $-10.00, $10.00, +$10.00, $+10.00, 10.00 USD, -10.00 USD, +10.00 USD, 10.00
-         * - Unicode currencies: ₽100.00, €50.00
-         * - Grouped numbers: 1,000.00 (with , or . or space as group separator)
-         * - Scientific notation: 1E-6, 1E3, EUR 1E3 (E/e followed by optional single sign and digits)
-         * - Quoted commodities: 3 "green apples", "Indian rupee" 10
-         * - Balance assertions without amount: =$500, = $500, ==$500, =* $500, ==* $500
-         * - Balance assignment: := $500
-         * - Amount with balance assertion: $100 = $500
-         * - Amount with cost: 10 AAPL @ $150
-         * - Indian numbering systems
-         * - Space as grouping character
-         *
-         * Number structure requires at least one digit. Scientific notation must follow
-         * the pattern: E or e, optional single sign (+/-), then digits.
-         * Sign can be + or - and can appear before or after the commodity symbol.
-         */
-        const validAmountPattern = /^(={1,2}\*?\s*|:=\s*)?[+-]?\s*("[^"]+"|[\p{Sc}\p{L}]*)\s*[+-]?((?:\p{Nd}{1,2}(?:[,. ]\p{Nd}{2})+(?:[,. ]\p{Nd}{3})*|\p{Nd}{1,3}(?:[,. ]\p{Nd}{3})+|\p{Nd}+)(?:[.,]\p{Nd}*)?(?:[eE][+-]?\p{Nd}+)?)\s*("[^"]+"|[\p{Sc}\p{L}]*)(?:\s*@{1,2}\s*[+-]?\s*("[^"]+"|[\p{Sc}\p{L}]*)\s*[+-]?((?:\p{Nd}{1,2}(?:[,. ]\p{Nd}{2})+(?:[,. ]\p{Nd}{3})*|\p{Nd}{1,3}(?:[,. ]\p{Nd}{3})+|\p{Nd}+)(?:[.,]\p{Nd}*)?(?:[eE][+-]?\p{Nd}+)?)\s*("[^"]+"|[\p{Sc}\p{L}]*))?\s*(?:={1,2}\*?\s*[+-]?\s*("[^"]+"|[\p{Sc}\p{L}]*)\s*[+-]?((?:\p{Nd}{1,2}(?:[,. ]\p{Nd}{2})+(?:[,. ]\p{Nd}{3})*|\p{Nd}{1,3}(?:[,. ]\p{Nd}{3})+|\p{Nd}+)(?:[.,]\p{Nd}*)?(?:[eE][+-]?\p{Nd}+)?)\s*("[^"]+"|[\p{Sc}\p{L}]*))?$/u;
-        if (!validAmountPattern.test(amountPart)) {
+        if (!HLedgerDiagnosticsProvider.VALID_AMOUNT_PATTERN.test(amountPart)) {
             const amountStartPos = lineText.indexOf(amountPart);
             const range = new vscode.Range(
                 lineNumber,
