@@ -91,6 +91,11 @@
           "type": "string",
           "default": "",
           "description": "Path to the main hledger journal file. If empty, will try to use LEDGER_FILE environment variable or current file"
+        },
+        "hledger.diagnostics.enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable diagnostics validation for hledger files (account checks, tag format, amount format)"
         }
       }
     },

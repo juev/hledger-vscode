@@ -40,6 +40,14 @@ export class HLedgerDiagnosticsProvider implements vscode.Disposable {
     }
 
     private validateDocument(document: vscode.TextDocument): void {
+        const vsconfig = vscode.workspace.getConfiguration('hledger');
+        const diagnosticsEnabled = vsconfig.get<boolean>('diagnostics.enabled', true);
+
+        if (!diagnosticsEnabled) {
+            this.diagnosticCollection.delete(document.uri);
+            return;
+        }
+
         this.config.getConfigForDocument(document);
 
         const definedAccounts = new Set(this.config.getDefinedAccounts());
@@ -225,7 +233,36 @@ export class HLedgerDiagnosticsProvider implements vscode.Disposable {
          * the pattern: E or e, optional single sign (+/-), then digits.
          * Sign can be + or - and can appear before or after the commodity symbol.
          */
-        const validAmountPattern = /^(={1,2}\*?\s*|:=\s*)?[+-]?\s*("[^"]+"|[\p{Sc}\p{L}]*)\s*[+-]?((?:\p{Nd}{1,2}(?:[,. ]\p{Nd}{2})+(?:[,. ]\p{Nd}{3})*|\p{Nd}{1,3}(?:[,. ]\p{Nd}{3})+|\p{Nd}+)(?:[.,]\p{Nd}*)?(?:[eE][+-]?\p{Nd}+)?)\s*("[^"]+"|[\p{Sc}\p{L}]*)(?:\s*@{1,2}\s*[+-]?\s*("[^"]+"|[\p{Sc}\p{L}]*)\s*[+-]?((?:\p{Nd}{1,2}(?:[,. ]\p{Nd}{2})+(?:[,. ]\p{Nd}{3})*|\p{Nd}{1,3}(?:[,. ]\p{Nd}{3})+|\p{Nd}+)(?:[.,]\p{Nd}*)?(?:[eE][+-]?\p{Nd}+)?)\s*("[^"]+"|[\p{Sc}\p{L}]*))?\s*(?:={1,2}\*?\s*[+-]?\s*("[^"]+"|[\p{Sc}\p{L}]*)\s*[+-]?((?:\p{Nd}{1,2}(?:[,. ]\p{Nd}{2})+(?:[,. ]\p{Nd}{3})*|\p{Nd}{1,3}(?:[,. ]\p{Nd}{3})+|\p{Nd}+)(?:[.,]\p{Nd}*)?(?:[eE][+-]?\p{Nd}+)?)\s*("[^"]+"|[\p{Sc}\p{L}]*))?$/u;
+
+        // Build amount pattern components to avoid duplication
+        const DECIMAL_DIGITS = '\\p{Nd}';
+        const GROUP_SEP = '[,. ]';
+
+        // Number grouping patterns:
+        // - Indian: 1,00,00,000 (1-2 digits, then groups of 2, optional final group of 3)
+        // - Standard: 1,000,000 (1-3 digits, then groups of 3)
+        // - Simple: 12345 (no grouping)
+        const NUMBER_GROUPS = [
+            `${DECIMAL_DIGITS}{1,2}(?:${GROUP_SEP}${DECIMAL_DIGITS}{2})+(?:${GROUP_SEP}${DECIMAL_DIGITS}{3})*`,
+            `${DECIMAL_DIGITS}{1,3}(?:${GROUP_SEP}${DECIMAL_DIGITS}{3})+`,
+            `${DECIMAL_DIGITS}+`
+        ].join('|');
+
+        // Full number with optional decimal and scientific notation
+        const FULL_NUMBER = `(?:${NUMBER_GROUPS})(?:[.,]${DECIMAL_DIGITS}*)?(?:[eE][+-]?${DECIMAL_DIGITS}+)?`;
+
+        // Commodity pattern (quoted or unquoted)
+        const COMMODITY = `(?:"[^"]+"|[\\p{Sc}\\p{L}]*)`;
+
+        // Sign pattern
+        const SIGN = '[+-]?';
+
+        // Amount pattern: optional sign, commodity, sign, number, commodity
+        const AMOUNT = `${SIGN}\\s*${COMMODITY}\\s*${SIGN}(${FULL_NUMBER})\\s*${COMMODITY}`;
+
+        // Build the full pattern
+        const validAmountPatternString = `^(={1,2}\\*?\\s*|:=\\s*)?${AMOUNT}(?:\\s*@{1,2}\\s*${AMOUNT})?\\s*(?:={1,2}\\*?\\s*${AMOUNT})?$`;
+        const validAmountPattern = new RegExp(validAmountPatternString, 'u');
         if (!validAmountPattern.test(amountPart)) {
             const amountStartPos = lineText.indexOf(amountPart);
             const range = new vscode.Range(

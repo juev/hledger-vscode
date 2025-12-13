@@ -907,6 +907,47 @@ account Assets
             const amountDiags = diagnostics?.filter(d => d.message.includes('amount')) ?? [];
             expect(amountDiags.length).toBe(0);
         });
+
+        test('accepts space as grouping character', () => {
+            const content = `
+2024-01-01 Test
+    Assets:Bank  1 000.00 EUR
+    Assets:Cash  1 000 000.00
+    Expenses:Tax
+`;
+            config.parseContent(content, '/test');
+
+            const document = new MockTextDocument(content.split('\n'), {
+                uri: vscode.Uri.file('/test/test.journal'),
+                languageId: 'hledger'
+            });
+
+            provider['validateDocument'](document);
+
+            const diagnostics = provider.diagnosticCollection.get(document.uri);
+            const amountDiags = diagnostics?.filter(d => d.message.includes('amount')) ?? [];
+            expect(amountDiags.length).toBe(0);
+        });
+
+        test('accepts quoted commodities at start', () => {
+            const content = `
+2024-01-01 Test
+    Assets:Food  "Indian rupee" 10
+    Assets:Cash
+`;
+            config.parseContent(content, '/test');
+
+            const document = new MockTextDocument(content.split('\n'), {
+                uri: vscode.Uri.file('/test/test.journal'),
+                languageId: 'hledger'
+            });
+
+            provider['validateDocument'](document);
+
+            const diagnostics = provider.diagnosticCollection.get(document.uri);
+            const amountDiags = diagnostics?.filter(d => d.message.includes('amount')) ?? [];
+            expect(amountDiags.length).toBe(0);
+        });
     });
 
     describe('Document Events', () => {
@@ -970,6 +1011,45 @@ account Assets:Cash
 
             const diagnostics = provider.diagnosticCollection.get(document.uri);
             expect(diagnostics).toBeUndefined();
+        });
+
+        test('skips validation when diagnostics disabled', () => {
+            // Mock config to return diagnostics.enabled = false
+            const mockGetConfiguration = vscode.workspace.getConfiguration as jest.Mock;
+            mockGetConfiguration.mockReturnValue({
+                get: jest.fn((key: string, defaultValue?: unknown) => {
+                    if (key === 'diagnostics.enabled') {
+                        return false;
+                    }
+                    return defaultValue;
+                })
+            });
+
+            // Content that would normally generate diagnostics (undefined account)
+            const content = `
+account Assets:Cash
+
+2024-01-01 Test
+    Expenses:Food  $10.00
+    Assets:Bank  -$10.00
+`;
+            config.parseContent(content, '/test');
+
+            const document = new MockTextDocument(content.split('\n'), {
+                uri: vscode.Uri.file('/test/test.journal'),
+                languageId: 'hledger'
+            });
+
+            provider['validateDocument'](document);
+
+            const diagnostics = provider.diagnosticCollection.get(document.uri);
+            // When disabled, no diagnostics should be produced
+            expect(diagnostics).toBeUndefined();
+
+            // Restore default mock behavior
+            mockGetConfiguration.mockReturnValue({
+                get: jest.fn((_key: string, defaultValue?: unknown) => defaultValue)
+            });
         });
     });
 
