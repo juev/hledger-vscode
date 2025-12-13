@@ -11,6 +11,7 @@ import {
     ImportOptions,
     PayeeAccountHistory,
     DEFAULT_IMPORT_OPTIONS,
+    isJournalError,
 } from './import';
 import { HLedgerConfig } from './HLedgerConfig';
 
@@ -147,12 +148,8 @@ export class HLedgerImportCommands implements vscode.Disposable {
                                 payeeHistory = historyData;
                             }
                         } catch (error) {
-                            // Differentiate expected vs unexpected failures
-                            const isExpectedFailure =
-                                error instanceof Error &&
-                                (error.message.includes('no journal') ||
-                                    error.message.includes('not found') ||
-                                    error.message.includes('ENOENT'));
+                            // Use type-safe error checking with custom error types
+                            const isExpectedFailure = isJournalError(error);
 
                             if (!isExpectedFailure) {
                                 // Log unexpected errors for debugging
@@ -167,7 +164,7 @@ export class HLedgerImportCommands implements vscode.Disposable {
                                     'OK'
                                 );
                             }
-                            // For expected failures (no journal), continue silently
+                            // For expected failures (JournalNotFoundError, JournalAccessError), continue silently
                         }
                     }
 

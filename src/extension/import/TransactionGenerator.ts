@@ -381,67 +381,83 @@ export class TransactionGenerator {
      *           DoS protection: rejects strings > 100 characters.
      */
     private parseAmountString(amountStr: string): number | null {
-        // Prevent DoS via extremely long strings in malformed CSV data
+        // DoS protection: reject strings over 100 characters
         if (amountStr.length > 100) {
             return null;
         }
 
-        // Remove currency symbols and whitespace
-        let cleaned = amountStr.replace(/[$€£¥₽₴₸₹\s]/g, '').trim();
+        const cleaned = this.stripCurrencySymbols(amountStr);
+        const { value: withoutParens, isNegative } = this.parseAccountingNotation(cleaned);
 
-        // Handle parentheses as negative (accounting notation)
-        const isNegative = cleaned.startsWith('(') && cleaned.endsWith(')');
-        if (isNegative) {
-            cleaned = cleaned.slice(1, -1);
+        // Extract explicit sign from the value
+        const hasSign = withoutParens.startsWith('-') || withoutParens.startsWith('+');
+        const sign = withoutParens.startsWith('-') ? -1 : 1;
+        const unsigned = hasSign ? withoutParens.slice(1) : withoutParens;
+
+        const normalized = this.normalizeDecimalSeparator(unsigned);
+        const numericValue = parseFloat(normalized);
+
+        if (isNaN(numericValue)) {
+            return null;
         }
 
-        // Handle leading minus or plus
-        const hasSign = cleaned.startsWith('-') || cleaned.startsWith('+');
-        const sign = cleaned.startsWith('-') ? -1 : 1;
-        if (hasSign) {
-            cleaned = cleaned.slice(1);
-        }
+        return (isNegative ? -1 : 1) * sign * numericValue;
+    }
 
-        // Determine decimal separator
-        // If both . and , are present, the last one is the decimal separator
-        const lastDot = cleaned.lastIndexOf('.');
-        const lastComma = cleaned.lastIndexOf(',');
+    /**
+     * Remove currency symbols and whitespace from amount string.
+     * Supports common currency symbols: $, €, £, ¥, ₽, ₴, ₸, ₹
+     */
+    private stripCurrencySymbols(str: string): string {
+        return str.replace(/[$€£¥₽₴₸₹\s]/g, '').trim();
+    }
+
+    /**
+     * Parse accounting notation where parentheses indicate negative values.
+     * Example: "(100)" represents -100
+     */
+    private parseAccountingNotation(str: string): { value: string; isNegative: boolean } {
+        const isNegative = str.startsWith('(') && str.endsWith(')');
+        const value = isNegative ? str.slice(1, -1) : str;
+        return { value, isNegative };
+    }
+
+    /**
+     * Normalize decimal separator to period for parseFloat compatibility.
+     * Handles US format (1,234.56), EU format (1.234,56), and ambiguous cases.
+     */
+    private normalizeDecimalSeparator(str: string): string {
+        const lastDot = str.lastIndexOf('.');
+        const lastComma = str.lastIndexOf(',');
 
         let normalized: string;
 
         if (lastDot > lastComma) {
             // Period is decimal separator (US format: 1,234.56)
-            normalized = cleaned.replace(/,/g, '');
+            normalized = str.replace(/,/g, '');
         } else if (lastComma > lastDot) {
             // Comma is decimal separator (EU format: 1.234,56)
-            normalized = cleaned.replace(/\./g, '').replace(',', '.');
+            normalized = str.replace(/\./g, '').replace(',', '.');
         } else if (lastComma === -1 && lastDot === -1) {
             // No decimal separator (integer)
-            normalized = cleaned;
+            normalized = str;
         } else if (lastComma !== -1) {
-            // Only comma, check if it's decimal or thousand separator
-            const afterComma = cleaned.slice(lastComma + 1);
+            // Only comma present - use heuristic based on digit count after comma
+            const afterComma = str.slice(lastComma + 1);
             if (afterComma.length <= 2) {
-                // Likely decimal separator
-                normalized = cleaned.replace(',', '.');
+                // Two or fewer digits after comma suggests decimal separator
+                normalized = str.replace(',', '.');
             } else {
-                // Likely thousand separator
-                normalized = cleaned.replace(/,/g, '');
+                // More than two digits suggests thousand separator
+                normalized = str.replace(/,/g, '');
             }
         } else {
-            // Only dot
-            normalized = cleaned;
+            // Only period present - treat as decimal separator
+            normalized = str;
         }
 
-        // Remove remaining group separators (spaces)
-        normalized = normalized.replace(/\s/g, '');
-
-        const value = parseFloat(normalized);
-        if (isNaN(value)) {
-            return null;
-        }
-
-        return (isNegative ? -1 : 1) * sign * value;
+        // Remove any remaining whitespace (group separators)
+        return normalized.replace(/\s/g, '');
     }
 
     /**

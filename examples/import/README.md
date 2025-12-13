@@ -19,7 +19,7 @@ See `hledger.import.*` settings in VS Code for customization options:
 
 - `hledger.import.defaultDebitAccount` - Default expense account (default: `expenses:unknown`)
 - `hledger.import.defaultCreditAccount` - Default income account (default: `income:unknown`)
-- `hledger.import.defaultBalancingAccount` - Balancing account (default: `assets:checking`)
+- `hledger.import.defaultBalancingAccount` - Balancing account (default: `TODO:account`)
 - `hledger.import.dateFormat` - Expected date format (`auto`, `YYYY-MM-DD`, `DD.MM.YYYY`, etc.)
 - `hledger.import.invertAmounts` - Invert amount signs
 - `hledger.import.merchantPatterns` - Custom regex patterns for merchant detection

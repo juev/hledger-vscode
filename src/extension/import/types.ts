@@ -4,6 +4,55 @@
 
 import { AccountName, PayeeName, UsageCount } from '../types';
 
+// ==================== Custom Error Types ====================
+
+/**
+ * Error thrown when a journal file is not found.
+ * Used to differentiate expected failures (no journal) from unexpected errors.
+ */
+export class JournalNotFoundError extends Error {
+    readonly name = 'JournalNotFoundError' as const;
+    readonly path: string;
+
+    constructor(path: string) {
+        super(`Journal not found: ${path}`);
+        this.path = path;
+        Object.setPrototypeOf(this, JournalNotFoundError.prototype);
+    }
+}
+
+/**
+ * Error thrown when a journal file cannot be accessed (permission denied, etc.).
+ * Used to differentiate access issues from other errors.
+ */
+export class JournalAccessError extends Error {
+    readonly name = 'JournalAccessError' as const;
+    readonly path: string;
+    readonly reason: string;
+
+    constructor(path: string, reason: string) {
+        super(`Cannot access journal ${path}: ${reason}`);
+        this.path = path;
+        this.reason = reason;
+        Object.setPrototypeOf(this, JournalAccessError.prototype);
+    }
+}
+
+/**
+ * Type guard to check if an error is a journal-related error.
+ * Returns true for JournalNotFoundError or JournalAccessError.
+ */
+export function isJournalError(
+    error: unknown
+): error is JournalNotFoundError | JournalAccessError {
+    return (
+        error instanceof JournalNotFoundError ||
+        error instanceof JournalAccessError
+    );
+}
+
+// ==================== End Custom Error Types ====================
+
 /**
  * Payee-to-account mapping from journal history.
  * Tracks which accounts are used with each payee for import resolution.
