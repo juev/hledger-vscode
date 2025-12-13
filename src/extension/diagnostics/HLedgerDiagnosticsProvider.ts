@@ -195,7 +195,7 @@ export class HLedgerDiagnosticsProvider implements vscode.Disposable {
         lineText: string,
         lineNumber: number
     ): vscode.Diagnostic | undefined {
-        const postingMatch = /^\s{2,}([\p{L}\p{N}:_\s-]+?)\s{2,}(.+)$/u.exec(lineText);
+        const postingMatch = /^\s{2,}([\p{L}\p{N}:_\s-]+?)\s{2,}(.+?)(;.*)?$/u.exec(lineText);
         if (!postingMatch || !postingMatch[2]) {
             return undefined;
         }
@@ -213,17 +213,19 @@ export class HLedgerDiagnosticsProvider implements vscode.Disposable {
          * - Unicode currencies: ₽100.00, €50.00
          * - Grouped numbers: 1,000.00 (with , or . or space as group separator)
          * - Scientific notation: 1E-6, 1E3, EUR 1E3 (E/e followed by optional single sign and digits)
-         * - Quoted commodities: 3 "green apples", 10 "ACME Inc."
+         * - Quoted commodities: 3 "green apples", "Indian rupee" 10
          * - Balance assertions without amount: =$500, = $500, ==$500, =* $500, ==* $500
          * - Balance assignment: := $500
          * - Amount with balance assertion: $100 = $500
          * - Amount with cost: 10 AAPL @ $150
+         * - Indian numbering systems
+         * - Space as grouping character
          *
          * Number structure requires at least one digit. Scientific notation must follow
          * the pattern: E or e, optional single sign (+/-), then digits.
          * Sign can be + or - and can appear before or after the commodity symbol.
          */
-        const validAmountPattern = /^(={1,2}\*?\s*|:=\s*)?[+-]?[\p{Sc}\p{L}]*\s*[+-]?[\p{N},.]+([Ee][+-]?[\p{N}]+)?\s*[\p{Sc}\p{L}]*(\s*"[^"]+")?\s*(\s*[@=:].*)?$/u;
+        const validAmountPattern = /^(={1,2}\*?\s*|:=\s*)?[+-]?\s*("[^"]+"|[\p{Sc}\p{L}]*)\s*[+-]?((?:\p{Nd}{1,2}(?:[,. ]\p{Nd}{2})+(?:[,. ]\p{Nd}{3})*|\p{Nd}{1,3}(?:[,. ]\p{Nd}{3})+|\p{Nd}+)(?:[.,]\p{Nd}*)?(?:[eE][+-]?\p{Nd}+)?)\s*("[^"]+"|[\p{Sc}\p{L}]*)(?:\s*@{1,2}\s*[+-]?\s*("[^"]+"|[\p{Sc}\p{L}]*)\s*[+-]?((?:\p{Nd}{1,2}(?:[,. ]\p{Nd}{2})+(?:[,. ]\p{Nd}{3})*|\p{Nd}{1,3}(?:[,. ]\p{Nd}{3})+|\p{Nd}+)(?:[.,]\p{Nd}*)?(?:[eE][+-]?\p{Nd}+)?)\s*("[^"]+"|[\p{Sc}\p{L}]*))?\s*(?:={1,2}\*?\s*[+-]?\s*("[^"]+"|[\p{Sc}\p{L}]*)\s*[+-]?((?:\p{Nd}{1,2}(?:[,. ]\p{Nd}{2})+(?:[,. ]\p{Nd}{3})*|\p{Nd}{1,3}(?:[,. ]\p{Nd}{3})+|\p{Nd}+)(?:[.,]\p{Nd}*)?(?:[eE][+-]?\p{Nd}+)?)\s*("[^"]+"|[\p{Sc}\p{L}]*))?$/u;
         if (!validAmountPattern.test(amountPart)) {
             const amountStartPos = lineText.indexOf(amountPart);
             const range = new vscode.Range(
