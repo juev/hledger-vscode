@@ -1,5 +1,15 @@
 # Change Log
 
+## [0.4.4] - 2025-12-14
+
+### Fixed
+- fix: exclude current line from completion parsing to prevent incomplete data
+- fix: force VS Code to respect frequency-based completion order
+- fix: cap completion score to prevent negative sortText values
+- fix: use index-based sortText to override VS Code sorting
+- fix: improve account completion filtering and frequency sorting
+
+
 ## [0.4.3] - 2025-12-13
 
 ### Added
