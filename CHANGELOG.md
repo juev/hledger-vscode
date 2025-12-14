@@ -1,5 +1,14 @@
 # Change Log
 
+## [0.4.5] - 2025-12-14
+
+### Fixed
+- fix: filter out incomplete typed text from account completions
+
+### Other
+- docs: streamline CLAUDE.md and document gopls completion sorting hack
+
+
 ## [0.4.4] - 2025-12-14
 
 ### Fixed
