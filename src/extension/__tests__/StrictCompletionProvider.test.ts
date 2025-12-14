@@ -8,6 +8,14 @@ import { SimpleProjectCache } from '../SimpleProjectCache';
 // Import MockTextDocument from the mock
 const { MockTextDocument } = vscode as any;
 
+// Helper to extract items from CompletionList or array
+function getItems(result: vscode.CompletionItem[] | vscode.CompletionList): vscode.CompletionItem[] {
+    if (Array.isArray(result)) {
+        return result;
+    }
+    return result.items;
+}
+
 describe('StrictCompletionProvider Integration', () => {
     let provider: StrictCompletionProvider;
     let config: HLedgerConfig;
@@ -34,12 +42,13 @@ describe('StrictCompletionProvider Integration', () => {
             const document = new MockTextDocument(['2024']);
             const position = new vscode.Position(0, 4);
 
-            const completions = provider.provideCompletionItems(
-                document, 
-                position, 
-                mockCancellationToken, 
+            const result = provider.provideCompletionItems(
+                document,
+                position,
+                mockCancellationToken,
                 mockCompletionContext
             );
+            const completions = getItems(result);
 
             expect(completions).toBeDefined();
             expect(Array.isArray(completions)).toBe(true);
@@ -56,12 +65,13 @@ describe('StrictCompletionProvider Integration', () => {
             const document = new MockTextDocument(['0']);
             const position = new vscode.Position(0, 1);
 
-            const completions = provider.provideCompletionItems(
-                document, 
-                position, 
-                mockCancellationToken, 
+            const result = provider.provideCompletionItems(
+                document,
+                position,
+                mockCancellationToken,
                 mockCompletionContext
             );
+            const completions = getItems(result);
 
             expect(completions).toBeDefined();
             expect(completions.length).toBeGreaterThan(0);
@@ -71,12 +81,13 @@ describe('StrictCompletionProvider Integration', () => {
             const document = new MockTextDocument(['  2024']);
             const position = new vscode.Position(0, 6);
 
-            const completions = provider.provideCompletionItems(
-                document, 
-                position, 
-                mockCancellationToken, 
+            const result = provider.provideCompletionItems(
+                document,
+                position,
+                mockCancellationToken,
                 mockCompletionContext
             );
+            const completions = getItems(result);
 
             expect(completions.length).toBe(0);
         });
@@ -87,12 +98,13 @@ describe('StrictCompletionProvider Integration', () => {
             const document = new MockTextDocument(['  Assets']);
             const position = new vscode.Position(0, 8);
 
-            const completions = provider.provideCompletionItems(
-                document, 
-                position, 
-                mockCancellationToken, 
+            const result = provider.provideCompletionItems(
+                document,
+                position,
+                mockCancellationToken,
                 mockCompletionContext
             );
+            const completions = getItems(result);
 
             expect(completions).toBeDefined();
             expect(Array.isArray(completions)).toBe(true);
@@ -103,12 +115,13 @@ describe('StrictCompletionProvider Integration', () => {
             const document = new MockTextDocument(['Assets']);
             const position = new vscode.Position(0, 6);
 
-            const completions = provider.provideCompletionItems(
-                document, 
-                position, 
-                mockCancellationToken, 
+            const result = provider.provideCompletionItems(
+                document,
+                position,
+                mockCancellationToken,
                 mockCompletionContext
             );
+            const completions = getItems(result);
 
             expect(completions.length).toBe(0);
         });
@@ -119,12 +132,13 @@ describe('StrictCompletionProvider Integration', () => {
             const document = new MockTextDocument(['  Assets:Cash  100.00 U']);
             const position = new vscode.Position(0, 23);
 
-            const completions = provider.provideCompletionItems(
-                document, 
-                position, 
-                mockCancellationToken, 
+            const result = provider.provideCompletionItems(
+                document,
+                position,
+                mockCancellationToken,
                 mockCompletionContext
             );
+            const completions = getItems(result);
 
             expect(completions).toBeDefined();
             expect(Array.isArray(completions)).toBe(true);
@@ -134,12 +148,13 @@ describe('StrictCompletionProvider Integration', () => {
             const document = new MockTextDocument(['  Assets:Cash  100.00  ']);
             const position = new vscode.Position(0, 24);
 
-            const completions = provider.provideCompletionItems(
-                document, 
-                position, 
-                mockCancellationToken, 
+            const result = provider.provideCompletionItems(
+                document,
+                position,
+                mockCancellationToken,
                 mockCompletionContext
             );
+            const completions = getItems(result);
 
             expect(completions.length).toBe(0);
         });
@@ -150,12 +165,13 @@ describe('StrictCompletionProvider Integration', () => {
             const document = new MockTextDocument(['  Assets:Cash  100.00  ']);
             const position = new vscode.Position(0, 24);
 
-            const completions = provider.provideCompletionItems(
-                document, 
-                position, 
-                mockCancellationToken, 
+            const result = provider.provideCompletionItems(
+                document,
+                position,
+                mockCancellationToken,
                 mockCompletionContext
             );
+            const completions = getItems(result);
 
             expect(completions.length).toBe(0);
         });
@@ -164,12 +180,13 @@ describe('StrictCompletionProvider Integration', () => {
             const document = new MockTextDocument(['  Assets:Cash']);
             const position = new vscode.Position(0, 5); // Middle of "Assets" (between 's' and 'e')
 
-            const completions = provider.provideCompletionItems(
+            const result = provider.provideCompletionItems(
                 document,
                 position,
                 mockCancellationToken,
                 mockCompletionContext
             );
+            const completions = getItems(result);
 
             expect(completions.length).toBe(0);
         });
@@ -180,12 +197,13 @@ describe('StrictCompletionProvider Integration', () => {
             const document = new MockTextDocument(['']);
             const position = new vscode.Position(0, 0);
 
-            const completions = provider.provideCompletionItems(
-                document, 
-                position, 
-                mockCancellationToken, 
+            const result = provider.provideCompletionItems(
+                document,
+                position,
+                mockCancellationToken,
                 mockCompletionContext
             );
+            const completions = getItems(result);
 
             expect(completions).toBeDefined();
             expect(Array.isArray(completions)).toBe(true);
@@ -195,12 +213,13 @@ describe('StrictCompletionProvider Integration', () => {
             const document = new MockTextDocument(['2024']);
             const position = new vscode.Position(0, 10);
 
-            const completions = provider.provideCompletionItems(
-                document, 
-                position, 
-                mockCancellationToken, 
+            const result = provider.provideCompletionItems(
+                document,
+                position,
+                mockCancellationToken,
                 mockCompletionContext
             );
+            const completions = getItems(result);
 
             expect(completions).toBeDefined();
             expect(Array.isArray(completions)).toBe(true);
@@ -215,16 +234,18 @@ describe('StrictCompletionProvider Integration', () => {
 
             // Test date completion on first line
             let position = new vscode.Position(0, 4);
-            let completions = provider.provideCompletionItems(
+            let result = provider.provideCompletionItems(
                 document, position, mockCancellationToken, mockCompletionContext
             );
+            let completions = getItems(result);
             expect(completions.length).toBeGreaterThan(0);
 
             // Test account completion on third line
             position = new vscode.Position(2, 15);
-            completions = provider.provideCompletionItems(
+            result = provider.provideCompletionItems(
                 document, position, mockCancellationToken, mockCompletionContext
             );
+            completions = getItems(result);
             expect(completions).toBeDefined();
         });
     });
@@ -330,12 +351,13 @@ describe('StrictCompletionProvider Integration', () => {
             const document = new MockTextDocument(['2024-01-15 ']);
             const position = new vscode.Position(0, 11);
 
-            const completions = provider.provideCompletionItems(
+            const result = provider.provideCompletionItems(
                 document,
                 position,
                 mockCancellationToken,
                 mockCompletionContext
             );
+            const completions = getItems(result);
 
             // With empty query, all payees should be returned (at least the 5 we defined)
             expect(completions).toBeDefined();
@@ -347,12 +369,13 @@ describe('StrictCompletionProvider Integration', () => {
             const document = new MockTextDocument(['2024-01-15 Ama']);
             const position = new vscode.Position(0, 14);
 
-            const completions = provider.provideCompletionItems(
+            const result = provider.provideCompletionItems(
                 document,
                 position,
                 mockCancellationToken,
                 mockCompletionContext
             );
+            const completions = getItems(result);
 
             // Should filter to only Amazon-related payees (at least 3)
             expect(completions).toBeDefined();
@@ -370,12 +393,13 @@ describe('StrictCompletionProvider Integration', () => {
             const document = new MockTextDocument(['2024-01-15 Amazon Pur']);
             const position = new vscode.Position(0, 21);
 
-            const completions = provider.provideCompletionItems(
+            const result = provider.provideCompletionItems(
                 document,
                 position,
                 mockCancellationToken,
                 mockCompletionContext
             );
+            const completions = getItems(result);
 
             // Should filter to "Amazon Purchase" only (matches "Amazon Pur")
             expect(completions).toBeDefined();
@@ -390,12 +414,13 @@ describe('StrictCompletionProvider Integration', () => {
             const document = new MockTextDocument(['2024-01-15 * ']);
             const position = new vscode.Position(0, 13);
 
-            const completions = provider.provideCompletionItems(
+            const result = provider.provideCompletionItems(
                 document,
                 position,
                 mockCancellationToken,
                 mockCompletionContext
             );
+            const completions = getItems(result);
 
             // With empty query, all payees should be returned (at least the 5 we defined)
             expect(completions).toBeDefined();
@@ -407,12 +432,13 @@ describe('StrictCompletionProvider Integration', () => {
             const document = new MockTextDocument(['2024-01-15 * Amazon']);
             const position = new vscode.Position(0, 19);
 
-            const completions = provider.provideCompletionItems(
+            const result = provider.provideCompletionItems(
                 document,
                 position,
                 mockCancellationToken,
                 mockCompletionContext
             );
+            const completions = getItems(result);
 
             // Should filter to Amazon-related payees (at least 3)
             expect(completions).toBeDefined();
@@ -426,12 +452,13 @@ describe('StrictCompletionProvider Integration', () => {
             const document = new MockTextDocument(['2024-01-15 ! Amazon Purchase']);
             const position = new vscode.Position(0, 28);
 
-            const completions = provider.provideCompletionItems(
+            const result = provider.provideCompletionItems(
                 document,
                 position,
                 mockCancellationToken,
                 mockCompletionContext
             );
+            const completions = getItems(result);
 
             expect(completions).toBeDefined();
             // Should match "Amazon Purchase" exactly
@@ -444,12 +471,13 @@ describe('StrictCompletionProvider Integration', () => {
             const document = new MockTextDocument(['01-15 Test']);
             const position = new vscode.Position(0, 10);
 
-            const completions = provider.provideCompletionItems(
+            const result = provider.provideCompletionItems(
                 document,
                 position,
                 mockCancellationToken,
                 mockCompletionContext
             );
+            const completions = getItems(result);
 
             // Should filter to Test-related payees
             expect(completions).toBeDefined();
@@ -462,12 +490,13 @@ describe('StrictCompletionProvider Integration', () => {
             const document = new MockTextDocument(['2024/01/15 Test']);
             const position = new vscode.Position(0, 15);
 
-            const completions = provider.provideCompletionItems(
+            const result = provider.provideCompletionItems(
                 document,
                 position,
                 mockCancellationToken,
                 mockCompletionContext
             );
+            const completions = getItems(result);
 
             // Should filter to Test-related payees
             expect(completions).toBeDefined();
@@ -482,12 +511,13 @@ describe('StrictCompletionProvider Integration', () => {
             const document = new MockTextDocument(['2024-01-15 Grocery']);
             const position = new vscode.Position(0, 18);
 
-            const completions = provider.provideCompletionItems(
+            const result = provider.provideCompletionItems(
                 document,
                 position,
                 mockCancellationToken,
                 mockCompletionContext
             );
+            const completions = getItems(result);
 
             // Should match "Grocery Store" since query is "Grocery"
             // If bug exists, query would be "2024-01-15 Grocery" and no match found
@@ -508,13 +538,14 @@ describe('StrictCompletionProvider Integration', () => {
 
             testCases.forEach(({ document: lines, position, expectedType }) => {
                 const document = new MockTextDocument(lines);
-                const completions = provider.provideCompletionItems(
+                const result = provider.provideCompletionItems(
                     document, position, mockCancellationToken, mockCompletionContext
                 );
+                const completions = getItems(result);
 
                 // Should have completions for the expected type
                 expect(completions).toBeDefined();
-                
+
                 // All completions should be of the same kind (single type per position rule)
                 if (completions.length > 0) {
                     const firstKind = completions[0]!.kind;
@@ -527,19 +558,20 @@ describe('StrictCompletionProvider Integration', () => {
         it('should respect minimum trigger requirements', () => {
             // Test that contextual triggers work
             const contextualTriggers = [':', '@', ';'];
-            
+
             contextualTriggers.forEach(trigger => {
                 // These should not cause errors when used appropriately
                 const document = new MockTextDocument([`  Assets${trigger}`]);
                 const position = new vscode.Position(0, 8 + trigger.length);
-                
-                const completions = provider.provideCompletionItems(
+
+                const result = provider.provideCompletionItems(
                     document, position, mockCancellationToken, {
                         ...mockCompletionContext,
                         triggerCharacter: trigger
                     }
                 );
-                
+                const completions = getItems(result);
+
                 expect(completions).toBeDefined();
             });
         });

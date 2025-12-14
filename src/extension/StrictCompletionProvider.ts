@@ -55,7 +55,7 @@ export class StrictCompletionProvider
     position: vscode.Position,
     _token: vscode.CancellationToken,
     _context: vscode.CompletionContext,
-  ): vscode.CompletionItem[] {
+  ): vscode.CompletionItem[] | vscode.CompletionList {
     // 1. Update configuration for current document
     this.config.getConfigForDocument(document);
 
@@ -82,7 +82,10 @@ export class StrictCompletionProvider
       document,
       position,
     );
-    return result;
+    // Return CompletionList with isIncomplete=true to prevent VS Code from re-sorting
+    // This is the "gopls hack" - when combined with identical filterText for all items,
+    // VS Code gives equal fuzzy scores and falls back to our sortText ordering
+    return new vscode.CompletionList(result, true);
   }
 
   private provideSingleTypeCompletion(

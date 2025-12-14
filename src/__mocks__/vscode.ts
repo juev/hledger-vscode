@@ -116,6 +116,16 @@ export class CompletionItem {
     }
 }
 
+export class CompletionList {
+    items: CompletionItem[];
+    isIncomplete: boolean;
+
+    constructor(items?: CompletionItem[], isIncomplete?: boolean) {
+        this.items = items || [];
+        this.isIncomplete = isIncomplete || false;
+    }
+}
+
 export class Diagnostic {
     range: Range;
     message: string;
@@ -905,6 +915,7 @@ export default {
     Diagnostic,
     CodeAction,
     CompletionItem,
+    CompletionList,
     WorkspaceEdit,
     SemanticTokensLegend,
     SemanticTokensBuilder,

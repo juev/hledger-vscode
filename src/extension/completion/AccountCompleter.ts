@@ -46,8 +46,9 @@ export class AccountCompleter {
         item.sortText = this.getSortText(match, index);
 
         // filterText controls VS Code's fuzzy matching
-        // Using sortText as filterText prevents VS Code from re-sorting by label match quality
-        item.filterText = fullAccountName;
+        // Use the same filterText (query) for all items so VS Code gives equal fuzzy scores
+        // This forces VS Code to fall back to sortText ordering (the "gopls hack")
+        item.filterText = context.query || '';
 
         // Explicitly set insertText to ensure full account path is inserted
         item.insertText = fullAccountName;
