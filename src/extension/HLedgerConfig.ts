@@ -156,6 +156,12 @@ export class HLedgerConfig {
       currentLine,
     );
     const currentData = this.parser.parseContent(currentContent, filePath);
+
+    // Clone workspace data before merging to prevent cache pollution.
+    // This ensures incomplete data from current line doesn't persist in cache.
+    if (currentLine !== undefined && this.data) {
+      this.data = this.cloneData(this.data);
+    }
     this.mergeCurrentData(currentData);
   }
 
@@ -205,6 +211,36 @@ export class HLedgerConfig {
       payeeUsage: Map<PayeeName, UsageCount>;
       tagUsage: Map<TagName, UsageCount>;
       commodityUsage: Map<CommodityCode, UsageCount>;
+    };
+  }
+
+  /**
+   * Creates a deep clone of ParsedHLedgerData to prevent cache mutation.
+   * Used when currentLine is provided to ensure workspace cache stays clean.
+   */
+  private cloneData(data: ParsedHLedgerData): ParsedHLedgerData {
+    return {
+      accounts: new Set(data.accounts),
+      usedAccounts: new Set(data.usedAccounts),
+      definedAccounts: new Set(data.definedAccounts),
+      payees: new Set(data.payees),
+      tags: new Set(data.tags),
+      commodities: new Set(data.commodities),
+      accountUsage: new Map(data.accountUsage),
+      payeeUsage: new Map(data.payeeUsage),
+      tagUsage: new Map(data.tagUsage),
+      commodityUsage: new Map(data.commodityUsage),
+      aliases: new Map(data.aliases),
+      defaultCommodity: data.defaultCommodity,
+      lastDate: data.lastDate,
+      payeeAccounts: new Map(
+        [...data.payeeAccounts].map(([k, v]) => [k, new Set(v)]),
+      ),
+      payeeAccountPairUsage: new Map(data.payeeAccountPairUsage),
+      tagValues: new Map([...data.tagValues].map(([k, v]) => [k, new Set(v)])),
+      tagValueUsage: new Map(data.tagValueUsage),
+      commodityFormats: new Map(data.commodityFormats),
+      decimalMark: data.decimalMark,
     };
   }
 
