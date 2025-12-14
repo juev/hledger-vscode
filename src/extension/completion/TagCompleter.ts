@@ -212,7 +212,9 @@ export class TagCompleter {
      * Higher scores appear first, then alphabetical order.
      */
     private getSortText(match: FuzzyMatch): string {
-        const scoreStr = (1000 - match.score).toString().padStart(4, '0');
+        // Cap score to prevent negative values with high usage counts (usageCount * 20 can exceed 1000)
+        const cappedScore = Math.min(Math.round(match.score), 999);
+        const scoreStr = (1000 - cappedScore).toString().padStart(4, '0');
         return `${scoreStr}_${match.item}`;
     }
 }

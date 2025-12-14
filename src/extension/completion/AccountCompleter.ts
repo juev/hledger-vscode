@@ -82,7 +82,9 @@ export class AccountCompleter {
         // VS Code respects sortText ordering when items have same prefix
         // Format: "00001_score_name" ensures lexicographic ordering matches our ranking
         const indexStr = index.toString().padStart(5, '0');
-        const scoreStr = (10000 - Math.round(match.score)).toString().padStart(5, '0');
+        // Cap score to prevent negative values with high usage counts (usageCount * 20 can exceed 10000)
+        const cappedScore = Math.min(Math.round(match.score), 9999);
+        const scoreStr = (10000 - cappedScore).toString().padStart(5, '0');
         return `${indexStr}_${scoreStr}_${match.item}`;
     }
 }
