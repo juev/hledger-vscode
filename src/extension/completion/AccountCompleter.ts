@@ -27,7 +27,18 @@ export class AccountCompleter {
             caseSensitive: context.isCaseSensitive ?? false
         });
 
-        return matches.map((match, index) => this.createCompletionItem(match, context, index));
+        // Filter out the query itself if it appears as a low-usage match
+        // This prevents incomplete typed text from appearing in completions
+        // (e.g., typing "прод" and canceling should not show "прод" as account)
+        const filteredMatches = matches.filter(match => {
+            const isExactQueryMatch = match.item.toLowerCase() === context.query.toLowerCase();
+            const usageCount = this.config.accountUsage.get(match.item as AccountName) ?? 0;
+            const isLowUsage = usageCount <= 2;
+            // Exclude if it's an exact match with low usage
+            return !(isExactQueryMatch && isLowUsage);
+        });
+
+        return filteredMatches.map((match, index) => this.createCompletionItem(match, context, index));
     }
 
     private createCompletionItem(match: FuzzyMatch<AccountName>, context: CompletionContext, index: number): vscode.CompletionItem {
