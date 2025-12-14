@@ -7,21 +7,21 @@
  * Represents all parsed data from hledger files with immutable readonly collections.
  */
 interface ParsedHLedgerData {
-    readonly accounts: ReadonlySet<AccountName>;
-    readonly definedAccounts: ReadonlySet<AccountName>;
-    readonly usedAccounts: ReadonlySet<AccountName>;
-    readonly payees: ReadonlySet<PayeeName>;
-    readonly tags: ReadonlySet<TagName>;
-    readonly commodities: ReadonlySet<CommodityCode>;
-    readonly aliases: ReadonlyMap<AccountName, AccountName>;
-    readonly accountUsage: ReadonlyMap<AccountName, UsageCount>;
-    readonly payeeUsage: ReadonlyMap<PayeeName, UsageCount>;
-    readonly tagUsage: ReadonlyMap<TagName, UsageCount>;
-    readonly commodityUsage: ReadonlyMap<CommodityCode, UsageCount>;
-    readonly tagValues: ReadonlyMap<TagName, ReadonlySet<TagValue>>;
-    readonly tagValueUsage: ReadonlyMap<string, UsageCount>;
-    readonly defaultCommodity: CommodityCode | null;
-    readonly lastDate: string | null;
+  readonly accounts: ReadonlySet<AccountName>;
+  readonly definedAccounts: ReadonlySet<AccountName>;
+  readonly usedAccounts: ReadonlySet<AccountName>;
+  readonly payees: ReadonlySet<PayeeName>;
+  readonly tags: ReadonlySet<TagName>;
+  readonly commodities: ReadonlySet<CommodityCode>;
+  readonly aliases: ReadonlyMap<AccountName, AccountName>;
+  readonly accountUsage: ReadonlyMap<AccountName, UsageCount>;
+  readonly payeeUsage: ReadonlyMap<PayeeName, UsageCount>;
+  readonly tagUsage: ReadonlyMap<TagName, UsageCount>;
+  readonly commodityUsage: ReadonlyMap<CommodityCode, UsageCount>;
+  readonly tagValues: ReadonlyMap<TagName, ReadonlySet<TagValue>>;
+  readonly tagValueUsage: ReadonlyMap<string, UsageCount>;
+  readonly defaultCommodity: CommodityCode | null;
+  readonly lastDate: string | null;
 }
 
 /**
@@ -61,18 +61,18 @@ export type DocumentVersion = number;
  * Represents the relationship between tag names and their associated values.
  */
 export interface TagValuePair {
-    readonly tag: TagName;
-    readonly value: TagValue;
+  readonly tag: TagName;
+  readonly value: TagValue;
 }
 
 // Enhanced completion context interface with type safety
 export interface CompletionContext {
-    readonly type: CompletionType;
-    readonly query: string;
-    readonly position?: CompletionPosition;
-    readonly document?: DocumentReference | undefined;
-    readonly range?: CompletionRange;
-    readonly isCaseSensitive?: boolean;
+  readonly type: CompletionType;
+  readonly query: string;
+  readonly position?: CompletionPosition;
+  readonly document?: DocumentReference | undefined;
+  readonly range?: CompletionRange;
+  readonly isCaseSensitive?: boolean;
 }
 
 /**
@@ -80,29 +80,37 @@ export interface CompletionContext {
  * Defines the span of text that should be replaced by the completion.
  */
 export interface CompletionRange {
-    readonly start: CompletionPosition;
-    readonly end: CompletionPosition;
+  readonly start: CompletionPosition;
+  readonly end: CompletionPosition;
 }
 
 /**
  * Completion type enumeration for better type safety.
  * Defines all possible completion types in hledger files.
  */
-export type CompletionType = 
-    | 'account'
-    | 'payee' 
-    | 'tag'
-    | 'tag_value'
-    | 'commodity'
-    | 'date'
-    | 'none'
-    | 'keyword';
+export type CompletionType =
+  | "account"
+  | "payee"
+  | "tag"
+  | "tag_value"
+  | "commodity"
+  | "date"
+  | "none"
+  | "keyword";
 
 /**
  * Type guard for CompletionType validation.
  */
 export const isCompletionType = (value: string): value is CompletionType => {
-    return ['account', 'payee', 'tag', 'tag_value', 'commodity', 'date', 'keyword'].includes(value);
+  return [
+    "account",
+    "payee",
+    "tag",
+    "tag_value",
+    "commodity",
+    "date",
+    "keyword",
+  ].includes(value);
 };
 
 /**
@@ -110,8 +118,8 @@ export const isCompletionType = (value: string): value is CompletionType => {
  * Uses branded number types for better type safety.
  */
 export interface CompletionPosition {
-    readonly line: LineNumber;
-    readonly character: CharacterPosition;
+  readonly line: LineNumber;
+  readonly character: CharacterPosition;
 }
 
 /**
@@ -119,50 +127,56 @@ export interface CompletionPosition {
  * Provides readonly access to document metadata.
  */
 export interface DocumentReference {
-    readonly uri: FilePath;
-    readonly languageId: string;
-    readonly version?: DocumentVersion;
+  readonly uri: FilePath;
+  readonly languageId: string;
+  readonly version?: DocumentVersion;
 }
 
 // Type-safe cache value union for all possible cache values
-export type CacheValue = 
-    | string
-    | number
-    | boolean
-    | null
-    | undefined
-    | ParsedHLedgerData
-    | Set<AccountName>
-    | Set<PayeeName>
-    | Set<TagName>
-    | Set<TagValue>
-    | Set<CommodityCode>
-    | Map<string, UsageCount>
-    | ReadonlyArray<string>
-    | Record<string, unknown>;
+export type CacheValue =
+  | string
+  | number
+  | boolean
+  | null
+  | undefined
+  | ParsedHLedgerData
+  | Set<AccountName>
+  | Set<PayeeName>
+  | Set<TagName>
+  | Set<TagValue>
+  | Set<CommodityCode>
+  | Map<string, UsageCount>
+  | ReadonlyArray<string>
+  | Record<string, unknown>;
 
 /**
  * Enhanced generic cache interface with strong type safety.
  * Uses union type instead of 'any' for better type checking.
  */
-export interface ISimpleCache<TKey extends string = CacheKey, TValue extends CacheValue = CacheValue> {
-    get(key: TKey): TValue | null;
-    set(key: TKey, value: TValue): void;
-    has(key: TKey): boolean;
-    delete(key: TKey): boolean;
-    clear(): void;
-    size(): number;
+export interface ISimpleCache<
+  TKey extends string = CacheKey,
+  TValue extends CacheValue = CacheValue,
+> {
+  get(key: TKey): TValue | null;
+  set(key: TKey, value: TValue): void;
+  has(key: TKey): boolean;
+  delete(key: TKey): boolean;
+  clear(): void;
+  size(): number;
 }
 
 /**
  * Enhanced cache interface with TTL and size limits.
  * Extends ISimpleCache with advanced caching features for performance optimization.
  */
-export interface IEnhancedCache<TKey extends string = CacheKey, TValue extends CacheValue = CacheValue> extends ISimpleCache<TKey, TValue> {
-    readonly maxSize: number;
-    readonly defaultTTL: number;
-    setWithTTL(key: TKey, value: TValue, ttlMs: number): void;
-    getStats(): CacheStats;
+export interface IEnhancedCache<
+  TKey extends string = CacheKey,
+  TValue extends CacheValue = CacheValue,
+> extends ISimpleCache<TKey, TValue> {
+  readonly maxSize: number;
+  readonly defaultTTL: number;
+  setWithTTL(key: TKey, value: TValue, ttlMs: number): void;
+  getStats(): CacheStats;
 }
 
 /**
@@ -170,36 +184,115 @@ export interface IEnhancedCache<TKey extends string = CacheKey, TValue extends C
  * Provides comprehensive metrics for cache performance monitoring.
  */
 export interface CacheStats {
-    readonly size: number;
-    readonly hitCount: number;
-    readonly missCount: number;
-    readonly hitRate: number;
-    readonly evictionCount: number;
+  readonly size: number;
+  readonly hitCount: number;
+  readonly missCount: number;
+  readonly hitRate: number;
+  readonly evictionCount: number;
 }
 
 // Basic constants for completion
 export const DEFAULT_ACCOUNT_PREFIXES = [
-    'Assets', 'Liabilities', 'Equity', 'Income', 'Expenses'
+  "Assets",
+  "Liabilities",
+  "Equity",
+  "Income",
+  "Expenses",
 ];
 
 export const DEFAULT_COMMODITIES = [
-    // Major world currencies (ISO 4217 codes)
-    'USD', 'EUR', 'GBP', 'JPY', 'CAD', 'AUD', 'CHF', 'CNY', 'INR', 'BRL', 'RUB', 'KRW', 'MXN', 'SGD', 'HKD', 'NOK', 'SEK', 'DKK', 'PLN', 'CZK', 'HUF', 'TRY', 'ZAR', 'NZD', 'THB',
-    // Currency symbols (Unicode Currency Symbols block)
-    '$', '€', '£', '¥', '₽', '₩', '₹', '₪', '¢', '¥', '₫', '₱', '₲', '₴', '₵', '₸', '₺', '₼', '₾', '₿',
-    // Cryptocurrencies
-    'BTC', 'ETH', 'LTC', 'BCH', 'ADA', 'DOT', 'XRP', 'DOGE', 'USDT', 'USDC', 'BNB', 'SOL', 'MATIC', 'AVAX',
-    // Precious metals and commodities
-    'XAU', 'XAG', 'XPT', 'XPD', 'OIL', 'GAS', 'GOLD', 'SILVER'
+  // Major world currencies (ISO 4217 codes)
+  "USD",
+  "EUR",
+  "GBP",
+  "JPY",
+  "CAD",
+  "AUD",
+  "CHF",
+  "CNY",
+  "INR",
+  "BRL",
+  "RUB",
+  "KRW",
+  "MXN",
+  "SGD",
+  "HKD",
+  "NOK",
+  "SEK",
+  "DKK",
+  "PLN",
+  "CZK",
+  "HUF",
+  "TRY",
+  "ZAR",
+  "NZD",
+  "THB",
+  // Currency symbols (Unicode Currency Symbols block)
+  "$",
+  "€",
+  "£",
+  "¥",
+  "₽",
+  "₩",
+  "₹",
+  "₪",
+  "¢",
+  "¥",
+  "₫",
+  "₱",
+  "₲",
+  "₴",
+  "₵",
+  "₸",
+  "₺",
+  "₼",
+  "₾",
+  "₿",
+  // Cryptocurrencies
+  "BTC",
+  "ETH",
+  "LTC",
+  "BCH",
+  "ADA",
+  "DOT",
+  "XRP",
+  "DOGE",
+  "USDT",
+  "USDC",
+  "BNB",
+  "SOL",
+  "MATIC",
+  "AVAX",
+  // Precious metals and commodities
+  "XAU",
+  "XAG",
+  "XPT",
+  "XPD",
+  "OIL",
+  "GAS",
+  "GOLD",
+  "SILVER",
 ];
 
 export const HLEDGER_KEYWORDS = [
-    'account', 'alias', 'commodity', 'payee', 'tag', 'include', 'year', 
-    'apply', 'end', 'default', 'format', 'note', 'assert', 'check'
+  "account",
+  "alias",
+  "commodity",
+  "payee",
+  "tag",
+  "include",
+  "year",
+  "apply",
+  "end",
+  "default",
+  "format",
+  "note",
+  "assert",
+  "check",
 ] as const;
 
 // Type-safe keyword type
-export type HLedgerKeyword = typeof HLEDGER_KEYWORDS[number];
+export type HLedgerKeyword = (typeof HLEDGER_KEYWORDS)[number];
 
 // Simple constructor functions for backward compatibility (now just identity functions)
 export const createAccountName = (value: string): AccountName => value;
@@ -212,42 +305,55 @@ export const createCacheKey = (value: string): CacheKey => value;
 export const createCompletionScore = (value: number): CompletionScore => value;
 export const createUsageCount = (value: number): UsageCount => value;
 export const createLineNumber = (value: number): LineNumber => value;
-export const createCharacterPosition = (value: number): CharacterPosition => value;
+export const createCharacterPosition = (value: number): CharacterPosition =>
+  value;
 export const createDocumentVersion = (value: number): DocumentVersion => value;
 
 // Modern Result type for better error handling
-export type Result<T, E = Error> = 
-    | { readonly success: true; readonly data: T }
-    | { readonly success: false; readonly error: E };
+export type Result<T, E = Error> =
+  | { readonly success: true; readonly data: T }
+  | { readonly success: false; readonly error: E };
 
 // Helper functions for Result type
-export const success = <T>(data: T): Result<T, never> => ({ success: true, data });
-export const failure = <E>(error: E): Result<never, E> => ({ success: false, error });
+export const success = <T>(data: T): Result<T, never> => ({
+  success: true,
+  data,
+});
+export const failure = <E>(error: E): Result<never, E> => ({
+  success: false,
+  error,
+});
 
 // Type guard for Result
-export const isSuccess = <T, E>(result: Result<T, E>): result is { success: true; data: T } => {
-    return result.success;
+export const isSuccess = <T, E>(
+  result: Result<T, E>,
+): result is { success: true; data: T } => {
+  return result.success;
 };
 
-export const isFailure = <T, E>(result: Result<T, E>): result is { success: false; error: E } => {
-    return !result.success;
+export const isFailure = <T, E>(
+  result: Result<T, E>,
+): result is { success: false; error: E } => {
+  return !result.success;
 };
 
 // Validation result type for input validation
 export interface ValidationResult<T> {
-    readonly isValid: boolean;
-    readonly value?: T;
-    readonly errors: readonly string[];
+  readonly isValid: boolean;
+  readonly value?: T;
+  readonly errors: readonly string[];
 }
 
 // Helper to create validation results
 export const validationSuccess = <T>(value: T): ValidationResult<T> => ({
-    isValid: true,
-    value,
-    errors: []
+  isValid: true,
+  value,
+  errors: [],
 });
 
-export const validationFailure = <T = never>(errors: string[]): ValidationResult<T> => ({
-    isValid: false,
-    errors
+export const validationFailure = <T = never>(
+  errors: string[],
+): ValidationResult<T> => ({
+  isValid: false,
+  errors,
 });

@@ -1,14 +1,14 @@
 // services.ts - Service factory for extension dependency management
 // Provides lightweight service factory pattern to replace global mutable state
 
-import * as vscode from 'vscode';
-import { HLedgerConfig } from './HLedgerConfig';
-import { HLedgerParser } from './HLedgerParser';
-import { SimpleProjectCache } from './SimpleProjectCache';
-import { HLedgerCliService } from './services/HLedgerCliService';
-import { HLedgerCliCommands } from './HLedgerCliCommands';
-import { HLedgerImportCommands } from './HLedgerImportCommands';
-import { ErrorNotificationHandler } from './utils/ErrorNotificationHandler';
+import * as vscode from "vscode";
+import { HLedgerConfig } from "./HLedgerConfig";
+import { HLedgerParser } from "./HLedgerParser";
+import { SimpleProjectCache } from "./SimpleProjectCache";
+import { HLedgerCliService } from "./services/HLedgerCliService";
+import { HLedgerCliCommands } from "./HLedgerCliCommands";
+import { HLedgerImportCommands } from "./HLedgerImportCommands";
+import { ErrorNotificationHandler } from "./utils/ErrorNotificationHandler";
 
 /**
  * Collection of core extension services with proper lifecycle management.
@@ -18,20 +18,20 @@ import { ErrorNotificationHandler } from './utils/ErrorNotificationHandler';
  * Extends vscode.Disposable to integrate with VS Code's subscription system.
  */
 export interface ExtensionServices extends vscode.Disposable {
-    /** Configuration and cache management service */
-    readonly config: HLedgerConfig;
+  /** Configuration and cache management service */
+  readonly config: HLedgerConfig;
 
-    /** CLI service for hledger command execution */
-    readonly cliService: HLedgerCliService;
+  /** CLI service for hledger command execution */
+  readonly cliService: HLedgerCliService;
 
-    /** Command handlers for CLI operations */
-    readonly cliCommands: HLedgerCliCommands;
+  /** Command handlers for CLI operations */
+  readonly cliCommands: HLedgerCliCommands;
 
-    /** Command handlers for import operations */
-    readonly importCommands: HLedgerImportCommands;
+  /** Command handlers for import operations */
+  readonly importCommands: HLedgerImportCommands;
 
-    /** Error notification handler for user-facing messages */
-    readonly errorHandler: ErrorNotificationHandler;
+  /** Error notification handler for user-facing messages */
+  readonly errorHandler: ErrorNotificationHandler;
 }
 
 /**
@@ -61,60 +61,60 @@ export interface ExtensionServices extends vscode.Disposable {
  * ```
  */
 export function createServices(): ExtensionServices {
-    // Create services in dependency order (bottom-up)
-    const errorHandler = new ErrorNotificationHandler();
-    const parser = new HLedgerParser(errorHandler);
-    const cache = new SimpleProjectCache();
-    const config = new HLedgerConfig(parser, cache);
-    const cliService = new HLedgerCliService();
-    const cliCommands = new HLedgerCliCommands(cliService);
-    const importCommands = new HLedgerImportCommands(config);
+  // Create services in dependency order (bottom-up)
+  const errorHandler = new ErrorNotificationHandler();
+  const parser = new HLedgerParser(errorHandler);
+  const cache = new SimpleProjectCache();
+  const config = new HLedgerConfig(parser, cache);
+  const cliService = new HLedgerCliService();
+  const cliCommands = new HLedgerCliCommands(cliService);
+  const importCommands = new HLedgerImportCommands(config);
 
-    return {
-        config,
-        cliService,
-        cliCommands,
-        importCommands,
-        errorHandler,
+  return {
+    config,
+    cliService,
+    cliCommands,
+    importCommands,
+    errorHandler,
 
-        /**
-         * Dispose all services in reverse order of creation (top-down).
-         * Ensures proper cleanup of resources and prevents memory leaks.
-         */
-        dispose(): void {
-            // Dispose in reverse order: top-down
-            try {
-                importCommands.dispose();
-            } catch (error) {
-                console.error('HLedger: Error disposing importCommands:', error);
-            }
+    /**
+     * Dispose all services in reverse order of creation (top-down).
+     * Ensures proper cleanup of resources and prevents memory leaks.
+     */
+    dispose(): void {
+      // Dispose in reverse order: top-down
+      try {
+        importCommands.dispose();
+      } catch (error) {
+        console.error("HLedger: Error disposing importCommands:", error);
+      }
 
-            try {
-                cliCommands.dispose();
-            } catch (error) {
-                console.error('HLedger: Error disposing cliCommands:', error);
-            }
+      try {
+        cliCommands.dispose();
+      } catch (error) {
+        console.error("HLedger: Error disposing cliCommands:", error);
+      }
 
-            try {
-                cliService.dispose();
-            } catch (error) {
-                console.error('HLedger: Error disposing cliService:', error);
-            }
+      try {
+        cliService.dispose();
+      } catch (error) {
+        console.error("HLedger: Error disposing cliService:", error);
+      }
 
-            try {
-                config.dispose();
-            } catch (error) {
-                console.error('HLedger: Error disposing config:', error);
-            }
+      try {
+        config.dispose();
+      } catch (error) {
+        console.error("HLedger: Error disposing config:", error);
+      }
 
-            // Cache has no dispose method - it's just a data structure
-            // Parser has no dispose method - it's stateless
+      // Cache has no dispose method - it's just a data structure
+      // Parser has no dispose method - it's stateless
 
-            try {
-                errorHandler.dispose();
-            } catch (error) {
-                console.error('HLedger: Error disposing errorHandler:', error);
-            }
-        }
-    };
+      try {
+        errorHandler.dispose();
+      } catch (error) {
+        console.error("HLedger: Error disposing errorHandler:", error);
+      }
+    },
+  };
 }
