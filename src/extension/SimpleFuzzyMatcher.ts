@@ -210,14 +210,14 @@ export class SimpleFuzzyMatcher {
             score += 25;
         }
 
-        // Add usage count bonus
+        // Add usage count bonus - higher multiplier to prioritize frequency over length
         if (options.usageCounts) {
             const usageCount = options.usageCounts.get(item) ?? 0;
-            score += usageCount * 5;
+            score += usageCount * 20;
         }
 
-        // Bonus for shorter items (more specific)
-        score += Math.max(0, 100 - item.length);
+        // Small bonus for shorter items (tie-breaker only, max 50 points)
+        score += Math.max(0, Math.min(50, 50 - item.length / 2));
 
         return createCompletionScore(Math.max(0, score));
     }

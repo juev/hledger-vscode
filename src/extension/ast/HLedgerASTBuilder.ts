@@ -328,9 +328,19 @@ export class HLedgerASTBuilder {
     }
 
     /**
-     * Adds an account to the data structures with usage tracking
+     * Adds an account to the data structures with usage tracking.
+     * Filters out incomplete accounts (ending with colon or empty).
      */
     private addAccount(account: AccountName, data: MutableParsedHLedgerData): void {
+        // Filter out incomplete accounts:
+        // - Empty account names
+        // - Names ending with colon (user still typing)
+        // - Names that are just whitespace
+        const trimmed = account.trim();
+        if (!trimmed || trimmed.endsWith(':')) {
+            return;
+        }
+
         data.accounts.add(account);
         data.usedAccounts.add(account);
 
