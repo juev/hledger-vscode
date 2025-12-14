@@ -14,6 +14,14 @@ import { SimpleProjectCache } from '../SimpleProjectCache';
 
 const { MockTextDocument } = vscode as any;
 
+// Helper to extract items from CompletionList or array
+function getItems(result: vscode.CompletionItem[] | vscode.CompletionList): vscode.CompletionItem[] {
+    if (Array.isArray(result)) {
+        return result;
+    }
+    return result.items;
+}
+
 describe('Completion Integration Tests', () => {
     let provider: StrictCompletionProvider;
     let config: HLedgerConfig;
@@ -83,12 +91,13 @@ commodity RUB
             const document = new MockTextDocument(['2024']);
             const position = new vscode.Position(0, 4);
 
-            const completions = provider.provideCompletionItems(
+            const result = provider.provideCompletionItems(
                 document,
                 position,
                 mockCancellationToken,
                 mockCompletionContext
             );
+            const completions = getItems(result);
 
             expect(completions).toBeDefined();
             expect(completions.length).toBeGreaterThan(0);
@@ -104,12 +113,13 @@ commodity RUB
             const document = new MockTextDocument(['  2024']);
             const position = new vscode.Position(0, 6);
 
-            const completions = provider.provideCompletionItems(
+            const result = provider.provideCompletionItems(
                 document,
                 position,
                 mockCancellationToken,
                 mockCompletionContext
             );
+            const completions = getItems(result);
 
             // Should not provide date completions when not at line start
             expect(completions.length).toBe(0);
@@ -121,12 +131,13 @@ commodity RUB
             const document = new MockTextDocument(['  Assets']);
             const position = new vscode.Position(0, 8);
 
-            const completions = provider.provideCompletionItems(
+            const result = provider.provideCompletionItems(
                 document,
                 position,
                 mockCancellationToken,
                 mockCompletionContext
             );
+            const completions = getItems(result);
 
             expect(completions).toBeDefined();
             expect(completions.length).toBeGreaterThan(0);
@@ -146,12 +157,13 @@ commodity RUB
             const document = new MockTextDocument(['  Expenses:Food']);
             const position = new vscode.Position(0, 15);
 
-            const completions = provider.provideCompletionItems(
+            const result = provider.provideCompletionItems(
                 document,
                 position,
                 mockCancellationToken,
                 mockCompletionContext
             );
+            const completions = getItems(result);
 
             expect(completions).toBeDefined();
 
@@ -167,7 +179,7 @@ commodity RUB
             const document = new MockTextDocument(['  Expenses:']);
             const position = new vscode.Position(0, 11);
 
-            const completions = provider.provideCompletionItems(
+            const result = provider.provideCompletionItems(
                 document,
                 position,
                 mockCancellationToken,
@@ -176,6 +188,7 @@ commodity RUB
                     triggerCharacter: ':'
                 }
             );
+            const completions = getItems(result);
 
             expect(completions).toBeDefined();
 
@@ -191,12 +204,13 @@ commodity RUB
             const document = new MockTextDocument(['Assets:Cash']);
             const position = new vscode.Position(0, 11);
 
-            const completions = provider.provideCompletionItems(
+            const result = provider.provideCompletionItems(
                 document,
                 position,
                 mockCancellationToken,
                 mockCompletionContext
             );
+            const completions = getItems(result);
 
             // Should not provide completions on non-indented lines
             expect(completions.length).toBe(0);
@@ -208,12 +222,13 @@ commodity RUB
             const document = new MockTextDocument(['  Expenses:Food and']);
             const position = new vscode.Position(0, 19);
 
-            const completions = provider.provideCompletionItems(
+            const result = provider.provideCompletionItems(
                 document,
                 position,
                 mockCancellationToken,
                 mockCompletionContext
             );
+            const completions = getItems(result);
 
             expect(completions).toBeDefined();
 
@@ -228,12 +243,13 @@ commodity RUB
             const document = new MockTextDocument(['  Assets:Checking']);
             const position = new vscode.Position(0, 17);
 
-            const completions = provider.provideCompletionItems(
+            const result = provider.provideCompletionItems(
                 document,
                 position,
                 mockCancellationToken,
                 mockCompletionContext
             );
+            const completions = getItems(result);
 
             expect(completions).toBeDefined();
 
@@ -249,12 +265,13 @@ commodity RUB
             const position = new vscode.Position(0, 29);
 
             // Position after the full account name - should not cause errors
-            const completions = provider.provideCompletionItems(
+            const result = provider.provideCompletionItems(
                 document,
                 position,
                 mockCancellationToken,
                 mockCompletionContext
             );
+            const completions = getItems(result);
 
             expect(completions).toBeDefined();
             expect(Array.isArray(completions)).toBe(true);
@@ -265,12 +282,13 @@ commodity RUB
             const document = new MockTextDocument(['  Assets:Checking Account']);
             const position = new vscode.Position(0, 24);
 
-            const completions = provider.provideCompletionItems(
+            const result = provider.provideCompletionItems(
                 document,
                 position,
                 mockCancellationToken,
                 mockCompletionContext
             );
+            const completions = getItems(result);
 
             expect(completions).toBeDefined();
             expect(Array.isArray(completions)).toBe(true);
@@ -325,9 +343,10 @@ commodity RUB
                 console.log('Matches accountAmountPattern:', accountAmountPattern.test(beforeCursor));
                 console.log('Matches commodityPattern:', commodityPattern.test(beforeCursor));
 
-                const completions = realProvider.provideCompletionItems(
+                const result = realProvider.provideCompletionItems(
                     document, position, mockCancellationToken, mockCompletionContext
                 );
+                const completions = getItems(result);
 
                 console.log('Completions:', completions.length);
                 if (completions.length > 0) {
@@ -363,12 +382,13 @@ commodity RUB
             console.log('Line 3 (cursor here):', JSON.stringify(document.lineAt(2).text));
             console.log('Cursor position: line 2, char 2');
 
-            const completions = provider.provideCompletionItems(
+            const result = provider.provideCompletionItems(
                 document,
                 position,
                 mockCancellationToken,
                 mockCompletionContext
             );
+            const completions = getItems(result);
 
             console.log('Completions count:', completions.length);
             if (completions.length > 0) {
@@ -408,12 +428,13 @@ commodity RUB
             console.log('Line:', JSON.stringify(line));
             console.log('Position:', position.character);
 
-            const completions = realProvider.provideCompletionItems(
+            const result = realProvider.provideCompletionItems(
                 document,
                 position,
                 mockCancellationToken,
                 mockCompletionContext
             );
+            const completions = getItems(result);
 
             console.log('Completions count:', completions.length);
             if (completions.length > 0) {
@@ -456,12 +477,13 @@ commodity RUB
             console.log('Position:', position.character);
             console.log('Has trailing space:', line.endsWith(' '));
 
-            const completions = provider.provideCompletionItems(
+            const result = provider.provideCompletionItems(
                 document,
                 position,
                 mockCancellationToken,
                 mockCompletionContext
             );
+            const completions = getItems(result);
 
             console.log('Completions count:', completions.length);
             if (completions.length > 0) {
@@ -501,12 +523,13 @@ commodity RUB
             const document = new MockTextDocument(['  Assets:Cash  100.00 ']);
             const position = new vscode.Position(0, 21);
 
-            const completions = provider.provideCompletionItems(
+            const result = provider.provideCompletionItems(
                 document,
                 position,
                 mockCancellationToken,
                 mockCompletionContext
             );
+            const completions = getItems(result);
 
             expect(completions).toBeDefined();
 
@@ -528,12 +551,13 @@ commodity RUB
             const document = new MockTextDocument(['  Assets:Cash  100.00 RU']);
             const position = new vscode.Position(0, 24);
 
-            const completions = provider.provideCompletionItems(
+            const result = provider.provideCompletionItems(
                 document,
                 position,
                 mockCancellationToken,
                 mockCompletionContext
             );
+            const completions = getItems(result);
 
             expect(completions).toBeDefined();
 
@@ -554,12 +578,13 @@ commodity RUB
             const document = new MockTextDocument(['  Assets:Cash  100.00 USD']);
             const position = new vscode.Position(0, 24);
 
-            const completions = provider.provideCompletionItems(
+            const result = provider.provideCompletionItems(
                 document,
                 position,
                 mockCancellationToken,
                 mockCompletionContext
             );
+            const completions = getItems(result);
 
             expect(completions).toBeDefined();
             expect(Array.isArray(completions)).toBe(true);
@@ -576,7 +601,7 @@ commodity RUB
             const document = new MockTextDocument(['  Assets:Cash  100.00 @']);
             const position = new vscode.Position(0, 22);
 
-            const completions = provider.provideCompletionItems(
+            const result = provider.provideCompletionItems(
                 document,
                 position,
                 mockCancellationToken,
@@ -585,6 +610,7 @@ commodity RUB
                     triggerCharacter: '@'
                 }
             );
+            const completions = getItems(result);
 
             expect(completions).toBeDefined();
             // Should provide commodity-related completions
@@ -605,12 +631,13 @@ commodity RUB
             // Position after "1.5 " - should trigger commodity completion
             const position = new vscode.Position(4, 29);
 
-            const completions = provider.provideCompletionItems(
+            const result = provider.provideCompletionItems(
                 document,
                 position,
                 mockCancellationToken,
                 mockCompletionContext
             );
+            const completions = getItems(result);
 
             expect(completions).toBeDefined();
             expect(Array.isArray(completions)).toBe(true);
@@ -630,12 +657,13 @@ commodity RUB
             const document = new MockTextDocument(['  Assets:Cash  100.00  ']);
             const position = new vscode.Position(0, 23);
 
-            const completions = provider.provideCompletionItems(
+            const result = provider.provideCompletionItems(
                 document,
                 position,
                 mockCancellationToken,
                 mockCompletionContext
             );
+            const completions = getItems(result);
 
             // Two spaces after amount is forbidden zone
             expect(completions.length).toBe(0);
@@ -645,12 +673,13 @@ commodity RUB
             const document = new MockTextDocument(['  Assets:Cash']);
             const position = new vscode.Position(0, 8); // Middle of "Assets:Cash"
 
-            const completions = provider.provideCompletionItems(
+            const result = provider.provideCompletionItems(
                 document,
                 position,
                 mockCancellationToken,
                 mockCompletionContext
             );
+            const completions = getItems(result);
 
             // Provider may return completions for account hierarchies even mid-word
             expect(completions).toBeDefined();
@@ -663,12 +692,13 @@ commodity RUB
             const document = new MockTextDocument(['  E']);
             const position = new vscode.Position(0, 3);
 
-            const completions = provider.provideCompletionItems(
+            const result = provider.provideCompletionItems(
                 document,
                 position,
                 mockCancellationToken,
                 mockCompletionContext
             );
+            const completions = getItems(result);
 
             expect(completions).toBeDefined();
 
@@ -698,9 +728,10 @@ commodity RUB
 
             // Cursor on last indented line
             const position = new vscode.Position(3, 2);
-            const completions = provider.provideCompletionItems(
+            const result = provider.provideCompletionItems(
                 document, position, mockCancellationToken, mockCompletionContext
             );
+            const completions = getItems(result);
 
             expect(completions).toBeDefined();
             // Should provide account completions on indented line
@@ -719,17 +750,19 @@ commodity RUB
 
             // Test date completion on first line
             let position = new vscode.Position(0, 4);
-            let completions = provider.provideCompletionItems(
+            let result = provider.provideCompletionItems(
                 document, position, mockCancellationToken, mockCompletionContext
             );
+            let completions = getItems(result);
             expect(completions.length).toBeGreaterThan(0);
             expect(completions[0]?.kind).toBe(vscode.CompletionItemKind.Constant);
 
             // Test account completion on third line
             position = new vscode.Position(2, 15);
-            completions = provider.provideCompletionItems(
+            result = provider.provideCompletionItems(
                 document, position, mockCancellationToken, mockCompletionContext
             );
+            completions = getItems(result);
             expect(completions).toBeDefined();
             expect(completions.length).toBeGreaterThan(0);
         });
@@ -740,9 +773,10 @@ commodity RUB
             const document = new MockTextDocument(['']);
             const position = new vscode.Position(0, 0);
 
-            const completions = provider.provideCompletionItems(
+            const result = provider.provideCompletionItems(
                 document, position, mockCancellationToken, mockCompletionContext
             );
+            const completions = getItems(result);
 
             expect(completions).toBeDefined();
             expect(Array.isArray(completions)).toBe(true);
@@ -752,9 +786,10 @@ commodity RUB
             const document = new MockTextDocument(['2024']);
             const position = new vscode.Position(0, 100);
 
-            const completions = provider.provideCompletionItems(
+            const result = provider.provideCompletionItems(
                 document, position, mockCancellationToken, mockCompletionContext
             );
+            const completions = getItems(result);
 
             expect(completions).toBeDefined();
             expect(Array.isArray(completions)).toBe(true);
@@ -764,9 +799,10 @@ commodity RUB
             const document = new MockTextDocument(['2024-01-15 Test']);
             const position = new vscode.Position(10, 0);
 
-            const completions = provider.provideCompletionItems(
+            const result = provider.provideCompletionItems(
                 document, position, mockCancellationToken, mockCompletionContext
             );
+            const completions = getItems(result);
 
             expect(completions).toBeDefined();
             expect(Array.isArray(completions)).toBe(true);
@@ -776,9 +812,10 @@ commodity RUB
             const document = new MockTextDocument(['  Assets:Bank:Checking-USD']);
             const position = new vscode.Position(0, 26);
 
-            const completions = provider.provideCompletionItems(
+            const result = provider.provideCompletionItems(
                 document, position, mockCancellationToken, mockCompletionContext
             );
+            const completions = getItems(result);
 
             expect(completions).toBeDefined();
         });
@@ -801,9 +838,10 @@ commodity RUB
             const position = new vscode.Position(0, 11);
 
             const startTime = Date.now();
-            const completions = provider.provideCompletionItems(
+            const result = provider.provideCompletionItems(
                 document, position, mockCancellationToken, mockCompletionContext
             );
+            const completions = getItems(result);
             const duration = Date.now() - startTime;
 
             expect(completions).toBeDefined();

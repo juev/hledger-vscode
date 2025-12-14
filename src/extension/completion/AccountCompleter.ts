@@ -27,21 +27,29 @@ export class AccountCompleter {
             caseSensitive: context.isCaseSensitive ?? false
         });
 
-        return matches.map(match => this.createCompletionItem(match, context));
+        return matches.map((match, index) => this.createCompletionItem(match, context, index));
     }
 
-    private createCompletionItem(match: FuzzyMatch<AccountName>, context: CompletionContext): vscode.CompletionItem {
+    private createCompletionItem(match: FuzzyMatch<AccountName>, context: CompletionContext, index: number): vscode.CompletionItem {
         const fullAccountName = match.item;
-        
+
         // Create completion item with explicit control over display
         const item = new vscode.CompletionItem(
             fullAccountName,  // Use full account name as the label
             vscode.CompletionItemKind.Class
         );
-        
+
         item.detail = 'Account';
-        item.sortText = this.getSortText(match);
-        
+
+        // Use index-based sortText to guarantee our ordering
+        // VS Code sorts by sortText first, then by label
+        item.sortText = this.getSortText(match, index);
+
+        // filterText controls VS Code's fuzzy matching
+        // Use the same filterText (query) for all items so VS Code gives equal fuzzy scores
+        // This forces VS Code to fall back to sortText ordering (the "gopls hack")
+        item.filterText = context.query || '';
+
         // Explicitly set insertText to ensure full account path is inserted
         item.insertText = fullAccountName;
         
@@ -70,10 +78,14 @@ export class AccountCompleter {
         return item;
     }
 
-    private getSortText(match: FuzzyMatch<AccountName>): string {
-        // Enhanced sorting with better score handling
-        // Higher scores should come first, so we invert the score
-        const scoreStr = (10000 - Math.round(match.score)).toString().padStart(5, '0');
-        return `${scoreStr}_${match.item}`;
+    private getSortText(match: FuzzyMatch<AccountName>, index: number): string {
+        // Use index as primary sort key to guarantee our ordering
+        // VS Code respects sortText ordering when items have same prefix
+        // Format: "00001_score_name" ensures lexicographic ordering matches our ranking
+        const indexStr = index.toString().padStart(5, '0');
+        // Cap score to prevent negative values with high usage counts (usageCount * 20 can exceed 10000)
+        const cappedScore = Math.min(Math.round(match.score), 9999);
+        const scoreStr = (10000 - cappedScore).toString().padStart(5, '0');
+        return `${indexStr}_${scoreStr}_${match.item}`;
     }
 }

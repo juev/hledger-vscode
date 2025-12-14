@@ -1,10 +1,6 @@
 import * as vscode from "vscode";
 import { HLedgerConfig } from "./HLedgerConfig";
-import {
-  CompletionType,
-  CompletionContext,
-  DocumentReference,
-} from "./types";
+import { CompletionType, CompletionContext, DocumentReference } from "./types";
 import {
   StrictPositionAnalyzer,
   StrictCompletionContext,
@@ -55,9 +51,10 @@ export class StrictCompletionProvider
     position: vscode.Position,
     _token: vscode.CancellationToken,
     _context: vscode.CompletionContext,
-  ): vscode.CompletionItem[] {
+  ): vscode.CompletionItem[] | vscode.CompletionList {
     // 1. Update configuration for current document
-    this.config.getConfigForDocument(document);
+    // Pass current line number to exclude incomplete line from parsing
+    this.config.getConfigForDocument(document, position.line);
 
     // 2. Analyze position with strict rules (includes all suppression logic)
     const strictContext = this.positionAnalyzer.analyzePosition(
@@ -82,7 +79,10 @@ export class StrictCompletionProvider
       document,
       position,
     );
-    return result;
+    // Return CompletionList with isIncomplete=true to prevent VS Code from re-sorting
+    // This is the "gopls hack" - when combined with identical filterText for all items,
+    // VS Code gives equal fuzzy scores and falls back to our sortText ordering
+    return new vscode.CompletionList(result, true);
   }
 
   private provideSingleTypeCompletion(
@@ -309,7 +309,9 @@ export class StrictCompletionProvider
       // Extract commodity characters after amount and space
       // Must have: indent + account name (letters/unicode) + spaces + amount + single space
       // Commodity can be uppercase letters or currency symbols
-      const commodityMatch = beforeCursor.match(/^\s+[\p{L}\p{N}:_\s-]+\s+\p{N}+(?:[.,]\p{N}+)?\s([\p{Lu}\p{Sc}]*)$/u);
+      const commodityMatch = beforeCursor.match(
+        /^\s+[\p{L}\p{N}:_\s-]+\s+\p{N}+(?:[.,]\p{N}+)?\s([\p{Lu}\p{Sc}]*)$/u,
+      );
       if (commodityMatch) {
         return commodityMatch[1] ?? ""; // Return only commodity characters, empty string if none typed yet
       }
@@ -323,7 +325,7 @@ export class StrictCompletionProvider
       // Pattern captures: date + optional whitespace + optional status marker + whitespace + payee
       // The payee part is everything after the last mandatory whitespace following date/status
       const datePayeeMatch = beforeCursor.match(
-        /^(?:\d{4}[-/.]\d{1,2}[-/.]\d{1,2}|\d{1,2}[-/.]\d{1,2})\s*[*!]?\s+(.*)$/u
+        /^(?:\d{4}[-/.]\d{1,2}[-/.]\d{1,2}|\d{1,2}[-/.]\d{1,2})\s*[*!]?\s+(.*)$/u,
       );
       if (datePayeeMatch) {
         return datePayeeMatch[1]?.trim() ?? "";
