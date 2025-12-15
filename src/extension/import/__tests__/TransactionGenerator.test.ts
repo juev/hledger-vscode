@@ -731,4 +731,142 @@ describe('TransactionGenerator', () => {
             expect(result.transactions[0]!.targetAccount).toBe('assets:bank');
         });
     });
+
+    describe('decimalSeparatorHint option', () => {
+        it('should use heuristic by default (auto) - comma as decimal for <=2 digits', () => {
+            const data = createData(
+                ['Date', 'Description', 'Amount'],
+                [['2024-01-15', 'Purchase', '1,23']],
+                createMappings([
+                    { type: 'date', index: 0 },
+                    { type: 'description', index: 1 },
+                    { type: 'amount', index: 2 },
+                ])
+            );
+
+            const result = generator.generate(data);
+
+            expect(result.transactions[0]!.amount).toBeCloseTo(1.23);
+        });
+
+        it('should use heuristic by default (auto) - comma as thousand separator for >2 digits', () => {
+            const data = createData(
+                ['Date', 'Description', 'Amount'],
+                [['2024-01-15', 'Purchase', '1,234']],
+                createMappings([
+                    { type: 'date', index: 0 },
+                    { type: 'description', index: 1 },
+                    { type: 'amount', index: 2 },
+                ])
+            );
+
+            const result = generator.generate(data);
+
+            expect(result.transactions[0]!.amount).toBe(1234);
+        });
+
+        it('should treat comma as decimal separator when hint is "comma"', () => {
+            const commaGenerator = new TransactionGenerator({
+                decimalSeparatorHint: 'comma',
+            });
+
+            const data = createData(
+                ['Date', 'Description', 'Amount'],
+                [['2024-01-15', 'Purchase', '1,234']],
+                createMappings([
+                    { type: 'date', index: 0 },
+                    { type: 'description', index: 1 },
+                    { type: 'amount', index: 2 },
+                ])
+            );
+
+            const result = commaGenerator.generate(data);
+
+            // With comma hint, "1,234" should be parsed as 1.234 (European decimal)
+            expect(result.transactions[0]!.amount).toBeCloseTo(1.234);
+        });
+
+        it('should treat comma as thousand separator when hint is "period"', () => {
+            const periodGenerator = new TransactionGenerator({
+                decimalSeparatorHint: 'period',
+            });
+
+            const data = createData(
+                ['Date', 'Description', 'Amount'],
+                [['2024-01-15', 'Purchase', '1,23']],
+                createMappings([
+                    { type: 'date', index: 0 },
+                    { type: 'description', index: 1 },
+                    { type: 'amount', index: 2 },
+                ])
+            );
+
+            const result = periodGenerator.generate(data);
+
+            // With period hint, "1,23" should be parsed as 123 (comma is thousand separator)
+            expect(result.transactions[0]!.amount).toBe(123);
+        });
+
+        it('should handle explicit auto hint same as default', () => {
+            const autoGenerator = new TransactionGenerator({
+                decimalSeparatorHint: 'auto',
+            });
+
+            const data = createData(
+                ['Date', 'Description', 'Amount'],
+                [['2024-01-15', 'Purchase', '1,23']],
+                createMappings([
+                    { type: 'date', index: 0 },
+                    { type: 'description', index: 1 },
+                    { type: 'amount', index: 2 },
+                ])
+            );
+
+            const result = autoGenerator.generate(data);
+
+            expect(result.transactions[0]!.amount).toBeCloseTo(1.23);
+        });
+
+        it('should not affect parsing when period is clearly decimal', () => {
+            const commaGenerator = new TransactionGenerator({
+                decimalSeparatorHint: 'comma',
+            });
+
+            const data = createData(
+                ['Date', 'Description', 'Amount'],
+                [['2024-01-15', 'Purchase', '1234.56']],
+                createMappings([
+                    { type: 'date', index: 0 },
+                    { type: 'description', index: 1 },
+                    { type: 'amount', index: 2 },
+                ])
+            );
+
+            const result = commaGenerator.generate(data);
+
+            // Period as last separator should still be treated as decimal
+            expect(result.transactions[0]!.amount).toBeCloseTo(1234.56);
+        });
+
+        it('should not affect EU format with both separators', () => {
+            const periodGenerator = new TransactionGenerator({
+                decimalSeparatorHint: 'period',
+            });
+
+            const data = createData(
+                ['Date', 'Description', 'Amount'],
+                [['2024-01-15', 'Purchase', '1.234,56']],
+                createMappings([
+                    { type: 'date', index: 0 },
+                    { type: 'description', index: 1 },
+                    { type: 'amount', index: 2 },
+                ])
+            );
+
+            const result = periodGenerator.generate(data);
+
+            // When both separators present, comma after period = EU format
+            expect(result.transactions[0]!.amount).toBeCloseTo(1234.56);
+        });
+    });
 });

@@ -215,14 +215,23 @@ export class HLedgerConfig {
   }
 
   /**
-   * Creates a deep clone of ParsedHLedgerData to prevent cache mutation.
-   * Used when currentLine is provided to ensure workspace cache stays clean.
+   * Creates a shallow clone with Copy-on-Write (CoW) optimization.
+   * Only clones collections that mergeCurrentData() actually mutates.
+   * Read-only collections share references with the original to reduce allocations.
+   *
+   * Cloned (mutated by mergeCurrentData):
+   *   accounts, usedAccounts, payees, tags, commodities,
+   *   accountUsage, payeeUsage, tagUsage, commodityUsage
+   *
+   * Shared (read-only, never mutated):
+   *   definedAccounts, aliases, payeeAccounts, payeeAccountPairUsage,
+   *   tagValues, tagValueUsage, commodityFormats, decimalMark, defaultCommodity, lastDate
    */
   private cloneData(data: ParsedHLedgerData): ParsedHLedgerData {
     return {
+      // Cloned: mutated by mergeCurrentData
       accounts: new Set(data.accounts),
       usedAccounts: new Set(data.usedAccounts),
-      definedAccounts: new Set(data.definedAccounts),
       payees: new Set(data.payees),
       tags: new Set(data.tags),
       commodities: new Set(data.commodities),
@@ -230,17 +239,18 @@ export class HLedgerConfig {
       payeeUsage: new Map(data.payeeUsage),
       tagUsage: new Map(data.tagUsage),
       commodityUsage: new Map(data.commodityUsage),
-      aliases: new Map(data.aliases),
+
+      // Shared: read-only references (CoW optimization)
+      definedAccounts: data.definedAccounts,
+      aliases: data.aliases,
+      payeeAccounts: data.payeeAccounts,
+      payeeAccountPairUsage: data.payeeAccountPairUsage,
+      tagValues: data.tagValues,
+      tagValueUsage: data.tagValueUsage,
+      commodityFormats: data.commodityFormats,
+      decimalMark: data.decimalMark,
       defaultCommodity: data.defaultCommodity,
       lastDate: data.lastDate,
-      payeeAccounts: new Map(
-        [...data.payeeAccounts].map(([k, v]) => [k, new Set(v)]),
-      ),
-      payeeAccountPairUsage: new Map(data.payeeAccountPairUsage),
-      tagValues: new Map([...data.tagValues].map(([k, v]) => [k, new Set(v)])),
-      tagValueUsage: new Map(data.tagValueUsage),
-      commodityFormats: new Map(data.commodityFormats),
-      decimalMark: data.decimalMark,
     };
   }
 
