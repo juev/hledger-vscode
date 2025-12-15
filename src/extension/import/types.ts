@@ -138,6 +138,14 @@ export interface ImportedTransaction {
     readonly lineNumber: number; // Original CSV line for error reporting
 }
 
+/**
+ * Hint for interpreting comma in ambiguous amounts like "1,234".
+ * - 'auto': Use heuristic (<=2 digits after comma = decimal separator)
+ * - 'comma': Always treat comma as decimal separator (European format)
+ * - 'period': Always treat comma as thousand separator (US format)
+ */
+export type DecimalSeparatorHint = 'auto' | 'comma' | 'period';
+
 /** Import options from configuration */
 export interface ImportOptions {
     readonly dateFormat?: DateFormat;
@@ -148,6 +156,12 @@ export interface ImportOptions {
     readonly useJournalHistory: boolean;
     readonly merchantPatterns: Record<string, string>;
     readonly categoryMapping: Record<string, string>;
+    /**
+     * Hint for interpreting comma in ambiguous amounts.
+     * Only applies when comma is the only separator (no period present).
+     * @default 'auto'
+     */
+    readonly decimalSeparatorHint?: DecimalSeparatorHint;
 }
 
 /** Supported date formats */

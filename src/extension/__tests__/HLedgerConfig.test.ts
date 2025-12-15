@@ -330,6 +330,121 @@ account Assets:Bank
             // Also verify usedAccounts wasn't polluted
             expect(originalUsedAccountsSet.has('Assets:NewAccount')).toBe(false);
         });
+
+        it('should not persist incomplete data across multiple getConfigForDocument calls', () => {
+            // This test verifies the persistence aspect of cache pollution:
+            // If cache is polluted on first call, it should NOT persist to subsequent calls.
+            //
+            // Scenario:
+            // 1. User types "prod" on line 5
+            // 2. getConfigForDocument(doc, 5) is called -> "prod" should NOT appear in accounts
+            // 3. User moves cursor to line 10 (different content)
+            // 4. getConfigForDocument(doc, 10) is called -> "prod" should STILL NOT be in accounts
+            //
+            // This tests that incomplete account names don't pollute the cache permanently.
+
+            // Set up workspace cache with known accounts
+            const workspaceData: ParsedHLedgerData = {
+                accounts: new Set(['Assets:Bank', 'Expenses:Food']),
+                definedAccounts: new Set(['Assets:Bank', 'Expenses:Food']),
+                usedAccounts: new Set<string>(),
+                payees: new Set(),
+                tags: new Set(),
+                commodities: new Set(),
+                aliases: new Map(),
+                accountUsage: new Map([
+                    [createAccountName('Assets:Bank'), createUsageCount(50)],
+                    [createAccountName('Expenses:Food'), createUsageCount(100)]
+                ]),
+                payeeUsage: new Map(),
+                tagUsage: new Map(),
+                commodityUsage: new Map(),
+                tagValues: new Map(),
+                tagValueUsage: new Map(),
+                payeeAccounts: new Map(),
+                payeeAccountPairUsage: new Map(),
+                commodityFormats: new Map(),
+                decimalMark: null,
+                defaultCommodity: null,
+                lastDate: null
+            };
+
+            const sharedCache = new SimpleProjectCache();
+            sharedCache.set('/test/project', workspaceData);
+
+            const parser = new HLedgerParser();
+            const configWithSharedCache = new HLedgerConfig(parser, sharedCache);
+
+            // Create document with partial account name "prod" on line 5
+            const documentContent = `2025-01-15 Grocery shopping
+    Assets:Bank          -100
+    Expenses:Food         100
+
+prod
+2025-01-16 Another transaction
+    Assets:Bank          -50
+    Expenses:Food         50
+`;
+            const fileUri = {
+                scheme: 'file',
+                authority: '',
+                path: '/test/project/test.journal',
+                query: '',
+                fragment: '',
+                fsPath: '/test/project/test.journal',
+                with: jest.fn(),
+                toString: () => 'file:///test/project/test.journal',
+                toJSON: () => ({ $mid: 1, fsPath: '/test/project/test.journal', path: '/test/project/test.journal', scheme: 'file' })
+            };
+
+            const document = new MockTextDocument(documentContent.split('\n'), {
+                uri: fileUri as vscode.Uri,
+                fileName: '/test/project/test.journal',
+                languageId: 'hledger'
+            });
+
+            const workspaceFolder = {
+                uri: {
+                    scheme: 'file',
+                    fsPath: '/test/project',
+                    path: '/test/project',
+                    authority: '',
+                    query: '',
+                    fragment: '',
+                    with: jest.fn(),
+                    toString: () => 'file:///test/project',
+                    toJSON: () => ({})
+                },
+                name: 'project',
+                index: 0
+            };
+            (vscode.workspace.getWorkspaceFolder as jest.Mock).mockReturnValue(workspaceFolder);
+            (fs.existsSync as jest.Mock).mockReturnValue(true);
+            (fs.readdirSync as jest.Mock).mockReturnValue([]);
+
+            // First call: user on line 5 (the "prod" line - zero-indexed line 4)
+            configWithSharedCache.getConfigForDocument(document, 4);
+            const accountsAfterFirstCall = configWithSharedCache.getAccounts();
+
+            // "prod" should NOT be in accounts (it's incomplete)
+            expect(accountsAfterFirstCall).not.toContain('prod');
+            expect(accountsAfterFirstCall).toContain('Assets:Bank');
+            expect(accountsAfterFirstCall).toContain('Expenses:Food');
+
+            // Second call: user on line 10 (zero-indexed line 9)
+            configWithSharedCache.getConfigForDocument(document, 9);
+            const accountsAfterSecondCall = configWithSharedCache.getAccounts();
+
+            // "prod" should STILL NOT be in accounts (cache wasn't polluted)
+            expect(accountsAfterSecondCall).not.toContain('prod');
+            expect(accountsAfterSecondCall).toContain('Assets:Bank');
+            expect(accountsAfterSecondCall).toContain('Expenses:Food');
+
+            // Verify cache wasn't polluted
+            const cachedData = sharedCache.get('/test/project');
+            expect(cachedData).toBeDefined();
+            expect(cachedData?.accounts.has('prod')).toBe(false);
+        });
     });
 
     describe('getConfigForDocument - virtual document handling', () => {

@@ -425,34 +425,60 @@ export class TransactionGenerator {
     /**
      * Normalize decimal separator to period for parseFloat compatibility.
      * Handles US format (1,234.56), EU format (1.234,56), and ambiguous cases.
+     *
+     * When both separators are present, the position determines format:
+     * - Period after comma = US format (1,234.56)
+     * - Comma after period = EU format (1.234,56)
+     *
+     * When only comma is present, decimalSeparatorHint controls interpretation:
+     * - 'auto': <=2 digits after comma = decimal, >2 digits = thousand separator
+     * - 'comma': Always treat as decimal separator
+     * - 'period': Always treat as thousand separator
      */
     private normalizeDecimalSeparator(str: string): string {
         const lastDot = str.lastIndexOf('.');
         const lastComma = str.lastIndexOf(',');
 
+        const hasDot = lastDot !== -1;
+        const hasComma = lastComma !== -1;
+
         let normalized: string;
 
-        if (lastDot > lastComma) {
-            // Period is decimal separator (US format: 1,234.56)
-            normalized = str.replace(/,/g, '');
-        } else if (lastComma > lastDot) {
-            // Comma is decimal separator (EU format: 1.234,56)
-            normalized = str.replace(/\./g, '').replace(',', '.');
-        } else if (lastComma === -1 && lastDot === -1) {
-            // No decimal separator (integer)
-            normalized = str;
-        } else if (lastComma !== -1) {
-            // Only comma present - use heuristic based on digit count after comma
-            const afterComma = str.slice(lastComma + 1);
-            if (afterComma.length <= 2) {
-                // Two or fewer digits after comma suggests decimal separator
-                normalized = str.replace(',', '.');
-            } else {
-                // More than two digits suggests thousand separator
+        if (hasDot && hasComma) {
+            // Both separators present - position determines format
+            if (lastDot > lastComma) {
+                // Period is decimal separator (US format: 1,234.56)
                 normalized = str.replace(/,/g, '');
+            } else {
+                // Comma is decimal separator (EU format: 1.234,56)
+                normalized = str.replace(/\./g, '').replace(',', '.');
             }
-        } else {
+        } else if (hasComma && !hasDot) {
+            // Only comma present - use hint or heuristic
+            const hint = this.options.decimalSeparatorHint ?? 'auto';
+
+            if (hint === 'comma') {
+                // Treat comma as decimal separator (European format)
+                normalized = str.replace(',', '.');
+            } else if (hint === 'period') {
+                // Treat comma as thousand separator (US format)
+                normalized = str.replace(/,/g, '');
+            } else {
+                // 'auto': Use heuristic based on digit count after comma
+                const afterComma = str.slice(lastComma + 1);
+                if (afterComma.length <= 2) {
+                    // Two or fewer digits after comma suggests decimal separator
+                    normalized = str.replace(',', '.');
+                } else {
+                    // More than two digits suggests thousand separator
+                    normalized = str.replace(/,/g, '');
+                }
+            }
+        } else if (hasDot && !hasComma) {
             // Only period present - treat as decimal separator
+            normalized = str;
+        } else {
+            // No separators (integer)
             normalized = str;
         }
 

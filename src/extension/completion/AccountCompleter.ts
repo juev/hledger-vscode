@@ -11,6 +11,13 @@ import { SimpleFuzzyMatcher, FuzzyMatch } from '../SimpleFuzzyMatcher';
  * Uses branded types for compile-time safety
  */
 export class AccountCompleter {
+    /**
+     * Threshold for filtering low-usage exact matches from completions.
+     * Usage count of 1-2 likely indicates incomplete typing that was saved,
+     * while count > 2 indicates an established account name.
+     */
+    private static readonly LOW_USAGE_THRESHOLD = 2;
+
     private fuzzyMatcher: SimpleFuzzyMatcher;
 
     constructor(private config: HLedgerConfig) {
@@ -33,7 +40,7 @@ export class AccountCompleter {
         const filteredMatches = matches.filter(match => {
             const isExactQueryMatch = match.item.toLowerCase() === context.query.toLowerCase();
             const usageCount = this.config.accountUsage.get(match.item as AccountName) ?? 0;
-            const isLowUsage = usageCount <= 2;
+            const isLowUsage = usageCount <= AccountCompleter.LOW_USAGE_THRESHOLD;
             // Exclude if it's an exact match with low usage
             return !(isExactQueryMatch && isLowUsage);
         });
