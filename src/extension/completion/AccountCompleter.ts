@@ -29,8 +29,6 @@ export class AccountCompleter {
         const matches = this.fuzzyMatcher.match(context.query, accounts, {
             usageCounts: this.config.accountUsage,
             maxResults: 50,
-            exactMatchBonus: 200,
-            prefixMatchBonus: 100,
             caseSensitive: context.isCaseSensitive ?? false
         });
 
@@ -70,7 +68,7 @@ export class AccountCompleter {
 
         // Explicitly set insertText to ensure full account path is inserted
         item.insertText = fullAccountName;
-        
+
         // Set replacement range if available
         if (context.range && context.position) {
             item.range = new vscode.Range(
@@ -78,19 +76,19 @@ export class AccountCompleter {
                 new vscode.Position(context.range.end.line, context.range.end.character)
             );
         }
-        
+
         // Enhanced documentation with usage information
         const usageCount = this.config.accountUsage.get(fullAccountName) || 0;
         const documentation = new vscode.MarkdownString();
-        
+
         if (fullAccountName.includes(':')) {
             const parts = fullAccountName.split(':');
             documentation.appendMarkdown(`**Account hierarchy:** ${parts.join(' → ')}
 `);
         }
-        
+
         documentation.appendMarkdown(`**Usage count:** ${usageCount}`);
-        
+
         item.documentation = documentation;
 
         return item;
