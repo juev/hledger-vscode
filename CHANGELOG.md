@@ -1,5 +1,14 @@
 # Change Log
 
+## [0.4.6] - 2025-12-15
+
+### Changed
+- refactor: implement code review fixes (High + Medium priority)
+
+### Other
+- docs: document completion filtering for cache pollution prevention
+
+
 ## [0.4.5] - 2025-12-14
 
 ### Fixed
