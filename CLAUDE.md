@@ -110,6 +110,36 @@ const scoreStr = (10000 - cappedScore).toString().padStart(5, '0');
 
 **Cap scores to prevent overflow:** `usageCount * 20` can exceed max values, causing negative sortText. Always cap: `Math.min(score, 9999)` for accounts, `Math.min(score, 999)` for others.
 
+### Completion Filtering (Cache Pollution Prevention)
+
+**Problem:** Incomplete typed text (e.g., "прод" while typing "Расходы:Продукты") could appear in completion results through two mechanisms:
+
+1. **Cache pollution**: `mergeCurrentData()` mutated shared Set/Map references, polluting workspace cache
+2. **Low-usage exact matches**: Incomplete text saved previously could appear as valid completions
+
+**Solution (two-part fix):**
+
+1. **Cache isolation** (`HLedgerConfig.ts`): Clone workspace data before merging current document data
+   ```typescript
+   // When currentLine is provided, clone first to avoid cache mutation
+   if (currentLine !== undefined && this.data) {
+     this.data = this.cloneData(this.data);
+   }
+   this.mergeCurrentData(currentData);
+   ```
+
+2. **Filter low-usage exact matches** (`AccountCompleter.ts`):
+   ```typescript
+   const filteredMatches = matches.filter(match => {
+     const isExactQueryMatch = match.item.toLowerCase() === context.query.toLowerCase();
+     const usageCount = this.config.accountUsage.get(match.item) ?? 0;
+     const isLowUsage = usageCount <= 2;
+     return !(isExactQueryMatch && isLowUsage);
+   });
+   ```
+
+**Why usage count ≤ 2?** Low count (1-2) likely indicates incomplete typing that was saved; established accounts have higher counts.
+
 ### Key Directories
 
 - `src/extension/completion/` - Individual completers (Account, Commodity, Date, Payee, Tag)
