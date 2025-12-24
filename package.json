@@ -102,6 +102,18 @@
           "default": true,
           "description": "Enable transaction template completion. When typing a payee name, suggests complete transactions with accounts and amounts based on history."
         },
+        "hledger.inlineCompletion.enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable inline ghost text completions for payees and transaction templates"
+        },
+        "hledger.inlineCompletion.minPayeeChars": {
+          "type": "number",
+          "default": 2,
+          "minimum": 1,
+          "maximum": 10,
+          "description": "Minimum characters to type before showing inline payee completion"
+        },
         "hledger.import.defaultDebitAccount": {
           "type": "string",
           "default": "expenses:unknown",

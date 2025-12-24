@@ -790,7 +790,11 @@ export const languages = {
   registerDocumentSemanticTokensProvider: jest.fn(() => ({
     dispose: jest.fn(),
   })),
+  registerDocumentRangeSemanticTokensProvider: jest.fn(() => ({
+    dispose: jest.fn(),
+  })),
   registerCodeActionsProvider: jest.fn(() => ({ dispose: jest.fn() })),
+  registerInlineCompletionItemProvider: jest.fn(() => ({ dispose: jest.fn() })),
   createDiagnosticCollection: jest.fn(
     (name: string): DiagnosticCollection => new MockDiagnosticCollection(name),
   ),
@@ -1179,6 +1183,40 @@ export class MockTextDocument implements TextDocument {
   }
 }
 
+/**
+ * Inline completion trigger kind enum.
+ */
+export enum InlineCompletionTriggerKind {
+  Invoke = 0,
+  Automatic = 1,
+}
+
+/**
+ * Inline completion context interface.
+ */
+export interface InlineCompletionContext {
+  triggerKind: InlineCompletionTriggerKind;
+  selectedCompletionInfo?: {
+    range: Range;
+    text: string;
+  };
+}
+
+/**
+ * Mock InlineCompletionItem class for inline ghost text completions.
+ */
+export class InlineCompletionItem {
+  insertText: string;
+  range: Range | undefined;
+  command?: unknown;
+  filterText?: string;
+
+  constructor(insertText: string, range?: Range) {
+    this.insertText = insertText;
+    this.range = range;
+  }
+}
+
 // Export vscode module as both named exports and default export for compatibility
 export default {
   Uri,
@@ -1209,4 +1247,6 @@ export default {
   Disposable,
   createMockExtensionContext,
   MockTextDocument,
+  InlineCompletionItem,
+  InlineCompletionTriggerKind,
 };

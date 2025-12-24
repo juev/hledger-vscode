@@ -14,6 +14,7 @@ import { createServices } from "./services";
 import { SimpleFuzzyMatcher } from "./SimpleFuzzyMatcher";
 import { HLedgerCodeActionProvider } from "./actions/HLedgerCodeActionProvider";
 import { HLedgerDiagnosticsProvider } from "./diagnostics/HLedgerDiagnosticsProvider";
+import { InlineCompletionProvider } from "./inline/InlineCompletionProvider";
 
 // Main activation function
 export function activate(context: vscode.ExtensionContext): void {
@@ -51,6 +52,16 @@ export function activate(context: vscode.ExtensionContext): void {
 
     // Register the provider itself for proper disposal (prevents RegexCache memory leak)
     context.subscriptions.push(strictProvider);
+
+    // Register inline completion provider for ghost text completions
+    const inlineProvider = new InlineCompletionProvider(services.config);
+    context.subscriptions.push(
+      vscode.languages.registerInlineCompletionItemProvider(
+        "hledger",
+        inlineProvider,
+      ),
+    );
+    context.subscriptions.push(inlineProvider);
 
     // Register code action provider for balance assertions and quick fixes
     const codeActionProvider = new HLedgerCodeActionProvider(services.config);
