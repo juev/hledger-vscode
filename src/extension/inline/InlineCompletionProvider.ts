@@ -125,9 +125,13 @@ export class InlineCompletionProvider
 
     const ghostText = this.buildTemplateGhostText(template);
 
+    // Normalize position to column 0 to ensure proper indentation
+    // The range replaces from start of line to cursor, ensuring 4-space indent
+    const startOfLine = new vscode.Position(position.line, 0);
+
     const item = new vscode.InlineCompletionItem(
       ghostText,
-      new vscode.Range(position, position),
+      new vscode.Range(startOfLine, position),
     );
 
     return [item];
@@ -136,15 +140,25 @@ export class InlineCompletionProvider
   /**
    * Builds the ghost text for a transaction template.
    * Uses plain text (no snippets) as inline completions don't support snippets.
+   * First line has no leading newline since cursor is already on a new line.
    *
    * @param template - The transaction template to format
    */
   private buildTemplateGhostText(template: TransactionTemplate): string {
     const lines: string[] = [];
 
-    for (const posting of template.postings) {
+    for (let i = 0; i < template.postings.length; i++) {
+      const posting = template.postings[i];
+      if (!posting) continue;
+
       const amountPart = posting.amount !== null ? `  ${posting.amount}` : "";
-      lines.push(`\n    ${posting.account}${amountPart}`);
+      // First line: no leading newline (cursor already on new line)
+      // Subsequent lines: add newline before
+      if (i === 0) {
+        lines.push(`    ${posting.account}${amountPart}`);
+      } else {
+        lines.push(`\n    ${posting.account}${amountPart}`);
+      }
     }
 
     return lines.join("");

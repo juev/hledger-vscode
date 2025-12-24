@@ -89,7 +89,8 @@ describe("InlineCompletionProvider", () => {
 
       expect(result).toBeDefined();
       expect(result).toHaveLength(1);
-      expect(result![0].insertText).toBe("азин"); // Only remainder
+      const item = result![0]!;
+      expect(item.insertText).toBe("азин"); // Only remainder
     });
 
     it("should match case-insensitively", () => {
@@ -107,8 +108,9 @@ describe("InlineCompletionProvider", () => {
 
       expect(result).toBeDefined();
       expect(result).toHaveLength(1);
+      const item = result![0]!;
       // Should return remainder preserving original case
-      expect(result![0].insertText).toBe("ee Shop");
+      expect(item.insertText).toBe("ee Shop");
     });
 
     it("should return undefined when no payee matches prefix", () => {
@@ -127,15 +129,14 @@ describe("InlineCompletionProvider", () => {
       expect(result).toBeUndefined();
     });
 
-    it("should return undefined when prefix matches entire payee", () => {
+    it("should return undefined when cursor at end of exact payee match on same line", () => {
       mockConfig.getPayeesByUsage.mockReturnValue(["Coffee Shop" as PayeeName]);
 
       const document = new MockTextDocument(["2024-12-23 Coffee Shop"]);
       const position = new Position(0, 22);
 
-      // This is now a template context, but no templates exist
-      mockConfig.getTemplatesForPayee.mockReturnValue([]);
-
+      // Cursor at end of complete payee on same line - no inline completion
+      // (template only triggers on empty line after header)
       const result = provider.provideInlineCompletionItems(
         document,
         position,
@@ -143,7 +144,7 @@ describe("InlineCompletionProvider", () => {
         createCancellationToken(),
       );
 
-      // No remainder to show and no templates - should return undefined
+      // Should return undefined - no template on same line as payee
       expect(result).toBeUndefined();
     });
 
@@ -164,7 +165,8 @@ describe("InlineCompletionProvider", () => {
 
       expect(result).toBeDefined();
       expect(result).toHaveLength(1);
-      expect(result![0].insertText).toBe("уктовый магазин");
+      const item = result![0]!;
+      expect(item.insertText).toBe("уктовый магазин");
     });
 
     it("should use first (most-used) payee when multiple match", () => {
@@ -187,12 +189,16 @@ describe("InlineCompletionProvider", () => {
 
       expect(result).toBeDefined();
       expect(result).toHaveLength(1);
-      expect(result![0].insertText).toBe(" Alpha");
+      const item = result![0]!;
+      expect(item.insertText).toBe(" Alpha");
     });
   });
 
   describe("template completion", () => {
-    it("should return template ghost text for complete payee", () => {
+    // Template completion is now triggered on EMPTY LINE after transaction header
+    // This prevents template from being auto-accepted with payee completion
+
+    it("should return template ghost text on empty line after header", () => {
       mockConfig.getPayeesByUsage.mockReturnValue(["Coffee Shop" as PayeeName]);
       mockConfig.getTemplatesForPayee.mockReturnValue([
         createTemplate(
@@ -210,7 +216,7 @@ describe("InlineCompletionProvider", () => {
       ]);
 
       const document = new MockTextDocument(["2024-12-23 Coffee Shop", ""]);
-      const position = new Position(0, 22);
+      const position = new Position(1, 0); // On empty line after header
 
       const result = provider.provideInlineCompletionItems(
         document,
@@ -221,10 +227,10 @@ describe("InlineCompletionProvider", () => {
 
       expect(result).toBeDefined();
       expect(result).toHaveLength(1);
-      // Should include newline and posting lines
-      expect(result![0].insertText).toContain("\n");
-      expect(result![0].insertText).toContain("Expenses:Food:Coffee");
-      expect(result![0].insertText).toContain("Assets:Cash");
+      const item = result![0]!;
+      // First line should NOT start with newline (cursor already on new line)
+      expect(item.insertText).toMatch(/^    Expenses:Food:Coffee/);
+      expect(item.insertText).toContain("Assets:Cash");
     });
 
     it("should format template with proper indentation", () => {
@@ -237,7 +243,7 @@ describe("InlineCompletionProvider", () => {
       ]);
 
       const document = new MockTextDocument(["2024-12-23 Coffee Shop", ""]);
-      const position = new Position(0, 22);
+      const position = new Position(1, 0); // On empty line
 
       const result = provider.provideInlineCompletionItems(
         document,
@@ -247,9 +253,12 @@ describe("InlineCompletionProvider", () => {
       );
 
       expect(result).toBeDefined();
-      // Check for 4-space indentation
-      expect(result![0].insertText).toContain("\n    Expenses:Food");
-      expect(result![0].insertText).toContain("\n    Assets:Cash");
+      expect(result).toHaveLength(1);
+      const item = result![0]!;
+      // First line: 4-space indentation, no leading newline
+      expect(item.insertText).toMatch(/^    Expenses:Food/);
+      // Second line: newline + 4-space indentation
+      expect(item.insertText).toContain("\n    Assets:Cash");
     });
 
     it("should include amounts in template ghost text", () => {
@@ -264,7 +273,7 @@ describe("InlineCompletionProvider", () => {
       ]);
 
       const document = new MockTextDocument(["2024-12-23 Grocery Store", ""]);
-      const position = new Position(0, 24);
+      const position = new Position(1, 0); // On empty line
 
       const result = provider.provideInlineCompletionItems(
         document,
@@ -274,7 +283,9 @@ describe("InlineCompletionProvider", () => {
       );
 
       expect(result).toBeDefined();
-      expect(result![0].insertText).toContain("100 RUB");
+      expect(result).toHaveLength(1);
+      const item = result![0]!;
+      expect(item.insertText).toContain("100 RUB");
     });
 
     it("should return undefined when no templates for payee", () => {
@@ -282,7 +293,7 @@ describe("InlineCompletionProvider", () => {
       mockConfig.getTemplatesForPayee.mockReturnValue([]);
 
       const document = new MockTextDocument(["2024-12-23 New Store", ""]);
-      const position = new Position(0, 20);
+      const position = new Position(1, 0); // On empty line
 
       const result = provider.provideInlineCompletionItems(
         document,
@@ -294,9 +305,31 @@ describe("InlineCompletionProvider", () => {
       expect(result).toBeUndefined();
     });
 
+    it("should NOT return template on same line as payee", () => {
+      mockConfig.getPayeesByUsage.mockReturnValue(["Store" as PayeeName]);
+      mockConfig.getTemplatesForPayee.mockReturnValue([
+        createTemplate("Store", [
+          { account: "Expenses:Shopping", amount: "50 USD", commodity: "USD" },
+          { account: "Assets:Bank", amount: null, commodity: null },
+        ]),
+      ]);
+
+      const document = new MockTextDocument(["2024-12-23 Store", ""]);
+      const position = new Position(0, 16); // On same line as payee (not empty line)
+
+      const result = provider.provideInlineCompletionItems(
+        document,
+        position,
+        createInlineContext(),
+        createCancellationToken(),
+      );
+
+      // Should return undefined - no payee prefix, no template on same line
+      expect(result).toBeUndefined();
+    });
+
     it("should use most frequently used template when multiple exist", () => {
       mockConfig.getPayeesByUsage.mockReturnValue(["Store" as PayeeName]);
-      // getTemplatesForPayee already returns sorted by usage (highest first)
       mockConfig.getTemplatesForPayee.mockReturnValue([
         createTemplate(
           "Store",
@@ -325,7 +358,7 @@ describe("InlineCompletionProvider", () => {
       ]);
 
       const document = new MockTextDocument(["2024-12-23 Store", ""]);
-      const position = new Position(0, 16);
+      const position = new Position(1, 0); // On empty line
 
       const result = provider.provideInlineCompletionItems(
         document,
@@ -335,8 +368,10 @@ describe("InlineCompletionProvider", () => {
       );
 
       expect(result).toBeDefined();
-      expect(result![0].insertText).toContain("Expenses:Shopping");
-      expect(result![0].insertText).not.toContain("Expenses:Groceries");
+      expect(result).toHaveLength(1);
+      const item = result![0]!;
+      expect(item.insertText).toContain("Expenses:Shopping");
+      expect(item.insertText).not.toContain("Expenses:Groceries");
     });
 
     it("should handle Unicode template content", () => {
@@ -349,7 +384,7 @@ describe("InlineCompletionProvider", () => {
       ]);
 
       const document = new MockTextDocument(["2024-12-23 Магазин", ""]);
-      const position = new Position(0, 18);
+      const position = new Position(1, 0); // On empty line
 
       const result = provider.provideInlineCompletionItems(
         document,
@@ -359,8 +394,45 @@ describe("InlineCompletionProvider", () => {
       );
 
       expect(result).toBeDefined();
-      expect(result![0].insertText).toContain("Расходы:Продукты");
-      expect(result![0].insertText).toContain("Активы:Наличные");
+      expect(result).toHaveLength(1);
+      const item = result![0]!;
+      expect(item.insertText).toContain("Расходы:Продукты");
+      expect(item.insertText).toContain("Активы:Наличные");
+    });
+
+    it("should have correct range when cursor is not at column 0", () => {
+      mockConfig.getPayeesByUsage.mockReturnValue(["Coffee Shop" as PayeeName]);
+      mockConfig.getTemplatesForPayee.mockReturnValue([
+        createTemplate("Coffee Shop", [
+          { account: "Expenses:Food", amount: "5.00", commodity: null },
+          { account: "Assets:Cash", amount: null, commodity: null },
+        ]),
+      ]);
+
+      // User typed 2 spaces on empty line before ghost text appears
+      const document = new MockTextDocument(["2024-12-23 Coffee Shop", "  "]);
+      const position = new Position(1, 2); // Cursor at column 2 (after 2 spaces)
+
+      const result = provider.provideInlineCompletionItems(
+        document,
+        position,
+        createInlineContext(),
+        createCancellationToken(),
+      );
+
+      expect(result).toBeDefined();
+      expect(result).toHaveLength(1);
+      const item = result![0]!;
+
+      // Range should start at column 0 to replace any typed spaces
+      expect(item.range?.start.line).toBe(1);
+      expect(item.range?.start.character).toBe(0);
+      // Range should end at cursor position
+      expect(item.range?.end.line).toBe(1);
+      expect(item.range?.end.character).toBe(2);
+
+      // Ghost text should still have proper 4-space indentation
+      expect(item.insertText).toMatch(/^    Expenses:Food/);
     });
   });
 
@@ -384,11 +456,29 @@ describe("InlineCompletionProvider", () => {
       expect(result).toBeUndefined();
     });
 
-    it("should return undefined for empty lines", () => {
+    it("should return undefined for empty line without transaction header above", () => {
       mockConfig.getPayeesByUsage.mockReturnValue(["Coffee Shop" as PayeeName]);
 
+      // Empty line at start of document - no previous line to check
       const document = new MockTextDocument([""]);
       const position = new Position(0, 0);
+
+      const result = provider.provideInlineCompletionItems(
+        document,
+        position,
+        createInlineContext(),
+        createCancellationToken(),
+      );
+
+      expect(result).toBeUndefined();
+    });
+
+    it("should return undefined for empty line after non-header line", () => {
+      mockConfig.getPayeesByUsage.mockReturnValue(["Coffee Shop" as PayeeName]);
+
+      // Empty line after comment, not transaction header
+      const document = new MockTextDocument(["; comment", ""]);
+      const position = new Position(1, 0);
 
       const result = provider.provideInlineCompletionItems(
         document,
@@ -431,10 +521,12 @@ describe("InlineCompletionProvider", () => {
       );
 
       expect(result).toBeDefined();
-      expect(result![0].range).toBeDefined();
+      expect(result).toHaveLength(1);
+      const item = result![0]!;
+      expect(item.range).toBeDefined();
       // Range should start at cursor position
-      expect(result![0].range?.start.line).toBe(0);
-      expect(result![0].range?.start.character).toBe(15);
+      expect(item.range?.start.line).toBe(0);
+      expect(item.range?.start.character).toBe(15);
     });
   });
 });

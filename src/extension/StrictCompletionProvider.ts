@@ -10,7 +10,6 @@ import { CommodityCompleter } from "./completion/CommodityCompleter";
 import { DateCompleter } from "./completion/DateCompleter";
 import { PayeeCompleter } from "./completion/PayeeCompleter";
 import { TagCompleter } from "./completion/TagCompleter";
-import { TransactionTemplateCompleter } from "./completion/TransactionTemplateCompleter";
 import {
   NumberFormatService,
   createNumberFormatService,
@@ -28,7 +27,6 @@ export class StrictCompletionProvider
   private commodityCompleter: CommodityCompleter;
   private payeeCompleter: PayeeCompleter;
   private tagCompleter: TagCompleter;
-  private transactionTemplateCompleter: TransactionTemplateCompleter;
 
   constructor(private config: HLedgerConfig) {
     // Initialize NumberFormatService
@@ -46,7 +44,6 @@ export class StrictCompletionProvider
     this.commodityCompleter = new CommodityCompleter(config);
     this.payeeCompleter = new PayeeCompleter(config);
     this.tagCompleter = new TagCompleter(config);
-    this.transactionTemplateCompleter = new TransactionTemplateCompleter(config);
   }
 
   provideCompletionItems(
@@ -195,46 +192,7 @@ export class StrictCompletionProvider
       vscodeDocument,
       vscodePosition,
     );
-
-    // Get payee completions
-    const payeeItems = this.payeeCompleter.complete(legacyContext);
-
-    // Add transaction template completions if enabled
-    if (this.isTransactionTemplatesEnabled()) {
-      const templateContext = this.convertToLegacyContext(
-        context,
-        "transaction_template",
-        vscodeDocument,
-        vscodePosition,
-      );
-      const templateItems =
-        this.transactionTemplateCompleter.complete(templateContext);
-
-      // Debug: log template discovery
-      const payeesWithTemplates = this.config.getPayeesWithTemplates();
-      console.log(
-        `[HLedger] Templates: ${payeesWithTemplates.length} payees, ${templateItems.length} items for query "${templateContext.query}"`,
-      );
-      if (payeesWithTemplates.length > 0) {
-        console.log(`[HLedger] Payees with templates: ${payeesWithTemplates.slice(0, 5).join(", ")}${payeesWithTemplates.length > 5 ? "..." : ""}`);
-      }
-
-      // Combine and return both types
-      return [...templateItems, ...payeeItems];
-    }
-
-    return payeeItems;
-  }
-
-  /**
-   * Checks if transaction template completions are enabled.
-   */
-  private isTransactionTemplatesEnabled(): boolean {
-    const config = vscode.workspace.getConfiguration("hledger");
-    return config.get<boolean>(
-      "autoCompletion.transactionTemplates.enabled",
-      true,
-    );
+    return this.payeeCompleter.complete(legacyContext);
   }
 
   private provideTagCompletion(

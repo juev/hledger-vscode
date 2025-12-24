@@ -105,9 +105,12 @@ describe("InlinePositionAnalyzer", () => {
   });
 
   describe("template context detection", () => {
-    it("should detect template context when complete payee at end of line", () => {
+    // Template context is now detected on EMPTY line after transaction header
+    // This prevents template from being auto-accepted with payee completion
+
+    it("should detect template context on empty line after transaction header", () => {
       const document = new MockTextDocument(["2024-12-23 Coffee Shop", ""]);
-      const position = new Position(0, 22); // At end of payee
+      const position = new Position(1, 0); // On empty line after header
       const knownPayees = new Set<string>(["Coffee Shop"]);
 
       const result = analyzer.analyzePosition(document, position, knownPayees);
@@ -118,9 +121,9 @@ describe("InlinePositionAnalyzer", () => {
       }
     });
 
-    it("should detect template context with status marker", () => {
+    it("should detect template context on empty line with status marker in header", () => {
       const document = new MockTextDocument(["2024-12-23 * Coffee Shop", ""]);
-      const position = new Position(0, 24);
+      const position = new Position(1, 0); // On empty line after header
       const knownPayees = new Set<string>(["Coffee Shop"]);
 
       const result = analyzer.analyzePosition(document, position, knownPayees);
@@ -131,9 +134,9 @@ describe("InlinePositionAnalyzer", () => {
       }
     });
 
-    it("should detect template context when next line is empty", () => {
+    it("should detect template context when previous line has known payee", () => {
       const document = new MockTextDocument(["2024-12-23 Grocery Store", ""]);
-      const position = new Position(0, 24);
+      const position = new Position(1, 0);
       const knownPayees = new Set<string>(["Grocery Store"]);
 
       const result = analyzer.analyzePosition(document, position, knownPayees);
@@ -141,57 +144,47 @@ describe("InlinePositionAnalyzer", () => {
       expect(result.type).toBe("template");
     });
 
-    it("should detect template context when next line starts new transaction", () => {
-      const document = new MockTextDocument([
-        "2024-12-23 Coffee Shop",
-        "2024-12-24 Another Transaction",
-      ]);
-      const position = new Position(0, 22);
+    it("should NOT detect template when cursor is on same line as payee", () => {
+      // This is the key fix: template should NOT trigger on same line as payee
+      const document = new MockTextDocument(["2024-12-23 Coffee Shop", ""]);
+      const position = new Position(0, 22); // On same line as payee
       const knownPayees = new Set<string>(["Coffee Shop"]);
 
       const result = analyzer.analyzePosition(document, position, knownPayees);
 
-      expect(result.type).toBe("template");
-    });
-
-    it("should detect template context when at last line of document", () => {
-      const document = new MockTextDocument(["2024-12-23 Coffee Shop"]);
-      const position = new Position(0, 22);
-      const knownPayees = new Set<string>(["Coffee Shop"]);
-
-      const result = analyzer.analyzePosition(document, position, knownPayees);
-
-      expect(result.type).toBe("template");
+      // Should be none (not template, not payee - cursor at end of exact match)
+      expect(result.type).toBe("none");
     });
 
     it("should NOT detect template when payee is not an exact match", () => {
-      const document = new MockTextDocument(["2024-12-23 Coffee"]);
-      const position = new Position(0, 17);
+      const document = new MockTextDocument(["2024-12-23 Coffee", ""]);
+      const position = new Position(1, 0); // On empty line
       const knownPayees = new Set<string>(["Coffee Shop"]);
 
       const result = analyzer.analyzePosition(document, position, knownPayees);
 
-      // Should be payee context (partial match), not template
-      expect(result.type).toBe("payee");
+      // Payee "Coffee" is not in knownPayees
+      expect(result.type).toBe("none");
     });
 
-    it("should NOT detect template when next line has postings (indented)", () => {
+    it("should NOT detect template when transaction already has postings", () => {
       const document = new MockTextDocument([
         "2024-12-23 Coffee Shop",
         "    Expenses:Food  5.00",
+        "",
       ]);
-      const position = new Position(0, 22);
+      const position = new Position(2, 0); // On empty line after postings
       const knownPayees = new Set<string>(["Coffee Shop"]);
 
       const result = analyzer.analyzePosition(document, position, knownPayees);
 
-      // Should be none - transaction already has postings
+      // Previous line is posting, not header
       expect(result.type).toBe("none");
     });
 
     it("should handle Unicode payees for template context", () => {
       const document = new MockTextDocument(["2024-12-23 Магазин", ""]);
-      const position = new Position(0, 18);
+      const position = new Position(1, 0); // On empty line after header
       const knownPayees = new Set<string>(["Магазин"]);
 
       const result = analyzer.analyzePosition(document, position, knownPayees);
@@ -200,6 +193,27 @@ describe("InlinePositionAnalyzer", () => {
       if (result.type === "template") {
         expect(result.payee).toBe("Магазин");
       }
+    });
+
+    it("should NOT detect template on first line of document", () => {
+      const document = new MockTextDocument([""]);
+      const position = new Position(0, 0);
+      const knownPayees = new Set<string>(["Coffee Shop"]);
+
+      const result = analyzer.analyzePosition(document, position, knownPayees);
+
+      // No previous line to check for header
+      expect(result.type).toBe("none");
+    });
+
+    it("should NOT detect template when previous line is not a transaction header", () => {
+      const document = new MockTextDocument(["; comment line", ""]);
+      const position = new Position(1, 0);
+      const knownPayees = new Set<string>(["Coffee Shop"]);
+
+      const result = analyzer.analyzePosition(document, position, knownPayees);
+
+      expect(result.type).toBe("none");
     });
   });
 
@@ -217,10 +231,21 @@ describe("InlinePositionAnalyzer", () => {
       expect(result.type).toBe("none");
     });
 
-    it("should return none for empty lines", () => {
+    it("should return none for empty lines without preceding transaction header", () => {
       const document = new MockTextDocument([""]);
       const position = new Position(0, 0);
       const knownPayees = new Set<string>(["Coffee Shop"]);
+
+      const result = analyzer.analyzePosition(document, position, knownPayees);
+
+      // First line is empty, no previous line to check
+      expect(result.type).toBe("none");
+    });
+
+    it("should return none for empty line after non-transaction line", () => {
+      const document = new MockTextDocument(["account Assets:Cash", ""]);
+      const position = new Position(1, 0);
+      const knownPayees = new Set<string>(["Assets:Cash"]);
 
       const result = analyzer.analyzePosition(document, position, knownPayees);
 
@@ -257,16 +282,18 @@ describe("InlinePositionAnalyzer", () => {
       expect(result.type).toBe("none");
     });
 
-    it("should return none when cursor is not at end of line for template", () => {
+    it("should detect payee context when typing after known payee text", () => {
       const document = new MockTextDocument(["2024-12-23 Coffee Shop extra"]);
-      const position = new Position(0, 22); // Not at end of line
+      const position = new Position(0, 28); // At end of "extra"
       const knownPayees = new Set<string>(["Coffee Shop"]);
 
       const result = analyzer.analyzePosition(document, position, knownPayees);
 
-      // Cursor not at end of line, so not template context
-      // Should still be payee context since we're in payee area
+      // Should be payee context - user is typing more text
       expect(result.type).toBe("payee");
+      if (result.type === "payee") {
+        expect(result.prefix).toBe("Coffee Shop extra");
+      }
     });
   });
 });

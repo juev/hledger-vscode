@@ -60,9 +60,10 @@ export class InlinePositionAnalyzer {
   ): InlineContext {
     const line = document.lineAt(position.line).text;
 
-    // Early exit for empty lines
-    if (line.trim().length === 0) {
-      return { type: "none" };
+    // Check for template context: cursor on EMPTY line after transaction header
+    // This prevents template from being auto-accepted with payee completion
+    if (line.trim().length === 0 && position.line > 0) {
+      return this.checkTemplateContext(document, position, knownPayees);
     }
 
     // Check for indented lines (posting lines) - no inline completion
@@ -80,7 +81,7 @@ export class InlinePositionAnalyzer {
       return { type: "none" };
     }
 
-    // Try to match date pattern
+    // Try to match date pattern for payee completion
     const dateMatch = line.match(InlinePositionAnalyzer.DATE_IN_TRANSACTION);
     if (!dateMatch) {
       return { type: "none" };
@@ -96,30 +97,6 @@ export class InlinePositionAnalyzer {
 
     // Extract payee portion (from date end to cursor)
     const payeePortion = line.substring(dateEndPos, cursorPos);
-    const fullPayeeLine = line.substring(dateEndPos).trimEnd();
-
-    // Check if we have a complete payee (exact match with known payee)
-    const isExactPayeeMatch = knownPayees.has(fullPayeeLine);
-    const isCursorAtEnd = cursorPos === line.length;
-
-    if (isExactPayeeMatch && isCursorAtEnd) {
-      // Check if template context is valid (next line is empty, doesn't exist, or starts new transaction)
-      const isTemplateContextValid = this.isValidTemplateContext(
-        document,
-        position.line,
-      );
-
-      if (isTemplateContextValid) {
-        return {
-          type: "template",
-          payee: fullPayeeLine as PayeeName,
-          insertPosition: position,
-        };
-      } else {
-        // Transaction already has postings
-        return { type: "none" };
-      }
-    }
 
     // Check for payee prefix (partial match)
     const prefix = payeePortion.trim();
@@ -129,10 +106,58 @@ export class InlinePositionAnalyzer {
       return { type: "none" };
     }
 
+    // If prefix exactly matches a known payee and cursor at end of line,
+    // return none - template will be offered on next line after Enter
+    const isCursorAtEnd = cursorPos >= line.trimEnd().length;
+    if (isCursorAtEnd && knownPayees.has(prefix)) {
+      return { type: "none" };
+    }
+
     return {
       type: "payee",
       prefix,
       payeeStartPos: dateEndPos + payeePortion.indexOf(prefix.charAt(0)),
+    };
+  }
+
+  /**
+   * Checks if we're on an empty line after a transaction header with known payee.
+   * Template completion is only offered when cursor is on a NEW line after the header.
+   *
+   * @param document - The text document
+   * @param position - Current cursor position (on empty line)
+   * @param knownPayees - Set of known payee names
+   * @returns Template context if valid, none otherwise
+   */
+  private checkTemplateContext(
+    document: vscode.TextDocument,
+    position: vscode.Position,
+    knownPayees: ReadonlySet<string>,
+  ): InlineContext {
+    const prevLine = document.lineAt(position.line - 1).text;
+
+    // Previous line must be a transaction header (date + payee)
+    const dateMatch = prevLine.match(InlinePositionAnalyzer.DATE_IN_TRANSACTION);
+    if (!dateMatch) {
+      return { type: "none" };
+    }
+
+    // Extract and validate payee
+    const payee = prevLine.substring(dateMatch[0].length).trim();
+    if (!payee || !knownPayees.has(payee)) {
+      return { type: "none" };
+    }
+
+    // Check that transaction doesn't already have postings
+    // (no indented lines following the header)
+    if (!this.isValidTemplateContext(document, position.line - 1)) {
+      return { type: "none" };
+    }
+
+    return {
+      type: "template",
+      payee: payee as PayeeName,
+      insertPosition: position,
     };
   }
 
