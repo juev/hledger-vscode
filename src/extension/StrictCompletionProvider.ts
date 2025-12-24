@@ -210,6 +210,15 @@ export class StrictCompletionProvider
       const templateItems =
         this.transactionTemplateCompleter.complete(templateContext);
 
+      // Debug: log template discovery
+      const payeesWithTemplates = this.config.getPayeesWithTemplates();
+      console.log(
+        `[HLedger] Templates: ${payeesWithTemplates.length} payees, ${templateItems.length} items for query "${templateContext.query}"`,
+      );
+      if (payeesWithTemplates.length > 0) {
+        console.log(`[HLedger] Payees with templates: ${payeesWithTemplates.slice(0, 5).join(", ")}${payeesWithTemplates.length > 5 ? "..." : ""}`);
+      }
+
       // Combine and return both types
       return [...templateItems, ...payeeItems];
     }
