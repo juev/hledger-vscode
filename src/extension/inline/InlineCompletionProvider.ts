@@ -123,7 +123,8 @@ export class InlineCompletionProvider
       return undefined;
     }
 
-    const ghostText = this.buildTemplateGhostText(template);
+    const { text: ghostText, amountColumn } =
+      this.buildTemplateGhostText(template);
 
     // Normalize position to column 0 to ensure proper indentation
     // The range replaces from start of line to cursor, ensuring 4-space indent
@@ -134,24 +135,41 @@ export class InlineCompletionProvider
       new vscode.Range(startOfLine, position),
     );
 
+    // Add command to position cursor at the amount field after insertion
+    if (amountColumn !== null) {
+      item.command = {
+        command: "hledger.positionCursorAfterTemplate",
+        title: "Position cursor at amount",
+        arguments: [position.line, amountColumn],
+      };
+    }
+
     return [item];
   }
 
   /**
-   * Builds the ghost text for a transaction template.
-   * Uses plain text (no snippets) as inline completions don't support snippets.
-   * First line has no leading newline since cursor is already on a new line.
-   *
-   * @param template - The transaction template to format
+   * Result of building template ghost text.
    */
-  private buildTemplateGhostText(template: TransactionTemplate): string {
+  private buildTemplateGhostText(template: TransactionTemplate): {
+    text: string;
+    amountColumn: number | null;
+  } {
     const lines: string[] = [];
+    let amountColumn: number | null = null;
+    const indent = 4;
+    const separator = 2; // two spaces before amount
 
     for (let i = 0; i < template.postings.length; i++) {
       const posting = template.postings[i];
       if (!posting) continue;
 
       const amountPart = posting.amount !== null ? `  ${posting.amount}` : "";
+
+      // Calculate amount column for first posting with amount
+      if (amountColumn === null && posting.amount !== null && i === 0) {
+        amountColumn = indent + posting.account.length + separator;
+      }
+
       // First line: no leading newline (cursor already on new line)
       // Subsequent lines: add newline before
       if (i === 0) {
@@ -161,7 +179,7 @@ export class InlineCompletionProvider
       }
     }
 
-    return lines.join("");
+    return { text: lines.join(""), amountColumn };
   }
 
   /**

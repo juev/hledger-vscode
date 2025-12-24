@@ -63,6 +63,17 @@ export function activate(context: vscode.ExtensionContext): void {
     );
     context.subscriptions.push(inlineProvider);
 
+    // Register command to position cursor after template insertion
+    context.subscriptions.push(
+      vscode.commands.registerTextEditorCommand(
+        "hledger.positionCursorAfterTemplate",
+        (editor, _edit, line: number, column: number) => {
+          const newPosition = new vscode.Position(line, column);
+          editor.selection = new vscode.Selection(newPosition, newPosition);
+        },
+      ),
+    );
+
     // Register code action provider for balance assertions and quick fixes
     const codeActionProvider = new HLedgerCodeActionProvider(services.config);
     context.subscriptions.push(
