@@ -65,6 +65,33 @@ export interface TagValuePair {
   readonly value: TagValue;
 }
 
+/**
+ * Represents a single posting within a transaction template.
+ * Captures account name and optional amount/commodity for template reconstruction.
+ */
+export interface TemplatePosting {
+  readonly account: AccountName;
+  readonly amount: string | null;
+  readonly commodity: CommodityCode | null;
+}
+
+/**
+ * Represents a complete transaction template derived from historical transactions.
+ * Used for autocomplete to suggest full transactions based on payee history.
+ */
+export interface TransactionTemplate {
+  readonly payee: PayeeName;
+  readonly postings: readonly TemplatePosting[];
+  readonly usageCount: UsageCount;
+  readonly lastUsedDate: string | null;
+}
+
+/**
+ * Key for identifying unique transaction templates.
+ * Format: sorted account names joined by "|" (e.g., "Account1|Account2")
+ */
+export type TemplateKey = string;
+
 // Enhanced completion context interface with type safety
 export interface CompletionContext {
   readonly type: CompletionType;
@@ -96,7 +123,8 @@ export type CompletionType =
   | "commodity"
   | "date"
   | "none"
-  | "keyword";
+  | "keyword"
+  | "transaction_template";
 
 /**
  * Type guard for CompletionType validation.
@@ -110,6 +138,7 @@ export const isCompletionType = (value: string): value is CompletionType => {
     "commodity",
     "date",
     "keyword",
+    "transaction_template",
   ].includes(value);
 };
 

@@ -604,6 +604,23 @@ export class HLedgerFileProcessor {
      * Creates a mutable copy of ParsedHLedgerData for merging
      */
     private createMutableData(data: ParsedHLedgerData): any {
+        // Deep clone transaction templates
+        const clonedTemplates = new Map();
+        if (data.transactionTemplates) {
+            data.transactionTemplates.forEach((templates, payee) => {
+                const clonedInner = new Map();
+                templates.forEach((template, key) => {
+                    clonedInner.set(key, {
+                        payee: template.payee,
+                        postings: [...template.postings],
+                        usageCount: template.usageCount,
+                        lastUsedDate: template.lastUsedDate
+                    });
+                });
+                clonedTemplates.set(payee, clonedInner);
+            });
+        }
+
         return {
             accounts: new Set(data.accounts),
             definedAccounts: new Set(data.definedAccounts),
@@ -624,6 +641,7 @@ export class HLedgerFileProcessor {
                 Array.from(data.payeeAccounts.entries()).map(([k, v]) => [k, new Set(v)])
             ),
             payeeAccountPairUsage: new Map(data.payeeAccountPairUsage),
+            transactionTemplates: clonedTemplates,
             commodityFormats: new Map(data.commodityFormats),
             decimalMark: data.decimalMark,
             defaultCommodity: data.defaultCommodity,
@@ -651,6 +669,7 @@ export class HLedgerFileProcessor {
             commodityUsage: mutableData.commodityUsage,
             payeeAccounts: mutableData.payeeAccounts,
             payeeAccountPairUsage: mutableData.payeeAccountPairUsage,
+            transactionTemplates: mutableData.transactionTemplates ?? new Map(),
             commodityFormats: mutableData.commodityFormats,
             decimalMark: mutableData.decimalMark,
             defaultCommodity: mutableData.defaultCommodity,

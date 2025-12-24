@@ -97,6 +97,11 @@
           "default": true,
           "description": "Enable diagnostics validation for hledger files (account checks, tag format, amount format)"
         },
+        "hledger.autoCompletion.transactionTemplates.enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable transaction template completion. When typing a payee name, suggests complete transactions with accounts and amounts based on history."
+        },
         "hledger.import.defaultDebitAccount": {
           "type": "string",
           "default": "expenses:unknown",

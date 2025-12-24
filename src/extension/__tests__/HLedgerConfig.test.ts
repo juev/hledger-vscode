@@ -243,6 +243,7 @@ account Assets:Bank
                 commodityFormats: new Map(),
                 decimalMark: null,
                 defaultCommodity: null,
+                transactionTemplates: new Map(),
                 lastDate: null
             };
 
@@ -366,6 +367,7 @@ account Assets:Bank
                 commodityFormats: new Map(),
                 decimalMark: null,
                 defaultCommodity: null,
+                transactionTemplates: new Map(),
                 lastDate: null
             };
 

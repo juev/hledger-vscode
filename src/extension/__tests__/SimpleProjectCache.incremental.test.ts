@@ -55,6 +55,7 @@ describe('SimpleProjectCache - Incremental Updates', () => {
                 commodityFormats: new Map(),
                 decimalMark: null,
                 defaultCommodity: null,
+                transactionTemplates: new Map(),
                 lastDate: '2025-01-15'
             };
 
@@ -92,6 +93,7 @@ describe('SimpleProjectCache - Incremental Updates', () => {
                 commodityFormats: new Map(),
                 decimalMark: null,
                 defaultCommodity: null,
+                transactionTemplates: new Map(),
                 lastDate: '2025-01-15'
             };
 
@@ -134,6 +136,7 @@ describe('SimpleProjectCache - Incremental Updates', () => {
                 commodityFormats: new Map(),
                 decimalMark: null,
                 defaultCommodity: null,
+                transactionTemplates: new Map(),
                 lastDate: '2025-01-15'
             };
 
@@ -175,6 +178,7 @@ describe('SimpleProjectCache - Incremental Updates', () => {
                 commodityFormats: new Map(),
                 decimalMark: null,
                 defaultCommodity: null,
+                transactionTemplates: new Map(),
                 lastDate: '2025-01-15'
             };
 
@@ -197,6 +201,7 @@ describe('SimpleProjectCache - Incremental Updates', () => {
                 commodityFormats: new Map(),
                 decimalMark: null,
                 defaultCommodity: null,
+                transactionTemplates: new Map(),
                 lastDate: '2025-01-15'
             };
 
@@ -245,6 +250,7 @@ describe('SimpleProjectCache - Incremental Updates', () => {
                 commodityFormats: new Map(),
                 decimalMark: null,
                 defaultCommodity: null,
+                transactionTemplates: new Map(),
                 lastDate: null
             };
 
@@ -278,6 +284,7 @@ describe('SimpleProjectCache - Incremental Updates', () => {
                 commodityFormats: new Map(),
                 decimalMark: null,
                 defaultCommodity: null,
+                transactionTemplates: new Map(),
                 lastDate: null
             };
 

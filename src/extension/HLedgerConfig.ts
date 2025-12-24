@@ -14,6 +14,8 @@ import {
   TagValue,
   CommodityCode,
   UsageCount,
+  TransactionTemplate,
+  TemplateKey,
   createUsageCount,
   createCacheKey,
 } from "./types";
@@ -225,7 +227,7 @@ export class HLedgerConfig {
    *
    * Shared (read-only, never mutated):
    *   definedAccounts, aliases, payeeAccounts, payeeAccountPairUsage,
-   *   tagValues, tagValueUsage, commodityFormats, decimalMark, defaultCommodity, lastDate
+   *   transactionTemplates, tagValues, tagValueUsage, commodityFormats, decimalMark, defaultCommodity, lastDate
    */
   private cloneData(data: ParsedHLedgerData): ParsedHLedgerData {
     return {
@@ -245,6 +247,7 @@ export class HLedgerConfig {
       aliases: data.aliases,
       payeeAccounts: data.payeeAccounts,
       payeeAccountPairUsage: data.payeeAccountPairUsage,
+      transactionTemplates: data.transactionTemplates,
       tagValues: data.tagValues,
       tagValueUsage: data.tagValueUsage,
       commodityFormats: data.commodityFormats,
@@ -406,6 +409,52 @@ export class HLedgerConfig {
       payeeAccounts: this.data.payeeAccounts,
       pairUsage: this.data.payeeAccountPairUsage,
     };
+  }
+
+  // Transaction templates for autocomplete
+  getTransactionTemplates(): ReadonlyMap<
+    PayeeName,
+    ReadonlyMap<TemplateKey, TransactionTemplate>
+  > | null {
+    return this.data?.transactionTemplates ?? null;
+  }
+
+  /**
+   * Gets all templates for a specific payee, sorted by usage count (highest first).
+   * Returns empty array if no templates exist for the payee.
+   */
+  getTemplatesForPayee(payee: PayeeName): TransactionTemplate[] {
+    const templates = this.data?.transactionTemplates?.get(payee);
+    if (!templates) return [];
+    return Array.from(templates.values()).sort(
+      (a, b) => b.usageCount - a.usageCount,
+    );
+  }
+
+  /**
+   * Gets all payees that have transaction templates, with optional fuzzy matching.
+   * Returns payees sorted by total template usage.
+   */
+  getPayeesWithTemplates(): PayeeName[] {
+    if (!this.data?.transactionTemplates) return [];
+
+    return Array.from(this.data.transactionTemplates.keys()).sort((a, b) => {
+      const aTemplates = this.data!.transactionTemplates.get(a);
+      const bTemplates = this.data!.transactionTemplates.get(b);
+      const aTotal = aTemplates
+        ? Array.from(aTemplates.values()).reduce(
+            (sum, t) => sum + t.usageCount,
+            0,
+          )
+        : 0;
+      const bTotal = bTemplates
+        ? Array.from(bTemplates.values()).reduce(
+            (sum, t) => sum + t.usageCount,
+            0,
+          )
+        : 0;
+      return bTotal - aTotal;
+    });
   }
 
   // Context detection for completion

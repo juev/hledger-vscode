@@ -908,6 +908,61 @@ export class MarkdownString {
   }
 }
 
+export class SnippetString {
+  value: string;
+
+  constructor(value?: string) {
+    this.value = value || "";
+  }
+
+  appendText(value: string): SnippetString {
+    this.value += value;
+    return this;
+  }
+
+  appendTabstop(number?: number): SnippetString {
+    this.value += number !== undefined ? `\$${number}` : "$0";
+    return this;
+  }
+
+  appendPlaceholder(
+    value: string | ((snippet: SnippetString) => void),
+    number?: number,
+  ): SnippetString {
+    if (typeof value === "function") {
+      const inner = new SnippetString();
+      value(inner);
+      this.value += `\${${number || 1}:${inner.value}}`;
+    } else {
+      this.value += `\${${number || 1}:${value}}`;
+    }
+    return this;
+  }
+
+  appendChoice(values: string[], number?: number): SnippetString {
+    this.value += `\${${number || 1}|${values.join(",")}|}`;
+    return this;
+  }
+
+  appendVariable(
+    name: string,
+    defaultValue?: string | ((snippet: SnippetString) => void),
+  ): SnippetString {
+    if (defaultValue !== undefined) {
+      if (typeof defaultValue === "function") {
+        const inner = new SnippetString();
+        defaultValue(inner);
+        this.value += `\${${name}:${inner.value}}`;
+      } else {
+        this.value += `\${${name}:${defaultValue}}`;
+      }
+    } else {
+      this.value += `\$${name}`;
+    }
+    return this;
+  }
+}
+
 const createUriObject = (path: string): Uri => ({
   scheme: "file",
   authority: "",
@@ -1150,6 +1205,7 @@ export default {
   SemanticTokensLegend,
   SemanticTokensBuilder,
   MarkdownString,
+  SnippetString,
   Disposable,
   createMockExtensionContext,
   MockTextDocument,

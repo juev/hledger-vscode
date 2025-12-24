@@ -3,10 +3,28 @@
 
 import {
     AccountName, PayeeName, TagName, TagValue, CommodityCode, UsageCount,
+    TemplatePosting, TransactionTemplate, TemplateKey,
     createPayeeName, createCommodityCode, createUsageCount
 } from '../types';
 import { NumberFormatService, CommodityFormat } from '../services/NumberFormatService';
 import { HLedgerToken, TokenType } from '../lexer/HLedgerLexer';
+
+/**
+ * Mutable interface for transaction template during AST construction.
+ * Allows updating amounts and usage counts as transactions are processed.
+ */
+interface MutableTransactionTemplate {
+    payee: PayeeName;
+    postings: TemplatePosting[];
+    usageCount: UsageCount;
+    lastUsedDate: string | null;
+}
+
+/**
+ * Maximum number of different account combinations to store per payee.
+ * Keeps only the most frequently used templates.
+ */
+const MAX_TEMPLATES_PER_PAYEE = 5;
 
 /**
  * Internal mutable interface for building parsed data during AST construction
@@ -33,6 +51,9 @@ interface MutableParsedHLedgerData {
     // Payee-to-account mappings for import history
     payeeAccounts: Map<PayeeName, Set<AccountName>>;
     payeeAccountPairUsage: Map<string, UsageCount>;
+
+    // Transaction templates for autocomplete
+    transactionTemplates: Map<PayeeName, Map<TemplateKey, MutableTransactionTemplate>>;
 
     // Format information for number formatting and commodity display
     commodityFormats: Map<CommodityCode, CommodityFormat>;
@@ -68,6 +89,9 @@ export interface ParsedHLedgerData {
     readonly payeeAccounts: ReadonlyMap<PayeeName, ReadonlySet<AccountName>>;
     readonly payeeAccountPairUsage: ReadonlyMap<string, UsageCount>;
 
+    // Transaction templates for autocomplete
+    readonly transactionTemplates: ReadonlyMap<PayeeName, ReadonlyMap<TemplateKey, TransactionTemplate>>;
+
     // Number format information
     readonly commodityFormats: ReadonlyMap<CommodityCode, CommodityFormat>;
     readonly decimalMark: '.' | ',' | null;
@@ -83,6 +107,8 @@ interface BuildingContext {
     transactionPayee: PayeeName;
     pendingFormatDirective: string | null;
     lastDate: string | null;
+    currentTransactionPostings: TemplatePosting[];
+    currentTransactionDate: string | null;
 }
 
 /**
@@ -104,12 +130,17 @@ export class HLedgerASTBuilder {
             inTransaction: false,
             transactionPayee: createPayeeName(''),
             pendingFormatDirective: null,
-            lastDate: null
+            lastDate: null,
+            currentTransactionPostings: [],
+            currentTransactionDate: null
         };
 
         for (const token of tokens) {
             this.processToken(token, data, context);
         }
+
+        // Finalize the last transaction if any
+        this.finalizeTransaction(data, context);
 
         return this.toReadonly(data);
     }
@@ -179,6 +210,9 @@ export class HLedgerASTBuilder {
      * Processes transaction tokens
      */
     private handleTransactionToken(token: HLedgerToken, data: MutableParsedHLedgerData, context: BuildingContext): void {
+        // Finalize previous transaction before starting a new one
+        this.finalizeTransaction(data, context);
+
         if (token.payee) {
             this.addPayee(token.payee, data);
         }
@@ -188,14 +222,16 @@ export class HLedgerASTBuilder {
             this.processTags(token.tags, data);
         }
 
-        // Update context
+        // Update context for new transaction
         context.inTransaction = true;
         context.transactionPayee = token.payee || createPayeeName('Unknown');
+        context.currentTransactionPostings = [];
 
         // Extract date from transaction line (support both full and short date formats)
         const dateMatch = token.trimmedLine.match(/^(\d{4}[-\/\.]\d{1,2}[-\/\.]\d{1,2}|\d{1,2}[-\/\.]\d{1,2})/);
         if (dateMatch?.[1]) {
             context.lastDate = dateMatch[1];
+            context.currentTransactionDate = dateMatch[1];
             data.lastDate = dateMatch[1];
         }
     }
@@ -210,6 +246,15 @@ export class HLedgerASTBuilder {
             // Track payee-account relationship for import history
             if (context.inTransaction && context.transactionPayee) {
                 this.addPayeeAccountMapping(context.transactionPayee, token.account, data);
+            }
+
+            // Accumulate posting for transaction template
+            if (context.inTransaction) {
+                context.currentTransactionPostings.push({
+                    account: token.account,
+                    amount: token.amount || null,
+                    commodity: token.commodity || null
+                });
             }
         }
 
@@ -397,6 +442,87 @@ export class HLedgerASTBuilder {
     }
 
     /**
+     * Finalizes the current transaction and creates/updates template.
+     * Called when a new transaction starts or at end of token processing.
+     */
+    private finalizeTransaction(data: MutableParsedHLedgerData, context: BuildingContext): void {
+        // Skip if not in a transaction or fewer than 2 postings
+        if (!context.inTransaction || context.currentTransactionPostings.length < 2) {
+            context.inTransaction = false;
+            context.currentTransactionPostings = [];
+            context.currentTransactionDate = null;
+            return;
+        }
+
+        const normalizedPayee = context.transactionPayee.normalize('NFC') as PayeeName;
+
+        // Generate template key from sorted account names
+        const accountNames = context.currentTransactionPostings
+            .map(p => p.account)
+            .sort()
+            .join('|') as TemplateKey;
+
+        // Get or create payee's template map
+        if (!data.transactionTemplates.has(normalizedPayee)) {
+            data.transactionTemplates.set(normalizedPayee, new Map());
+        }
+        const payeeTemplates = data.transactionTemplates.get(normalizedPayee)!;
+
+        // Update existing template or create new one
+        const existingTemplate = payeeTemplates.get(accountNames);
+        if (existingTemplate) {
+            // Update usage count
+            existingTemplate.usageCount = createUsageCount(existingTemplate.usageCount + 1);
+            existingTemplate.lastUsedDate = context.currentTransactionDate;
+
+            // Update amounts with latest values
+            existingTemplate.postings = context.currentTransactionPostings.map(posting => ({
+                account: posting.account,
+                amount: posting.amount,
+                commodity: posting.commodity
+            }));
+        } else {
+            // Create new template
+            const newTemplate: MutableTransactionTemplate = {
+                payee: normalizedPayee,
+                postings: context.currentTransactionPostings.map(posting => ({
+                    account: posting.account,
+                    amount: posting.amount,
+                    commodity: posting.commodity
+                })),
+                usageCount: createUsageCount(1),
+                lastUsedDate: context.currentTransactionDate
+            };
+            payeeTemplates.set(accountNames, newTemplate);
+
+            // Enforce MAX_TEMPLATES_PER_PAYEE limit
+            if (payeeTemplates.size > MAX_TEMPLATES_PER_PAYEE) {
+                this.pruneTemplates(payeeTemplates);
+            }
+        }
+
+        // Reset context for next transaction
+        context.inTransaction = false;
+        context.currentTransactionPostings = [];
+        context.currentTransactionDate = null;
+    }
+
+    /**
+     * Removes least frequently used templates to maintain limit.
+     */
+    private pruneTemplates(templates: Map<TemplateKey, MutableTransactionTemplate>): void {
+        const entries = Array.from(templates.entries())
+            .sort((a, b) => a[1].usageCount - b[1].usageCount);
+
+        while (templates.size > MAX_TEMPLATES_PER_PAYEE && entries.length > 0) {
+            const lowestEntry = entries.shift();
+            if (lowestEntry) {
+                templates.delete(lowestEntry[0]);
+            }
+        }
+    }
+
+    /**
      * Adds a payee-account mapping for import history tracking.
      * Uses double-colon separator to avoid conflicts with account names containing colons.
      */
@@ -466,6 +592,38 @@ export class HLedgerASTBuilder {
         });
         this.mergeUsageData(target.payeeAccountPairUsage, source.payeeAccountPairUsage);
 
+        // Merge transaction templates
+        source.transactionTemplates.forEach((sourceTemplates, payee) => {
+            if (!target.transactionTemplates.has(payee)) {
+                target.transactionTemplates.set(payee, new Map());
+            }
+            const targetTemplates = target.transactionTemplates.get(payee)!;
+
+            sourceTemplates.forEach((template, key) => {
+                const existingTemplate = targetTemplates.get(key);
+                if (existingTemplate) {
+                    // Combine usage counts, keep newer amounts
+                    existingTemplate.usageCount = createUsageCount(existingTemplate.usageCount + template.usageCount);
+                    if (template.lastUsedDate && (!existingTemplate.lastUsedDate || template.lastUsedDate > existingTemplate.lastUsedDate)) {
+                        existingTemplate.lastUsedDate = template.lastUsedDate;
+                        existingTemplate.postings = [...template.postings];
+                    }
+                } else {
+                    targetTemplates.set(key, {
+                        payee: template.payee,
+                        postings: [...template.postings],
+                        usageCount: template.usageCount,
+                        lastUsedDate: template.lastUsedDate
+                    });
+                }
+            });
+
+            // Enforce MAX_TEMPLATES_PER_PAYEE after merge
+            if (targetTemplates.size > MAX_TEMPLATES_PER_PAYEE) {
+                this.pruneTemplates(targetTemplates);
+            }
+        });
+
         // Update other properties
         if (source.defaultCommodity && !target.defaultCommodity) {
             target.defaultCommodity = source.defaultCommodity;
@@ -508,6 +666,7 @@ export class HLedgerASTBuilder {
             commodityUsage: new Map(),
             payeeAccounts: new Map(),
             payeeAccountPairUsage: new Map(),
+            transactionTemplates: new Map(),
             commodityFormats: new Map(),
             decimalMark: null,
             defaultCommodity: null,
@@ -535,10 +694,63 @@ export class HLedgerASTBuilder {
             commodityUsage: data.commodityUsage,
             payeeAccounts: data.payeeAccounts,
             payeeAccountPairUsage: data.payeeAccountPairUsage,
+            transactionTemplates: data.transactionTemplates,
             commodityFormats: data.commodityFormats,
             decimalMark: data.decimalMark,
             defaultCommodity: data.defaultCommodity,
             lastDate: data.lastDate
         };
+    }
+
+    /**
+     * Creates a mutable copy from readonly data for merging.
+     * Used by tests and for data aggregation across files.
+     */
+    public createMutableFromReadonly(data: ParsedHLedgerData): MutableParsedHLedgerData {
+        // Deep clone transaction templates
+        const clonedTemplates = new Map<PayeeName, Map<TemplateKey, MutableTransactionTemplate>>();
+        data.transactionTemplates.forEach((templates, payee) => {
+            const clonedInner = new Map<TemplateKey, MutableTransactionTemplate>();
+            templates.forEach((template, key) => {
+                clonedInner.set(key, {
+                    payee: template.payee,
+                    postings: [...template.postings],
+                    usageCount: template.usageCount,
+                    lastUsedDate: template.lastUsedDate
+                });
+            });
+            clonedTemplates.set(payee, clonedInner);
+        });
+
+        return {
+            accounts: new Set(data.accounts),
+            definedAccounts: new Set(data.definedAccounts),
+            usedAccounts: new Set(data.usedAccounts),
+            payees: new Set(data.payees),
+            tags: new Set(data.tags),
+            commodities: new Set(data.commodities),
+            aliases: new Map(data.aliases),
+            tagValues: new Map(Array.from(data.tagValues.entries()).map(([k, v]) => [k, new Set(v)])),
+            tagValueUsage: new Map(data.tagValueUsage),
+            accountUsage: new Map(data.accountUsage),
+            payeeUsage: new Map(data.payeeUsage),
+            tagUsage: new Map(data.tagUsage),
+            commodityUsage: new Map(data.commodityUsage),
+            payeeAccounts: new Map(Array.from(data.payeeAccounts.entries()).map(([k, v]) => [k, new Set(v)])),
+            payeeAccountPairUsage: new Map(data.payeeAccountPairUsage),
+            transactionTemplates: clonedTemplates,
+            commodityFormats: new Map(data.commodityFormats),
+            decimalMark: data.decimalMark,
+            defaultCommodity: data.defaultCommodity,
+            lastDate: data.lastDate
+        };
+    }
+
+    /**
+     * Converts mutable data back to readonly.
+     * Public wrapper for toReadonly for use by tests.
+     */
+    public toReadonlyData(data: MutableParsedHLedgerData): ParsedHLedgerData {
+        return this.toReadonly(data);
     }
 }

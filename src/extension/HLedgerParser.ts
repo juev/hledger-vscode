@@ -11,6 +11,8 @@ import {
   TagValue,
   CommodityCode,
   UsageCount,
+  TransactionTemplate,
+  TemplateKey,
   createTagName,
   createTagValue,
   createCommodityCode,
@@ -26,6 +28,20 @@ import { HLedgerASTBuilder } from "./ast/HLedgerASTBuilder";
 import { HLedgerFileProcessor } from "./processor/HLedgerFileProcessor";
 import { SimpleProjectCache } from "./SimpleProjectCache";
 import { ErrorNotificationHandler } from "./utils/ErrorNotificationHandler";
+
+/**
+ * Mutable transaction template for internal building.
+ */
+interface MutableTransactionTemplate {
+  payee: PayeeName;
+  postings: {
+    account: AccountName;
+    amount: string | null;
+    commodity: CommodityCode | null;
+  }[];
+  usageCount: UsageCount;
+  lastUsedDate: string | null;
+}
 
 /**
  * Internal mutable interface for building parsed data during parsing.
@@ -52,6 +68,9 @@ interface MutableParsedHLedgerData {
   // Payee-to-account mappings for import history
   payeeAccounts: Map<PayeeName, Set<AccountName>>;
   payeeAccountPairUsage: Map<string, UsageCount>;
+
+  // Transaction templates for autocomplete
+  transactionTemplates: Map<PayeeName, Map<TemplateKey, MutableTransactionTemplate>>;
 
   // Format information for number formatting and commodity display
   commodityFormats: Map<CommodityCode, CommodityFormat>;
@@ -87,6 +106,12 @@ export interface ParsedHLedgerData {
   // Payee-to-account mappings for import history
   readonly payeeAccounts: ReadonlyMap<PayeeName, ReadonlySet<AccountName>>;
   readonly payeeAccountPairUsage: ReadonlyMap<string, UsageCount>;
+
+  // Transaction templates for autocomplete
+  readonly transactionTemplates: ReadonlyMap<
+    PayeeName,
+    ReadonlyMap<TemplateKey, TransactionTemplate>
+  >;
 
   // Format information for number formatting and commodity display
   readonly commodityFormats: ReadonlyMap<CommodityCode, CommodityFormat>;
@@ -763,6 +788,26 @@ export class HLedgerParser {
   private createMutableDataFrom(
     source: ParsedHLedgerData,
   ): MutableParsedHLedgerData {
+    // Deep clone transaction templates
+    const clonedTemplates = new Map<
+      PayeeName,
+      Map<TemplateKey, MutableTransactionTemplate>
+    >();
+    if (source.transactionTemplates) {
+      source.transactionTemplates.forEach((templates, payee) => {
+        const clonedInner = new Map<TemplateKey, MutableTransactionTemplate>();
+        templates.forEach((template, key) => {
+          clonedInner.set(key, {
+            payee: template.payee,
+            postings: [...template.postings],
+            usageCount: template.usageCount,
+            lastUsedDate: template.lastUsedDate,
+          });
+        });
+        clonedTemplates.set(payee, clonedInner);
+      });
+    }
+
     return {
       accounts: new Set(source.accounts),
       definedAccounts: new Set(source.definedAccounts),
@@ -786,6 +831,7 @@ export class HLedgerParser {
         ]),
       ),
       payeeAccountPairUsage: new Map(source.payeeAccountPairUsage),
+      transactionTemplates: clonedTemplates,
       commodityFormats: new Map(source.commodityFormats),
       decimalMark: source.decimalMark,
       defaultCommodity: source.defaultCommodity,
@@ -906,6 +952,7 @@ export class HLedgerParser {
       commodityUsage: new Map<CommodityCode, UsageCount>(),
       payeeAccounts: new Map<PayeeName, Set<AccountName>>(),
       payeeAccountPairUsage: new Map<string, UsageCount>(),
+      transactionTemplates: new Map(),
       commodityFormats: new Map<CommodityCode, CommodityFormat>(),
       decimalMark: null,
       defaultCommodity: null,
