@@ -64,6 +64,7 @@ describe('TransactionTemplateCompleter', () => {
         mockConfig = {
             getPayeesWithTemplates: jest.fn().mockReturnValue([]),
             getTemplatesForPayee: jest.fn().mockReturnValue([]),
+            getRecentTemplateUsage: jest.fn().mockReturnValue(0),
         } as unknown as jest.Mocked<HLedgerConfig>;
         completer = new TransactionTemplateCompleter(mockConfig);
     });

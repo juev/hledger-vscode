@@ -56,6 +56,7 @@ describe('SimpleProjectCache - Incremental Updates', () => {
                 decimalMark: null,
                 defaultCommodity: null,
                 transactionTemplates: new Map(),
+                payeeRecentTemplates: new Map(),
                 lastDate: '2025-01-15'
             };
 
@@ -94,6 +95,7 @@ describe('SimpleProjectCache - Incremental Updates', () => {
                 decimalMark: null,
                 defaultCommodity: null,
                 transactionTemplates: new Map(),
+                payeeRecentTemplates: new Map(),
                 lastDate: '2025-01-15'
             };
 
@@ -137,6 +139,7 @@ describe('SimpleProjectCache - Incremental Updates', () => {
                 decimalMark: null,
                 defaultCommodity: null,
                 transactionTemplates: new Map(),
+                payeeRecentTemplates: new Map(),
                 lastDate: '2025-01-15'
             };
 
@@ -179,6 +182,7 @@ describe('SimpleProjectCache - Incremental Updates', () => {
                 decimalMark: null,
                 defaultCommodity: null,
                 transactionTemplates: new Map(),
+                payeeRecentTemplates: new Map(),
                 lastDate: '2025-01-15'
             };
 
@@ -202,6 +206,7 @@ describe('SimpleProjectCache - Incremental Updates', () => {
                 decimalMark: null,
                 defaultCommodity: null,
                 transactionTemplates: new Map(),
+                payeeRecentTemplates: new Map(),
                 lastDate: '2025-01-15'
             };
 
@@ -251,6 +256,7 @@ describe('SimpleProjectCache - Incremental Updates', () => {
                 decimalMark: null,
                 defaultCommodity: null,
                 transactionTemplates: new Map(),
+                payeeRecentTemplates: new Map(),
                 lastDate: null
             };
 
@@ -285,6 +291,7 @@ describe('SimpleProjectCache - Incremental Updates', () => {
                 decimalMark: null,
                 defaultCommodity: null,
                 transactionTemplates: new Map(),
+                payeeRecentTemplates: new Map(),
                 lastDate: null
             };
 

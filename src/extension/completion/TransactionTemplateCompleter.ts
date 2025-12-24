@@ -3,7 +3,12 @@
 
 import * as vscode from "vscode";
 import { HLedgerConfig } from "../HLedgerConfig";
-import { CompletionContext, PayeeName, TransactionTemplate } from "../types";
+import {
+  CompletionContext,
+  PayeeName,
+  TransactionTemplate,
+  TemplateKey,
+} from "../types";
 import { SimpleFuzzyMatcher, FuzzyMatch } from "../SimpleFuzzyMatcher";
 
 /**
@@ -59,8 +64,11 @@ export class TransactionTemplateCompleter {
       }
     }
 
-    // Sort all items by usage count (descending)
+    // Sort all items by recent usage (descending), fall back to total usage
     items.sort((a, b) => {
+      const aRecent = (a as CompletionItemWithUsage).recentUsage ?? 0;
+      const bRecent = (b as CompletionItemWithUsage).recentUsage ?? 0;
+      if (aRecent !== bRecent) return bRecent - aRecent;
       const aUsage = (a as CompletionItemWithUsage).usageCount ?? 0;
       const bUsage = (b as CompletionItemWithUsage).usageCount ?? 0;
       return bUsage - aUsage;
@@ -69,7 +77,7 @@ export class TransactionTemplateCompleter {
     // Re-assign sortText after sorting
     items.forEach((item, index) => {
       item.sortText = this.getSortText(
-        (item as CompletionItemWithUsage).usageCount ?? 0,
+        (item as CompletionItemWithUsage).recentUsage ?? 0,
         index,
       );
     });
@@ -91,7 +99,14 @@ export class TransactionTemplateCompleter {
       vscode.CompletionItemKind.Snippet,
     ) as CompletionItemWithUsage;
 
-    item.detail = `Transaction template (used ${template.usageCount} times)`;
+    // Get recent usage count for this template
+    const templateKey = this.getTemplateKey(template);
+    const recentUsage = this.config.getRecentTemplateUsage(
+      template.payee,
+      templateKey,
+    );
+
+    item.detail = `Transaction template (${recentUsage} recent, ${template.usageCount} total)`;
 
     // Build snippet with tabstops for amounts
     const snippetText = this.buildSnippet(template);
@@ -101,15 +116,27 @@ export class TransactionTemplateCompleter {
     item.filterText = context.query || "";
 
     // Initial sortText (will be reassigned after sorting)
-    item.sortText = this.getSortText(template.usageCount, index);
+    item.sortText = this.getSortText(recentUsage, index);
 
-    // Store usage count for sorting
+    // Store usage counts for sorting
     item.usageCount = template.usageCount;
+    item.recentUsage = recentUsage;
 
     // Documentation showing template preview
-    item.documentation = this.buildDocumentation(template);
+    item.documentation = this.buildDocumentation(template, recentUsage);
 
     return item;
+  }
+
+  /**
+   * Generates a template key from a template's postings.
+   * Format: sorted account names joined by "|".
+   */
+  private getTemplateKey(template: TransactionTemplate): TemplateKey {
+    return template.postings
+      .map((p) => p.account)
+      .sort()
+      .join("|") as TemplateKey;
   }
 
   /**
@@ -137,7 +164,10 @@ export class TransactionTemplateCompleter {
   /**
    * Builds documentation for a transaction template.
    */
-  private buildDocumentation(template: TransactionTemplate): vscode.MarkdownString {
+  private buildDocumentation(
+    template: TransactionTemplate,
+    recentUsage: number,
+  ): vscode.MarkdownString {
     const doc = new vscode.MarkdownString();
     doc.appendMarkdown(`**Payee:** ${template.payee}\n\n`);
     doc.appendMarkdown(`**Accounts:**\n`);
@@ -151,7 +181,8 @@ export class TransactionTemplateCompleter {
       doc.appendMarkdown(`\n**Last used:** ${template.lastUsedDate}`);
     }
 
-    doc.appendMarkdown(`\n**Usage count:** ${template.usageCount}`);
+    doc.appendMarkdown(`\n**Recent usage:** ${recentUsage} (last 50 transactions)`);
+    doc.appendMarkdown(`\n**Total usage:** ${template.usageCount}`);
 
     return doc;
   }
@@ -170,8 +201,9 @@ export class TransactionTemplateCompleter {
 }
 
 /**
- * Extended CompletionItem with usage count for sorting.
+ * Extended CompletionItem with usage counts for sorting.
  */
 interface CompletionItemWithUsage extends vscode.CompletionItem {
   usageCount?: number;
+  recentUsage?: number;
 }

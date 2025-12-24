@@ -27,6 +27,12 @@ interface MutableTransactionTemplate {
 const MAX_TEMPLATES_PER_PAYEE = 5;
 
 /**
+ * Maximum number of recent transactions to track per payee.
+ * Used for relevance-based sorting in completions.
+ */
+const MAX_RECENT_TRANSACTIONS_PER_PAYEE = 50;
+
+/**
  * Internal mutable interface for building parsed data during AST construction
  */
 interface MutableParsedHLedgerData {
@@ -54,6 +60,9 @@ interface MutableParsedHLedgerData {
 
     // Transaction templates for autocomplete
     transactionTemplates: Map<PayeeName, Map<TemplateKey, MutableTransactionTemplate>>;
+
+    // Recent template usage tracking for relevance-based sorting
+    payeeRecentTemplates: Map<PayeeName, TemplateKey[]>;
 
     // Format information for number formatting and commodity display
     commodityFormats: Map<CommodityCode, CommodityFormat>;
@@ -91,6 +100,9 @@ export interface ParsedHLedgerData {
 
     // Transaction templates for autocomplete
     readonly transactionTemplates: ReadonlyMap<PayeeName, ReadonlyMap<TemplateKey, TransactionTemplate>>;
+
+    // Recent template usage tracking for relevance-based sorting
+    readonly payeeRecentTemplates: ReadonlyMap<PayeeName, readonly TemplateKey[]>;
 
     // Number format information
     readonly commodityFormats: ReadonlyMap<CommodityCode, CommodityFormat>;
@@ -501,6 +513,17 @@ export class HLedgerASTBuilder {
             }
         }
 
+        // Track recent template usage for relevance-based sorting
+        if (!data.payeeRecentTemplates.has(normalizedPayee)) {
+            data.payeeRecentTemplates.set(normalizedPayee, []);
+        }
+        const recentList = data.payeeRecentTemplates.get(normalizedPayee)!;
+        recentList.push(accountNames);
+        // Keep only last MAX_RECENT_TRANSACTIONS_PER_PAYEE entries (FIFO)
+        while (recentList.length > MAX_RECENT_TRANSACTIONS_PER_PAYEE) {
+            recentList.shift();
+        }
+
         // Reset context for next transaction
         context.inTransaction = false;
         context.currentTransactionPostings = [];
@@ -624,6 +647,17 @@ export class HLedgerASTBuilder {
             }
         });
 
+        // Merge recent templates - concatenate and keep last MAX_RECENT_TRANSACTIONS_PER_PAYEE
+        source.payeeRecentTemplates.forEach((sourceRecent, payee) => {
+            const targetRecent = target.payeeRecentTemplates.get(payee) ?? [];
+            const combined = [...targetRecent, ...sourceRecent];
+            // Keep only last MAX_RECENT_TRANSACTIONS_PER_PAYEE entries
+            target.payeeRecentTemplates.set(
+                payee,
+                combined.slice(-MAX_RECENT_TRANSACTIONS_PER_PAYEE)
+            );
+        });
+
         // Update other properties
         if (source.defaultCommodity && !target.defaultCommodity) {
             target.defaultCommodity = source.defaultCommodity;
@@ -667,6 +701,7 @@ export class HLedgerASTBuilder {
             payeeAccounts: new Map(),
             payeeAccountPairUsage: new Map(),
             transactionTemplates: new Map(),
+            payeeRecentTemplates: new Map(),
             commodityFormats: new Map(),
             decimalMark: null,
             defaultCommodity: null,
@@ -695,6 +730,7 @@ export class HLedgerASTBuilder {
             payeeAccounts: data.payeeAccounts,
             payeeAccountPairUsage: data.payeeAccountPairUsage,
             transactionTemplates: data.transactionTemplates,
+            payeeRecentTemplates: data.payeeRecentTemplates,
             commodityFormats: data.commodityFormats,
             decimalMark: data.decimalMark,
             defaultCommodity: data.defaultCommodity,
@@ -739,6 +775,10 @@ export class HLedgerASTBuilder {
             payeeAccounts: new Map(Array.from(data.payeeAccounts.entries()).map(([k, v]) => [k, new Set(v)])),
             payeeAccountPairUsage: new Map(data.payeeAccountPairUsage),
             transactionTemplates: clonedTemplates,
+            payeeRecentTemplates: new Map(
+                Array.from(data.payeeRecentTemplates.entries())
+                    .map(([k, v]) => [k, [...v]])
+            ),
             commodityFormats: new Map(data.commodityFormats),
             decimalMark: data.decimalMark,
             defaultCommodity: data.defaultCommodity,

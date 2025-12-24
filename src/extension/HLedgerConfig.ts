@@ -248,6 +248,7 @@ export class HLedgerConfig {
       payeeAccounts: data.payeeAccounts,
       payeeAccountPairUsage: data.payeeAccountPairUsage,
       transactionTemplates: data.transactionTemplates,
+      payeeRecentTemplates: data.payeeRecentTemplates,
       tagValues: data.tagValues,
       tagValueUsage: data.tagValueUsage,
       commodityFormats: data.commodityFormats,
@@ -420,25 +421,58 @@ export class HLedgerConfig {
   }
 
   /**
-   * Gets all templates for a specific payee, sorted by usage count (highest first).
+   * Gets all templates for a specific payee, sorted by recent usage (highest first).
+   * Falls back to total usage count when recent usage is equal.
    * Returns empty array if no templates exist for the payee.
    */
   getTemplatesForPayee(payee: PayeeName): TransactionTemplate[] {
     const templates = this.data?.transactionTemplates?.get(payee);
     if (!templates) return [];
-    return Array.from(templates.values()).sort(
-      (a, b) => b.usageCount - a.usageCount,
-    );
+
+    const recentList = this.data?.payeeRecentTemplates?.get(payee) ?? [];
+
+    // Count recent usage for each template
+    const recentCounts = new Map<TemplateKey, number>();
+    for (const key of recentList) {
+      recentCounts.set(key, (recentCounts.get(key) ?? 0) + 1);
+    }
+
+    return Array.from(templates.entries())
+      .map(([key, template]) => ({ key, template }))
+      .sort((a, b) => {
+        const aRecent = recentCounts.get(a.key) ?? 0;
+        const bRecent = recentCounts.get(b.key) ?? 0;
+        // Sort by recent usage first, fall back to total usage
+        if (aRecent !== bRecent) return bRecent - aRecent;
+        return b.template.usageCount - a.template.usageCount;
+      })
+      .map(({ template }) => template);
   }
 
   /**
-   * Gets all payees that have transaction templates, with optional fuzzy matching.
-   * Returns payees sorted by total template usage.
+   * Gets recent usage count for a template (occurrences in last 50 transactions).
+   * Used for displaying recent vs total usage in completions.
+   */
+  getRecentTemplateUsage(payee: PayeeName, templateKey: TemplateKey): number {
+    const recentList = this.data?.payeeRecentTemplates?.get(payee);
+    if (!recentList) return 0;
+    return recentList.filter((key) => key === templateKey).length;
+  }
+
+  /**
+   * Gets all payees that have transaction templates.
+   * Returns payees sorted by recent transaction count, falling back to total usage.
    */
   getPayeesWithTemplates(): PayeeName[] {
     if (!this.data?.transactionTemplates) return [];
 
     return Array.from(this.data.transactionTemplates.keys()).sort((a, b) => {
+      // Sort by recent transactions count first
+      const aRecent = this.data!.payeeRecentTemplates?.get(a)?.length ?? 0;
+      const bRecent = this.data!.payeeRecentTemplates?.get(b)?.length ?? 0;
+      if (aRecent !== bRecent) return bRecent - aRecent;
+
+      // Fall back to total usage
       const aTemplates = this.data!.transactionTemplates.get(a);
       const bTemplates = this.data!.transactionTemplates.get(b);
       const aTotal = aTemplates

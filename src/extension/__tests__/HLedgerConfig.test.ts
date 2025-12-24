@@ -244,6 +244,7 @@ account Assets:Bank
                 decimalMark: null,
                 defaultCommodity: null,
                 transactionTemplates: new Map(),
+                payeeRecentTemplates: new Map(),
                 lastDate: null
             };
 
@@ -368,6 +369,7 @@ account Assets:Bank
                 decimalMark: null,
                 defaultCommodity: null,
                 transactionTemplates: new Map(),
+                payeeRecentTemplates: new Map(),
                 lastDate: null
             };
 

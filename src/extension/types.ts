@@ -22,6 +22,7 @@ interface ParsedHLedgerData {
   readonly tagValueUsage: ReadonlyMap<string, UsageCount>;
   readonly defaultCommodity: CommodityCode | null;
   readonly lastDate: string | null;
+  readonly payeeRecentTemplates: ReadonlyMap<PayeeName, readonly TemplateKey[]>;
 }
 
 /**

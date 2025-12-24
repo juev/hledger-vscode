@@ -72,6 +72,9 @@ interface MutableParsedHLedgerData {
   // Transaction templates for autocomplete
   transactionTemplates: Map<PayeeName, Map<TemplateKey, MutableTransactionTemplate>>;
 
+  // Recent template usage tracking for relevance-based sorting
+  payeeRecentTemplates: Map<PayeeName, TemplateKey[]>;
+
   // Format information for number formatting and commodity display
   commodityFormats: Map<CommodityCode, CommodityFormat>;
   decimalMark: "." | "," | null;
@@ -112,6 +115,9 @@ export interface ParsedHLedgerData {
     PayeeName,
     ReadonlyMap<TemplateKey, TransactionTemplate>
   >;
+
+  // Recent template usage tracking for relevance-based sorting
+  readonly payeeRecentTemplates: ReadonlyMap<PayeeName, readonly TemplateKey[]>;
 
   // Format information for number formatting and commodity display
   readonly commodityFormats: ReadonlyMap<CommodityCode, CommodityFormat>;
@@ -832,6 +838,12 @@ export class HLedgerParser {
       ),
       payeeAccountPairUsage: new Map(source.payeeAccountPairUsage),
       transactionTemplates: clonedTemplates,
+      payeeRecentTemplates: new Map(
+        Array.from(source.payeeRecentTemplates.entries()).map(([k, v]) => [
+          k,
+          [...v],
+        ]),
+      ),
       commodityFormats: new Map(source.commodityFormats),
       decimalMark: source.decimalMark,
       defaultCommodity: source.defaultCommodity,
@@ -944,6 +956,14 @@ export class HLedgerParser {
       });
     });
 
+    // Merge recent templates - concatenate and keep last 50
+    const MAX_RECENT = 50;
+    source.payeeRecentTemplates.forEach((sourceRecent, payee) => {
+      const targetRecent = target.payeeRecentTemplates.get(payee) ?? [];
+      const combined = [...targetRecent, ...sourceRecent];
+      target.payeeRecentTemplates.set(payee, combined.slice(-MAX_RECENT));
+    });
+
     // Merge commodity formats
     source.commodityFormats.forEach((format, commodity) => {
       target.commodityFormats.set(commodity, format);
@@ -986,6 +1006,7 @@ export class HLedgerParser {
       payeeAccounts: new Map<PayeeName, Set<AccountName>>(),
       payeeAccountPairUsage: new Map<string, UsageCount>(),
       transactionTemplates: new Map(),
+      payeeRecentTemplates: new Map(),
       commodityFormats: new Map<CommodityCode, CommodityFormat>(),
       decimalMark: null,
       defaultCommodity: null,

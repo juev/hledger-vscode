@@ -642,6 +642,10 @@ export class HLedgerFileProcessor {
             ),
             payeeAccountPairUsage: new Map(data.payeeAccountPairUsage),
             transactionTemplates: clonedTemplates,
+            payeeRecentTemplates: new Map(
+                Array.from(data.payeeRecentTemplates.entries())
+                    .map(([k, v]) => [k, [...v]])
+            ),
             commodityFormats: new Map(data.commodityFormats),
             decimalMark: data.decimalMark,
             defaultCommodity: data.defaultCommodity,
@@ -670,6 +674,7 @@ export class HLedgerFileProcessor {
             payeeAccounts: mutableData.payeeAccounts,
             payeeAccountPairUsage: mutableData.payeeAccountPairUsage,
             transactionTemplates: mutableData.transactionTemplates ?? new Map(),
+            payeeRecentTemplates: mutableData.payeeRecentTemplates ?? new Map(),
             commodityFormats: mutableData.commodityFormats,
             decimalMark: mutableData.decimalMark,
             defaultCommodity: mutableData.defaultCommodity,
