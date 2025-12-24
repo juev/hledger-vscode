@@ -271,7 +271,12 @@
       {
         "command": "hledger.onTab",
         "key": "tab",
-        "when": "editorTextFocus && editorLangId == hledger && !suggestWidgetVisible && !inSnippetMode && !parameterHintsVisible"
+        "when": "editorTextFocus && editorLangId == hledger && !suggestWidgetVisible && !inSnippetMode && !parameterHintsVisible && !inlineSuggestionVisible"
+      },
+      {
+        "command": "editor.action.inlineSuggest.commit",
+        "key": "enter",
+        "when": "editorTextFocus && editorLangId == hledger && inlineSuggestionVisible"
       }
     ],
     "configurationDefaults": {
