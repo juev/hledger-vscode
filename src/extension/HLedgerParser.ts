@@ -911,6 +911,39 @@ export class HLedgerParser {
       target.payeeAccountPairUsage.set(key, createUsageCount(newCount));
     });
 
+    // Merge transaction templates
+    source.transactionTemplates.forEach((sourceTemplates, payee) => {
+      if (!target.transactionTemplates.has(payee)) {
+        target.transactionTemplates.set(payee, new Map());
+      }
+      const targetTemplates = target.transactionTemplates.get(payee)!;
+
+      sourceTemplates.forEach((template, key) => {
+        const existingTemplate = targetTemplates.get(key);
+        if (existingTemplate) {
+          // Combine usage counts, keep newer amounts
+          existingTemplate.usageCount = createUsageCount(
+            existingTemplate.usageCount + template.usageCount,
+          );
+          if (
+            template.lastUsedDate &&
+            (!existingTemplate.lastUsedDate ||
+              template.lastUsedDate > existingTemplate.lastUsedDate)
+          ) {
+            existingTemplate.lastUsedDate = template.lastUsedDate;
+            existingTemplate.postings = [...template.postings];
+          }
+        } else {
+          targetTemplates.set(key, {
+            payee: template.payee,
+            postings: [...template.postings],
+            usageCount: template.usageCount,
+            lastUsedDate: template.lastUsedDate,
+          });
+        }
+      });
+    });
+
     // Merge commodity formats
     source.commodityFormats.forEach((format, commodity) => {
       target.commodityFormats.set(commodity, format);
