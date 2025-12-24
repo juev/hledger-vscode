@@ -103,7 +103,7 @@ describe('TransactionTemplateCompleter', () => {
             const result = completer.complete(context);
 
             expect(result.length).toBe(1);
-            expect(result[0].label).toBe('Coffee Shop');
+            expect(result[0]!.label).toBe('Coffee Shop');
         });
 
         it('should create snippet with tabstops for amounts', () => {
@@ -123,7 +123,7 @@ describe('TransactionTemplateCompleter', () => {
             const result = completer.complete(context);
 
             expect(result.length).toBe(1);
-            const snippet = result[0].insertText as vscode.SnippetString;
+            const snippet = result[0]!.insertText as vscode.SnippetString;
             expect(snippet.value).toContain('Coffee Shop');
             expect(snippet.value).toContain('Expenses:Food:Coffee');
             expect(snippet.value).toContain('Assets:Cash');
@@ -159,8 +159,8 @@ describe('TransactionTemplateCompleter', () => {
 
             expect(result.length).toBe(2);
             // Store B has higher usage count, should come first
-            expect(result[0].label).toBe('Store B');
-            expect(result[1].label).toBe('Store A');
+            expect(result[0]!.label).toBe('Store B');
+            expect(result[1]!.label).toBe('Store A');
         });
 
         it('should use identical filterText for gopls hack', () => {
@@ -229,7 +229,7 @@ describe('TransactionTemplateCompleter', () => {
             const result = completer.complete(context);
 
             expect(result.length).toBe(1);
-            expect(result[0].label).toBe('Кафе');
+            expect(result[0]!.label).toBe('Кафе');
         });
 
         it('should handle empty query (show all templates)', () => {
@@ -293,7 +293,7 @@ describe('TransactionTemplateCompleter', () => {
             const result = completer.complete(context);
 
             expect(result.length).toBe(1);
-            const snippet = result[0].insertText as vscode.SnippetString;
+            const snippet = result[0]!.insertText as vscode.SnippetString;
             // Should have proper 4-space indentation for postings
             expect(snippet.value).toContain('\n    Expenses:Test');
             expect(snippet.value).toContain('\n    Assets:Cash');
@@ -315,7 +315,7 @@ describe('TransactionTemplateCompleter', () => {
 
             const result = completer.complete(context);
 
-            const snippet = result[0].insertText as vscode.SnippetString;
+            const snippet = result[0]!.insertText as vscode.SnippetString;
             // Amount should be in a tabstop placeholder
             expect(snippet.value).toMatch(/\$\{\d+:100\.00USD\}/);
         });
