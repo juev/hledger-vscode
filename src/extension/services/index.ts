@@ -14,26 +14,26 @@ import { ErrorNotificationHandler } from '../utils/ErrorNotificationHandler';
  * Implements vscode.Disposable for automatic cleanup via context.subscriptions
  */
 export interface Services extends vscode.Disposable {
-    readonly config: HLedgerConfig;
-    readonly cliService: HLedgerCliService;
-    readonly cliCommands: HLedgerCliCommands;
-    readonly errorHandler: ErrorNotificationHandler;
+  readonly config: HLedgerConfig;
+  readonly cliService: HLedgerCliService;
+  readonly cliCommands: HLedgerCliCommands;
+  readonly errorHandler: ErrorNotificationHandler;
 }
 
 class ServicesImpl implements Services {
-    constructor(
-        public readonly config: HLedgerConfig,
-        public readonly cliService: HLedgerCliService,
-        public readonly cliCommands: HLedgerCliCommands,
-        public readonly errorHandler: ErrorNotificationHandler
-    ) {}
+  constructor(
+    public readonly config: HLedgerConfig,
+    public readonly cliService: HLedgerCliService,
+    public readonly cliCommands: HLedgerCliCommands,
+    public readonly errorHandler: ErrorNotificationHandler
+  ) {}
 
-    dispose(): void {
-        this.config.dispose();
-        this.cliCommands.dispose();
-        this.cliService.dispose();
-        this.errorHandler.dispose();
-    }
+  dispose(): void {
+    this.config.dispose();
+    this.cliCommands.dispose();
+    this.cliService.dispose();
+    this.errorHandler.dispose();
+  }
 }
 
 /**
@@ -43,12 +43,12 @@ class ServicesImpl implements Services {
  * @returns Services container with all initialized services
  */
 export function createServices(): Services {
-    const errorHandler = new ErrorNotificationHandler();
-    const parser = new HLedgerParser(errorHandler);
-    const cache = new SimpleProjectCache();
-    const config = new HLedgerConfig(parser, cache);
-    const cliService = new HLedgerCliService();
-    const cliCommands = new HLedgerCliCommands(cliService);
+  const errorHandler = new ErrorNotificationHandler();
+  const parser = new HLedgerParser(errorHandler);
+  const cache = new SimpleProjectCache();
+  const config = new HLedgerConfig(parser, cache);
+  const cliService = new HLedgerCliService();
+  const cliCommands = new HLedgerCliCommands(cliService);
 
-    return new ServicesImpl(config, cliService, cliCommands, errorHandler);
+  return new ServicesImpl(config, cliService, cliCommands, errorHandler);
 }

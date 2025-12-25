@@ -1,17 +1,8 @@
 // DocumentFormatter.ts - Comprehensive document formatting for hledger files
 // Provides full formatting functionality including indentation, amount alignment, and comment alignment
 
-import {
-  Result,
-  success,
-  failure,
-  LineNumber,
-  CharacterPosition,
-} from "./types";
-import {
-  NumberFormatService,
-  ParsedAmount,
-} from "./services/NumberFormatService";
+import { Result, success, failure, LineNumber, CharacterPosition } from './types';
+import { NumberFormatService, ParsedAmount } from './services/NumberFormatService';
 
 /**
  * Interface representing a posting line with amount information
@@ -150,10 +141,8 @@ export class DocumentFormatter {
   private static readonly SIMPLE_INTEGER_REGEX = /^[-+]?\p{N}+$/u;
   private static readonly TRANSACTION_HEADER_REGEX =
     /^(\d{4}[-/.]\d{1,2}[-/.]\d{1,2}|\d{1,2}[-/.]\d{1,2})/;
-  private static readonly POSTING_REGEX =
-    /^([^\s;]+(?:\s+[^\s;]+)*?)\s{2,}([^;]+)$/;
-  private static readonly POSTING_WITH_SPACES_REGEX =
-    /^\s*([^\s;]+(?:\s+[^\s;]+)*?)\s{2,}([^;]*)/;
+  private static readonly POSTING_REGEX = /^([^\s;]+(?:\s+[^\s;]+)*?)\s{2,}([^;]+)$/;
+  private static readonly POSTING_WITH_SPACES_REGEX = /^\s*([^\s;]+(?:\s+[^\s;]+)*?)\s{2,}([^;]*)/;
   private static readonly BALANCE_ASSERTION_REGEX =
     /^(.*?)(\s*[=]+\s*)([-+]?\d+(?:[.,]\d+)?(?:\s*[^\s]+)?)$/;
   private static readonly WHITESPACE_REGEX = /^\s*/;
@@ -167,7 +156,7 @@ export class DocumentFormatter {
    */
   constructor(
     options: Partial<DocumentFormattingOptions> = {},
-    numberFormatService?: NumberFormatService,
+    numberFormatService?: NumberFormatService
   ) {
     this.options = { ...DEFAULT_FORMATTING_OPTIONS, ...options };
     this.numberFormatService = numberFormatService ?? new NumberFormatService();
@@ -181,8 +170,8 @@ export class DocumentFormatter {
    * @returns Result containing formatted content or error
    */
   formatContent(content: string): Result<string> {
-    if (typeof content !== "string") {
-      return failure(new Error("Content must be a string"));
+    if (typeof content !== 'string') {
+      return failure(new Error('Content must be a string'));
     }
 
     try {
@@ -196,8 +185,8 @@ export class DocumentFormatter {
     } catch (error) {
       return failure(
         new Error(
-          `Failed to format content: ${error instanceof Error ? error.message : "Unknown error"}`,
-        ),
+          `Failed to format content: ${error instanceof Error ? error.message : 'Unknown error'}`
+        )
       );
     }
   }
@@ -209,7 +198,7 @@ export class DocumentFormatter {
    * @returns Result containing formatted content or error
    */
   private formatTransactions(content: string): Result<string> {
-    const lines = content.split("\n");
+    const lines = content.split('\n');
     const formattedLines = [...lines];
     let currentTransaction: FormattedTransaction | null = null;
     const transactions: FormattedTransaction[] = [];
@@ -250,10 +239,7 @@ export class DocumentFormatter {
         currentTransaction.postings.push(formattedPosting);
       }
       // End transaction on empty line or new directive
-      else if (
-        currentTransaction &&
-        (trimmedLine === "" || this.isDirective(trimmedLine))
-      ) {
+      else if (currentTransaction && (trimmedLine === '' || this.isDirective(trimmedLine))) {
         transactions.push(currentTransaction);
         currentTransaction = null;
       }
@@ -275,12 +261,9 @@ export class DocumentFormatter {
    * @param lineNumber The line number
    * @returns Formatted posting line
    */
-  private formatPostingLine(
-    line: string,
-    lineNumber: LineNumber,
-  ): FormattedLine {
+  private formatPostingLine(line: string, lineNumber: LineNumber): FormattedLine {
     const trimmedLine = line.trim();
-    const isStartComment = trimmedLine.startsWith(";");
+    const isStartComment = trimmedLine.startsWith(';');
 
     // Handle start-of-line comments (preserve as-is)
     if (isStartComment) {
@@ -300,9 +283,9 @@ export class DocumentFormatter {
     let formattedLine = line;
 
     // Ensure proper indentation (exactly postingIndent spaces)
-    const currentIndent = line.length - line.replace(/^\s+/, "").length;
+    const currentIndent = line.length - line.replace(/^\s+/, '').length;
     if (currentIndent !== this.options.postingIndent) {
-      formattedLine = " ".repeat(this.options.postingIndent) + trimmedLine;
+      formattedLine = ' '.repeat(this.options.postingIndent) + trimmedLine;
     }
 
     const baseFormattedLine: FormattedLine = {
@@ -335,14 +318,13 @@ export class DocumentFormatter {
    */
   private applyTransactionFormatting(
     lines: string[],
-    transactions: FormattedTransaction[],
+    transactions: FormattedTransaction[]
   ): Result<string> {
     // Calculate document-wide alignment columns
-    const amountAlignmentColumn =
-      this.calculateDocumentAmountAlignment(transactions);
+    const amountAlignmentColumn = this.calculateDocumentAmountAlignment(transactions);
     const commentAlignmentColumn = this.calculateDocumentCommentAlignment(
       transactions,
-      amountAlignmentColumn,
+      amountAlignmentColumn
     );
 
     // Apply formatting for each transaction
@@ -353,14 +335,14 @@ export class DocumentFormatter {
           const finalFormattedLine = this.applyFinalFormatting(
             posting.formattedLine,
             amountAlignmentColumn,
-            commentAlignmentColumn,
+            commentAlignmentColumn
           );
           lines[posting.lineNumber - 1] = finalFormattedLine;
         }
       }
     }
 
-    return success(lines.join("\n"));
+    return success(lines.join('\n'));
   }
 
   /**
@@ -374,7 +356,7 @@ export class DocumentFormatter {
   private applyFinalFormatting(
     line: string,
     amountAlignmentColumn: CharacterPosition,
-    commentAlignmentColumn: CharacterPosition,
+    commentAlignmentColumn: CharacterPosition
   ): string {
     // Simple amount alignment within this single posting line
     line = this.alignAmountInLine(line, amountAlignmentColumn);
@@ -394,20 +376,17 @@ export class DocumentFormatter {
    * @param amountAlignmentColumn The target alignment column for amounts
    * @returns Line with aligned amount
    */
-  private alignAmountInLine(
-    line: string,
-    amountAlignmentColumn: CharacterPosition,
-  ): string {
+  private alignAmountInLine(line: string, amountAlignmentColumn: CharacterPosition): string {
     // Skip if this is a comment-only line
-    if (line.trimStart().startsWith(";")) {
+    if (line.trimStart().startsWith(';')) {
       return line;
     }
 
     // Find comment position first
-    const commentIndex = line.indexOf(";");
+    const commentIndex = line.indexOf(';');
     const hasComment = commentIndex !== -1;
     const beforeComment = hasComment ? line.substring(0, commentIndex) : line;
-    const comment = hasComment ? line.substring(commentIndex) : "";
+    const comment = hasComment ? line.substring(commentIndex) : '';
 
     // Split the line into account and amount parts using improved pattern from syntax highlighting
     const trimmedBefore = beforeComment.trim();
@@ -420,8 +399,8 @@ export class DocumentFormatter {
       return line; // No posting with amount found, return as-is
     }
 
-    const accountName = postingMatch[1]?.trim() ?? "";
-    const amountExpression = postingMatch[2]?.trim() ?? "";
+    const accountName = postingMatch[1]?.trim() ?? '';
+    const amountExpression = postingMatch[2]?.trim() ?? '';
 
     if (!accountName || !amountExpression) {
       return line; // Invalid format, return as-is
@@ -435,15 +414,13 @@ export class DocumentFormatter {
     // Parse the amount expression to understand its structure
     // This handles: regular amounts, balance assertions (=, ==), price assignments (@, @@)
     let amount: string;
-    let balanceAssertion: string = "";
+    let balanceAssertion: string = '';
 
     // Check for balance assertions first
-    const balanceMatch = amountExpression.match(
-      DocumentFormatter.BALANCE_ASSERTION_REGEX,
-    );
+    const balanceMatch = amountExpression.match(DocumentFormatter.BALANCE_ASSERTION_REGEX);
     if (balanceMatch) {
-      amount = balanceMatch[1]?.trim() ?? "";
-      balanceAssertion = balanceMatch[2] + (balanceMatch[3] ?? "");
+      amount = balanceMatch[1]?.trim() ?? '';
+      balanceAssertion = balanceMatch[2] + (balanceMatch[3] ?? '');
     } else {
       amount = amountExpression;
     }
@@ -452,19 +429,16 @@ export class DocumentFormatter {
     const accountLength = this.options.postingIndent + accountName.length;
 
     // Check if amount starts with a sign
-    const hasSign = amount.startsWith("-") || amount.startsWith("+");
+    const hasSign = amount.startsWith('-') || amount.startsWith('+');
     const amountWithoutSign = hasSign ? amount.substring(1) : amount;
-    const sign = hasSign ? amount[0] : "";
+    const sign = hasSign ? amount[0] : '';
 
     // Calculate spacing for the amount without sign
-    const spacingNeeded = Math.max(
-      2,
-      amountAlignmentColumn - accountLength - (hasSign ? 1 : 0),
-    );
+    const spacingNeeded = Math.max(2, amountAlignmentColumn - accountLength - (hasSign ? 1 : 0));
 
     // Reconstruct the line with balance assertion if present
-    const indent = " ".repeat(this.options.postingIndent);
-    const spacing = " ".repeat(spacingNeeded);
+    const indent = ' '.repeat(this.options.postingIndent);
+    const spacing = ' '.repeat(spacingNeeded);
     const amountPart = `${sign}${amountWithoutSign}${balanceAssertion}`;
     const alignedLine = `${indent}${accountName}${spacing}${amountPart}${comment}`;
 
@@ -478,16 +452,16 @@ export class DocumentFormatter {
    * @returns Result containing array of TransactionBlock or error
    */
   parseTransactions(content: string): Result<TransactionBlock[]> {
-    if (typeof content !== "string") {
-      return failure(new Error("Content must be a string"));
+    if (typeof content !== 'string') {
+      return failure(new Error('Content must be a string'));
     }
 
     if (content === null || content === undefined) {
-      return failure(new Error("Content cannot be null or undefined"));
+      return failure(new Error('Content cannot be null or undefined'));
     }
 
     try {
-      const lines = content.split("\n");
+      const lines = content.split('\n');
       const transactions: TransactionBlock[] = [];
       let currentTransaction: TransactionBlock | null = null;
 
@@ -519,10 +493,7 @@ export class DocumentFormatter {
           }
         }
         // End transaction on empty line or new directive
-        else if (
-          currentTransaction &&
-          (trimmedLine === "" || this.isDirective(trimmedLine))
-        ) {
+        else if (currentTransaction && (trimmedLine === '' || this.isDirective(trimmedLine))) {
           transactions.push(this.finalizeTransaction(currentTransaction));
           currentTransaction = null;
         }
@@ -537,8 +508,8 @@ export class DocumentFormatter {
     } catch (error) {
       return failure(
         new Error(
-          `Failed to parse transactions: ${error instanceof Error ? error.message : "Unknown error"}`,
-        ),
+          `Failed to parse transactions: ${error instanceof Error ? error.message : 'Unknown error'}`
+        )
       );
     }
   }
@@ -558,15 +529,14 @@ export class DocumentFormatter {
     let maxAccountLength = 0;
     for (const posting of postings) {
       if (posting.hasAmount) {
-        const accountLength =
-          posting.accountPosition + posting.accountName.length;
+        const accountLength = posting.accountPosition + posting.accountName.length;
         maxAccountLength = Math.max(maxAccountLength, accountLength);
       }
     }
 
     // Add minimum spacing and ensure reasonable alignment
     const alignmentColumn = createCharacterPosition(
-      Math.max(maxAccountLength + this.amountOptions.minSpacing, 40),
+      Math.max(maxAccountLength + this.amountOptions.minSpacing, 40)
     );
 
     return alignmentColumn;
@@ -579,23 +549,18 @@ export class DocumentFormatter {
    * @param lineNumber The line number
    * @returns Parsed PostingLine or null if parsing fails
    */
-  private parsePostingLine(
-    line: string,
-    lineNumber: LineNumber,
-  ): PostingLine | null {
+  private parsePostingLine(line: string, lineNumber: LineNumber): PostingLine | null {
     const trimmedLine = line.trim();
 
     // Check if this is a comment-only line (should not be considered as posting with amount)
-    if (trimmedLine.startsWith(";")) {
+    if (trimmedLine.startsWith(';')) {
       return null;
     }
 
     // Find comment position first - anything after ; is comment
-    const commentIndex = trimmedLine.indexOf(";");
+    const commentIndex = trimmedLine.indexOf(';');
     const beforeComment =
-      commentIndex !== -1
-        ? trimmedLine.substring(0, commentIndex)
-        : trimmedLine;
+      commentIndex !== -1 ? trimmedLine.substring(0, commentIndex) : trimmedLine;
     const hasComment = commentIndex !== -1;
 
     // Find the split point between account and amount using improved pattern from syntax highlighting
@@ -608,15 +573,15 @@ export class DocumentFormatter {
         originalLine: line,
         lineNumber,
         accountName: beforeComment.trim(),
-        amountPart: "",
+        amountPart: '',
         accountPosition: createCharacterPosition(accountStartPos),
         amountPosition: createCharacterPosition(line.length),
         hasAmount: false,
       };
     }
 
-    const accountName = postingMatch[1]?.trim() ?? "";
-    let amountPart = postingMatch[2]?.trim() ?? "";
+    const accountName = postingMatch[1]?.trim() ?? '';
+    let amountPart = postingMatch[2]?.trim() ?? '';
 
     // If there's a comment in the original line, append it to the amount part
     if (hasComment) {
@@ -632,8 +597,8 @@ export class DocumentFormatter {
 
     if (fullMatch?.[2]) {
       // Find the exact position where the amount starts in the original line
-      const amountText = fullMatch[2] ?? "";
-      const accountText = fullMatch[1] ?? "";
+      const amountText = fullMatch[2] ?? '';
+      const accountText = fullMatch[1] ?? '';
       const tempAmountStartPos = line.indexOf(accountText) + accountText.length;
 
       // Verify this amount actually contains numbers (not just a comment)
@@ -649,7 +614,7 @@ export class DocumentFormatter {
       amountPart,
       accountPosition: createCharacterPosition(accountStartPos),
       amountPosition: createCharacterPosition(amountStartPos),
-      hasAmount: amountPart.length > 0 && !amountPart.startsWith(";"),
+      hasAmount: amountPart.length > 0 && !amountPart.startsWith(';'),
     };
 
     // Try to parse the amount if present (only if it doesn't start with comment)
@@ -661,9 +626,7 @@ export class DocumentFormatter {
         posting.parsedAmount = parseResult.data;
       } else {
         // Fallback: try to parse simple integers manually
-        const simpleIntMatch = cleanAmount.match(
-          DocumentFormatter.SIMPLE_INTEGER_REGEX,
-        );
+        const simpleIntMatch = cleanAmount.match(DocumentFormatter.SIMPLE_INTEGER_REGEX);
         if (simpleIntMatch) {
           const value = parseInt(cleanAmount, 10);
           if (!isNaN(value) && isFinite(value)) {
@@ -671,8 +634,8 @@ export class DocumentFormatter {
               value,
               integerPart: cleanAmount,
               format: {
-                decimalMark: ".",
-                groupSeparator: "",
+                decimalMark: '.',
+                groupSeparator: '',
                 decimalPlaces: 0,
                 useGrouping: false,
               },
@@ -705,9 +668,7 @@ export class DocumentFormatter {
    */
   private isAmountString(str: string): boolean {
     // Remove any leading commodity symbols and check if remaining part looks like a number
-    const cleanStr = str
-      .replace(DocumentFormatter.LEADING_COMMODITY_REGEX, "")
-      .trim();
+    const cleanStr = str.replace(DocumentFormatter.LEADING_COMMODITY_REGEX, '').trim();
     return DocumentFormatter.NUMBER_REGEX.test(cleanStr);
   }
 
@@ -719,12 +680,8 @@ export class DocumentFormatter {
    */
   private cleanAmountString(amountStr: string): string {
     // Remove commodity symbols but keep numbers, decimal marks, separators, and signs
-    let cleaned = amountStr
-      .replace(DocumentFormatter.LEADING_COMMODITY_REGEX, "")
-      .trim(); // Remove prefix symbols
-    cleaned = cleaned
-      .replace(DocumentFormatter.SUFFIX_COMMODITY_REGEX, "")
-      .trim(); // Remove suffix commodities
+    let cleaned = amountStr.replace(DocumentFormatter.LEADING_COMMODITY_REGEX, '').trim(); // Remove prefix symbols
+    cleaned = cleaned.replace(DocumentFormatter.SUFFIX_COMMODITY_REGEX, '').trim(); // Remove suffix commodities
     return cleaned;
   }
 
@@ -735,9 +692,7 @@ export class DocumentFormatter {
    * @returns TransactionBlock with calculated alignment
    */
   private finalizeTransaction(transaction: TransactionBlock): TransactionBlock {
-    const alignmentColumn = this.calculateOptimalAlignment(
-      transaction.postings,
-    );
+    const alignmentColumn = this.calculateOptimalAlignment(transaction.postings);
     return {
       ...transaction,
       alignmentColumn,
@@ -751,7 +706,7 @@ export class DocumentFormatter {
    * @returns The optimal alignment column for amounts
    */
   private calculateDocumentAmountAlignment(
-    transactions: FormattedTransaction[],
+    transactions: FormattedTransaction[]
   ): CharacterPosition {
     let maxAccountLength = 0;
 
@@ -763,23 +718,20 @@ export class DocumentFormatter {
           const trimmedLine = line.trim();
 
           // Look for amount in the line
-          const commentIndex = trimmedLine.indexOf(";");
+          const commentIndex = trimmedLine.indexOf(';');
           const beforeComment =
-            commentIndex !== -1
-              ? trimmedLine.substring(0, commentIndex)
-              : trimmedLine;
+            commentIndex !== -1 ? trimmedLine.substring(0, commentIndex) : trimmedLine;
 
           // Match pattern: accountname + whitespace + amount
           const match = beforeComment.match(DocumentFormatter.SPLIT_LINE_REGEX);
 
           if (match) {
-            const accountName = match[1]?.trim() ?? "";
-            const amount = match[3]?.trim() ?? "";
+            const accountName = match[1]?.trim() ?? '';
+            const amount = match[3]?.trim() ?? '';
 
             // Check if the amount part looks like an amount (contains numbers)
             if (DocumentFormatter.NUMBER_REGEX.test(amount)) {
-              const accountLength =
-                this.options.postingIndent + accountName.length;
+              const accountLength = this.options.postingIndent + accountName.length;
               maxAccountLength = Math.max(maxAccountLength, accountLength);
             }
           }
@@ -789,7 +741,7 @@ export class DocumentFormatter {
 
     // Add minimum spacing and ensure reasonable alignment
     const alignmentColumn = createCharacterPosition(
-      Math.max(maxAccountLength + this.options.minAmountSpacing, 40),
+      Math.max(maxAccountLength + this.options.minAmountSpacing, 40)
     );
 
     return alignmentColumn;
@@ -805,7 +757,7 @@ export class DocumentFormatter {
    */
   private calculateDocumentCommentAlignment(
     transactions: FormattedTransaction[],
-    amountAlignmentColumn: CharacterPosition,
+    amountAlignmentColumn: CharacterPosition
   ): CharacterPosition {
     let maxContentEnd = 0;
 
@@ -814,7 +766,7 @@ export class DocumentFormatter {
         if (!posting.isStartComment && posting.hasInlineComment) {
           // Parse the formatted line to find where content (before comment) ends
           const line = posting.formattedLine;
-          const commentIndex = line.indexOf(";");
+          const commentIndex = line.indexOf(';');
 
           if (commentIndex !== -1) {
             // Content before comment
@@ -823,11 +775,11 @@ export class DocumentFormatter {
             // Find the amount in the formatted line
             const beforeCommentTrimmed = beforeComment.trim();
             const postingMatch = beforeCommentTrimmed.match(
-              /^([^\s;]+(?:\s+[^\s;]+)*?)\s{2,}([^;]+)$/,
+              /^([^\s;]+(?:\s+[^\s;]+)*?)\s{2,}([^;]+)$/
             );
 
             if (postingMatch) {
-              const amountExpression = postingMatch[2]?.trim() ?? "";
+              const amountExpression = postingMatch[2]?.trim() ?? '';
 
               // Calculate where the amount ends
               // Amount starts at amountAlignmentColumn
@@ -838,18 +790,16 @@ export class DocumentFormatter {
               if (amountExpression) {
                 // Check for balance assertions (=, ==) and price assignments (@, @@)
                 const balanceMatch = amountExpression.match(
-                  DocumentFormatter.BALANCE_ASSERTION_REGEX,
+                  DocumentFormatter.BALANCE_ASSERTION_REGEX
                 );
                 if (balanceMatch) {
-                  const amount = balanceMatch[1]?.trim() ?? "";
-                  const assertion = balanceMatch[2] + (balanceMatch[3] ?? "");
+                  const amount = balanceMatch[1]?.trim() ?? '';
+                  const assertion = balanceMatch[2] + (balanceMatch[3] ?? '');
                   amountEnd = createCharacterPosition(
-                    amountStart + amount.length + assertion.length,
+                    amountStart + amount.length + assertion.length
                   );
                 } else {
-                  amountEnd = createCharacterPosition(
-                    amountStart + amountExpression.length,
-                  );
+                  amountEnd = createCharacterPosition(amountStart + amountExpression.length);
                 }
               }
 
@@ -875,23 +825,14 @@ export class DocumentFormatter {
    * Checks if a line is a posting line.
    */
   private isPostingLine(line: string): boolean {
-    return line.startsWith(" ") && !line.trimStart().startsWith(";");
+    return line.startsWith(' ') && !line.trimStart().startsWith(';');
   }
 
   /**
    * Checks if a line is a directive.
    */
   private isDirective(trimmedLine: string): boolean {
-    const directives = [
-      "account",
-      "commodity",
-      "payee",
-      "tag",
-      "alias",
-      "include",
-      "year",
-      "D ",
-    ];
+    const directives = ['account', 'commodity', 'payee', 'tag', 'alias', 'include', 'year', 'D '];
     return directives.some((directive) => trimmedLine.startsWith(directive));
   }
 
@@ -899,14 +840,14 @@ export class DocumentFormatter {
    * Checks if a line contains an inline comment.
    */
   private hasInlineComment(line: string): boolean {
-    return line.includes(";") && !line.trimStart().startsWith(";");
+    return line.includes(';') && !line.trimStart().startsWith(';');
   }
 
   /**
    * Finds the position of an inline comment in a line.
    */
   private findCommentPosition(line: string): CharacterPosition {
-    const commentIndex = line.indexOf(";");
+    const commentIndex = line.indexOf(';');
     return createCharacterPosition(commentIndex);
   }
 
@@ -918,11 +859,8 @@ export class DocumentFormatter {
    * @param commentAlignmentColumn The target alignment column for the comment
    * @returns Line with aligned comment
    */
-  private alignInlineComment(
-    line: string,
-    commentAlignmentColumn: CharacterPosition,
-  ): string {
-    const commentIndex = line.indexOf(";");
+  private alignInlineComment(line: string, commentAlignmentColumn: CharacterPosition): string {
+    const commentIndex = line.indexOf(';');
     if (commentIndex === -1) {
       return line;
     }
@@ -937,11 +875,11 @@ export class DocumentFormatter {
 
     let contentEndPosition = beforeComment.length;
     if (postingMatch) {
-      const accountName = postingMatch[1]?.trim() ?? "";
-      const amountExpression = postingMatch[2]?.trim() ?? "";
+      const accountName = postingMatch[1]?.trim() ?? '';
+      const amountExpression = postingMatch[2]?.trim() ?? '';
 
       // Reconstruct the line to find the actual end position
-      const indent = " ".repeat(this.options.postingIndent);
+      const indent = ' '.repeat(this.options.postingIndent);
       const accountPart = `${indent}${accountName}`;
 
       // Find amount start position (should be aligned)
@@ -952,16 +890,9 @@ export class DocumentFormatter {
     }
 
     // Calculate spaces needed to align comment
-    const spacesNeeded = Math.max(
-      1,
-      commentAlignmentColumn - contentEndPosition,
-    );
+    const spacesNeeded = Math.max(1, commentAlignmentColumn - contentEndPosition);
 
-    return (
-      beforeComment.substring(0, contentEndPosition) +
-      " ".repeat(spacesNeeded) +
-      comment
-    );
+    return beforeComment.substring(0, contentEndPosition) + ' '.repeat(spacesNeeded) + comment;
   }
 }
 
@@ -979,16 +910,16 @@ function createCharacterPosition(value: number): CharacterPosition {
  */
 export function isPostingLine(obj: unknown): obj is PostingLine {
   return (
-    typeof obj === "object" &&
+    typeof obj === 'object' &&
     obj !== null &&
-    "originalLine" in obj &&
-    typeof (obj as Record<string, unknown>).originalLine === "string" &&
-    "accountName" in obj &&
-    typeof (obj as Record<string, unknown>).accountName === "string" &&
-    "amountPart" in obj &&
-    typeof (obj as Record<string, unknown>).amountPart === "string" &&
-    "hasAmount" in obj &&
-    typeof (obj as Record<string, unknown>).hasAmount === "boolean"
+    'originalLine' in obj &&
+    typeof (obj as Record<string, unknown>).originalLine === 'string' &&
+    'accountName' in obj &&
+    typeof (obj as Record<string, unknown>).accountName === 'string' &&
+    'amountPart' in obj &&
+    typeof (obj as Record<string, unknown>).amountPart === 'string' &&
+    'hasAmount' in obj &&
+    typeof (obj as Record<string, unknown>).hasAmount === 'boolean'
   );
 }
 
@@ -996,13 +927,13 @@ export function isPostingLine(obj: unknown): obj is PostingLine {
  * Type guard to check if an object is a valid TransactionBlock.
  */
 export function isTransactionBlock(obj: unknown): obj is TransactionBlock {
-  if (typeof obj !== "object" || obj === null) {
+  if (typeof obj !== 'object' || obj === null) {
     return false;
   }
 
   const record = obj as Record<string, unknown>;
   return (
-    typeof record.headerLine === "string" &&
+    typeof record.headerLine === 'string' &&
     Array.isArray(record.postings) &&
     record.postings.every(isPostingLine)
   );
@@ -1016,7 +947,7 @@ export function isTransactionBlock(obj: unknown): obj is TransactionBlock {
  * @returns New DocumentFormatter with default configuration
  */
 export function createDocumentFormatter(
-  options?: Partial<DocumentFormattingOptions>,
+  options?: Partial<DocumentFormattingOptions>
 ): DocumentFormatter {
   return new DocumentFormatter(options);
 }

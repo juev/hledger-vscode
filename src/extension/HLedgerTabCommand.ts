@@ -1,5 +1,5 @@
-import * as vscode from "vscode";
-import { DocumentFormatter, TransactionBlock } from "./DocumentFormatter";
+import * as vscode from 'vscode';
+import { DocumentFormatter, TransactionBlock } from './DocumentFormatter';
 
 /**
  * Handles Tab key press for amount alignment positioning in hledger files.
@@ -11,23 +11,16 @@ export class HLedgerTabCommand implements vscode.Disposable {
 
   constructor() {
     this.documentFormatter = new DocumentFormatter();
-    this.disposable = vscode.commands.registerTextEditorCommand(
-      "hledger.onTab",
-      this.onTab,
-      this,
-    );
+    this.disposable = vscode.commands.registerTextEditorCommand('hledger.onTab', this.onTab, this);
   }
 
-  private async onTab(
-    textEditor: vscode.TextEditor,
-    edit: vscode.TextEditorEdit,
-  ): Promise<void> {
+  private async onTab(textEditor: vscode.TextEditor, edit: vscode.TextEditorEdit): Promise<void> {
     const document = textEditor.document;
 
     // Check if this is an hledger file
-    if (document.languageId !== "hledger") {
+    if (document.languageId !== 'hledger') {
       // If not an hledger file, execute standard tab action
-      await vscode.commands.executeCommand("default:type", { text: "\t" });
+      await vscode.commands.executeCommand('default:type', { text: '\t' });
       return;
     }
 
@@ -38,7 +31,7 @@ export class HLedgerTabCommand implements vscode.Disposable {
 
     if (!tabAction.shouldAlign) {
       // Standard tab behavior
-      await vscode.commands.executeCommand("default:type", { text: "\t" });
+      await vscode.commands.executeCommand('default:type', { text: '\t' });
       return;
     }
 
@@ -49,10 +42,7 @@ export class HLedgerTabCommand implements vscode.Disposable {
   /**
    * Analyzes the current context to determine if Tab should trigger amount alignment.
    */
-  private analyzeTabContext(
-    document: vscode.TextDocument,
-    position: vscode.Position,
-  ): TabAction {
+  private analyzeTabContext(document: vscode.TextDocument, position: vscode.Position): TabAction {
     const currentLine = document.lineAt(position.line);
     const lineText = currentLine.text;
     const textBeforeCursor = lineText.substring(0, position.character);
@@ -134,7 +124,7 @@ export class HLedgerTabCommand implements vscode.Disposable {
   private async applySmartPositioning(
     textEditor: vscode.TextEditor,
     edit: vscode.TextEditorEdit,
-    tabAction: TabAction,
+    tabAction: TabAction
   ): Promise<void> {
     const document = textEditor.document;
     const currentLine = tabAction.currentLine;
@@ -142,20 +132,14 @@ export class HLedgerTabCommand implements vscode.Disposable {
 
     try {
       // Get optimal alignment position for this document
-      const alignmentPosition = await this.getOptimalAmountPosition(
-        document,
-        currentLine,
-      );
+      const alignmentPosition = await this.getOptimalAmountPosition(document, currentLine);
 
-      if (
-        alignmentPosition !== null &&
-        alignmentPosition > position.character
-      ) {
+      if (alignmentPosition !== null && alignmentPosition > position.character) {
         // Calculate how many spaces we need to add
         const spacesToAdd = alignmentPosition - position.character;
 
         // Add spaces to reach the alignment position
-        const spaces = " ".repeat(spacesToAdd);
+        const spaces = ' '.repeat(spacesToAdd);
 
         await textEditor.edit((editBuilder) => {
           editBuilder.insert(position, spaces);
@@ -166,11 +150,11 @@ export class HLedgerTabCommand implements vscode.Disposable {
         textEditor.selection = new vscode.Selection(newPosition, newPosition);
       } else {
         // Fallback to standard tab behavior
-        await vscode.commands.executeCommand("default:type", { text: "\t" });
+        await vscode.commands.executeCommand('default:type', { text: '\t' });
       }
     } catch {
       // Fallback to standard tab behavior
-      await vscode.commands.executeCommand("default:type", { text: "\t" });
+      await vscode.commands.executeCommand('default:type', { text: '\t' });
     }
   }
 
@@ -179,7 +163,7 @@ export class HLedgerTabCommand implements vscode.Disposable {
    */
   private async getOptimalAmountPosition(
     document: vscode.TextDocument,
-    currentLineNumber: number,
+    currentLineNumber: number
   ): Promise<number | null> {
     try {
       // Parse the document to find all transactions
@@ -198,8 +182,7 @@ export class HLedgerTabCommand implements vscode.Disposable {
       }
 
       // Calculate document-wide alignment
-      const documentAlignment =
-        this.calculateDocumentOptimalAlignment(transactions);
+      const documentAlignment = this.calculateDocumentOptimalAlignment(transactions);
 
       // Get the current line content to find account name length
       const currentLine = document.lineAt(currentLineNumber);
@@ -217,10 +200,7 @@ export class HLedgerTabCommand implements vscode.Disposable {
       const accountEndPosition = accountPosition + accountName.length;
 
       // Calculate amount position with minimum spacing
-      const amountPosition = Math.max(
-        documentAlignment,
-        accountEndPosition + 2,
-      );
+      const amountPosition = Math.max(documentAlignment, accountEndPosition + 2);
 
       return amountPosition;
     } catch {
@@ -233,28 +213,21 @@ export class HLedgerTabCommand implements vscode.Disposable {
    */
   private findTransactionForLine(
     transactions: TransactionBlock[],
-    lineNumber: number,
+    lineNumber: number
   ): TransactionBlock | null {
     for (const transaction of transactions) {
       // Check if the line is within the transaction range
       if (
         lineNumber === transaction.headerLineNumber ||
-        transaction.postings.some(
-          (posting) => posting.lineNumber === lineNumber,
-        )
+        transaction.postings.some((posting) => posting.lineNumber === lineNumber)
       ) {
         return transaction;
       }
 
       // Check if line is between header and first posting
       if (transaction.postings.length > 0) {
-        const firstPostingLine = Math.min(
-          ...transaction.postings.map((p) => p.lineNumber),
-        );
-        if (
-          lineNumber > transaction.headerLineNumber &&
-          lineNumber < firstPostingLine
-        ) {
+        const firstPostingLine = Math.min(...transaction.postings.map((p) => p.lineNumber));
+        if (lineNumber > transaction.headerLineNumber && lineNumber < firstPostingLine) {
           return transaction;
         }
       }
@@ -293,9 +266,7 @@ export class HLedgerTabCommand implements vscode.Disposable {
    * @param transactions Array of all transaction blocks to analyze
    * @returns The optimal alignment column position for the entire document
    */
-  private calculateDocumentOptimalAlignment(
-    transactions: TransactionBlock[],
-  ): number {
+  private calculateDocumentOptimalAlignment(transactions: TransactionBlock[]): number {
     if (transactions.length === 0) {
       return 40;
     }
@@ -305,8 +276,7 @@ export class HLedgerTabCommand implements vscode.Disposable {
     for (const transaction of transactions) {
       for (const posting of transaction.postings) {
         if (posting.hasAmount) {
-          const accountLength =
-            posting.accountPosition + posting.accountName.length;
+          const accountLength = posting.accountPosition + posting.accountName.length;
           maxAccountLength = Math.max(maxAccountLength, accountLength);
         }
       }
@@ -325,8 +295,8 @@ export class HLedgerTabCommand implements vscode.Disposable {
  * Types of tab actions for hledger files.
  */
 enum TabActionType {
-  NONE = "none",
-  MOVE_TO_AMOUNT_POSITION = "move_to_amount_position",
+  NONE = 'none',
+  MOVE_TO_AMOUNT_POSITION = 'move_to_amount_position',
 }
 
 /**

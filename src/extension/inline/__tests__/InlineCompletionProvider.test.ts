@@ -1,23 +1,23 @@
 // InlineCompletionProvider.test.ts - Tests for inline ghost text completions
-import * as vscode from "vscode";
+import * as vscode from 'vscode';
 import {
   Position,
   MockTextDocument,
   Range,
   InlineCompletionTriggerKind,
   SnippetString,
-} from "../../../__mocks__/vscode";
-import { InlineCompletionProvider } from "../InlineCompletionProvider";
-import { HLedgerConfig } from "../../HLedgerConfig";
+} from '../../../__mocks__/vscode';
+import { InlineCompletionProvider } from '../InlineCompletionProvider';
+import { HLedgerConfig } from '../../HLedgerConfig';
 import {
   PayeeName,
   AccountName,
   CommodityCode,
   UsageCount,
   TransactionTemplate,
-} from "../../types";
+} from '../../types';
 
-describe("InlineCompletionProvider", () => {
+describe('InlineCompletionProvider', () => {
   let provider: InlineCompletionProvider;
   let mockConfig: jest.Mocked<HLedgerConfig>;
 
@@ -30,7 +30,7 @@ describe("InlineCompletionProvider", () => {
       commodity: string | null;
     }[],
     usageCount: number = 1,
-    lastUsedDate: string | null = "2024-12-24",
+    lastUsedDate: string | null = '2024-12-24'
   ): TransactionTemplate {
     return {
       payee: payee as PayeeName,
@@ -70,70 +70,70 @@ describe("InlineCompletionProvider", () => {
     provider = new InlineCompletionProvider(mockConfig);
   });
 
-  describe("payee completion", () => {
-    it("should return single most-used payee match as ghost text", () => {
+  describe('payee completion', () => {
+    it('should return single most-used payee match as ghost text', () => {
       mockConfig.getPayeesByUsage.mockReturnValue([
-        "Магазин" as PayeeName,
-        "Маркет" as PayeeName,
-        "Маша" as PayeeName,
+        'Магазин' as PayeeName,
+        'Маркет' as PayeeName,
+        'Маша' as PayeeName,
       ]);
 
-      const document = new MockTextDocument(["2024-12-23 Маг"]);
+      const document = new MockTextDocument(['2024-12-23 Маг']);
       const position = new Position(0, 14);
 
       const result = provider.provideInlineCompletionItems(
         document,
         position,
         createInlineContext(),
-        createCancellationToken(),
+        createCancellationToken()
       );
 
       expect(result).toBeDefined();
       expect(result).toHaveLength(1);
       const item = result![0]!;
-      expect(item.insertText).toBe("азин"); // Only remainder
+      expect(item.insertText).toBe('азин'); // Only remainder
     });
 
-    it("should match case-insensitively", () => {
-      mockConfig.getPayeesByUsage.mockReturnValue(["Coffee Shop" as PayeeName]);
+    it('should match case-insensitively', () => {
+      mockConfig.getPayeesByUsage.mockReturnValue(['Coffee Shop' as PayeeName]);
 
-      const document = new MockTextDocument(["2024-12-23 coff"]);
+      const document = new MockTextDocument(['2024-12-23 coff']);
       const position = new Position(0, 15);
 
       const result = provider.provideInlineCompletionItems(
         document,
         position,
         createInlineContext(),
-        createCancellationToken(),
+        createCancellationToken()
       );
 
       expect(result).toBeDefined();
       expect(result).toHaveLength(1);
       const item = result![0]!;
       // Should return remainder preserving original case
-      expect(item.insertText).toBe("ee Shop");
+      expect(item.insertText).toBe('ee Shop');
     });
 
-    it("should return undefined when no payee matches prefix", () => {
-      mockConfig.getPayeesByUsage.mockReturnValue(["Coffee Shop" as PayeeName]);
+    it('should return undefined when no payee matches prefix', () => {
+      mockConfig.getPayeesByUsage.mockReturnValue(['Coffee Shop' as PayeeName]);
 
-      const document = new MockTextDocument(["2024-12-23 Xyz"]);
+      const document = new MockTextDocument(['2024-12-23 Xyz']);
       const position = new Position(0, 14);
 
       const result = provider.provideInlineCompletionItems(
         document,
         position,
         createInlineContext(),
-        createCancellationToken(),
+        createCancellationToken()
       );
 
       expect(result).toBeUndefined();
     });
 
-    it("should return undefined when cursor at end of exact payee match on same line", () => {
-      mockConfig.getPayeesByUsage.mockReturnValue(["Coffee Shop" as PayeeName]);
+    it('should return undefined when cursor at end of exact payee match on same line', () => {
+      mockConfig.getPayeesByUsage.mockReturnValue(['Coffee Shop' as PayeeName]);
 
-      const document = new MockTextDocument(["2024-12-23 Coffee Shop"]);
+      const document = new MockTextDocument(['2024-12-23 Coffee Shop']);
       const position = new Position(0, 22);
 
       // Cursor at end of complete payee on same line - no inline completion
@@ -142,88 +142,86 @@ describe("InlineCompletionProvider", () => {
         document,
         position,
         createInlineContext(),
-        createCancellationToken(),
+        createCancellationToken()
       );
 
       // Should return undefined - no template on same line as payee
       expect(result).toBeUndefined();
     });
 
-    it("should handle Unicode payees correctly", () => {
-      mockConfig.getPayeesByUsage.mockReturnValue([
-        "Продуктовый магазин" as PayeeName,
-      ]);
+    it('should handle Unicode payees correctly', () => {
+      mockConfig.getPayeesByUsage.mockReturnValue(['Продуктовый магазин' as PayeeName]);
 
-      const document = new MockTextDocument(["2024-12-23 Прод"]);
+      const document = new MockTextDocument(['2024-12-23 Прод']);
       const position = new Position(0, 15);
 
       const result = provider.provideInlineCompletionItems(
         document,
         position,
         createInlineContext(),
-        createCancellationToken(),
+        createCancellationToken()
       );
 
       expect(result).toBeDefined();
       expect(result).toHaveLength(1);
       const item = result![0]!;
-      expect(item.insertText).toBe("уктовый магазин");
+      expect(item.insertText).toBe('уктовый магазин');
     });
 
-    it("should use first (most-used) payee when multiple match", () => {
+    it('should use first (most-used) payee when multiple match', () => {
       // Payees are already sorted by usage, so first one is most used
       mockConfig.getPayeesByUsage.mockReturnValue([
-        "Store Alpha" as PayeeName, // Most used
-        "Store Beta" as PayeeName,
-        "Store Charlie" as PayeeName,
+        'Store Alpha' as PayeeName, // Most used
+        'Store Beta' as PayeeName,
+        'Store Charlie' as PayeeName,
       ]);
 
-      const document = new MockTextDocument(["2024-12-23 Store"]);
+      const document = new MockTextDocument(['2024-12-23 Store']);
       const position = new Position(0, 16);
 
       const result = provider.provideInlineCompletionItems(
         document,
         position,
         createInlineContext(),
-        createCancellationToken(),
+        createCancellationToken()
       );
 
       expect(result).toBeDefined();
       expect(result).toHaveLength(1);
       const item = result![0]!;
-      expect(item.insertText).toBe(" Alpha");
+      expect(item.insertText).toBe(' Alpha');
     });
   });
 
-  describe("template completion", () => {
+  describe('template completion', () => {
     // Template completion is now triggered on EMPTY LINE after transaction header
     // This prevents template from being auto-accepted with payee completion
 
-    it("should return template ghost text on empty line after header", () => {
-      mockConfig.getPayeesByUsage.mockReturnValue(["Coffee Shop" as PayeeName]);
+    it('should return template ghost text on empty line after header', () => {
+      mockConfig.getPayeesByUsage.mockReturnValue(['Coffee Shop' as PayeeName]);
       mockConfig.getTemplatesForPayee.mockReturnValue([
         createTemplate(
-          "Coffee Shop",
+          'Coffee Shop',
           [
             {
-              account: "Expenses:Food:Coffee",
-              amount: "5.00 USD",
-              commodity: "USD",
+              account: 'Expenses:Food:Coffee',
+              amount: '5.00 USD',
+              commodity: 'USD',
             },
-            { account: "Assets:Cash", amount: null, commodity: null },
+            { account: 'Assets:Cash', amount: null, commodity: null },
           ],
-          10,
+          10
         ),
       ]);
 
-      const document = new MockTextDocument(["2024-12-23 Coffee Shop", ""]);
+      const document = new MockTextDocument(['2024-12-23 Coffee Shop', '']);
       const position = new Position(1, 0); // On empty line after header
 
       const result = provider.provideInlineCompletionItems(
         document,
         position,
         createInlineContext(),
-        createCancellationToken(),
+        createCancellationToken()
       );
 
       expect(result).toBeDefined();
@@ -233,26 +231,26 @@ describe("InlineCompletionProvider", () => {
       const snippetValue = (item.insertText as SnippetString).value;
       // First line should NOT start with newline (cursor already on new line)
       expect(snippetValue).toMatch(/^    Expenses:Food:Coffee/);
-      expect(snippetValue).toContain("Assets:Cash");
+      expect(snippetValue).toContain('Assets:Cash');
     });
 
-    it("should format template with proper indentation", () => {
-      mockConfig.getPayeesByUsage.mockReturnValue(["Coffee Shop" as PayeeName]);
+    it('should format template with proper indentation', () => {
+      mockConfig.getPayeesByUsage.mockReturnValue(['Coffee Shop' as PayeeName]);
       mockConfig.getTemplatesForPayee.mockReturnValue([
-        createTemplate("Coffee Shop", [
-          { account: "Expenses:Food", amount: "5.00", commodity: null },
-          { account: "Assets:Cash", amount: null, commodity: null },
+        createTemplate('Coffee Shop', [
+          { account: 'Expenses:Food', amount: '5.00', commodity: null },
+          { account: 'Assets:Cash', amount: null, commodity: null },
         ]),
       ]);
 
-      const document = new MockTextDocument(["2024-12-23 Coffee Shop", ""]);
+      const document = new MockTextDocument(['2024-12-23 Coffee Shop', '']);
       const position = new Position(1, 0); // On empty line
 
       const result = provider.provideInlineCompletionItems(
         document,
         position,
         createInlineContext(),
-        createCancellationToken(),
+        createCancellationToken()
       );
 
       expect(result).toBeDefined();
@@ -263,28 +261,26 @@ describe("InlineCompletionProvider", () => {
       // First line: 4-space indentation, no leading newline
       expect(snippetValue).toMatch(/^    Expenses:Food/);
       // Second line: newline + 4-space indentation
-      expect(snippetValue).toContain("\n    Assets:Cash");
+      expect(snippetValue).toContain('\n    Assets:Cash');
     });
 
-    it("should include amounts in template ghost text", () => {
-      mockConfig.getPayeesByUsage.mockReturnValue([
-        "Grocery Store" as PayeeName,
-      ]);
+    it('should include amounts in template ghost text', () => {
+      mockConfig.getPayeesByUsage.mockReturnValue(['Grocery Store' as PayeeName]);
       mockConfig.getTemplatesForPayee.mockReturnValue([
-        createTemplate("Grocery Store", [
-          { account: "Expenses:Food", amount: "100 RUB", commodity: "RUB" },
-          { account: "Assets:Wallet", amount: null, commodity: null },
+        createTemplate('Grocery Store', [
+          { account: 'Expenses:Food', amount: '100 RUB', commodity: 'RUB' },
+          { account: 'Assets:Wallet', amount: null, commodity: null },
         ]),
       ]);
 
-      const document = new MockTextDocument(["2024-12-23 Grocery Store", ""]);
+      const document = new MockTextDocument(['2024-12-23 Grocery Store', '']);
       const position = new Position(1, 0); // On empty line
 
       const result = provider.provideInlineCompletionItems(
         document,
         position,
         createInlineContext(),
-        createCancellationToken(),
+        createCancellationToken()
       );
 
       expect(result).toBeDefined();
@@ -292,86 +288,86 @@ describe("InlineCompletionProvider", () => {
       const item = result![0]!;
       expect(item.insertText).toBeInstanceOf(SnippetString);
       const snippetValue = (item.insertText as SnippetString).value;
-      expect(snippetValue).toContain("100 RUB");
+      expect(snippetValue).toContain('100 RUB');
     });
 
-    it("should return undefined when no templates for payee", () => {
-      mockConfig.getPayeesByUsage.mockReturnValue(["New Store" as PayeeName]);
+    it('should return undefined when no templates for payee', () => {
+      mockConfig.getPayeesByUsage.mockReturnValue(['New Store' as PayeeName]);
       mockConfig.getTemplatesForPayee.mockReturnValue([]);
 
-      const document = new MockTextDocument(["2024-12-23 New Store", ""]);
+      const document = new MockTextDocument(['2024-12-23 New Store', '']);
       const position = new Position(1, 0); // On empty line
 
       const result = provider.provideInlineCompletionItems(
         document,
         position,
         createInlineContext(),
-        createCancellationToken(),
+        createCancellationToken()
       );
 
       expect(result).toBeUndefined();
     });
 
-    it("should NOT return template on same line as payee", () => {
-      mockConfig.getPayeesByUsage.mockReturnValue(["Store" as PayeeName]);
+    it('should NOT return template on same line as payee', () => {
+      mockConfig.getPayeesByUsage.mockReturnValue(['Store' as PayeeName]);
       mockConfig.getTemplatesForPayee.mockReturnValue([
-        createTemplate("Store", [
-          { account: "Expenses:Shopping", amount: "50 USD", commodity: "USD" },
-          { account: "Assets:Bank", amount: null, commodity: null },
+        createTemplate('Store', [
+          { account: 'Expenses:Shopping', amount: '50 USD', commodity: 'USD' },
+          { account: 'Assets:Bank', amount: null, commodity: null },
         ]),
       ]);
 
-      const document = new MockTextDocument(["2024-12-23 Store", ""]);
+      const document = new MockTextDocument(['2024-12-23 Store', '']);
       const position = new Position(0, 16); // On same line as payee (not empty line)
 
       const result = provider.provideInlineCompletionItems(
         document,
         position,
         createInlineContext(),
-        createCancellationToken(),
+        createCancellationToken()
       );
 
       // Should return undefined - no payee prefix, no template on same line
       expect(result).toBeUndefined();
     });
 
-    it("should use most frequently used template when multiple exist", () => {
-      mockConfig.getPayeesByUsage.mockReturnValue(["Store" as PayeeName]);
+    it('should use most frequently used template when multiple exist', () => {
+      mockConfig.getPayeesByUsage.mockReturnValue(['Store' as PayeeName]);
       mockConfig.getTemplatesForPayee.mockReturnValue([
         createTemplate(
-          "Store",
+          'Store',
           [
             {
-              account: "Expenses:Shopping",
-              amount: "50 USD",
-              commodity: "USD",
+              account: 'Expenses:Shopping',
+              amount: '50 USD',
+              commodity: 'USD',
             },
-            { account: "Assets:Bank", amount: null, commodity: null },
+            { account: 'Assets:Bank', amount: null, commodity: null },
           ],
-          100, // Most used
+          100 // Most used
         ),
         createTemplate(
-          "Store",
+          'Store',
           [
             {
-              account: "Expenses:Groceries",
-              amount: "30 USD",
-              commodity: "USD",
+              account: 'Expenses:Groceries',
+              amount: '30 USD',
+              commodity: 'USD',
             },
-            { account: "Assets:Cash", amount: null, commodity: null },
+            { account: 'Assets:Cash', amount: null, commodity: null },
           ],
-          10,
+          10
         ),
       ]);
 
-      const document = new MockTextDocument(["2024-12-23 Store", ""]);
+      const document = new MockTextDocument(['2024-12-23 Store', '']);
       const position = new Position(1, 0); // On empty line
 
       const result = provider.provideInlineCompletionItems(
         document,
         position,
         createInlineContext(),
-        createCancellationToken(),
+        createCancellationToken()
       );
 
       expect(result).toBeDefined();
@@ -379,27 +375,27 @@ describe("InlineCompletionProvider", () => {
       const item = result![0]!;
       expect(item.insertText).toBeInstanceOf(SnippetString);
       const snippetValue = (item.insertText as SnippetString).value;
-      expect(snippetValue).toContain("Expenses:Shopping");
-      expect(snippetValue).not.toContain("Expenses:Groceries");
+      expect(snippetValue).toContain('Expenses:Shopping');
+      expect(snippetValue).not.toContain('Expenses:Groceries');
     });
 
-    it("should handle Unicode template content", () => {
-      mockConfig.getPayeesByUsage.mockReturnValue(["Магазин" as PayeeName]);
+    it('should handle Unicode template content', () => {
+      mockConfig.getPayeesByUsage.mockReturnValue(['Магазин' as PayeeName]);
       mockConfig.getTemplatesForPayee.mockReturnValue([
-        createTemplate("Магазин", [
-          { account: "Расходы:Продукты", amount: "1000 RUB", commodity: "RUB" },
-          { account: "Активы:Наличные", amount: null, commodity: null },
+        createTemplate('Магазин', [
+          { account: 'Расходы:Продукты', amount: '1000 RUB', commodity: 'RUB' },
+          { account: 'Активы:Наличные', amount: null, commodity: null },
         ]),
       ]);
 
-      const document = new MockTextDocument(["2024-12-23 Магазин", ""]);
+      const document = new MockTextDocument(['2024-12-23 Магазин', '']);
       const position = new Position(1, 0); // On empty line
 
       const result = provider.provideInlineCompletionItems(
         document,
         position,
         createInlineContext(),
-        createCancellationToken(),
+        createCancellationToken()
       );
 
       expect(result).toBeDefined();
@@ -407,28 +403,28 @@ describe("InlineCompletionProvider", () => {
       const item = result![0]!;
       expect(item.insertText).toBeInstanceOf(SnippetString);
       const snippetValue = (item.insertText as SnippetString).value;
-      expect(snippetValue).toContain("Расходы:Продукты");
-      expect(snippetValue).toContain("Активы:Наличные");
+      expect(snippetValue).toContain('Расходы:Продукты');
+      expect(snippetValue).toContain('Активы:Наличные');
     });
 
-    it("should have correct range when cursor is not at column 0", () => {
-      mockConfig.getPayeesByUsage.mockReturnValue(["Coffee Shop" as PayeeName]);
+    it('should have correct range when cursor is not at column 0', () => {
+      mockConfig.getPayeesByUsage.mockReturnValue(['Coffee Shop' as PayeeName]);
       mockConfig.getTemplatesForPayee.mockReturnValue([
-        createTemplate("Coffee Shop", [
-          { account: "Expenses:Food", amount: "5.00", commodity: null },
-          { account: "Assets:Cash", amount: null, commodity: null },
+        createTemplate('Coffee Shop', [
+          { account: 'Expenses:Food', amount: '5.00', commodity: null },
+          { account: 'Assets:Cash', amount: null, commodity: null },
         ]),
       ]);
 
       // User typed 2 spaces on empty line before ghost text appears
-      const document = new MockTextDocument(["2024-12-23 Coffee Shop", "  "]);
+      const document = new MockTextDocument(['2024-12-23 Coffee Shop', '  ']);
       const position = new Position(1, 2); // Cursor at column 2 (after 2 spaces)
 
       const result = provider.provideInlineCompletionItems(
         document,
         position,
         createInlineContext(),
-        createCancellationToken(),
+        createCancellationToken()
       );
 
       expect(result).toBeDefined();
@@ -448,26 +444,24 @@ describe("InlineCompletionProvider", () => {
       expect(snippetValue).toMatch(/^    Expenses:Food/);
     });
 
-    describe("SnippetString with tabstops", () => {
-      it("should return SnippetString for template completion", () => {
-        mockConfig.getPayeesByUsage.mockReturnValue([
-          "Coffee Shop" as PayeeName,
-        ]);
+    describe('SnippetString with tabstops', () => {
+      it('should return SnippetString for template completion', () => {
+        mockConfig.getPayeesByUsage.mockReturnValue(['Coffee Shop' as PayeeName]);
         mockConfig.getTemplatesForPayee.mockReturnValue([
-          createTemplate("Coffee Shop", [
-            { account: "Expenses:Food", amount: "5.00 USD", commodity: "USD" },
-            { account: "Assets:Cash", amount: null, commodity: null },
+          createTemplate('Coffee Shop', [
+            { account: 'Expenses:Food', amount: '5.00 USD', commodity: 'USD' },
+            { account: 'Assets:Cash', amount: null, commodity: null },
           ]),
         ]);
 
-        const document = new MockTextDocument(["2024-12-23 Coffee Shop", ""]);
+        const document = new MockTextDocument(['2024-12-23 Coffee Shop', '']);
         const position = new Position(1, 0);
 
         const result = provider.provideInlineCompletionItems(
           document,
           position,
           createInlineContext(),
-          createCancellationToken(),
+          createCancellationToken()
         );
 
         expect(result).toBeDefined();
@@ -476,190 +470,175 @@ describe("InlineCompletionProvider", () => {
         expect(item.insertText).toBeInstanceOf(SnippetString);
       });
 
-      it("should include tabstop for amount field", () => {
-        mockConfig.getPayeesByUsage.mockReturnValue([
-          "Coffee Shop" as PayeeName,
-        ]);
+      it('should include tabstop for amount field', () => {
+        mockConfig.getPayeesByUsage.mockReturnValue(['Coffee Shop' as PayeeName]);
         mockConfig.getTemplatesForPayee.mockReturnValue([
-          createTemplate("Coffee Shop", [
-            { account: "Expenses:Food", amount: "5.00 USD", commodity: "USD" },
-            { account: "Assets:Cash", amount: null, commodity: null },
+          createTemplate('Coffee Shop', [
+            { account: 'Expenses:Food', amount: '5.00 USD', commodity: 'USD' },
+            { account: 'Assets:Cash', amount: null, commodity: null },
           ]),
         ]);
 
-        const document = new MockTextDocument(["2024-12-23 Coffee Shop", ""]);
+        const document = new MockTextDocument(['2024-12-23 Coffee Shop', '']);
         const position = new Position(1, 0);
 
         const result = provider.provideInlineCompletionItems(
           document,
           position,
           createInlineContext(),
-          createCancellationToken(),
+          createCancellationToken()
         );
 
         const snippet = result![0]!.insertText as SnippetString;
         // Should have tabstop with amount as placeholder: ${1:5.00 USD}
-        expect(snippet.value).toContain("${1:5.00 USD}");
+        expect(snippet.value).toContain('${1:5.00 USD}');
       });
 
-      it("should have sequential tabstops for multiple amounts", () => {
-        mockConfig.getPayeesByUsage.mockReturnValue(["Transfer" as PayeeName]);
+      it('should have sequential tabstops for multiple amounts', () => {
+        mockConfig.getPayeesByUsage.mockReturnValue(['Transfer' as PayeeName]);
         mockConfig.getTemplatesForPayee.mockReturnValue([
-          createTemplate("Transfer", [
-            { account: "Assets:Bank", amount: "100 USD", commodity: "USD" },
-            { account: "Assets:Cash", amount: "-100 USD", commodity: "USD" },
+          createTemplate('Transfer', [
+            { account: 'Assets:Bank', amount: '100 USD', commodity: 'USD' },
+            { account: 'Assets:Cash', amount: '-100 USD', commodity: 'USD' },
           ]),
         ]);
 
-        const document = new MockTextDocument(["2024-12-23 Transfer", ""]);
+        const document = new MockTextDocument(['2024-12-23 Transfer', '']);
         const position = new Position(1, 0);
 
         const result = provider.provideInlineCompletionItems(
           document,
           position,
           createInlineContext(),
-          createCancellationToken(),
+          createCancellationToken()
         );
 
         const snippet = result![0]!.insertText as SnippetString;
         // Should have $1 for first amount, $2 for second
-        expect(snippet.value).toContain("${1:100 USD}");
-        expect(snippet.value).toContain("${2:-100 USD}");
+        expect(snippet.value).toContain('${1:100 USD}');
+        expect(snippet.value).toContain('${2:-100 USD}');
       });
 
-      it("should include final tabstop $0 for exiting snippet mode", () => {
-        mockConfig.getPayeesByUsage.mockReturnValue([
-          "Coffee Shop" as PayeeName,
-        ]);
+      it('should include final tabstop $0 for exiting snippet mode', () => {
+        mockConfig.getPayeesByUsage.mockReturnValue(['Coffee Shop' as PayeeName]);
         mockConfig.getTemplatesForPayee.mockReturnValue([
-          createTemplate("Coffee Shop", [
-            { account: "Expenses:Food", amount: "5.00 USD", commodity: "USD" },
-            { account: "Assets:Cash", amount: null, commodity: null },
+          createTemplate('Coffee Shop', [
+            { account: 'Expenses:Food', amount: '5.00 USD', commodity: 'USD' },
+            { account: 'Assets:Cash', amount: null, commodity: null },
           ]),
         ]);
 
-        const document = new MockTextDocument(["2024-12-23 Coffee Shop", ""]);
+        const document = new MockTextDocument(['2024-12-23 Coffee Shop', '']);
         const position = new Position(1, 0);
 
         const result = provider.provideInlineCompletionItems(
           document,
           position,
           createInlineContext(),
-          createCancellationToken(),
+          createCancellationToken()
         );
 
         const snippet = result![0]!.insertText as SnippetString;
-        expect(snippet.value).toContain("$0");
+        expect(snippet.value).toContain('$0');
       });
 
-      it("should escape special snippet characters in account names", () => {
-        mockConfig.getPayeesByUsage.mockReturnValue([
-          "Special Store" as PayeeName,
-        ]);
+      it('should escape special snippet characters in account names', () => {
+        mockConfig.getPayeesByUsage.mockReturnValue(['Special Store' as PayeeName]);
         mockConfig.getTemplatesForPayee.mockReturnValue([
-          createTemplate("Special Store", [
+          createTemplate('Special Store', [
             {
-              account: "Expenses:Store$Name",
-              amount: "10 USD",
-              commodity: "USD",
+              account: 'Expenses:Store$Name',
+              amount: '10 USD',
+              commodity: 'USD',
             },
-            { account: "Assets:Cash", amount: null, commodity: null },
+            { account: 'Assets:Cash', amount: null, commodity: null },
           ]),
         ]);
 
-        const document = new MockTextDocument(["2024-12-23 Special Store", ""]);
+        const document = new MockTextDocument(['2024-12-23 Special Store', '']);
         const position = new Position(1, 0);
 
         const result = provider.provideInlineCompletionItems(
           document,
           position,
           createInlineContext(),
-          createCancellationToken(),
+          createCancellationToken()
         );
 
         const snippet = result![0]!.insertText as SnippetString;
         // $ should be escaped as \$
-        expect(snippet.value).toContain("Expenses:Store\\$Name");
+        expect(snippet.value).toContain('Expenses:Store\\$Name');
       });
 
-      it("should escape curly braces in account names", () => {
-        mockConfig.getPayeesByUsage.mockReturnValue([
-          "Bracket Store" as PayeeName,
-        ]);
+      it('should escape curly braces in account names', () => {
+        mockConfig.getPayeesByUsage.mockReturnValue(['Bracket Store' as PayeeName]);
         mockConfig.getTemplatesForPayee.mockReturnValue([
-          createTemplate("Bracket Store", [
+          createTemplate('Bracket Store', [
             {
-              account: "Expenses:Store}Name",
-              amount: "10 USD",
-              commodity: "USD",
+              account: 'Expenses:Store}Name',
+              amount: '10 USD',
+              commodity: 'USD',
             },
-            { account: "Assets:Cash", amount: null, commodity: null },
+            { account: 'Assets:Cash', amount: null, commodity: null },
           ]),
         ]);
 
-        const document = new MockTextDocument([
-          "2024-12-23 Bracket Store",
-          "",
-        ]);
+        const document = new MockTextDocument(['2024-12-23 Bracket Store', '']);
         const position = new Position(1, 0);
 
         const result = provider.provideInlineCompletionItems(
           document,
           position,
           createInlineContext(),
-          createCancellationToken(),
+          createCancellationToken()
         );
 
         const snippet = result![0]!.insertText as SnippetString;
         // } should be escaped as \}
-        expect(snippet.value).toContain("Expenses:Store\\}Name");
+        expect(snippet.value).toContain('Expenses:Store\\}Name');
       });
 
-      it("should escape special characters in amount values", () => {
-        mockConfig.getPayeesByUsage.mockReturnValue([
-          "Dollar Store" as PayeeName,
-        ]);
+      it('should escape special characters in amount values', () => {
+        mockConfig.getPayeesByUsage.mockReturnValue(['Dollar Store' as PayeeName]);
         mockConfig.getTemplatesForPayee.mockReturnValue([
-          createTemplate("Dollar Store", [
-            { account: "Expenses:Food", amount: "$10.00", commodity: "$" },
-            { account: "Assets:Cash", amount: null, commodity: null },
+          createTemplate('Dollar Store', [
+            { account: 'Expenses:Food', amount: '$10.00', commodity: '$' },
+            { account: 'Assets:Cash', amount: null, commodity: null },
           ]),
         ]);
 
-        const document = new MockTextDocument(["2024-12-23 Dollar Store", ""]);
+        const document = new MockTextDocument(['2024-12-23 Dollar Store', '']);
         const position = new Position(1, 0);
 
         const result = provider.provideInlineCompletionItems(
           document,
           position,
           createInlineContext(),
-          createCancellationToken(),
+          createCancellationToken()
         );
 
         const snippet = result![0]!.insertText as SnippetString;
         // $ in amount should be escaped as \$
-        expect(snippet.value).toContain("${1:\\$10.00}");
+        expect(snippet.value).toContain('${1:\\$10.00}');
       });
 
-      it("should not have command for cursor positioning (snippet handles it)", () => {
-        mockConfig.getPayeesByUsage.mockReturnValue([
-          "Coffee Shop" as PayeeName,
-        ]);
+      it('should not have command for cursor positioning (snippet handles it)', () => {
+        mockConfig.getPayeesByUsage.mockReturnValue(['Coffee Shop' as PayeeName]);
         mockConfig.getTemplatesForPayee.mockReturnValue([
-          createTemplate("Coffee Shop", [
-            { account: "Expenses:Food", amount: "5.00 USD", commodity: "USD" },
-            { account: "Assets:Cash", amount: null, commodity: null },
+          createTemplate('Coffee Shop', [
+            { account: 'Expenses:Food', amount: '5.00 USD', commodity: 'USD' },
+            { account: 'Assets:Cash', amount: null, commodity: null },
           ]),
         ]);
 
-        const document = new MockTextDocument(["2024-12-23 Coffee Shop", ""]);
+        const document = new MockTextDocument(['2024-12-23 Coffee Shop', '']);
         const position = new Position(1, 0);
 
         const result = provider.provideInlineCompletionItems(
           document,
           position,
           createInlineContext(),
-          createCancellationToken(),
+          createCancellationToken()
         );
 
         const item = result![0]!;
@@ -667,25 +646,23 @@ describe("InlineCompletionProvider", () => {
         expect(item.command).toBeUndefined();
       });
 
-      it("should only have tabstops for postings with amounts", () => {
-        mockConfig.getPayeesByUsage.mockReturnValue([
-          "Coffee Shop" as PayeeName,
-        ]);
+      it('should only have tabstops for postings with amounts', () => {
+        mockConfig.getPayeesByUsage.mockReturnValue(['Coffee Shop' as PayeeName]);
         mockConfig.getTemplatesForPayee.mockReturnValue([
-          createTemplate("Coffee Shop", [
-            { account: "Expenses:Food", amount: "5.00 USD", commodity: "USD" },
-            { account: "Assets:Cash", amount: null, commodity: null },
+          createTemplate('Coffee Shop', [
+            { account: 'Expenses:Food', amount: '5.00 USD', commodity: 'USD' },
+            { account: 'Assets:Cash', amount: null, commodity: null },
           ]),
         ]);
 
-        const document = new MockTextDocument(["2024-12-23 Coffee Shop", ""]);
+        const document = new MockTextDocument(['2024-12-23 Coffee Shop', '']);
         const position = new Position(1, 0);
 
         const result = provider.provideInlineCompletionItems(
           document,
           position,
           createInlineContext(),
-          createCancellationToken(),
+          createCancellationToken()
         );
 
         const snippet = result![0]!.insertText as SnippetString;
@@ -694,94 +671,88 @@ describe("InlineCompletionProvider", () => {
         expect(snippet.value).toMatch(/\$\{1:/);
         expect(snippet.value).not.toMatch(/\$\{2:/);
         // Should have Assets:Cash without tabstop
-        expect(snippet.value).toContain("Assets:Cash");
-        expect(snippet.value).not.toContain("Assets:Cash  ${");
+        expect(snippet.value).toContain('Assets:Cash');
+        expect(snippet.value).not.toContain('Assets:Cash  ${');
       });
     });
   });
 
-  describe("edge cases", () => {
-    it("should return undefined for indented lines", () => {
-      mockConfig.getPayeesByUsage.mockReturnValue(["Coffee Shop" as PayeeName]);
+  describe('edge cases', () => {
+    it('should return undefined for indented lines', () => {
+      mockConfig.getPayeesByUsage.mockReturnValue(['Coffee Shop' as PayeeName]);
 
-      const document = new MockTextDocument([
-        "2024-12-23 Transaction",
-        "    Expenses:Cof",
-      ]);
+      const document = new MockTextDocument(['2024-12-23 Transaction', '    Expenses:Cof']);
       const position = new Position(1, 17);
 
       const result = provider.provideInlineCompletionItems(
         document,
         position,
         createInlineContext(),
-        createCancellationToken(),
+        createCancellationToken()
       );
 
       expect(result).toBeUndefined();
     });
 
-    it("should return undefined for empty line without transaction header above", () => {
-      mockConfig.getPayeesByUsage.mockReturnValue(["Coffee Shop" as PayeeName]);
+    it('should return undefined for empty line without transaction header above', () => {
+      mockConfig.getPayeesByUsage.mockReturnValue(['Coffee Shop' as PayeeName]);
 
       // Empty line at start of document - no previous line to check
-      const document = new MockTextDocument([""]);
+      const document = new MockTextDocument(['']);
       const position = new Position(0, 0);
 
       const result = provider.provideInlineCompletionItems(
         document,
         position,
         createInlineContext(),
-        createCancellationToken(),
+        createCancellationToken()
       );
 
       expect(result).toBeUndefined();
     });
 
-    it("should return undefined for empty line after non-header line", () => {
-      mockConfig.getPayeesByUsage.mockReturnValue(["Coffee Shop" as PayeeName]);
+    it('should return undefined for empty line after non-header line', () => {
+      mockConfig.getPayeesByUsage.mockReturnValue(['Coffee Shop' as PayeeName]);
 
       // Empty line after comment, not transaction header
-      const document = new MockTextDocument(["; comment", ""]);
+      const document = new MockTextDocument(['; comment', '']);
       const position = new Position(1, 0);
 
       const result = provider.provideInlineCompletionItems(
         document,
         position,
         createInlineContext(),
-        createCancellationToken(),
+        createCancellationToken()
       );
 
       expect(result).toBeUndefined();
     });
 
-    it("should call getConfigForDocument with correct parameters", () => {
-      const document = new MockTextDocument(["2024-12-23 Test"]);
+    it('should call getConfigForDocument with correct parameters', () => {
+      const document = new MockTextDocument(['2024-12-23 Test']);
       const position = new Position(0, 15);
 
       provider.provideInlineCompletionItems(
         document,
         position,
         createInlineContext(),
-        createCancellationToken(),
+        createCancellationToken()
       );
 
-      expect(mockConfig.getConfigForDocument).toHaveBeenCalledWith(
-        document,
-        position.line,
-      );
+      expect(mockConfig.getConfigForDocument).toHaveBeenCalledWith(document, position.line);
     });
 
-    it("should set correct range for completion", () => {
-      mockConfig.getPayeesByUsage.mockReturnValue(["Coffee Shop" as PayeeName]);
+    it('should set correct range for completion', () => {
+      mockConfig.getPayeesByUsage.mockReturnValue(['Coffee Shop' as PayeeName]);
 
-      const document = new MockTextDocument(["2024-12-23 Coff"]);
+      const document = new MockTextDocument(['2024-12-23 Coff']);
       const position = new Position(0, 15);
 
       const result = provider.provideInlineCompletionItems(
         document,
         position,
         createInlineContext(),
-        createCancellationToken(),
+        createCancellationToken()
       );
 
       expect(result).toBeDefined();

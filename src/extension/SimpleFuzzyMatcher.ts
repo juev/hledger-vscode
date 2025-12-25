@@ -1,5 +1,5 @@
 // Simple fuzzy matching implementation using fzf-style gap-based algorithm
-import { CompletionScore, UsageCount, createCompletionScore } from "./types";
+import { CompletionScore, UsageCount, createCompletionScore } from './types';
 
 /**
  * FuzzyMatch result with branded types for type safety.
@@ -49,7 +49,7 @@ export class SimpleFuzzyMatcher {
   match<T extends string>(
     query: string,
     items: readonly T[],
-    options: FuzzyMatchOptions<T> = {},
+    options: FuzzyMatchOptions<T> = {}
   ): FuzzyMatch<T>[] {
     const maxResults = options.maxResults ?? 100;
     const caseSensitive = options.caseSensitive ?? false;
@@ -100,10 +100,7 @@ export class SimpleFuzzyMatcher {
       .slice(0, maxResults)
       .map(({ item, gapScore }) => ({
         item,
-        score: this.calculateFinalScore(
-          gapScore,
-          options.usageCounts?.get(item) ?? 0,
-        ),
+        score: this.calculateFinalScore(gapScore, options.usageCounts?.get(item) ?? 0),
       }));
   }
 
@@ -157,10 +154,7 @@ export class SimpleFuzzyMatcher {
    * @param usageCount - Usage frequency count
    * @returns Branded CompletionScore
    */
-  private calculateFinalScore(
-    gapScore: number,
-    usageCount: number,
-  ): CompletionScore {
+  private calculateFinalScore(gapScore: number, usageCount: number): CompletionScore {
     // Usage multiplier of 20 ensures frequency has significant impact
     // Cap at 9999 to prevent overflow in sortText (see AccountCompleter.getSortText)
     const rawScore = gapScore + usageCount * 20;

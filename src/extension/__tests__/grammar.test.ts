@@ -24,7 +24,7 @@ describe('TextMate Grammar Tests', () => {
     const registry = new Registry({
       onigLib: Promise.resolve({
         createOnigScanner: (sources: string[]) => new OnigScanner(sources),
-        createOnigString: (str: string) => new OnigString(str)
+        createOnigString: (str: string) => new OnigString(str),
       }),
       loadGrammar: async (scopeName: string) => {
         if (scopeName === 'source.hledger') {
@@ -33,7 +33,7 @@ describe('TextMate Grammar Tests', () => {
           return JSON.parse(grammarJson);
         }
         return null;
-      }
+      },
     });
 
     const loadedGrammar = await registry.loadGrammar('source.hledger');
@@ -46,7 +46,10 @@ describe('TextMate Grammar Tests', () => {
   /**
    * Helper function to tokenize a line and extract token information
    */
-  function tokenizeLine(line: string, prevState: StateStack = INITIAL): {
+  function tokenizeLine(
+    line: string,
+    prevState: StateStack = INITIAL
+  ): {
     tokens: IToken[];
     ruleStack: StateStack;
   } {
@@ -72,9 +75,13 @@ describe('TextMate Grammar Tests', () => {
   /**
    * Helper to check if any token scope contains a specific scope
    */
-  function assertLineContainsScope(line: string, expectedScope: string, prevState: StateStack = INITIAL) {
+  function assertLineContainsScope(
+    line: string,
+    expectedScope: string,
+    prevState: StateStack = INITIAL
+  ) {
     const { tokens } = tokenizeLine(line, prevState);
-    const allScopes = tokens.flatMap(token => token.scopes);
+    const allScopes = tokens.flatMap((token) => token.scopes);
     expect(allScopes).toContain(expectedScope);
   }
 
@@ -94,23 +101,26 @@ describe('TextMate Grammar Tests', () => {
       // First line: 'comment' keyword
       const result1 = tokenizeLine(lines[0]!, state);
       state = result1.ruleStack;
-      const scopes1 = result1.tokens.flatMap(t => t.scopes);
+      const scopes1 = result1.tokens.flatMap((t) => t.scopes);
       expect(scopes1).toContain('keyword.directive.comment.hledger');
 
       // Second line: block comment content
       const result2 = tokenizeLine(lines[1]!, state);
       state = result2.ruleStack;
-      const scopes2 = result2.tokens.flatMap(t => t.scopes);
+      const scopes2 = result2.tokens.flatMap((t) => t.scopes);
       expect(scopes2).toContain('comment.block.hledger');
 
       // Third line: 'end comment' keyword
       const result3 = tokenizeLine(lines[2]!, state);
-      const scopes3 = result3.tokens.flatMap(t => t.scopes);
+      const scopes3 = result3.tokens.flatMap((t) => t.scopes);
       expect(scopes3).toContain('keyword.directive.comment.hledger');
     });
 
     it('should highlight URLs in comments', () => {
-      assertLineContainsScope('; Check https://example.com for details', 'markup.underline.link.hledger');
+      assertLineContainsScope(
+        '; Check https://example.com for details',
+        'markup.underline.link.hledger'
+      );
     });
 
     it('should highlight tags in comments', () => {
@@ -136,7 +146,10 @@ describe('TextMate Grammar Tests', () => {
     });
 
     it('should highlight transaction note', () => {
-      assertLineContainsScope('2025-11-22 Grocery Store | Weekly shopping', 'string.unquoted.note.hledger');
+      assertLineContainsScope(
+        '2025-11-22 Grocery Store | Weekly shopping',
+        'string.unquoted.note.hledger'
+      );
     });
 
     it('should highlight periodic transaction', () => {
@@ -200,11 +213,9 @@ describe('TextMate Grammar Tests', () => {
       // In posting context, uses generic account scope for generic accounts (Note: Some Cyrillic account names may not match specific patterns)
       const line = '    Собственные:Начальный';
       const { tokens } = tokenizeLine(line);
-      const allScopes = tokens.flatMap(token => token.scopes);
+      const allScopes = tokens.flatMap((token) => token.scopes);
       // Should have some account-related scope
-      expect(allScopes.some(scope =>
-        scope.includes('account')
-      )).toBe(true);
+      expect(allScopes.some((scope) => scope.includes('account'))).toBe(true);
     });
 
     it('should highlight Russian Income account (Доходы)', () => {
@@ -221,74 +232,122 @@ describe('TextMate Grammar Tests', () => {
     });
 
     it('should highlight amount', () => {
-      assertLineContainsScope('    Assets:Cash              100', 'constant.numeric.amount.hledger');
+      assertLineContainsScope(
+        '    Assets:Cash              100',
+        'constant.numeric.amount.hledger'
+      );
     });
 
     it('should highlight commodity', () => {
-      assertLineContainsScope('    Assets:Cash              100 USD', 'entity.name.type.commodity.hledger');
+      assertLineContainsScope(
+        '    Assets:Cash              100 USD',
+        'entity.name.type.commodity.hledger'
+      );
     });
 
     it('should highlight currency symbol commodity', () => {
-      assertLineContainsScope('    Assets:Cash              $100', 'entity.name.type.commodity.hledger');
+      assertLineContainsScope(
+        '    Assets:Cash              $100',
+        'entity.name.type.commodity.hledger'
+      );
     });
 
     it('should highlight quoted commodity', () => {
-      assertLineContainsScope('    Assets:Cash              100 "CUSTOM"', 'entity.name.type.commodity.hledger');
+      assertLineContainsScope(
+        '    Assets:Cash              100 "CUSTOM"',
+        'entity.name.type.commodity.hledger'
+      );
     });
   });
 
   describe('Amounts and Commodities', () => {
     it('should highlight negative amount', () => {
-      assertLineContainsScope('    Expenses:Food            -50 USD', 'constant.numeric.amount.hledger');
+      assertLineContainsScope(
+        '    Expenses:Food            -50 USD',
+        'constant.numeric.amount.hledger'
+      );
     });
 
     it('should highlight positive amount with sign', () => {
-      assertLineContainsScope('    Assets:Cash              +100 USD', 'constant.numeric.amount.hledger');
+      assertLineContainsScope(
+        '    Assets:Cash              +100 USD',
+        'constant.numeric.amount.hledger'
+      );
     });
 
     it('should highlight amount with thousand separators (comma)', () => {
-      assertLineContainsScope('    Assets:Cash              1,000 USD', 'constant.numeric.amount.hledger');
+      assertLineContainsScope(
+        '    Assets:Cash              1,000 USD',
+        'constant.numeric.amount.hledger'
+      );
     });
 
     it('should highlight amount with thousand separators (apostrophe)', () => {
-      assertLineContainsScope("    Assets:Cash              1'000 USD", 'constant.numeric.amount.hledger');
+      assertLineContainsScope(
+        "    Assets:Cash              1'000 USD",
+        'constant.numeric.amount.hledger'
+      );
     });
 
     it('should highlight amount with decimal point', () => {
-      assertLineContainsScope('    Assets:Cash              100.50 USD', 'constant.numeric.amount.hledger');
+      assertLineContainsScope(
+        '    Assets:Cash              100.50 USD',
+        'constant.numeric.amount.hledger'
+      );
     });
 
     it('should highlight amount with decimal comma (European style)', () => {
-      assertLineContainsScope('    Assets:Cash              100,50 EUR', 'constant.numeric.amount.hledger');
+      assertLineContainsScope(
+        '    Assets:Cash              100,50 EUR',
+        'constant.numeric.amount.hledger'
+      );
     });
 
     it('should highlight commodity before amount (prefix style)', () => {
-      assertLineContainsScope('    Assets:Cash              $100', 'entity.name.type.commodity.hledger');
+      assertLineContainsScope(
+        '    Assets:Cash              $100',
+        'entity.name.type.commodity.hledger'
+      );
     });
 
     it('should highlight commodity after amount (suffix style)', () => {
-      assertLineContainsScope('    Assets:Cash              100 USD', 'entity.name.type.commodity.hledger');
+      assertLineContainsScope(
+        '    Assets:Cash              100 USD',
+        'entity.name.type.commodity.hledger'
+      );
     });
   });
 
   describe('Cost and Price', () => {
     it('should highlight unit cost with @', () => {
-      assertLineContainsScope('    Assets:Stock             10 AAPL @ $150', 'keyword.operator.cost.hledger');
+      assertLineContainsScope(
+        '    Assets:Stock             10 AAPL @ $150',
+        'keyword.operator.cost.hledger'
+      );
     });
 
     it('should highlight total cost with @@', () => {
-      assertLineContainsScope('    Assets:Stock             10 AAPL @@ $1500', 'keyword.operator.cost.total.hledger');
+      assertLineContainsScope(
+        '    Assets:Stock             10 AAPL @@ $1500',
+        'keyword.operator.cost.total.hledger'
+      );
     });
   });
 
   describe('Balance Assertions', () => {
     it('should highlight balance assertion with ==', () => {
       // Note: Single = is handled by price-assignment, double == by balance-assertion
-      assertLineContainsScope('    Assets:Checking          100 USD == 1000 USD', 'keyword.operator.balance-assertion.hledger');
+      assertLineContainsScope(
+        '    Assets:Checking          100 USD == 1000 USD',
+        'keyword.operator.balance-assertion.hledger'
+      );
     });
 
     it('should highlight price assignment with =', () => {
-      assertLineContainsScope('    Assets:Checking          100 USD = 1000 USD', 'keyword.operator.price-assignment.hledger');
+      assertLineContainsScope(
+        '    Assets:Checking          100 USD = 1000 USD',
+        'keyword.operator.price-assignment.hledger'
+      );
     });
   });
 
@@ -358,7 +417,10 @@ describe('TextMate Grammar Tests', () => {
 
   describe('Timeclock Entries', () => {
     it('should highlight clock-in entry (i)', () => {
-      assertLineContainsScope('i 2025-11-22 09:00:00 Project Work', 'keyword.operator.timeclock.hledger');
+      assertLineContainsScope(
+        'i 2025-11-22 09:00:00 Project Work',
+        'keyword.operator.timeclock.hledger'
+      );
     });
 
     it('should highlight clock-out entry (o)', () => {
@@ -390,7 +452,7 @@ describe('TextMate Grammar Tests', () => {
       // Note: In timeclock context, time is part of description scope
       const line = 'i 2025-11-22 09:30:00 Project';
       const { tokens } = tokenizeLine(line);
-      const allScopes = tokens.flatMap(t => t.scopes);
+      const allScopes = tokens.flatMap((t) => t.scopes);
 
       expect(allScopes).toContain('keyword.operator.timeclock.hledger');
       expect(allScopes).toContain('constant.numeric.date.iso.hledger');
@@ -401,7 +463,7 @@ describe('TextMate Grammar Tests', () => {
       // Note: In timeclock context, time is part of description scope
       const line = 'i 2025-11-22 09:30:45 Project';
       const { tokens } = tokenizeLine(line);
-      const allScopes = tokens.flatMap(t => t.scopes);
+      const allScopes = tokens.flatMap((t) => t.scopes);
 
       expect(allScopes).toContain('keyword.operator.timeclock.hledger');
       expect(allScopes).toContain('constant.numeric.date.iso.hledger');
@@ -411,11 +473,17 @@ describe('TextMate Grammar Tests', () => {
 
   describe('Lot Information', () => {
     it('should highlight lot date', () => {
-      assertLineContainsScope('    Assets:Stock             10 AAPL {2025-01-15}', 'meta.lot.date.hledger');
+      assertLineContainsScope(
+        '    Assets:Stock             10 AAPL {2025-01-15}',
+        'meta.lot.date.hledger'
+      );
     });
 
     it('should highlight lot price', () => {
-      assertLineContainsScope('    Assets:Stock             10 AAPL {=$150}', 'meta.lot.price.hledger');
+      assertLineContainsScope(
+        '    Assets:Stock             10 AAPL {=$150}',
+        'meta.lot.price.hledger'
+      );
     });
   });
 
@@ -425,15 +493,24 @@ describe('TextMate Grammar Tests', () => {
         '2025-11-22 * Grocery Store | Weekly shopping',
         '    ; project: personal',
         '    Expenses:Food:Groceries      50 USD',
-        '    Assets:Checking'
+        '    Assets:Checking',
       ];
 
       let state = INITIAL;
       const expectedScopes = [
-        ['constant.numeric.date.hledger', 'keyword.operator.status.hledger', 'entity.name.function.payee.hledger', 'string.unquoted.note.hledger'],
+        [
+          'constant.numeric.date.hledger',
+          'keyword.operator.status.hledger',
+          'entity.name.function.payee.hledger',
+          'string.unquoted.note.hledger',
+        ],
         ['comment.line.semicolon.hledger', 'entity.name.tag.hledger'],
-        ['entity.name.type.account.hledger', 'constant.numeric.amount.hledger', 'entity.name.type.commodity.hledger'],
-        ['entity.name.type.account.hledger']
+        [
+          'entity.name.type.account.hledger',
+          'constant.numeric.amount.hledger',
+          'entity.name.type.commodity.hledger',
+        ],
+        ['entity.name.type.account.hledger'],
       ];
 
       for (let i = 0; i < lines.length; i++) {
@@ -441,7 +518,7 @@ describe('TextMate Grammar Tests', () => {
         const result = tokenizeLine(line, state);
         state = result.ruleStack;
 
-        const allScopes = result.tokens.flatMap(token => token.scopes);
+        const allScopes = result.tokens.flatMap((token) => token.scopes);
 
         for (const expectedScope of expectedScopes[i]!) {
           expect(allScopes).toContain(expectedScope);
@@ -454,7 +531,7 @@ describe('TextMate Grammar Tests', () => {
       // gets generic source.hledger scope in this context
       const line = 'account Assets:Checking';
       const { tokens } = tokenizeLine(line);
-      const allScopes = tokens.flatMap(token => token.scopes);
+      const allScopes = tokens.flatMap((token) => token.scopes);
 
       expect(allScopes).toContain('keyword.directive.hledger');
       expect(allScopes).toContain('meta.directive.keyword.hledger');
@@ -465,7 +542,7 @@ describe('TextMate Grammar Tests', () => {
       // gets generic source.hledger scope in this context
       const line = 'P 2025-11-22 USD 1.20 EUR';
       const { tokens } = tokenizeLine(line);
-      const allScopes = tokens.flatMap(token => token.scopes);
+      const allScopes = tokens.flatMap((token) => token.scopes);
 
       expect(allScopes).toContain('keyword.directive.hledger');
       expect(allScopes).toContain('meta.directive.keyword.hledger');
@@ -494,7 +571,10 @@ describe('TextMate Grammar Tests', () => {
     });
 
     it('should handle amounts without commodity', () => {
-      assertLineContainsScope('    Assets:Cash              100', 'constant.numeric.amount.hledger');
+      assertLineContainsScope(
+        '    Assets:Cash              100',
+        'constant.numeric.amount.hledger'
+      );
     });
 
     it('should handle posting with only account (no amount)', () => {

@@ -2,10 +2,10 @@
 // ~200 lines according to REFACTORING.md FASE G
 // Combines configuration and caching functionality
 
-import * as vscode from "vscode";
-import * as path from "path";
-import { HLedgerParser, ParsedHLedgerData } from "./HLedgerParser";
-import { SimpleProjectCache } from "./SimpleProjectCache";
+import * as vscode from 'vscode';
+import * as path from 'path';
+import { HLedgerParser, ParsedHLedgerData } from './HLedgerParser';
+import { SimpleProjectCache } from './SimpleProjectCache';
 import {
   CompletionContext,
   AccountName,
@@ -18,10 +18,10 @@ import {
   TemplateKey,
   createUsageCount,
   createCacheKey,
-} from "./types";
+} from './types';
 
 // CompletionContext is now imported from types.ts
-export { CompletionContext } from "./types";
+export { CompletionContext } from './types';
 
 /**
  * Result type for document path validation.
@@ -31,7 +31,7 @@ type PathValidationResult =
   | { valid: true; projectPath: string }
   | {
       valid: false;
-      reason: "virtual-document" | "malformed-path" | "invalid-derived-path";
+      reason: 'virtual-document' | 'malformed-path' | 'invalid-derived-path';
     };
 
 export class HLedgerConfig {
@@ -50,8 +50,7 @@ export class HLedgerConfig {
     FULL_DATE: /^\d{4}[-/]\d{1,2}[-/]\d{1,2}$/, // Complete date format
     SHORT_DATE: /^(0?[1-9]|1[0-2])[-/](0?[1-9]|[12]\d|3[01])$/, // MM/DD or M/D format
     // Fixed: Support both full dates (YYYY-MM-DD) and short dates (MM-DD) in transactions
-    DATE_IN_TRANSACTION:
-      /^\s*(?:\d{4}[-/]\d{1,2}[-/]\d{1,2}|\d{1,2}[-/]\d{1,2})\s*[*!]?\s*/,
+    DATE_IN_TRANSACTION: /^\s*(?:\d{4}[-/]\d{1,2}[-/]\d{1,2}|\d{1,2}[-/]\d{1,2})\s*[*!]?\s*/,
   } as const;
 
   private parser: HLedgerParser;
@@ -71,15 +70,13 @@ export class HLedgerConfig {
    * 2. Malformed file paths - invalid or dangerous paths
    * 3. Invalid derived paths - when path.dirname yields unusable result
    */
-  private validateDocumentPath(
-    document: vscode.TextDocument,
-  ): PathValidationResult {
+  private validateDocumentPath(document: vscode.TextDocument): PathValidationResult {
     const filePath = document.uri.fsPath;
 
     // Virtual documents (untitled, vscode-notebook, output, custom schemes)
     // don't have real file paths - skip workspace scanning
-    if (document.uri.scheme !== "file") {
-      return { valid: false, reason: "virtual-document" };
+    if (document.uri.scheme !== 'file') {
+      return { valid: false, reason: 'virtual-document' };
     }
 
     // Check workspace folder first
@@ -92,24 +89,20 @@ export class HLedgerConfig {
     // Even for file:// scheme, fsPath could be malformed
     if (
       !filePath ||
-      typeof filePath !== "string" ||
+      typeof filePath !== 'string' ||
       !path.isAbsolute(filePath) ||
-      filePath === "/" ||
-      filePath === "."
+      filePath === '/' ||
+      filePath === '.'
     ) {
-      return { valid: false, reason: "malformed-path" };
+      return { valid: false, reason: 'malformed-path' };
     }
 
     // No workspace, use directory of the file
     const projectPath = path.dirname(filePath);
 
     // Safety check: ensure derived path is absolute and reasonable
-    if (
-      !path.isAbsolute(projectPath) ||
-      projectPath === "/" ||
-      projectPath === "."
-    ) {
-      return { valid: false, reason: "invalid-derived-path" };
+    if (!path.isAbsolute(projectPath) || projectPath === '/' || projectPath === '.') {
+      return { valid: false, reason: 'invalid-derived-path' };
     }
 
     return { valid: true, projectPath };
@@ -118,20 +111,14 @@ export class HLedgerConfig {
   // Main method to get configuration for a document
   // Optional currentLine parameter: when provided, excludes that line from parsing
   // This prevents incomplete data (e.g., partial account names being typed) from appearing in completions
-  getConfigForDocument(
-    document: vscode.TextDocument,
-    currentLine?: number,
-  ): void {
+  getConfigForDocument(document: vscode.TextDocument, currentLine?: number): void {
     const filePath = document.uri.fsPath;
     const validationResult = this.validateDocumentPath(document);
 
     // For invalid paths, parse document content only without workspace scanning
     if (!validationResult.valid) {
-      const currentContent = this.getContentExcludingCurrentLine(
-        document,
-        currentLine,
-      );
-      const effectivePath = filePath || "untitled";
+      const currentContent = this.getContentExcludingCurrentLine(document, currentLine);
+      const effectivePath = filePath || 'untitled';
       this.data = this.parser.parseContent(currentContent, effectivePath);
       return;
     }
@@ -153,10 +140,7 @@ export class HLedgerConfig {
     // (potentially unsaved) document are available for completion.
     // When currentLine is provided, exclude that line to prevent incomplete data
     // (e.g., "Прод" while typing "Расходы:Продукты") from polluting completions.
-    const currentContent = this.getContentExcludingCurrentLine(
-      document,
-      currentLine,
-    );
+    const currentContent = this.getContentExcludingCurrentLine(document, currentLine);
     const currentData = this.parser.parseContent(currentContent, filePath);
 
     // Clone workspace data before merging to prevent cache pollution.
@@ -173,7 +157,7 @@ export class HLedgerConfig {
    */
   private getContentExcludingCurrentLine(
     document: vscode.TextDocument,
-    lineToExclude?: number,
+    lineToExclude?: number
   ): string {
     if (lineToExclude === undefined) {
       return document.getText();
@@ -185,7 +169,7 @@ export class HLedgerConfig {
         lines.push(document.lineAt(i).text);
       }
     }
-    return lines.join("\n");
+    return lines.join('\n');
   }
 
   // Helper method to cast readonly data to mutable for internal operations
@@ -266,9 +250,7 @@ export class HLedgerConfig {
 
     // Update with current document data
     currentData.accounts.forEach((acc) => mutableData.accounts.add(acc));
-    currentData.usedAccounts.forEach((acc) =>
-      mutableData.usedAccounts.add(acc),
-    );
+    currentData.usedAccounts.forEach((acc) => mutableData.usedAccounts.add(acc));
     currentData.payees.forEach((p) => mutableData.payees.add(p));
     currentData.tags.forEach((t) => mutableData.tags.add(t));
     currentData.commodities.forEach((c) => mutableData.commodities.add(c));
@@ -290,8 +272,7 @@ export class HLedgerConfig {
     });
 
     currentData.commodityUsage.forEach((count, key) => {
-      const existing =
-        mutableData.commodityUsage.get(key) ?? createUsageCount(0);
+      const existing = mutableData.commodityUsage.get(key) ?? createUsageCount(0);
       mutableData.commodityUsage.set(key, createUsageCount(existing + count));
     });
   }
@@ -439,8 +420,8 @@ export class HLedgerConfig {
         // Sort by recent frequency first (higher = better)
         if (a.frequency !== b.frequency) return b.frequency - a.frequency;
         // Then by lastUsedDate (most recent first)
-        const aDate = a.template.lastUsedDate ?? "";
-        const bDate = b.template.lastUsedDate ?? "";
+        const aDate = a.template.lastUsedDate ?? '';
+        const bDate = b.template.lastUsedDate ?? '';
         if (aDate !== bDate) return bDate.localeCompare(aDate);
         // Fall back to total usage
         return b.template.usageCount - a.template.usageCount;
@@ -505,30 +486,22 @@ export class HLedgerConfig {
       const bMostFrequentKey = this.getMostFrequentTemplateKey(b);
       const aDate =
         aMostFrequentKey != null
-          ? (this.data!.transactionTemplates.get(a)?.get(aMostFrequentKey)
-              ?.lastUsedDate ?? "")
-          : "";
+          ? (this.data!.transactionTemplates.get(a)?.get(aMostFrequentKey)?.lastUsedDate ?? '')
+          : '';
       const bDate =
         bMostFrequentKey != null
-          ? (this.data!.transactionTemplates.get(b)?.get(bMostFrequentKey)
-              ?.lastUsedDate ?? "")
-          : "";
+          ? (this.data!.transactionTemplates.get(b)?.get(bMostFrequentKey)?.lastUsedDate ?? '')
+          : '';
       if (aDate !== bDate) return bDate.localeCompare(aDate);
 
       // Fall back to total usage
       const aTemplates = this.data!.transactionTemplates.get(a);
       const bTemplates = this.data!.transactionTemplates.get(b);
       const aTotal = aTemplates
-        ? Array.from(aTemplates.values()).reduce(
-            (sum, t) => sum + t.usageCount,
-            0,
-          )
+        ? Array.from(aTemplates.values()).reduce((sum, t) => sum + t.usageCount, 0)
         : 0;
       const bTotal = bTemplates
-        ? Array.from(bTemplates.values()).reduce(
-            (sum, t) => sum + t.usageCount,
-            0,
-          )
+        ? Array.from(bTemplates.values()).reduce((sum, t) => sum + t.usageCount, 0)
         : 0;
       return bTotal - aTotal;
     });
@@ -537,7 +510,7 @@ export class HLedgerConfig {
   // Context detection for completion
   getCompletionContext(
     document: vscode.TextDocument,
-    position: vscode.Position,
+    position: vscode.Position
   ): CompletionContext {
     const line = document.lineAt(position).text;
     const beforeCursor = line.substring(0, position.character);
@@ -547,28 +520,25 @@ export class HLedgerConfig {
     const query = this.extractHierarchicalQuery(beforeCursor);
 
     // Check if we're in a comment
-    if (beforeCursor.includes(";") || beforeCursor.includes("#")) {
+    if (beforeCursor.includes(';') || beforeCursor.includes('#')) {
       // Look for tag patterns in comments
       if (HLedgerConfig.PATTERNS.TAG_IN_COMMENT.test(beforeCursor)) {
-        return { type: "tag", query };
+        return { type: 'tag', query };
       }
-      return { type: "tag", query: "" };
+      return { type: 'tag', query: '' };
     }
 
     // Check for date context FIRST - at beginning of line with numeric input
     const lineStart = beforeCursor.trimStart();
     if (
-      this.isDateContext(
-        lineStart,
-        position.character - (beforeCursor.length - lineStart.length),
-      )
+      this.isDateContext(lineStart, position.character - (beforeCursor.length - lineStart.length))
     ) {
-      return { type: "date", query: lineStart }; // Use lineStart as query for better matching
+      return { type: 'date', query: lineStart }; // Use lineStart as query for better matching
     }
 
     // Check for payee context BEFORE commodity (after date in transaction line)
     if (this.isPayeePosition(line, position.character)) {
-      return { type: "payee", query };
+      return { type: 'payee', query };
     }
 
     // Check for hledger keywords at beginning of line (but not if it looks like a date)
@@ -577,7 +547,7 @@ export class HLedgerConfig {
       position.character < 20 &&
       !HLedgerConfig.PATTERNS.NUMERIC_START.test(lineStart)
     ) {
-      return { type: "keyword", query };
+      return { type: 'keyword', query };
     }
 
     // Check for account context (indented lines or after account keyword)
@@ -585,31 +555,31 @@ export class HLedgerConfig {
       HLedgerConfig.PATTERNS.INDENTED_LINE.test(beforeCursor) &&
       !this.isInAmountPosition(line, position.character)
     ) {
-      return { type: "account", query };
+      return { type: 'account', query };
     }
 
     // Check for explicit commodity context (after commodity keyword)
-    if (beforeCursor.includes("commodity ")) {
-      return { type: "commodity", query };
+    if (beforeCursor.includes('commodity ')) {
+      return { type: 'commodity', query };
     }
 
     // Check for commodity context ONLY in posting lines (after numbers/amounts)
     if (this.isInAmountPosition(line, position.character)) {
-      return { type: "commodity", query };
+      return { type: 'commodity', query };
     }
 
     // Check for account directive context
-    if (beforeCursor.includes("account ")) {
-      return { type: "account", query };
+    if (beforeCursor.includes('account ')) {
+      return { type: 'account', query };
     }
 
     // Default to account completion for indented lines
     if (HLedgerConfig.PATTERNS.INDENTED_LINE.test(beforeCursor)) {
-      return { type: "account", query };
+      return { type: 'account', query };
     }
 
     // Default to keyword completion for line start
-    return { type: "keyword", query };
+    return { type: 'keyword', query };
   }
 
   /**
@@ -638,7 +608,7 @@ export class HLedgerConfig {
     }
 
     // If no match found, return empty string
-    return "";
+    return '';
   }
 
   private isDateContext(lineStart: string, positionInTrimmed: number): boolean {
@@ -656,8 +626,7 @@ export class HLedgerConfig {
     const isShortDate = HLedgerConfig.PATTERNS.SHORT_DATE.test(lineStart);
 
     // Accept any of these patterns
-    const isValidPattern =
-      isNumericStart || isPartialDate || isFullDate || isShortDate;
+    const isValidPattern = isNumericStart || isPartialDate || isFullDate || isShortDate;
 
     // Be generous with position - allow up to 12 characters for date entry
     return isValidPattern && positionInTrimmed <= 12;
@@ -676,9 +645,7 @@ export class HLedgerConfig {
     // Check if we're after a number (with optional whitespace) in a posting line
     if (HLedgerConfig.PATTERNS.AFTER_NUMBER.test(beforeCursor)) {
       // Make sure we're past the account name part
-      const accountMatch = beforeCursor.match(
-        HLedgerConfig.PATTERNS.ACCOUNT_END,
-      );
+      const accountMatch = beforeCursor.match(HLedgerConfig.PATTERNS.ACCOUNT_END);
       if (accountMatch && position > accountMatch[0].length) {
         return true;
       }
@@ -695,9 +662,7 @@ export class HLedgerConfig {
   private isPayeePosition(line: string, position: number): boolean {
     // Payee comes after date and optional status in transaction lines
     const beforeCursor = line.substring(0, position);
-    const dateMatch = beforeCursor.match(
-      HLedgerConfig.PATTERNS.DATE_IN_TRANSACTION,
-    );
+    const dateMatch = beforeCursor.match(HLedgerConfig.PATTERNS.DATE_IN_TRANSACTION);
 
     // Fixed: Use >= instead of > to handle cursor at end of date match
     // This covers cases like "2024-08-23 |" where cursor is right after the space
@@ -812,7 +777,7 @@ export class HLedgerConfig {
     // Return accounts that are used but not defined (including parent accounts)
     const defined = new Set(this.getDefinedAccounts());
     return this.getUsedAccounts().filter(
-      (account) => !this.isAccountDefinedOrHasDefinedParent(account, defined),
+      (account) => !this.isAccountDefinedOrHasDefinedParent(account, defined)
     );
   }
 
@@ -822,7 +787,7 @@ export class HLedgerConfig {
    */
   private isAccountDefinedOrHasDefinedParent(
     accountName: AccountName,
-    definedAccounts: ReadonlySet<AccountName>,
+    definedAccounts: ReadonlySet<AccountName>
   ): boolean {
     // Check exact match first
     if (definedAccounts.has(accountName)) {
@@ -831,9 +796,9 @@ export class HLedgerConfig {
 
     // Check if any parent account is defined
     // For 'Assets:Bank:Cash', check 'Assets:Bank' and 'Assets'
-    const parts = accountName.split(":");
+    const parts = accountName.split(':');
     for (let i = parts.length - 1; i > 0; i--) {
-      const parentAccount = parts.slice(0, i).join(":") as AccountName;
+      const parentAccount = parts.slice(0, i).join(':') as AccountName;
       if (definedAccounts.has(parentAccount)) {
         return true;
       }

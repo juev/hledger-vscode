@@ -2,8 +2,8 @@
  * HLedgerImportCommands - Command handlers for CSV/TSV import
  */
 
-import * as vscode from "vscode";
-import * as path from "path";
+import * as vscode from 'vscode';
+import * as path from 'path';
 import {
   TabularDataParser,
   ColumnDetector,
@@ -12,8 +12,8 @@ import {
   PayeeAccountHistory,
   DEFAULT_IMPORT_OPTIONS,
   isJournalError,
-} from "./import";
-import { HLedgerConfig } from "./HLedgerConfig";
+} from './import';
+import { HLedgerConfig } from './HLedgerConfig';
 
 /**
  * Import commands for converting tabular data to hledger format
@@ -39,25 +39,23 @@ export class HLedgerImportCommands implements vscode.Disposable {
   async importFromSelection(): Promise<void> {
     const editor = vscode.window.activeTextEditor;
     if (!editor) {
-      vscode.window.showErrorMessage("No active editor found.");
+      vscode.window.showErrorMessage('No active editor found.');
       return;
     }
 
     const selection = editor.selection;
     if (selection.isEmpty) {
-      vscode.window.showErrorMessage(
-        "No text selected. Please select tabular data to import.",
-      );
+      vscode.window.showErrorMessage('No text selected. Please select tabular data to import.');
       return;
     }
 
     const selectedText = editor.document.getText(selection);
     if (!selectedText.trim()) {
-      vscode.window.showErrorMessage("Selection is empty.");
+      vscode.window.showErrorMessage('Selection is empty.');
       return;
     }
 
-    await this.processImport(selectedText, "selection");
+    await this.processImport(selectedText, 'selection');
   }
 
   /**
@@ -66,7 +64,7 @@ export class HLedgerImportCommands implements vscode.Disposable {
   async importFromFile(): Promise<void> {
     const editor = vscode.window.activeTextEditor;
     if (!editor) {
-      vscode.window.showErrorMessage("No active editor found.");
+      vscode.window.showErrorMessage('No active editor found.');
       return;
     }
 
@@ -74,7 +72,7 @@ export class HLedgerImportCommands implements vscode.Disposable {
     const content = document.getText();
 
     if (!content.trim()) {
-      vscode.window.showErrorMessage("File is empty.");
+      vscode.window.showErrorMessage('File is empty.');
       return;
     }
 
@@ -87,46 +85,41 @@ export class HLedgerImportCommands implements vscode.Disposable {
   /**
    * Process import with progress indicator
    */
-  private async processImport(
-    content: string,
-    sourceName: string,
-  ): Promise<void> {
+  private async processImport(content: string, sourceName: string): Promise<void> {
     await vscode.window.withProgress(
       {
         location: vscode.ProgressLocation.Notification,
-        title: "Importing tabular data...",
+        title: 'Importing tabular data...',
         cancellable: false,
       },
       async (progress) => {
         try {
-          progress.report({ message: "Parsing data..." });
+          progress.report({ message: 'Parsing data...' });
 
           // Parse tabular data
           const parseResult = this.parser.parse(content);
           if (parseResult.success === false) {
-            vscode.window.showErrorMessage(
-              `Failed to parse data: ${parseResult.error}`,
-            );
+            vscode.window.showErrorMessage(`Failed to parse data: ${parseResult.error}`);
             return;
           }
 
           const parsedData = parseResult.value;
 
-          progress.report({ message: "Detecting columns..." });
+          progress.report({ message: 'Detecting columns...' });
 
           // Detect column types
           const columnMappings = this.columnDetector.detectColumns(
             parsedData.headers,
-            parsedData.rows,
+            parsedData.rows
           );
 
           // Check for required columns
           const validation = ColumnDetector.hasRequiredColumns(columnMappings);
           if (!validation.valid) {
-            const missing = validation.missing.join(", ");
+            const missing = validation.missing.join(', ');
             vscode.window.showErrorMessage(
               `Missing required columns: ${missing}. ` +
-                `Detected columns: ${columnMappings.map((m) => `${m.headerName}(${m.type})`).join(", ")}`,
+                `Detected columns: ${columnMappings.map((m) => `${m.headerName}(${m.type})`).join(', ')}`
             );
             return;
           }
@@ -137,7 +130,7 @@ export class HLedgerImportCommands implements vscode.Disposable {
             columnMappings,
           };
 
-          progress.report({ message: "Generating transactions..." });
+          progress.report({ message: 'Generating transactions...' });
 
           // Get import options from configuration
           const options = this.getImportOptions();
@@ -156,15 +149,12 @@ export class HLedgerImportCommands implements vscode.Disposable {
 
               if (!isExpectedFailure) {
                 // Log unexpected errors for debugging
-                console.error(
-                  "Failed to load payee account history from journal.",
-                  error,
-                );
+                console.error('Failed to load payee account history from journal.', error);
 
                 // Only show warning for unexpected failures
                 await vscode.window.showWarningMessage(
-                  "Could not load journal account history. Account resolution will use patterns and category mapping instead.",
-                  "OK",
+                  'Could not load journal account history. Account resolution will use patterns and category mapping instead.',
+                  'OK'
                 );
               }
               // For expected failures (JournalNotFoundError, JournalAccessError), continue silently
@@ -179,7 +169,7 @@ export class HLedgerImportCommands implements vscode.Disposable {
           const fatalErrors = result.errors.filter((e) => e.fatal);
           if (fatalErrors.length > 0) {
             vscode.window.showErrorMessage(
-              `Import failed: ${fatalErrors.map((e) => e.message).join("; ")}`,
+              `Import failed: ${fatalErrors.map((e) => e.message).join('; ')}`
             );
             return;
           }
@@ -187,13 +177,13 @@ export class HLedgerImportCommands implements vscode.Disposable {
           // Check if any transactions were generated
           if (result.transactions.length === 0) {
             vscode.window.showWarningMessage(
-              "No transactions could be generated from the data. " +
-                `Errors: ${result.errors.map((e) => e.message).join("; ")}`,
+              'No transactions could be generated from the data. ' +
+                `Errors: ${result.errors.map((e) => e.message).join('; ')}`
             );
             return;
           }
 
-          progress.report({ message: "Creating document..." });
+          progress.report({ message: 'Creating document...' });
 
           // Format transactions
           const journalContent = generator.formatAll(result, sourceName);
@@ -204,11 +194,10 @@ export class HLedgerImportCommands implements vscode.Disposable {
           // Show summary
           this.showImportSummary(result);
         } catch (error: unknown) {
-          const message =
-            error instanceof Error ? error.message : String(error);
+          const message = error instanceof Error ? error.message : String(error);
           vscode.window.showErrorMessage(`Import failed: ${message}`);
         }
-      },
+      }
     );
   }
 
@@ -216,42 +205,30 @@ export class HLedgerImportCommands implements vscode.Disposable {
    * Get import options from VS Code configuration
    */
   private getImportOptions(): ImportOptions {
-    const config = vscode.workspace.getConfiguration("hledger.import");
+    const config = vscode.workspace.getConfiguration('hledger.import');
 
-    const dateFormat = config.get<ImportOptions["dateFormat"]>(
-      "dateFormat",
-      DEFAULT_IMPORT_OPTIONS.dateFormat,
+    const dateFormat = config.get<ImportOptions['dateFormat']>(
+      'dateFormat',
+      DEFAULT_IMPORT_OPTIONS.dateFormat
     );
 
     const options: ImportOptions = {
       defaultDebitAccount: config.get(
-        "defaultDebitAccount",
-        DEFAULT_IMPORT_OPTIONS.defaultDebitAccount,
+        'defaultDebitAccount',
+        DEFAULT_IMPORT_OPTIONS.defaultDebitAccount
       ),
       defaultCreditAccount: config.get(
-        "defaultCreditAccount",
-        DEFAULT_IMPORT_OPTIONS.defaultCreditAccount,
+        'defaultCreditAccount',
+        DEFAULT_IMPORT_OPTIONS.defaultCreditAccount
       ),
       defaultBalancingAccount: config.get(
-        "defaultBalancingAccount",
-        DEFAULT_IMPORT_OPTIONS.defaultBalancingAccount,
+        'defaultBalancingAccount',
+        DEFAULT_IMPORT_OPTIONS.defaultBalancingAccount
       ),
-      invertAmounts: config.get(
-        "invertAmounts",
-        DEFAULT_IMPORT_OPTIONS.invertAmounts,
-      ),
-      useJournalHistory: config.get(
-        "useJournalHistory",
-        DEFAULT_IMPORT_OPTIONS.useJournalHistory,
-      ),
-      merchantPatterns: config.get(
-        "merchantPatterns",
-        DEFAULT_IMPORT_OPTIONS.merchantPatterns,
-      ),
-      categoryMapping: config.get(
-        "categoryMapping",
-        DEFAULT_IMPORT_OPTIONS.categoryMapping,
-      ),
+      invertAmounts: config.get('invertAmounts', DEFAULT_IMPORT_OPTIONS.invertAmounts),
+      useJournalHistory: config.get('useJournalHistory', DEFAULT_IMPORT_OPTIONS.useJournalHistory),
+      merchantPatterns: config.get('merchantPatterns', DEFAULT_IMPORT_OPTIONS.merchantPatterns),
+      categoryMapping: config.get('categoryMapping', DEFAULT_IMPORT_OPTIONS.categoryMapping),
     };
 
     // Only include dateFormat if it has a value
@@ -266,7 +243,7 @@ export class HLedgerImportCommands implements vscode.Disposable {
    */
   private async openInNewDocument(content: string): Promise<void> {
     const document = await vscode.workspace.openTextDocument({
-      language: "hledger",
+      language: 'hledger',
       content,
     });
 
@@ -303,11 +280,9 @@ export class HLedgerImportCommands implements vscode.Disposable {
     }
 
     if (warnings.length > 0) {
-      vscode.window.showWarningMessage(
-        `${message}. ${warnings.length} warnings.`,
-      );
+      vscode.window.showWarningMessage(`${message}. ${warnings.length} warnings.`);
     } else {
-      vscode.window.showInformationMessage(message + ".");
+      vscode.window.showInformationMessage(message + '.');
     }
   }
 }

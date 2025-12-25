@@ -5,8 +5,7 @@
 export class RegexPatterns {
   // Date patterns
   static readonly DATE_FULL = /^(\d{4}[-/.]\d{2}[-/.]\d{2}|\d{2}[-/.]\d{2})/;
-  static readonly DATE_LINE_START =
-    /^(\d{4}[-/]\d{1,2}[-/]\d{1,2}|\d{1,2}[-/]\d{1,2})$/u;
+  static readonly DATE_LINE_START = /^(\d{4}[-/]\d{1,2}[-/]\d{1,2}|\d{1,2}[-/]\d{1,2})$/u;
   static readonly DATE_WITH_STATUS =
     /^(\d{4}[-/]\d{1,2}[-/]\d{1,2}|\d{1,2}[-/]\d{1,2})\s*[*!]?\s*$/u;
   static readonly AFTER_DATE_PATTERN =
@@ -20,8 +19,7 @@ export class RegexPatterns {
   static readonly ZERO_PARTIAL_DATE = /^0[1-9][-/]?\d{0,2}$/u;
 
   // Transaction patterns
-  static readonly TRANSACTION_LINE =
-    /^(\d{4}[-/.]\d{2}[-/.]\d{2}|\d{2}[-/.]\d{2})/;
+  static readonly TRANSACTION_LINE = /^(\d{4}[-/.]\d{2}[-/.]\d{2}|\d{2}[-/.]\d{2})/;
   static readonly TRANSACTION_CODE = /^\([^)]+\)\s*/;
   static readonly TRANSACTION_STATUS = /^[*!]\s*/;
 
@@ -31,8 +29,7 @@ export class RegexPatterns {
   static readonly COMMENT_HASH = /#/;
 
   // Tag patterns
-  static readonly TAG_PATTERN =
-    /([\p{L}\p{N}_]+):\s*([^,;#]*?)(?=\s*(?:,|$))/gu;
+  static readonly TAG_PATTERN = /([\p{L}\p{N}_]+):\s*([^,;#]*?)(?=\s*(?:,|$))/gu;
   static readonly TAG_NAME_PREFIX = /([\p{L}\p{N}_]+):/u;
 
   // Account patterns

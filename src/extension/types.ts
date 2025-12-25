@@ -119,7 +119,7 @@ export interface MutableRecentTemplateBuffer {
  * @returns TemplateKey for template identification
  */
 export function generateTemplateKey(accounts: readonly string[]): TemplateKey {
-  return [...accounts].sort().join("||") as TemplateKey;
+  return [...accounts].sort().join('||') as TemplateKey;
 }
 
 // Enhanced completion context interface with type safety
@@ -146,29 +146,29 @@ export interface CompletionRange {
  * Defines all possible completion types in hledger files.
  */
 export type CompletionType =
-  | "account"
-  | "payee"
-  | "tag"
-  | "tag_value"
-  | "commodity"
-  | "date"
-  | "none"
-  | "keyword"
-  | "transaction_template";
+  | 'account'
+  | 'payee'
+  | 'tag'
+  | 'tag_value'
+  | 'commodity'
+  | 'date'
+  | 'none'
+  | 'keyword'
+  | 'transaction_template';
 
 /**
  * Type guard for CompletionType validation.
  */
 export const isCompletionType = (value: string): value is CompletionType => {
   return [
-    "account",
-    "payee",
-    "tag",
-    "tag_value",
-    "commodity",
-    "date",
-    "keyword",
-    "transaction_template",
+    'account',
+    'payee',
+    'tag',
+    'tag_value',
+    'commodity',
+    'date',
+    'keyword',
+    'transaction_template',
   ].includes(value);
 };
 
@@ -251,103 +251,97 @@ export interface CacheStats {
 }
 
 // Basic constants for completion
-export const DEFAULT_ACCOUNT_PREFIXES = [
-  "Assets",
-  "Liabilities",
-  "Equity",
-  "Income",
-  "Expenses",
-];
+export const DEFAULT_ACCOUNT_PREFIXES = ['Assets', 'Liabilities', 'Equity', 'Income', 'Expenses'];
 
 export const DEFAULT_COMMODITIES = [
   // Major world currencies (ISO 4217 codes)
-  "USD",
-  "EUR",
-  "GBP",
-  "JPY",
-  "CAD",
-  "AUD",
-  "CHF",
-  "CNY",
-  "INR",
-  "BRL",
-  "RUB",
-  "KRW",
-  "MXN",
-  "SGD",
-  "HKD",
-  "NOK",
-  "SEK",
-  "DKK",
-  "PLN",
-  "CZK",
-  "HUF",
-  "TRY",
-  "ZAR",
-  "NZD",
-  "THB",
+  'USD',
+  'EUR',
+  'GBP',
+  'JPY',
+  'CAD',
+  'AUD',
+  'CHF',
+  'CNY',
+  'INR',
+  'BRL',
+  'RUB',
+  'KRW',
+  'MXN',
+  'SGD',
+  'HKD',
+  'NOK',
+  'SEK',
+  'DKK',
+  'PLN',
+  'CZK',
+  'HUF',
+  'TRY',
+  'ZAR',
+  'NZD',
+  'THB',
   // Currency symbols (Unicode Currency Symbols block)
-  "$",
-  "€",
-  "£",
-  "¥",
-  "₽",
-  "₩",
-  "₹",
-  "₪",
-  "¢",
-  "¥",
-  "₫",
-  "₱",
-  "₲",
-  "₴",
-  "₵",
-  "₸",
-  "₺",
-  "₼",
-  "₾",
-  "₿",
+  '$',
+  '€',
+  '£',
+  '¥',
+  '₽',
+  '₩',
+  '₹',
+  '₪',
+  '¢',
+  '¥',
+  '₫',
+  '₱',
+  '₲',
+  '₴',
+  '₵',
+  '₸',
+  '₺',
+  '₼',
+  '₾',
+  '₿',
   // Cryptocurrencies
-  "BTC",
-  "ETH",
-  "LTC",
-  "BCH",
-  "ADA",
-  "DOT",
-  "XRP",
-  "DOGE",
-  "USDT",
-  "USDC",
-  "BNB",
-  "SOL",
-  "MATIC",
-  "AVAX",
+  'BTC',
+  'ETH',
+  'LTC',
+  'BCH',
+  'ADA',
+  'DOT',
+  'XRP',
+  'DOGE',
+  'USDT',
+  'USDC',
+  'BNB',
+  'SOL',
+  'MATIC',
+  'AVAX',
   // Precious metals and commodities
-  "XAU",
-  "XAG",
-  "XPT",
-  "XPD",
-  "OIL",
-  "GAS",
-  "GOLD",
-  "SILVER",
+  'XAU',
+  'XAG',
+  'XPT',
+  'XPD',
+  'OIL',
+  'GAS',
+  'GOLD',
+  'SILVER',
 ];
 
 export const HLEDGER_KEYWORDS = [
-  "account",
-  "alias",
-  "commodity",
-  "payee",
-  "tag",
-  "include",
-  "year",
-  "apply",
-  "end",
-  "default",
-  "format",
-  "note",
-  "assert",
-  "check",
+  'account',
+  'alias',
+  'commodity',
+  'payee',
+  'tag',
+  'include',
+  'year',
+  'apply',
+  'end',
+  'default',
+  'format',
+  'note',
+  'assert',
+  'check',
 ] as const;
 
 // Type-safe keyword type
@@ -364,8 +358,7 @@ export const createCacheKey = (value: string): CacheKey => value;
 export const createCompletionScore = (value: number): CompletionScore => value;
 export const createUsageCount = (value: number): UsageCount => value;
 export const createLineNumber = (value: number): LineNumber => value;
-export const createCharacterPosition = (value: number): CharacterPosition =>
-  value;
+export const createCharacterPosition = (value: number): CharacterPosition => value;
 export const createDocumentVersion = (value: number): DocumentVersion => value;
 
 // Modern Result type for better error handling
@@ -384,15 +377,11 @@ export const failure = <E>(error: E): Result<never, E> => ({
 });
 
 // Type guard for Result
-export const isSuccess = <T, E>(
-  result: Result<T, E>,
-): result is { success: true; data: T } => {
+export const isSuccess = <T, E>(result: Result<T, E>): result is { success: true; data: T } => {
   return result.success;
 };
 
-export const isFailure = <T, E>(
-  result: Result<T, E>,
-): result is { success: false; error: E } => {
+export const isFailure = <T, E>(result: Result<T, E>): result is { success: false; error: E } => {
   return !result.success;
 };
 
@@ -410,9 +399,7 @@ export const validationSuccess = <T>(value: T): ValidationResult<T> => ({
   errors: [],
 });
 
-export const validationFailure = <T = never>(
-  errors: string[],
-): ValidationResult<T> => ({
+export const validationFailure = <T = never>(errors: string[]): ValidationResult<T> => ({
   isValid: false,
   errors,
 });

@@ -2,8 +2,8 @@
 // Refactored to use Lexer → AST Builder → FileProcessor pipeline
 // Maintains backward compatibility with existing API
 
-import * as fs from "fs";
-import * as path from "path";
+import * as fs from 'fs';
+import * as path from 'path';
 import {
   AccountName,
   PayeeName,
@@ -19,17 +19,14 @@ import {
   createTagValue,
   createCommodityCode,
   createUsageCount,
-} from "./types";
-import {
-  NumberFormatService,
-  CommodityFormat,
-} from "./services/NumberFormatService";
-import { RegexPatterns } from "./RegexPatterns";
-import { HLedgerLexer } from "./lexer/HLedgerLexer";
-import { HLedgerASTBuilder } from "./ast/HLedgerASTBuilder";
-import { HLedgerFileProcessor } from "./processor/HLedgerFileProcessor";
-import { SimpleProjectCache } from "./SimpleProjectCache";
-import { ErrorNotificationHandler } from "./utils/ErrorNotificationHandler";
+} from './types';
+import { NumberFormatService, CommodityFormat } from './services/NumberFormatService';
+import { RegexPatterns } from './RegexPatterns';
+import { HLedgerLexer } from './lexer/HLedgerLexer';
+import { HLedgerASTBuilder } from './ast/HLedgerASTBuilder';
+import { HLedgerFileProcessor } from './processor/HLedgerFileProcessor';
+import { SimpleProjectCache } from './SimpleProjectCache';
+import { ErrorNotificationHandler } from './utils/ErrorNotificationHandler';
 
 /**
  * Maximum number of recent transactions to track per payee in the circular buffer.
@@ -85,7 +82,7 @@ interface MutableParsedHLedgerData {
 
   // Format information for number formatting and commodity display
   commodityFormats: Map<CommodityCode, CommodityFormat>;
-  decimalMark: "." | "," | null;
+  decimalMark: '.' | ',' | null;
 
   defaultCommodity: CommodityCode | null;
   lastDate: string | null;
@@ -129,7 +126,7 @@ export interface ParsedHLedgerData {
 
   // Format information for number formatting and commodity display
   readonly commodityFormats: ReadonlyMap<CommodityCode, CommodityFormat>;
-  readonly decimalMark: "." | "," | null;
+  readonly decimalMark: '.' | ',' | null;
 
   readonly defaultCommodity: CommodityCode | null;
   readonly lastDate: string | null;
@@ -190,13 +187,13 @@ export class HLedgerParser {
         return this.toReadonly(this.createEmptyData());
       }
 
-      const content = fs.readFileSync(filePath, "utf8");
+      const content = fs.readFileSync(filePath, 'utf8');
       const basePath = path.dirname(filePath);
       return this.parseContent(content, basePath);
     } catch (error) {
       // Log error only in non-test environment
-      if (process.env.NODE_ENV !== "test") {
-        console.error("Error parsing file:", filePath, error);
+      if (process.env.NODE_ENV !== 'test') {
+        console.error('Error parsing file:', filePath, error);
       }
       return this.toReadonly(this.createEmptyData());
     }
@@ -225,13 +222,13 @@ export class HLedgerParser {
 
         return this.enhanceWithLegacyParsing(
           result.data,
-          await fs.promises.readFile(filePath, "utf8"),
+          await fs.promises.readFile(filePath, 'utf8')
         );
       }
       return this.parseFile(filePath);
     } catch (error) {
-      if (process.env.NODE_ENV !== "test") {
-        console.error("Error parsing file async:", filePath, error);
+      if (process.env.NODE_ENV !== 'test') {
+        console.error('Error parsing file async:', filePath, error);
       }
       return this.toReadonly(this.createEmptyData());
     }
@@ -263,36 +260,30 @@ export class HLedgerParser {
   private enhanceWithLegacyParsing(
     astData: ParsedHLedgerData,
     content: string,
-    basePath?: string,
+    basePath?: string
   ): ParsedHLedgerData {
     const data = this.createMutableDataFrom(astData);
-    const lines = content.split("\n");
+    const lines = content.split('\n');
 
     let inTransaction = false;
-    let transactionPayee = "";
+    let transactionPayee = '';
 
     for (const line of lines) {
       const trimmedLine = line.trim();
 
       // Update transaction state BEFORE parsing the line
-      if (trimmedLine && !line.startsWith(" ") && !line.startsWith("\t")) {
+      if (trimmedLine && !line.startsWith(' ') && !line.startsWith('\t')) {
         if (this.isTransactionLine(trimmedLine)) {
           inTransaction = true;
           transactionPayee = this.extractPayeeFromTransaction(trimmedLine);
         } else {
           inTransaction = false;
-          transactionPayee = "";
+          transactionPayee = '';
         }
       }
 
       // Parse line for enhanced features
-      this.parseLegacyFeatures(
-        line,
-        data,
-        basePath,
-        inTransaction,
-        transactionPayee,
-      );
+      this.parseLegacyFeatures(line, data, basePath, inTransaction, transactionPayee);
     }
 
     return this.toReadonly(data);
@@ -311,12 +302,12 @@ export class HLedgerParser {
     data: MutableParsedHLedgerData,
     basePath?: string,
     inTransaction = false,
-    _transactionPayee = "",
+    _transactionPayee = ''
   ): void {
     const trimmedLine = line.trim();
 
     // Handle comment lines - extract tags from them
-    if (trimmedLine.startsWith(";") || trimmedLine.startsWith("#")) {
+    if (trimmedLine.startsWith(';') || trimmedLine.startsWith('#')) {
       this.extractTags(trimmedLine, data);
       return;
     }
@@ -326,31 +317,31 @@ export class HLedgerParser {
     }
 
     // Include directives are handled by HLedgerFileProcessor
-    if (trimmedLine.startsWith("include ")) {
+    if (trimmedLine.startsWith('include ')) {
       this.handleIncludeDirective(trimmedLine, data, basePath);
       return;
     }
 
     // Commodity directive (enhanced to handle format templates)
-    if (trimmedLine.startsWith("commodity ")) {
+    if (trimmedLine.startsWith('commodity ')) {
       this.handleCommodityDirective(trimmedLine, data);
       return;
     }
 
     // Format directive (for multi-line commodity format specification)
-    if (trimmedLine.startsWith("format ")) {
+    if (trimmedLine.startsWith('format ')) {
       this.handleFormatDirective(trimmedLine, data);
       return;
     }
 
     // Decimal-mark directive
-    if (trimmedLine.startsWith("decimal-mark ")) {
+    if (trimmedLine.startsWith('decimal-mark ')) {
       this.handleDecimalMarkDirective(trimmedLine, data);
       return;
     }
 
     // Default commodity (enhanced to handle format templates)
-    if (trimmedLine.startsWith("D ")) {
+    if (trimmedLine.startsWith('D ')) {
       this.handleDefaultCommodityDirective(trimmedLine, data);
       return;
     }
@@ -362,7 +353,7 @@ export class HLedgerParser {
     }
 
     // Posting line - extract tags and commodity formats
-    if (inTransaction && (line.startsWith("    ") || line.startsWith("\t"))) {
+    if (inTransaction && (line.startsWith('    ') || line.startsWith('\t'))) {
       const parts = trimmedLine.split(RegexPatterns.AMOUNT_SPLIT);
 
       // Extract commodity from amount (if present) with format detection
@@ -380,10 +371,7 @@ export class HLedgerParser {
   /**
    * Async content parsing for large files.
    */
-  private async parseContentAsync(
-    content: string,
-    basePath?: string,
-  ): Promise<ParsedHLedgerData> {
+  private async parseContentAsync(content: string, basePath?: string): Promise<ParsedHLedgerData> {
     // Reset pending format directive state
     this.pendingFormatDirective = null;
 
@@ -404,7 +392,7 @@ export class HLedgerParser {
   private handleIncludeDirective(
     line: string,
     data: MutableParsedHLedgerData,
-    basePath?: string,
+    basePath?: string
   ): void {
     const includeFile = line.substring(8).trim();
     if (includeFile && basePath) {
@@ -424,18 +412,13 @@ export class HLedgerParser {
    * - Basic commodity definition: "commodity EUR"
    * - Inline format template: "commodity 1 000,00 EUR"
    */
-  private handleCommodityDirective(
-    line: string,
-    data: MutableParsedHLedgerData,
-  ): void {
+  private handleCommodityDirective(line: string, data: MutableParsedHLedgerData): void {
     const commodityPart = line.substring(10).trim(); // Remove 'commodity '
 
     // Remove inline comments
-    const commentIndex = commodityPart.indexOf(";");
+    const commentIndex = commodityPart.indexOf(';');
     const cleanCommodityPart =
-      commentIndex !== -1
-        ? commodityPart.substring(0, commentIndex).trim()
-        : commodityPart;
+      commentIndex !== -1 ? commodityPart.substring(0, commentIndex).trim() : commodityPart;
 
     if (!cleanCommodityPart) {
       return;
@@ -446,8 +429,7 @@ export class HLedgerParser {
 
     if (hasNumbers) {
       // This is a format template like "1 000,00 EUR"
-      const formatResult =
-        this.numberFormatService.parseFormatTemplate(cleanCommodityPart);
+      const formatResult = this.numberFormatService.parseFormatTemplate(cleanCommodityPart);
       if (formatResult.success) {
         const format = formatResult.data;
         const commodityCode = createCommodityCode(format.symbol);
@@ -457,22 +439,17 @@ export class HLedgerParser {
         }
       } else {
         // Fallback: try to extract just the commodity symbol from the end
-        const commodityMatch = cleanCommodityPart.match(
-          RegexPatterns.COMMODITY_DETECTION,
-        );
+        const commodityMatch = cleanCommodityPart.match(RegexPatterns.COMMODITY_DETECTION);
         if (commodityMatch?.[1]) {
           const commodityCode = createCommodityCode(commodityMatch[1]);
           if (commodityCode) {
             data.commodities.add(commodityCode);
             // Try to create a basic format from the number pattern
             const numberPattern = cleanCommodityPart
-              .replace(RegexPatterns.COMMODITY_CLEANUP, "")
+              .replace(RegexPatterns.COMMODITY_CLEANUP, '')
               .trim();
             if (numberPattern) {
-              const basicFormat = this.createBasicCommodityFormat(
-                numberPattern,
-                commodityMatch[1],
-              );
+              const basicFormat = this.createBasicCommodityFormat(numberPattern, commodityMatch[1]);
               if (basicFormat) {
                 data.commodityFormats.set(commodityCode, basicFormat);
               }
@@ -498,26 +475,20 @@ export class HLedgerParser {
    * Handles format directives for multi-line commodity format specification.
    * Example: "format EUR 1 000,00"
    */
-  private handleFormatDirective(
-    line: string,
-    data: MutableParsedHLedgerData,
-  ): void {
+  private handleFormatDirective(line: string, data: MutableParsedHLedgerData): void {
     const formatPart = line.substring(7).trim(); // Remove 'format '
 
     // Remove inline comments
-    const commentIndex = formatPart.indexOf(";");
+    const commentIndex = formatPart.indexOf(';');
     const cleanFormatPart =
-      commentIndex !== -1
-        ? formatPart.substring(0, commentIndex).trim()
-        : formatPart;
+      commentIndex !== -1 ? formatPart.substring(0, commentIndex).trim() : formatPart;
 
     if (!cleanFormatPart) {
       return;
     }
 
     // Parse the format template
-    const formatResult =
-      this.numberFormatService.parseFormatTemplate(cleanFormatPart);
+    const formatResult = this.numberFormatService.parseFormatTemplate(cleanFormatPart);
     if (formatResult.success) {
       const format = formatResult.data;
       const commodityCode = createCommodityCode(format.symbol);
@@ -537,20 +508,15 @@ export class HLedgerParser {
    * Handles decimal-mark directives.
    * Example: "decimal-mark ," or "decimal-mark ."
    */
-  private handleDecimalMarkDirective(
-    line: string,
-    data: MutableParsedHLedgerData,
-  ): void {
+  private handleDecimalMarkDirective(line: string, data: MutableParsedHLedgerData): void {
     const decimalMarkPart = line.substring(13).trim(); // Remove 'decimal-mark '
 
     // Remove inline comments
-    const commentIndex = decimalMarkPart.indexOf(";");
+    const commentIndex = decimalMarkPart.indexOf(';');
     const cleanDecimalMarkPart =
-      commentIndex !== -1
-        ? decimalMarkPart.substring(0, commentIndex).trim()
-        : decimalMarkPart;
+      commentIndex !== -1 ? decimalMarkPart.substring(0, commentIndex).trim() : decimalMarkPart;
 
-    if (cleanDecimalMarkPart === "." || cleanDecimalMarkPart === ",") {
+    if (cleanDecimalMarkPart === '.' || cleanDecimalMarkPart === ',') {
       data.decimalMark = cleanDecimalMarkPart;
     }
   }
@@ -561,18 +527,13 @@ export class HLedgerParser {
    * - Basic default commodity: "D RUB"
    * - Format template: "D 1000,00 RUB"
    */
-  private handleDefaultCommodityDirective(
-    line: string,
-    data: MutableParsedHLedgerData,
-  ): void {
+  private handleDefaultCommodityDirective(line: string, data: MutableParsedHLedgerData): void {
     const defaultPart = line.substring(2).trim(); // Remove 'D '
 
     // Remove inline comments
-    const commentIndex = defaultPart.indexOf(";");
+    const commentIndex = defaultPart.indexOf(';');
     const cleanDefaultPart =
-      commentIndex !== -1
-        ? defaultPart.substring(0, commentIndex).trim()
-        : defaultPart;
+      commentIndex !== -1 ? defaultPart.substring(0, commentIndex).trim() : defaultPart;
 
     if (!cleanDefaultPart) {
       return;
@@ -583,8 +544,7 @@ export class HLedgerParser {
 
     if (hasNumbers) {
       // This is a format template like "1000,00 RUB"
-      const formatResult =
-        this.numberFormatService.parseFormatTemplate(cleanDefaultPart);
+      const formatResult = this.numberFormatService.parseFormatTemplate(cleanDefaultPart);
       if (formatResult.success) {
         const format = formatResult.data;
         const commodityCode = createCommodityCode(format.symbol);
@@ -595,9 +555,7 @@ export class HLedgerParser {
         }
       } else {
         // Fallback: try to extract just the commodity symbol from the end
-        const commodityMatch = cleanDefaultPart.match(
-          RegexPatterns.COMMODITY_DETECTION,
-        );
+        const commodityMatch = cleanDefaultPart.match(RegexPatterns.COMMODITY_DETECTION);
         if (commodityMatch?.[1]) {
           const commodityCode = createCommodityCode(commodityMatch[1]);
           if (commodityCode) {
@@ -605,13 +563,10 @@ export class HLedgerParser {
             data.commodities.add(commodityCode);
             // Try to create a basic format from the number pattern
             const numberPattern = cleanDefaultPart
-              .replace(RegexPatterns.COMMODITY_CLEANUP, "")
+              .replace(RegexPatterns.COMMODITY_CLEANUP, '')
               .trim();
             if (numberPattern) {
-              const basicFormat = this.createBasicCommodityFormat(
-                numberPattern,
-                commodityMatch[1],
-              );
+              const basicFormat = this.createBasicCommodityFormat(numberPattern, commodityMatch[1]);
               if (basicFormat) {
                 data.commodityFormats.set(commodityCode, basicFormat);
               }
@@ -635,45 +590,45 @@ export class HLedgerParser {
    */
   private createBasicCommodityFormat(
     numberPattern: string,
-    symbol: string,
+    symbol: string
   ): CommodityFormat | null {
     try {
       // Detect decimal mark by looking for the last comma or period followed by 1-4 digits
       const decimalMatch = numberPattern.match(RegexPatterns.DECIMAL_MATCH);
 
-      let decimalMark: "." | "," = ".";
-      let groupSeparator: " " | "," | "." | "" = "";
+      let decimalMark: '.' | ',' = '.';
+      let groupSeparator: ' ' | ',' | '.' | '' = '';
       let decimalPlaces = 2;
       let useGrouping = false;
 
       if (decimalMatch) {
         const integerPart = decimalMatch[1]!;
-        const decimalChar = decimalMatch[2]! as "." | ",";
+        const decimalChar = decimalMatch[2]! as '.' | ',';
         const decimalDigits = decimalMatch[3]!;
         decimalMark = decimalChar;
         decimalPlaces = decimalDigits.length;
 
         // Check for grouping in the integer part
-        if (integerPart.includes(" ")) {
-          groupSeparator = " ";
+        if (integerPart.includes(' ')) {
+          groupSeparator = ' ';
           useGrouping = true;
-        } else if (decimalMark === "," && integerPart.includes(".")) {
-          groupSeparator = ".";
+        } else if (decimalMark === ',' && integerPart.includes('.')) {
+          groupSeparator = '.';
           useGrouping = true;
-        } else if (decimalMark === "." && integerPart.includes(",")) {
-          groupSeparator = ",";
+        } else if (decimalMark === '.' && integerPart.includes(',')) {
+          groupSeparator = ',';
           useGrouping = true;
         }
       } else {
         // No decimal point, check for grouping
-        if (numberPattern.includes(" ")) {
-          groupSeparator = " ";
+        if (numberPattern.includes(' ')) {
+          groupSeparator = ' ';
           useGrouping = true;
-          decimalMark = ",";
-        } else if (numberPattern.includes(",")) {
-          groupSeparator = ",";
+          decimalMark = ',';
+        } else if (numberPattern.includes(',')) {
+          groupSeparator = ',';
           useGrouping = true;
-          decimalMark = ".";
+          decimalMark = '.';
         }
       }
 
@@ -699,19 +654,19 @@ export class HLedgerParser {
 
   private extractPayeeFromTransaction(line: string): string {
     // Remove date and status, extract payee (handle both full and short date formats)
-    let cleaned = line.replace(RegexPatterns.DATE_FULL, "").trim();
-    cleaned = cleaned.replace(RegexPatterns.TRANSACTION_STATUS, "").trim(); // Remove status
+    let cleaned = line.replace(RegexPatterns.DATE_FULL, '').trim();
+    cleaned = cleaned.replace(RegexPatterns.TRANSACTION_STATUS, '').trim(); // Remove status
 
     // Remove transaction codes like (REF123), (CODE456)
-    cleaned = cleaned.replace(RegexPatterns.TRANSACTION_CODE, "").trim();
+    cleaned = cleaned.replace(RegexPatterns.TRANSACTION_CODE, '').trim();
 
     // Split only by ; to separate payee from comment, but preserve pipe characters
     const parts = cleaned.split(RegexPatterns.COMMENT_SEMICOLON);
-    const payee = parts[0] ? parts[0].trim() : "";
+    const payee = parts[0] ? parts[0].trim() : '';
 
     // Normalize Unicode characters for consistent matching (NFC normalization)
     // This ensures characters like Cyrillic are handled consistently
-    return payee ? payee.normalize("NFC") : "";
+    return payee ? payee.normalize('NFC') : '';
   }
 
   private extractTags(line: string, data: MutableParsedHLedgerData): void {
@@ -769,10 +724,7 @@ export class HLedgerParser {
     }
   }
 
-  private extractCommodityFromAmount(
-    amountStr: string,
-    data: MutableParsedHLedgerData,
-  ): void {
+  private extractCommodityFromAmount(amountStr: string, data: MutableParsedHLedgerData): void {
     // Enhanced Unicode-aware commodity extraction
     // Matches international currency symbols, cryptocurrency symbols, and commodity codes
     // Supports Latin, Cyrillic, Greek, and other Unicode letter systems
@@ -789,24 +741,16 @@ export class HLedgerParser {
     return RegexPatterns.TRANSACTION_LINE.test(line);
   }
 
-  private incrementUsage<TKey extends string>(
-    usageMap: Map<TKey, UsageCount>,
-    key: TKey,
-  ): void {
+  private incrementUsage<TKey extends string>(usageMap: Map<TKey, UsageCount>, key: TKey): void {
     const currentCount = usageMap.get(key) ?? createUsageCount(0);
     usageMap.set(key, createUsageCount(currentCount + 1));
   }
 
   // ==================== Data Management Methods ====================
 
-  private createMutableDataFrom(
-    source: ParsedHLedgerData,
-  ): MutableParsedHLedgerData {
+  private createMutableDataFrom(source: ParsedHLedgerData): MutableParsedHLedgerData {
     // Deep clone transaction templates including posting objects
-    const clonedTemplates = new Map<
-      PayeeName,
-      Map<TemplateKey, MutableTransactionTemplate>
-    >();
+    const clonedTemplates = new Map<PayeeName, Map<TemplateKey, MutableTransactionTemplate>>();
     if (source.transactionTemplates) {
       source.transactionTemplates.forEach((templates, payee) => {
         const clonedInner = new Map<TemplateKey, MutableTransactionTemplate>();
@@ -831,30 +775,23 @@ export class HLedgerParser {
       tags: new Set(source.tags),
       commodities: new Set(source.commodities),
       aliases: new Map(source.aliases),
-      tagValues: new Map(
-        Array.from(source.tagValues.entries()).map(([k, v]) => [k, new Set(v)]),
-      ),
+      tagValues: new Map(Array.from(source.tagValues.entries()).map(([k, v]) => [k, new Set(v)])),
       tagValueUsage: new Map(source.tagValueUsage),
       accountUsage: new Map(source.accountUsage),
       payeeUsage: new Map(source.payeeUsage),
       tagUsage: new Map(source.tagUsage),
       commodityUsage: new Map(source.commodityUsage),
       payeeAccounts: new Map(
-        Array.from(source.payeeAccounts.entries()).map(([k, v]) => [
-          k,
-          new Set(v),
-        ]),
+        Array.from(source.payeeAccounts.entries()).map(([k, v]) => [k, new Set(v)])
       ),
       payeeAccountPairUsage: new Map(source.payeeAccountPairUsage),
       transactionTemplates: clonedTemplates,
       // Deep clone buffer structures to prevent shared references
       payeeRecentTemplates: new Map(
-        Array.from(source.payeeRecentTemplates.entries()).map(
-          ([payee, buffer]) => [
-            payee,
-            { keys: [...buffer.keys], writeIndex: buffer.writeIndex },
-          ],
-        ),
+        Array.from(source.payeeRecentTemplates.entries()).map(([payee, buffer]) => [
+          payee,
+          { keys: [...buffer.keys], writeIndex: buffer.writeIndex },
+        ])
       ),
       commodityFormats: new Map(source.commodityFormats),
       decimalMark: source.decimalMark,
@@ -863,10 +800,7 @@ export class HLedgerParser {
     };
   }
 
-  private mergeData(
-    target: MutableParsedHLedgerData,
-    source: ParsedHLedgerData,
-  ): void {
+  private mergeData(target: MutableParsedHLedgerData, source: ParsedHLedgerData): void {
     // Merge sets
     source.accounts.forEach((acc) => target.accounts.add(acc));
     source.definedAccounts.forEach((acc) => target.definedAccounts.add(acc));
@@ -923,14 +857,11 @@ export class HLedgerParser {
       if (!target.payeeAccounts.has(payee)) {
         target.payeeAccounts.set(payee, new Set<AccountName>());
       }
-      accounts.forEach((account) =>
-        target.payeeAccounts.get(payee)!.add(account),
-      );
+      accounts.forEach((account) => target.payeeAccounts.get(payee)!.add(account));
     });
 
     source.payeeAccountPairUsage.forEach((count, key) => {
-      const existing =
-        target.payeeAccountPairUsage.get(key) ?? createUsageCount(0);
+      const existing = target.payeeAccountPairUsage.get(key) ?? createUsageCount(0);
       const newCount = Math.min(existing + count, Number.MAX_SAFE_INTEGER);
       target.payeeAccountPairUsage.set(key, createUsageCount(newCount));
     });
@@ -947,7 +878,7 @@ export class HLedgerParser {
         if (existingTemplate) {
           // Combine usage counts, keep newer amounts
           existingTemplate.usageCount = createUsageCount(
-            existingTemplate.usageCount + template.usageCount,
+            existingTemplate.usageCount + template.usageCount
           );
           if (
             template.lastUsedDate &&
@@ -983,13 +914,10 @@ export class HLedgerParser {
         const combinedKeys = [...targetBuffer.keys, ...sourceBuffer.keys];
         if (combinedKeys.length <= MAX_RECENT_TRANSACTIONS_PER_PAYEE) {
           targetBuffer.keys = combinedKeys;
-          targetBuffer.writeIndex =
-            combinedKeys.length % MAX_RECENT_TRANSACTIONS_PER_PAYEE;
+          targetBuffer.writeIndex = combinedKeys.length % MAX_RECENT_TRANSACTIONS_PER_PAYEE;
         } else {
           // Keep only the last MAX entries (source entries are more recent)
-          targetBuffer.keys = combinedKeys.slice(
-            -MAX_RECENT_TRANSACTIONS_PER_PAYEE,
-          );
+          targetBuffer.keys = combinedKeys.slice(-MAX_RECENT_TRANSACTIONS_PER_PAYEE);
           targetBuffer.writeIndex = 0;
         }
       }
@@ -1006,10 +934,7 @@ export class HLedgerParser {
     }
 
     // Update last date if newer
-    if (
-      source.lastDate &&
-      (!target.lastDate || source.lastDate > target.lastDate)
-    ) {
+    if (source.lastDate && (!target.lastDate || source.lastDate > target.lastDate)) {
       target.lastDate = source.lastDate;
     }
 
@@ -1065,10 +990,7 @@ export class HLedgerParser {
    * @param cache - Optional cache for incremental updates (checks mtimeMs automatically)
    * @returns Merged parsed data from all workspace files
    */
-  parseWorkspace(
-    workspacePath: string,
-    cache?: SimpleProjectCache,
-  ): ParsedHLedgerData {
+  parseWorkspace(workspacePath: string, cache?: SimpleProjectCache): ParsedHLedgerData {
     const data = this.createEmptyData();
 
     try {
@@ -1086,33 +1008,21 @@ export class HLedgerParser {
 
           this.mergeData(data, fileData);
         } catch (error) {
-          const errorMessage =
-            error instanceof Error ? error.message : String(error);
+          const errorMessage = error instanceof Error ? error.message : String(error);
           console.error(`HLedger: Error parsing file ${file}: ${errorMessage}`);
 
-          if (
-            process.env.NODE_ENV !== "test" &&
-            error instanceof Error &&
-            error.stack
-          ) {
-            console.error("Stack trace:", error.stack);
+          if (process.env.NODE_ENV !== 'test' && error instanceof Error && error.stack) {
+            console.error('Stack trace:', error.stack);
           }
           // Continue processing other files
         }
       }
     } catch (error) {
-      const errorMessage =
-        error instanceof Error ? error.message : String(error);
-      console.error(
-        `HLedger: Error scanning workspace ${workspacePath}: ${errorMessage}`,
-      );
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      console.error(`HLedger: Error scanning workspace ${workspacePath}: ${errorMessage}`);
 
-      if (
-        process.env.NODE_ENV !== "test" &&
-        error instanceof Error &&
-        error.stack
-      ) {
-        console.error("Stack trace:", error.stack);
+      if (process.env.NODE_ENV !== 'test' && error instanceof Error && error.stack) {
+        console.error('Stack trace:', error.stack);
       }
     }
 
