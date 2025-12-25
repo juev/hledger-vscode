@@ -1,5 +1,27 @@
 # Change Log
 
+## [0.4.7] - 2025-12-25
+
+### Added
+- feat: enhance inline completion with SnippetString support
+- feat: enhance recent template tracking and sorting logic
+- feat: implement recent template usage tracking for improved sorting
+- feat: add cursor positioning command after template insertion
+- feat: enhance inline suggestion handling in Hledger
+- feat: add inline completion support for payees and templates
+- feat: merge transaction templates in HLedgerParser
+- feat: enhance transaction template functionality and add tests
+- feat: add transaction template support for autocomplete
+
+### Changed
+- refactor: enhance scoring mechanism in SimpleFuzzyMatcher
+- refactor: improve inline completion handling for transaction templates
+- refactor: implement gap-based fuzzy matching algorithm in SimpleFuzzyMatcher
+
+### Fixed
+- fix: ensure safe access to completion items in TransactionTemplateCompleter tests
+
+
 ## [0.4.6] - 2025-12-15
 
 ### Changed
