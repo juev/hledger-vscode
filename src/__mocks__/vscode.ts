@@ -1206,12 +1206,12 @@ export interface InlineCompletionContext {
  * Mock InlineCompletionItem class for inline ghost text completions.
  */
 export class InlineCompletionItem {
-  insertText: string;
+  insertText: string | SnippetString;
   range: Range | undefined;
   command?: unknown;
   filterText?: string;
 
-  constructor(insertText: string, range?: Range) {
+  constructor(insertText: string | SnippetString, range?: Range) {
     this.insertText = insertText;
     this.range = range;
   }

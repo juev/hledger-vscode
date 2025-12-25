@@ -131,7 +131,15 @@
         },
         "hledger.import.dateFormat": {
           "type": "string",
-          "enum": ["auto", "YYYY-MM-DD", "YYYY/MM/DD", "DD/MM/YYYY", "MM/DD/YYYY", "DD.MM.YYYY", "DD-MM-YYYY"],
+          "enum": [
+            "auto",
+            "YYYY-MM-DD",
+            "YYYY/MM/DD",
+            "DD/MM/YYYY",
+            "MM/DD/YYYY",
+            "DD.MM.YYYY",
+            "DD-MM-YYYY"
+          ],
           "default": "auto",
           "description": "Expected date format in import data. Use 'auto' for automatic detection"
         },
@@ -377,5 +385,8 @@
     "url": "https://github.com/juev/hledger-vscode/issues"
   },
   "homepage": "https://github.com/juev/hledger-vscode#readme",
-  "icon": "images/icon.png"
+  "icon": "images/icon.png",
+  "dependencies": {
+    "string-width": "^8.1.0"
+  }
 }

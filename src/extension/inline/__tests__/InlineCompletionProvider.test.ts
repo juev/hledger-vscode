@@ -5,6 +5,7 @@ import {
   MockTextDocument,
   Range,
   InlineCompletionTriggerKind,
+  SnippetString,
 } from "../../../__mocks__/vscode";
 import { InlineCompletionProvider } from "../InlineCompletionProvider";
 import { HLedgerConfig } from "../../HLedgerConfig";
@@ -228,9 +229,11 @@ describe("InlineCompletionProvider", () => {
       expect(result).toBeDefined();
       expect(result).toHaveLength(1);
       const item = result![0]!;
+      expect(item.insertText).toBeInstanceOf(SnippetString);
+      const snippetValue = (item.insertText as SnippetString).value;
       // First line should NOT start with newline (cursor already on new line)
-      expect(item.insertText).toMatch(/^    Expenses:Food:Coffee/);
-      expect(item.insertText).toContain("Assets:Cash");
+      expect(snippetValue).toMatch(/^    Expenses:Food:Coffee/);
+      expect(snippetValue).toContain("Assets:Cash");
     });
 
     it("should format template with proper indentation", () => {
@@ -255,10 +258,12 @@ describe("InlineCompletionProvider", () => {
       expect(result).toBeDefined();
       expect(result).toHaveLength(1);
       const item = result![0]!;
+      expect(item.insertText).toBeInstanceOf(SnippetString);
+      const snippetValue = (item.insertText as SnippetString).value;
       // First line: 4-space indentation, no leading newline
-      expect(item.insertText).toMatch(/^    Expenses:Food/);
+      expect(snippetValue).toMatch(/^    Expenses:Food/);
       // Second line: newline + 4-space indentation
-      expect(item.insertText).toContain("\n    Assets:Cash");
+      expect(snippetValue).toContain("\n    Assets:Cash");
     });
 
     it("should include amounts in template ghost text", () => {
@@ -285,7 +290,9 @@ describe("InlineCompletionProvider", () => {
       expect(result).toBeDefined();
       expect(result).toHaveLength(1);
       const item = result![0]!;
-      expect(item.insertText).toContain("100 RUB");
+      expect(item.insertText).toBeInstanceOf(SnippetString);
+      const snippetValue = (item.insertText as SnippetString).value;
+      expect(snippetValue).toContain("100 RUB");
     });
 
     it("should return undefined when no templates for payee", () => {
@@ -370,8 +377,10 @@ describe("InlineCompletionProvider", () => {
       expect(result).toBeDefined();
       expect(result).toHaveLength(1);
       const item = result![0]!;
-      expect(item.insertText).toContain("Expenses:Shopping");
-      expect(item.insertText).not.toContain("Expenses:Groceries");
+      expect(item.insertText).toBeInstanceOf(SnippetString);
+      const snippetValue = (item.insertText as SnippetString).value;
+      expect(snippetValue).toContain("Expenses:Shopping");
+      expect(snippetValue).not.toContain("Expenses:Groceries");
     });
 
     it("should handle Unicode template content", () => {
@@ -396,8 +405,10 @@ describe("InlineCompletionProvider", () => {
       expect(result).toBeDefined();
       expect(result).toHaveLength(1);
       const item = result![0]!;
-      expect(item.insertText).toContain("Расходы:Продукты");
-      expect(item.insertText).toContain("Активы:Наличные");
+      expect(item.insertText).toBeInstanceOf(SnippetString);
+      const snippetValue = (item.insertText as SnippetString).value;
+      expect(snippetValue).toContain("Расходы:Продукты");
+      expect(snippetValue).toContain("Активы:Наличные");
     });
 
     it("should have correct range when cursor is not at column 0", () => {
@@ -432,7 +443,260 @@ describe("InlineCompletionProvider", () => {
       expect(item.range?.end.character).toBe(2);
 
       // Ghost text should still have proper 4-space indentation
-      expect(item.insertText).toMatch(/^    Expenses:Food/);
+      expect(item.insertText).toBeInstanceOf(SnippetString);
+      const snippetValue = (item.insertText as SnippetString).value;
+      expect(snippetValue).toMatch(/^    Expenses:Food/);
+    });
+
+    describe("SnippetString with tabstops", () => {
+      it("should return SnippetString for template completion", () => {
+        mockConfig.getPayeesByUsage.mockReturnValue([
+          "Coffee Shop" as PayeeName,
+        ]);
+        mockConfig.getTemplatesForPayee.mockReturnValue([
+          createTemplate("Coffee Shop", [
+            { account: "Expenses:Food", amount: "5.00 USD", commodity: "USD" },
+            { account: "Assets:Cash", amount: null, commodity: null },
+          ]),
+        ]);
+
+        const document = new MockTextDocument(["2024-12-23 Coffee Shop", ""]);
+        const position = new Position(1, 0);
+
+        const result = provider.provideInlineCompletionItems(
+          document,
+          position,
+          createInlineContext(),
+          createCancellationToken(),
+        );
+
+        expect(result).toBeDefined();
+        expect(result).toHaveLength(1);
+        const item = result![0]!;
+        expect(item.insertText).toBeInstanceOf(SnippetString);
+      });
+
+      it("should include tabstop for amount field", () => {
+        mockConfig.getPayeesByUsage.mockReturnValue([
+          "Coffee Shop" as PayeeName,
+        ]);
+        mockConfig.getTemplatesForPayee.mockReturnValue([
+          createTemplate("Coffee Shop", [
+            { account: "Expenses:Food", amount: "5.00 USD", commodity: "USD" },
+            { account: "Assets:Cash", amount: null, commodity: null },
+          ]),
+        ]);
+
+        const document = new MockTextDocument(["2024-12-23 Coffee Shop", ""]);
+        const position = new Position(1, 0);
+
+        const result = provider.provideInlineCompletionItems(
+          document,
+          position,
+          createInlineContext(),
+          createCancellationToken(),
+        );
+
+        const snippet = result![0]!.insertText as SnippetString;
+        // Should have tabstop with amount as placeholder: ${1:5.00 USD}
+        expect(snippet.value).toContain("${1:5.00 USD}");
+      });
+
+      it("should have sequential tabstops for multiple amounts", () => {
+        mockConfig.getPayeesByUsage.mockReturnValue(["Transfer" as PayeeName]);
+        mockConfig.getTemplatesForPayee.mockReturnValue([
+          createTemplate("Transfer", [
+            { account: "Assets:Bank", amount: "100 USD", commodity: "USD" },
+            { account: "Assets:Cash", amount: "-100 USD", commodity: "USD" },
+          ]),
+        ]);
+
+        const document = new MockTextDocument(["2024-12-23 Transfer", ""]);
+        const position = new Position(1, 0);
+
+        const result = provider.provideInlineCompletionItems(
+          document,
+          position,
+          createInlineContext(),
+          createCancellationToken(),
+        );
+
+        const snippet = result![0]!.insertText as SnippetString;
+        // Should have $1 for first amount, $2 for second
+        expect(snippet.value).toContain("${1:100 USD}");
+        expect(snippet.value).toContain("${2:-100 USD}");
+      });
+
+      it("should include final tabstop $0 for exiting snippet mode", () => {
+        mockConfig.getPayeesByUsage.mockReturnValue([
+          "Coffee Shop" as PayeeName,
+        ]);
+        mockConfig.getTemplatesForPayee.mockReturnValue([
+          createTemplate("Coffee Shop", [
+            { account: "Expenses:Food", amount: "5.00 USD", commodity: "USD" },
+            { account: "Assets:Cash", amount: null, commodity: null },
+          ]),
+        ]);
+
+        const document = new MockTextDocument(["2024-12-23 Coffee Shop", ""]);
+        const position = new Position(1, 0);
+
+        const result = provider.provideInlineCompletionItems(
+          document,
+          position,
+          createInlineContext(),
+          createCancellationToken(),
+        );
+
+        const snippet = result![0]!.insertText as SnippetString;
+        expect(snippet.value).toContain("$0");
+      });
+
+      it("should escape special snippet characters in account names", () => {
+        mockConfig.getPayeesByUsage.mockReturnValue([
+          "Special Store" as PayeeName,
+        ]);
+        mockConfig.getTemplatesForPayee.mockReturnValue([
+          createTemplate("Special Store", [
+            {
+              account: "Expenses:Store$Name",
+              amount: "10 USD",
+              commodity: "USD",
+            },
+            { account: "Assets:Cash", amount: null, commodity: null },
+          ]),
+        ]);
+
+        const document = new MockTextDocument(["2024-12-23 Special Store", ""]);
+        const position = new Position(1, 0);
+
+        const result = provider.provideInlineCompletionItems(
+          document,
+          position,
+          createInlineContext(),
+          createCancellationToken(),
+        );
+
+        const snippet = result![0]!.insertText as SnippetString;
+        // $ should be escaped as \$
+        expect(snippet.value).toContain("Expenses:Store\\$Name");
+      });
+
+      it("should escape curly braces in account names", () => {
+        mockConfig.getPayeesByUsage.mockReturnValue([
+          "Bracket Store" as PayeeName,
+        ]);
+        mockConfig.getTemplatesForPayee.mockReturnValue([
+          createTemplate("Bracket Store", [
+            {
+              account: "Expenses:Store}Name",
+              amount: "10 USD",
+              commodity: "USD",
+            },
+            { account: "Assets:Cash", amount: null, commodity: null },
+          ]),
+        ]);
+
+        const document = new MockTextDocument([
+          "2024-12-23 Bracket Store",
+          "",
+        ]);
+        const position = new Position(1, 0);
+
+        const result = provider.provideInlineCompletionItems(
+          document,
+          position,
+          createInlineContext(),
+          createCancellationToken(),
+        );
+
+        const snippet = result![0]!.insertText as SnippetString;
+        // } should be escaped as \}
+        expect(snippet.value).toContain("Expenses:Store\\}Name");
+      });
+
+      it("should escape special characters in amount values", () => {
+        mockConfig.getPayeesByUsage.mockReturnValue([
+          "Dollar Store" as PayeeName,
+        ]);
+        mockConfig.getTemplatesForPayee.mockReturnValue([
+          createTemplate("Dollar Store", [
+            { account: "Expenses:Food", amount: "$10.00", commodity: "$" },
+            { account: "Assets:Cash", amount: null, commodity: null },
+          ]),
+        ]);
+
+        const document = new MockTextDocument(["2024-12-23 Dollar Store", ""]);
+        const position = new Position(1, 0);
+
+        const result = provider.provideInlineCompletionItems(
+          document,
+          position,
+          createInlineContext(),
+          createCancellationToken(),
+        );
+
+        const snippet = result![0]!.insertText as SnippetString;
+        // $ in amount should be escaped as \$
+        expect(snippet.value).toContain("${1:\\$10.00}");
+      });
+
+      it("should not have command for cursor positioning (snippet handles it)", () => {
+        mockConfig.getPayeesByUsage.mockReturnValue([
+          "Coffee Shop" as PayeeName,
+        ]);
+        mockConfig.getTemplatesForPayee.mockReturnValue([
+          createTemplate("Coffee Shop", [
+            { account: "Expenses:Food", amount: "5.00 USD", commodity: "USD" },
+            { account: "Assets:Cash", amount: null, commodity: null },
+          ]),
+        ]);
+
+        const document = new MockTextDocument(["2024-12-23 Coffee Shop", ""]);
+        const position = new Position(1, 0);
+
+        const result = provider.provideInlineCompletionItems(
+          document,
+          position,
+          createInlineContext(),
+          createCancellationToken(),
+        );
+
+        const item = result![0]!;
+        // No command needed when using SnippetString - tabstops handle cursor
+        expect(item.command).toBeUndefined();
+      });
+
+      it("should only have tabstops for postings with amounts", () => {
+        mockConfig.getPayeesByUsage.mockReturnValue([
+          "Coffee Shop" as PayeeName,
+        ]);
+        mockConfig.getTemplatesForPayee.mockReturnValue([
+          createTemplate("Coffee Shop", [
+            { account: "Expenses:Food", amount: "5.00 USD", commodity: "USD" },
+            { account: "Assets:Cash", amount: null, commodity: null },
+          ]),
+        ]);
+
+        const document = new MockTextDocument(["2024-12-23 Coffee Shop", ""]);
+        const position = new Position(1, 0);
+
+        const result = provider.provideInlineCompletionItems(
+          document,
+          position,
+          createInlineContext(),
+          createCancellationToken(),
+        );
+
+        const snippet = result![0]!.insertText as SnippetString;
+        // Only one tabstop (for the amount on first posting)
+        // Should have $1 but not $2
+        expect(snippet.value).toMatch(/\$\{1:/);
+        expect(snippet.value).not.toMatch(/\$\{2:/);
+        // Should have Assets:Cash without tabstop
+        expect(snippet.value).toContain("Assets:Cash");
+        expect(snippet.value).not.toContain("Assets:Cash  ${");
+      });
     });
   });
 

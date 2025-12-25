@@ -3,12 +3,12 @@
  *
  * Supports two completion modes:
  * 1. Payee completion - shows remainder of most-used matching payee
- * 2. Template completion - shows transaction postings for complete payee
+ * 2. Template completion - shows transaction postings for complete payee with snippet tabstops
  */
 import * as vscode from "vscode";
 import { HLedgerConfig } from "../HLedgerConfig";
 import { InlinePositionAnalyzer } from "./InlinePositionAnalyzer";
-import { TransactionTemplate, PayeeName } from "../types";
+import { TransactionTemplate, PayeeName, TemplatePosting } from "../types";
 
 /**
  * Provides inline (ghost text) completions for hledger files.
@@ -112,7 +112,7 @@ export class InlineCompletionProvider
 
   /**
    * Provides template completion for a complete payee.
-   * Returns the most frequently used template as ghost text.
+   * Returns the most frequently used template as a SnippetString with tabstops for amounts.
    *
    * @param payee - The complete payee name
    * @param position - Current cursor position
@@ -133,63 +133,65 @@ export class InlineCompletionProvider
       return undefined;
     }
 
-    const { text: ghostText, amountColumn } =
-      this.buildTemplateGhostText(template);
+    const snippet = this.buildTemplateSnippet(template);
 
     // Normalize position to column 0 to ensure proper indentation
     // The range replaces from start of line to cursor, ensuring 4-space indent
     const startOfLine = new vscode.Position(position.line, 0);
 
     const item = new vscode.InlineCompletionItem(
-      ghostText,
+      snippet,
       new vscode.Range(startOfLine, position),
     );
 
-    // Add command to position cursor at the amount field after insertion
-    if (amountColumn !== null) {
-      item.command = {
-        command: "hledger.positionCursorAfterTemplate",
-        title: "Position cursor at amount",
-        arguments: [position.line, amountColumn],
-      };
-    }
+    // No command needed - SnippetString tabstops handle cursor positioning
 
     return [item];
   }
 
   /**
-   * Result of building template ghost text.
+   * Escapes special snippet characters in text.
+   * In snippet syntax, $, }, and \ are special characters that must be escaped.
    */
-  private buildTemplateGhostText(template: TransactionTemplate): {
-    text: string;
-    amountColumn: number | null;
-  } {
-    const lines: string[] = [];
-    let amountColumn: number | null = null;
-    const indent = 4;
-    const separator = 2; // two spaces before amount
+  private escapeSnippetText(text: string): string {
+    return text.replace(/\\/g, "\\\\").replace(/\$/g, "\\$").replace(/}/g, "\\}");
+  }
+
+  /**
+   * Builds a SnippetString for a transaction template.
+   * Amount fields are wrapped in tabstops (${1:amount}, ${2:amount}, etc.)
+   * to enable Tab navigation after insertion.
+   */
+  private buildTemplateSnippet(template: TransactionTemplate): vscode.SnippetString {
+    const parts: string[] = [];
+    let tabstopIndex = 1;
 
     for (let i = 0; i < template.postings.length; i++) {
-      const posting = template.postings[i];
+      const posting: TemplatePosting | undefined = template.postings[i];
       if (!posting) continue;
 
-      const amountPart = posting.amount !== null ? `  ${posting.amount}` : "";
+      // Escape special snippet characters in account name
+      const escapedAccount = this.escapeSnippetText(posting.account);
 
-      // Calculate amount column for first posting with amount
-      if (amountColumn === null && posting.amount !== null && i === 0) {
-        amountColumn = indent + posting.account.length + separator;
-      }
+      // Tabstop for amount if exists, with escaped amount text
+      const amountPart =
+        posting.amount !== null
+          ? `  \${${tabstopIndex++}:${this.escapeSnippetText(posting.amount)}}`
+          : "";
 
       // First line: no leading newline (cursor already on new line)
       // Subsequent lines: add newline before
       if (i === 0) {
-        lines.push(`    ${posting.account}${amountPart}`);
+        parts.push(`    ${escapedAccount}${amountPart}`);
       } else {
-        lines.push(`\n    ${posting.account}${amountPart}`);
+        parts.push(`\n    ${escapedAccount}${amountPart}`);
       }
     }
 
-    return { text: lines.join(""), amountColumn };
+    // Final tabstop for exiting snippet mode
+    parts.push("\n$0");
+
+    return new vscode.SnippetString(parts.join(""));
   }
 
   /**
