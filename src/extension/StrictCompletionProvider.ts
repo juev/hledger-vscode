@@ -1,23 +1,15 @@
-import * as vscode from "vscode";
-import { HLedgerConfig } from "./HLedgerConfig";
-import { CompletionType, CompletionContext, DocumentReference } from "./types";
-import {
-  StrictPositionAnalyzer,
-  StrictCompletionContext,
-} from "./strict/StrictPositionAnalyzer";
-import { AccountCompleter } from "./completion/AccountCompleter";
-import { CommodityCompleter } from "./completion/CommodityCompleter";
-import { DateCompleter } from "./completion/DateCompleter";
-import { PayeeCompleter } from "./completion/PayeeCompleter";
-import { TagCompleter } from "./completion/TagCompleter";
-import {
-  NumberFormatService,
-  createNumberFormatService,
-} from "./services/NumberFormatService";
+import * as vscode from 'vscode';
+import { HLedgerConfig } from './HLedgerConfig';
+import { CompletionType, CompletionContext, DocumentReference } from './types';
+import { StrictPositionAnalyzer, StrictCompletionContext } from './strict/StrictPositionAnalyzer';
+import { AccountCompleter } from './completion/AccountCompleter';
+import { CommodityCompleter } from './completion/CommodityCompleter';
+import { DateCompleter } from './completion/DateCompleter';
+import { PayeeCompleter } from './completion/PayeeCompleter';
+import { TagCompleter } from './completion/TagCompleter';
+import { NumberFormatService, createNumberFormatService } from './services/NumberFormatService';
 
-export class StrictCompletionProvider
-  implements vscode.CompletionItemProvider, vscode.Disposable
-{
+export class StrictCompletionProvider implements vscode.CompletionItemProvider, vscode.Disposable {
   private numberFormatService: NumberFormatService;
   private positionAnalyzer: StrictPositionAnalyzer;
 
@@ -33,10 +25,7 @@ export class StrictCompletionProvider
     this.numberFormatService = createNumberFormatService();
 
     // Initialize position analyzer with required dependencies
-    this.positionAnalyzer = new StrictPositionAnalyzer(
-      this.numberFormatService,
-      config,
-    );
+    this.positionAnalyzer = new StrictPositionAnalyzer(this.numberFormatService, config);
 
     // Initialize completers with config
     this.dateCompleter = new DateCompleter(config);
@@ -50,17 +39,14 @@ export class StrictCompletionProvider
     document: vscode.TextDocument,
     position: vscode.Position,
     _token: vscode.CancellationToken,
-    _context: vscode.CompletionContext,
+    _context: vscode.CompletionContext
   ): vscode.CompletionItem[] | vscode.CompletionList {
     // 1. Update configuration for current document
     // Pass current line number to exclude incomplete line from parsing
     this.config.getConfigForDocument(document, position.line);
 
     // 2. Analyze position with strict rules (includes all suppression logic)
-    const strictContext = this.positionAnalyzer.analyzePosition(
-      document,
-      position,
-    );
+    const strictContext = this.positionAnalyzer.analyzePosition(document, position);
 
     // 3. Check if completions are suppressed
     if (strictContext.suppressAll || strictContext.allowedTypes.length === 0) {
@@ -73,12 +59,7 @@ export class StrictCompletionProvider
       return [];
     }
 
-    const result = this.provideSingleTypeCompletion(
-      strictContext,
-      primaryType,
-      document,
-      position,
-    );
+    const result = this.provideSingleTypeCompletion(strictContext, primaryType, document, position);
     // Return CompletionList with isIncomplete=true to prevent VS Code from re-sorting
     // This is the "gopls hack" - when combined with identical filterText for all items,
     // VS Code gives equal fuzzy scores and falls back to our sortText ordering
@@ -89,50 +70,26 @@ export class StrictCompletionProvider
     context: StrictCompletionContext,
     completionType: CompletionType,
     vscodeDocument: vscode.TextDocument,
-    vscodePosition: vscode.Position,
+    vscodePosition: vscode.Position
   ): vscode.CompletionItem[] {
     switch (completionType) {
-      case "date":
-        return this.provideDateCompletion(
-          context,
-          vscodeDocument,
-          vscodePosition,
-        );
+      case 'date':
+        return this.provideDateCompletion(context, vscodeDocument, vscodePosition);
 
-      case "account":
-        return this.provideAccountCompletion(
-          context,
-          vscodeDocument,
-          vscodePosition,
-        );
+      case 'account':
+        return this.provideAccountCompletion(context, vscodeDocument, vscodePosition);
 
-      case "commodity":
-        return this.provideCommodityCompletion(
-          context,
-          vscodeDocument,
-          vscodePosition,
-        );
+      case 'commodity':
+        return this.provideCommodityCompletion(context, vscodeDocument, vscodePosition);
 
-      case "payee":
-        return this.providePayeeCompletion(
-          context,
-          vscodeDocument,
-          vscodePosition,
-        );
+      case 'payee':
+        return this.providePayeeCompletion(context, vscodeDocument, vscodePosition);
 
-      case "tag":
-        return this.provideTagCompletion(
-          context,
-          vscodeDocument,
-          vscodePosition,
-        );
+      case 'tag':
+        return this.provideTagCompletion(context, vscodeDocument, vscodePosition);
 
-      case "tag_value":
-        return this.provideTagValueCompletion(
-          context,
-          vscodeDocument,
-          vscodePosition,
-        );
+      case 'tag_value':
+        return this.provideTagValueCompletion(context, vscodeDocument, vscodePosition);
 
       default:
         return [];
@@ -142,13 +99,13 @@ export class StrictCompletionProvider
   private provideDateCompletion(
     context: StrictCompletionContext,
     vscodeDocument: vscode.TextDocument,
-    vscodePosition: vscode.Position,
+    vscodePosition: vscode.Position
   ): vscode.CompletionItem[] {
     const legacyContext = this.convertToLegacyContext(
       context,
-      "date",
+      'date',
       vscodeDocument,
-      vscodePosition,
+      vscodePosition
     );
     return this.dateCompleter.complete(legacyContext);
   }
@@ -156,13 +113,13 @@ export class StrictCompletionProvider
   private provideAccountCompletion(
     context: StrictCompletionContext,
     vscodeDocument: vscode.TextDocument,
-    vscodePosition: vscode.Position,
+    vscodePosition: vscode.Position
   ): vscode.CompletionItem[] {
     const legacyContext = this.convertToLegacyContext(
       context,
-      "account",
+      'account',
       vscodeDocument,
-      vscodePosition,
+      vscodePosition
     );
     return this.accountCompleter.complete(legacyContext);
   }
@@ -170,13 +127,13 @@ export class StrictCompletionProvider
   private provideCommodityCompletion(
     context: StrictCompletionContext,
     vscodeDocument: vscode.TextDocument,
-    vscodePosition: vscode.Position,
+    vscodePosition: vscode.Position
   ): vscode.CompletionItem[] {
     const legacyContext = this.convertToLegacyContext(
       context,
-      "commodity",
+      'commodity',
       vscodeDocument,
-      vscodePosition,
+      vscodePosition
     );
     return this.commodityCompleter.complete(legacyContext);
   }
@@ -184,13 +141,13 @@ export class StrictCompletionProvider
   private providePayeeCompletion(
     context: StrictCompletionContext,
     vscodeDocument: vscode.TextDocument,
-    vscodePosition: vscode.Position,
+    vscodePosition: vscode.Position
   ): vscode.CompletionItem[] {
     const legacyContext = this.convertToLegacyContext(
       context,
-      "payee",
+      'payee',
       vscodeDocument,
-      vscodePosition,
+      vscodePosition
     );
     return this.payeeCompleter.complete(legacyContext);
   }
@@ -198,13 +155,13 @@ export class StrictCompletionProvider
   private provideTagCompletion(
     context: StrictCompletionContext,
     vscodeDocument: vscode.TextDocument,
-    vscodePosition: vscode.Position,
+    vscodePosition: vscode.Position
   ): vscode.CompletionItem[] {
     const legacyContext = this.convertToLegacyContext(
       context,
-      "tag",
+      'tag',
       vscodeDocument,
-      vscodePosition,
+      vscodePosition
     );
     return this.tagCompleter.complete(legacyContext);
   }
@@ -212,13 +169,13 @@ export class StrictCompletionProvider
   private provideTagValueCompletion(
     context: StrictCompletionContext,
     vscodeDocument: vscode.TextDocument,
-    vscodePosition: vscode.Position,
+    vscodePosition: vscode.Position
   ): vscode.CompletionItem[] {
     const legacyContext = this.convertToLegacyContext(
       context,
-      "tag_value",
+      'tag_value',
       vscodeDocument,
-      vscodePosition,
+      vscodePosition
     );
     return this.tagCompleter.complete(legacyContext);
   }
@@ -231,7 +188,7 @@ export class StrictCompletionProvider
     context: StrictCompletionContext,
     type: CompletionType,
     vscodeDocument?: vscode.TextDocument,
-    vscodePosition?: vscode.Position,
+    vscodePosition?: vscode.Position
   ): CompletionContext {
     // Extract query from position
     const query = this.extractQueryFromPosition(context);
@@ -283,7 +240,7 @@ export class StrictCompletionProvider
     const { beforeCursor } = context.position;
 
     // For tag value completion, extract the full tag:value pattern needed by TagCompleter
-    if (context.lineContext === "in_tag_value") {
+    if (context.lineContext === 'in_tag_value') {
       // Extract from after comment marker to cursor - TagCompleter expects full tag:value format
       const commentMatch = beforeCursor.match(/[;#]\s*(.*)$/);
       if (commentMatch?.[1]) {
@@ -294,7 +251,7 @@ export class StrictCompletionProvider
     }
 
     // For tag name completion in comments, extract just the tag name
-    if (context.lineContext === "in_comment") {
+    if (context.lineContext === 'in_comment') {
       // Extract from after comment marker to cursor, stop at colon
       const commentMatch = beforeCursor.match(/[;#]\s*([\p{L}\p{N}_-]*)$/u);
       if (commentMatch?.[1]) {
@@ -305,38 +262,38 @@ export class StrictCompletionProvider
     // For commodity completion after amount, extract only commodity characters after the space
     // Pattern: indented line + account name + spaces + amount + single space + optional commodity
     // Examples: "  Assets:Cash  100.00 " -> "", "  Assets:Cash  100.00 U" -> "U"
-    if (context.lineContext === "after_amount") {
+    if (context.lineContext === 'after_amount') {
       // Extract commodity characters after amount and space
       // Must have: indent + account name (letters/unicode) + spaces + amount + single space
       // Commodity can be uppercase letters or currency symbols
       const commodityMatch = beforeCursor.match(
-        /^\s+[\p{L}\p{N}:_\s-]+\s+\p{N}+(?:[.,]\p{N}+)?\s([\p{Lu}\p{Sc}]*)$/u,
+        /^\s+[\p{L}\p{N}:_\s-]+\s+\p{N}+(?:[.,]\p{N}+)?\s([\p{Lu}\p{Sc}]*)$/u
       );
       if (commodityMatch) {
-        return commodityMatch[1] ?? ""; // Return only commodity characters, empty string if none typed yet
+        return commodityMatch[1] ?? ''; // Return only commodity characters, empty string if none typed yet
       }
-      return "";
+      return '';
     }
 
     // For payee completion after date, extract only the payee portion
     // Date formats: YYYY-MM-DD, YYYY/MM/DD, YYYY.MM.DD, MM-DD, MM/DD
     // Optional status markers: * (cleared) or ! (pending)
-    if (context.lineContext === "after_date") {
+    if (context.lineContext === 'after_date') {
       // Pattern captures: date + optional whitespace + optional status marker + whitespace + payee
       // The payee part is everything after the last mandatory whitespace following date/status
       const datePayeeMatch = beforeCursor.match(
-        /^(?:\d{4}[-/.]\d{1,2}[-/.]\d{1,2}|\d{1,2}[-/.]\d{1,2})\s*[*!]?\s+(.*)$/u,
+        /^(?:\d{4}[-/.]\d{1,2}[-/.]\d{1,2}|\d{1,2}[-/.]\d{1,2})\s*[*!]?\s+(.*)$/u
       );
       if (datePayeeMatch) {
-        return datePayeeMatch[1]?.trim() ?? "";
+        return datePayeeMatch[1]?.trim() ?? '';
       }
-      return "";
+      return '';
     }
 
     // For other completion types, extract the word being typed at cursor position
     // Use Unicode-aware pattern to support international characters including spaces
     const match = beforeCursor.match(/[\p{L}\p{N}:_.\s-]*$/u);
-    return match ? match[0].trim() : "";
+    return match ? match[0].trim() : '';
   }
 
   /**

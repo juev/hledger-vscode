@@ -1,5 +1,5 @@
-import * as fs from "fs";
-import { ParsedHLedgerData } from "./HLedgerParser";
+import * as fs from 'fs';
+import { ParsedHLedgerData } from './HLedgerParser';
 
 /**
  * Simple file-based cache with modification time checking.

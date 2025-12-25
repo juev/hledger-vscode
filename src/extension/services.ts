@@ -1,14 +1,14 @@
 // services.ts - Service factory for extension dependency management
 // Provides lightweight service factory pattern to replace global mutable state
 
-import * as vscode from "vscode";
-import { HLedgerConfig } from "./HLedgerConfig";
-import { HLedgerParser } from "./HLedgerParser";
-import { SimpleProjectCache } from "./SimpleProjectCache";
-import { HLedgerCliService } from "./services/HLedgerCliService";
-import { HLedgerCliCommands } from "./HLedgerCliCommands";
-import { HLedgerImportCommands } from "./HLedgerImportCommands";
-import { ErrorNotificationHandler } from "./utils/ErrorNotificationHandler";
+import * as vscode from 'vscode';
+import { HLedgerConfig } from './HLedgerConfig';
+import { HLedgerParser } from './HLedgerParser';
+import { SimpleProjectCache } from './SimpleProjectCache';
+import { HLedgerCliService } from './services/HLedgerCliService';
+import { HLedgerCliCommands } from './HLedgerCliCommands';
+import { HLedgerImportCommands } from './HLedgerImportCommands';
+import { ErrorNotificationHandler } from './utils/ErrorNotificationHandler';
 
 /**
  * Collection of core extension services with proper lifecycle management.
@@ -86,25 +86,25 @@ export function createServices(): ExtensionServices {
       try {
         importCommands.dispose();
       } catch (error) {
-        console.error("HLedger: Error disposing importCommands:", error);
+        console.error('HLedger: Error disposing importCommands:', error);
       }
 
       try {
         cliCommands.dispose();
       } catch (error) {
-        console.error("HLedger: Error disposing cliCommands:", error);
+        console.error('HLedger: Error disposing cliCommands:', error);
       }
 
       try {
         cliService.dispose();
       } catch (error) {
-        console.error("HLedger: Error disposing cliService:", error);
+        console.error('HLedger: Error disposing cliService:', error);
       }
 
       try {
         config.dispose();
       } catch (error) {
-        console.error("HLedger: Error disposing config:", error);
+        console.error('HLedger: Error disposing config:', error);
       }
 
       // Cache has no dispose method - it's just a data structure
@@ -113,7 +113,7 @@ export function createServices(): ExtensionServices {
       try {
         errorHandler.dispose();
       } catch (error) {
-        console.error("HLedger: Error disposing errorHandler:", error);
+        console.error('HLedger: Error disposing errorHandler:', error);
       }
     },
   };

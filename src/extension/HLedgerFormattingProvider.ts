@@ -1,17 +1,15 @@
 // HLedgerFormattingProvider.ts - Standard VS Code formatting provider for hledger files
 // Uses VS Code's DocumentFormattingEditProvider API for seamless integration
 
-import * as vscode from "vscode";
-import { DocumentFormatter } from "./DocumentFormatter";
-import { isFailure } from "./types";
+import * as vscode from 'vscode';
+import { DocumentFormatter } from './DocumentFormatter';
+import { isFailure } from './types';
 
 /**
  * VS Code Document Formatting Provider for hledger files.
  * Integrates with VS Code's standard formatting infrastructure.
  */
-export class HLedgerFormattingProvider
-  implements vscode.DocumentFormattingEditProvider
-{
+export class HLedgerFormattingProvider implements vscode.DocumentFormattingEditProvider {
   private documentFormatter: DocumentFormatter;
 
   constructor() {
@@ -30,7 +28,7 @@ export class HLedgerFormattingProvider
   async provideDocumentFormattingEdits(
     document: vscode.TextDocument,
     options: vscode.FormattingOptions,
-    token: vscode.CancellationToken,
+    token: vscode.CancellationToken
   ): Promise<vscode.TextEdit[]> {
     // Check if operation is cancelled
     if (token.isCancellationRequested) {
@@ -47,7 +45,7 @@ export class HLedgerFormattingProvider
       const formatResult = this.documentFormatter.formatContent(content);
 
       if (isFailure(formatResult)) {
-        console.error("HLedger formatting failed:", formatResult.error);
+        console.error('HLedger formatting failed:', formatResult.error);
         return [];
       }
 
@@ -61,12 +59,12 @@ export class HLedgerFormattingProvider
       // Create a single edit that replaces the entire document
       const fullRange = new vscode.Range(
         document.positionAt(0),
-        document.positionAt(content.length),
+        document.positionAt(content.length)
       );
 
       return [vscode.TextEdit.replace(fullRange, formattedContent)];
     } catch (error) {
-      console.error("Error during hledger document formatting:", error);
+      console.error('Error during hledger document formatting:', error);
       return [];
     }
   }
@@ -76,9 +74,7 @@ export class HLedgerFormattingProvider
  * VS Code Document Range Formatting Provider for hledger files.
  * Allows formatting selected portions of hledger files.
  */
-export class HLedgerRangeFormattingProvider
-  implements vscode.DocumentRangeFormattingEditProvider
-{
+export class HLedgerRangeFormattingProvider implements vscode.DocumentRangeFormattingEditProvider {
   private documentFormatter: DocumentFormatter;
 
   constructor() {
@@ -99,7 +95,7 @@ export class HLedgerRangeFormattingProvider
     document: vscode.TextDocument,
     range: vscode.Range,
     options: vscode.FormattingOptions,
-    token: vscode.CancellationToken,
+    token: vscode.CancellationToken
   ): Promise<vscode.TextEdit[]> {
     // Check if operation is cancelled
     if (token.isCancellationRequested) {
@@ -110,13 +106,9 @@ export class HLedgerRangeFormattingProvider
       // For range formatting, we still format the entire document
       // because hledger formatting requires context of the whole transaction
       // This ensures consistency and proper alignment
-      return await this.provideDocumentFormattingEdits(
-        document,
-        options,
-        token,
-      );
+      return await this.provideDocumentFormattingEdits(document, options, token);
     } catch (error) {
-      console.error("Error during hledger range formatting:", error);
+      console.error('Error during hledger range formatting:', error);
       return [];
     }
   }
@@ -127,13 +119,13 @@ export class HLedgerRangeFormattingProvider
   private async provideDocumentFormattingEdits(
     document: vscode.TextDocument,
     _options: vscode.FormattingOptions,
-    _token: vscode.CancellationToken,
+    _token: vscode.CancellationToken
   ): Promise<vscode.TextEdit[]> {
     const content = document.getText();
     const formatResult = this.documentFormatter.formatContent(content);
 
     if (isFailure(formatResult)) {
-      console.error("HLedger formatting failed:", formatResult.error);
+      console.error('HLedger formatting failed:', formatResult.error);
       return [];
     }
 
@@ -143,10 +135,7 @@ export class HLedgerRangeFormattingProvider
       return [];
     }
 
-    const fullRange = new vscode.Range(
-      document.positionAt(0),
-      document.positionAt(content.length),
-    );
+    const fullRange = new vscode.Range(document.positionAt(0), document.positionAt(content.length));
 
     return [vscode.TextEdit.replace(fullRange, formattedContent)];
   }
@@ -156,26 +145,22 @@ export class HLedgerRangeFormattingProvider
  * Register formatting providers for hledger files.
  * Call this function during extension activation.
  */
-export function registerFormattingProviders(
-  context: vscode.ExtensionContext,
-): void {
+export function registerFormattingProviders(context: vscode.ExtensionContext): void {
   // Register document formatting provider
   const documentFormatter = new HLedgerFormattingProvider();
-  const documentRegistration =
-    vscode.languages.registerDocumentFormattingEditProvider(
-      "hledger",
-      documentFormatter,
-    );
+  const documentRegistration = vscode.languages.registerDocumentFormattingEditProvider(
+    'hledger',
+    documentFormatter
+  );
   context.subscriptions.push(documentRegistration);
 
   // Register range formatting provider
   const rangeFormatter = new HLedgerRangeFormattingProvider();
-  const rangeRegistration =
-    vscode.languages.registerDocumentRangeFormattingEditProvider(
-      "hledger",
-      rangeFormatter,
-    );
+  const rangeRegistration = vscode.languages.registerDocumentRangeFormattingEditProvider(
+    'hledger',
+    rangeFormatter
+  );
   context.subscriptions.push(rangeRegistration);
 
-  console.log("HLedger formatting providers registered");
+  console.log('HLedger formatting providers registered');
 }

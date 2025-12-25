@@ -1,4 +1,4 @@
-import * as vscode from "vscode";
+import * as vscode from 'vscode';
 
 /**
  * Utilities for handling Enter key press with smart indentation logic
@@ -9,21 +9,21 @@ export class HLedgerEnterKeyProvider {
    */
   static handleEnterKey(
     document: vscode.TextDocument,
-    position: vscode.Position,
+    position: vscode.Position
   ): { indentAction: vscode.IndentAction; appendText?: string } | null {
     const currentLine = document.lineAt(position.line);
     const currentLineText = currentLine.text;
     const trimmedText = currentLineText.trim();
 
     // Case 1: Empty line without indent -> new line without indent
-    if (trimmedText === "" && currentLineText === "") {
+    if (trimmedText === '' && currentLineText === '') {
       return {
         indentAction: vscode.IndentAction.None,
       };
     }
 
     // Case 2: Line with only indent -> new line without indent
-    if (trimmedText === "" && currentLineText.match(/^\s+$/)) {
+    if (trimmedText === '' && currentLineText.match(/^\s+$/)) {
       return {
         indentAction: vscode.IndentAction.Outdent,
       };
@@ -32,7 +32,7 @@ export class HLedgerEnterKeyProvider {
     // Case 3: Line with date -> new line with indent
     if (
       currentLineText.match(
-        /^(\d{4}[-/.]?\d{1,2}[-/.]?\d{1,2}|\d{1,2}[-/.]?\d{1,2})\s*(\*|!)?\s*(\([^)]+\))?\s*\S.*$/,
+        /^(\d{4}[-/.]?\d{1,2}[-/.]?\d{1,2}|\d{1,2}[-/.]?\d{1,2})\s*(\*|!)?\s*(\([^)]+\))?\s*\S.*$/
       )
     ) {
       return {
@@ -43,7 +43,7 @@ export class HLedgerEnterKeyProvider {
     // Case 4: Line with indent and content -> new line preserving indent
     if (currentLineText.match(/^\s+\S.*$/)) {
       const indentMatch = currentLineText.match(/^(\s+)/);
-      const currentIndent = indentMatch?.[1] ?? "    ";
+      const currentIndent = indentMatch?.[1] ?? '    ';
 
       return {
         indentAction: vscode.IndentAction.None,
@@ -64,21 +64,21 @@ export class HLedgerEnterCommand implements vscode.Disposable {
 
   constructor() {
     this.disposable = vscode.commands.registerTextEditorCommand(
-      "hledger.onEnter",
+      'hledger.onEnter',
       this.onEnter,
-      this,
+      this
     );
   }
 
   private async onEnter(
     textEditor: vscode.TextEditor,
-    _edit: vscode.TextEditorEdit,
+    _edit: vscode.TextEditorEdit
   ): Promise<void> {
     const document = textEditor.document;
 
-    if (document.languageId !== "hledger") {
+    if (document.languageId !== 'hledger') {
       // If this is not an hledger file, execute standard action
-      await vscode.commands.executeCommand("default:type", { text: "\n" });
+      await vscode.commands.executeCommand('default:type', { text: '\n' });
       return;
     }
 
@@ -105,11 +105,11 @@ export class HLedgerEnterCommand implements vscode.Disposable {
 
         if (!action) {
           // Standard behavior for this cursor only
-          editBuilder.insert(position, "\n");
+          editBuilder.insert(position, '\n');
           continue;
         }
 
-        let insertText = "\n";
+        let insertText = '\n';
 
         switch (action.indentAction) {
           case vscode.IndentAction.None:
@@ -119,7 +119,7 @@ export class HLedgerEnterCommand implements vscode.Disposable {
             break;
 
           case vscode.IndentAction.Indent:
-            insertText += "    "; // 4 spaces for indent
+            insertText += '    '; // 4 spaces for indent
             break;
 
           case vscode.IndentAction.Outdent:

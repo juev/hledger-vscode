@@ -1,20 +1,20 @@
 // main.ts - Simplified entry point for hledger extension
 // Refactored architecture with ~190 lines (FASE G)
 
-import * as vscode from "vscode";
-import { StrictCompletionProvider } from "./StrictCompletionProvider";
-import { HLedgerEnterCommand } from "./HLedgerEnterCommand";
-import { HLedgerTabCommand } from "./HLedgerTabCommand";
-import { registerFormattingProviders } from "./HLedgerFormattingProvider";
+import * as vscode from 'vscode';
+import { StrictCompletionProvider } from './StrictCompletionProvider';
+import { HLedgerEnterCommand } from './HLedgerEnterCommand';
+import { HLedgerTabCommand } from './HLedgerTabCommand';
+import { registerFormattingProviders } from './HLedgerFormattingProvider';
 import {
   HledgerSemanticTokensProvider,
   HLEDGER_SEMANTIC_TOKENS_LEGEND,
-} from "./HledgerSemanticTokensProvider";
-import { createServices } from "./services";
-import { SimpleFuzzyMatcher } from "./SimpleFuzzyMatcher";
-import { HLedgerCodeActionProvider } from "./actions/HLedgerCodeActionProvider";
-import { HLedgerDiagnosticsProvider } from "./diagnostics/HLedgerDiagnosticsProvider";
-import { InlineCompletionProvider } from "./inline/InlineCompletionProvider";
+} from './HledgerSemanticTokensProvider';
+import { createServices } from './services';
+import { SimpleFuzzyMatcher } from './SimpleFuzzyMatcher';
+import { HLedgerCodeActionProvider } from './actions/HLedgerCodeActionProvider';
+import { HLedgerDiagnosticsProvider } from './diagnostics/HLedgerDiagnosticsProvider';
+import { InlineCompletionProvider } from './inline/InlineCompletionProvider';
 
 // Main activation function
 export function activate(context: vscode.ExtensionContext): void {
@@ -31,23 +31,23 @@ export function activate(context: vscode.ExtensionContext): void {
     // Register the provider for completion items
     context.subscriptions.push(
       vscode.languages.registerCompletionItemProvider(
-        "hledger",
+        'hledger',
         strictProvider,
         // Triggers for different completion contexts (space intentionally excluded):
-        "0",
-        "1",
-        "2",
-        "3",
-        "4",
-        "5",
-        "6",
-        "7",
-        "8",
-        "9", // Date completion at line start
-        ":", // Account hierarchy
-        "@", // Commodities
-        ";", // Comments (future use)
-      ),
+        '0',
+        '1',
+        '2',
+        '3',
+        '4',
+        '5',
+        '6',
+        '7',
+        '8',
+        '9', // Date completion at line start
+        ':', // Account hierarchy
+        '@', // Commodities
+        ';' // Comments (future use)
+      )
     );
 
     // Register the provider itself for proper disposal (prevents RegexCache memory leak)
@@ -56,17 +56,14 @@ export function activate(context: vscode.ExtensionContext): void {
     // Register inline completion provider for ghost text completions
     const inlineProvider = new InlineCompletionProvider(services.config);
     context.subscriptions.push(
-      vscode.languages.registerInlineCompletionItemProvider(
-        "hledger",
-        inlineProvider,
-      ),
+      vscode.languages.registerInlineCompletionItemProvider('hledger', inlineProvider)
     );
     context.subscriptions.push(inlineProvider);
 
     // Register command to position cursor after template insertion
     context.subscriptions.push(
       vscode.commands.registerTextEditorCommand(
-        "hledger.positionCursorAfterTemplate",
+        'hledger.positionCursorAfterTemplate',
         (editor, _edit, line: number, column: number) => {
           // Bounds check: clamp line to valid document range
           const maxLine = editor.document.lineCount - 1;
@@ -78,21 +75,16 @@ export function activate(context: vscode.ExtensionContext): void {
 
           const newPosition = new vscode.Position(safeLine, safeColumn);
           editor.selection = new vscode.Selection(newPosition, newPosition);
-        },
-      ),
+        }
+      )
     );
 
     // Register code action provider for balance assertions and quick fixes
     const codeActionProvider = new HLedgerCodeActionProvider(services.config);
     context.subscriptions.push(
-      vscode.languages.registerCodeActionsProvider(
-        "hledger",
-        codeActionProvider,
-        {
-          providedCodeActionKinds:
-            HLedgerCodeActionProvider.providedCodeActionKinds,
-        },
-      ),
+      vscode.languages.registerCodeActionsProvider('hledger', codeActionProvider, {
+        providedCodeActionKinds: HLedgerCodeActionProvider.providedCodeActionKinds,
+      })
     );
 
     // Register diagnostics provider for validation on save
@@ -114,19 +106,19 @@ export function activate(context: vscode.ExtensionContext): void {
     const semanticProvider = new HledgerSemanticTokensProvider();
     context.subscriptions.push(
       vscode.languages.registerDocumentSemanticTokensProvider(
-        { language: "hledger" },
+        { language: 'hledger' },
         semanticProvider,
-        HLEDGER_SEMANTIC_TOKENS_LEGEND,
-      ),
+        HLEDGER_SEMANTIC_TOKENS_LEGEND
+      )
     );
 
     // Also register range provider for better performance on large files
     context.subscriptions.push(
       vscode.languages.registerDocumentRangeSemanticTokensProvider(
-        { language: "hledger" },
+        { language: 'hledger' },
         semanticProvider,
-        HLEDGER_SEMANTIC_TOKENS_LEGEND,
-      ),
+        HLEDGER_SEMANTIC_TOKENS_LEGEND
+      )
     );
 
     // Register the semantic provider itself for proper disposal
@@ -134,16 +126,14 @@ export function activate(context: vscode.ExtensionContext): void {
 
     // FS watcher for journal files: reset data on change, preserve cache for mtimeMs validation
     // This enables incremental updates - only modified files will be reparsed
-    const watcher = vscode.workspace.createFileSystemWatcher(
-      "**/*.{journal,hledger,ledger}",
-    );
+    const watcher = vscode.workspace.createFileSystemWatcher('**/*.{journal,hledger,ledger}');
     const onFsChange = (): void => {
       try {
         // Reset data without clearing cache - SimpleProjectCache.get() validates mtimeMs automatically
         // This provides ~50x speedup for large projects by avoiding full workspace reparsing
         services.config.resetData();
       } catch (err) {
-        console.error("HLedger: data reset failed after FS change", err);
+        console.error('HLedger: data reset failed after FS change', err);
       }
     };
     watcher.onDidCreate(onFsChange, null, context.subscriptions);
@@ -153,61 +143,52 @@ export function activate(context: vscode.ExtensionContext): void {
 
     // Register manual completion commands
     context.subscriptions.push(
-      vscode.commands.registerCommand("hledger.triggerDateCompletion", () => {
-        vscode.commands.executeCommand("editor.action.triggerSuggest");
-      }),
+      vscode.commands.registerCommand('hledger.triggerDateCompletion', () => {
+        vscode.commands.executeCommand('editor.action.triggerSuggest');
+      })
     );
 
     context.subscriptions.push(
-      vscode.commands.registerCommand(
-        "hledger.triggerAccountCompletion",
-        () => {
-          vscode.commands.executeCommand("editor.action.triggerSuggest");
-        },
-      ),
+      vscode.commands.registerCommand('hledger.triggerAccountCompletion', () => {
+        vscode.commands.executeCommand('editor.action.triggerSuggest');
+      })
     );
 
     // Register CLI commands
     context.subscriptions.push(
-      vscode.commands.registerCommand("hledger.cli.balance", async () => {
+      vscode.commands.registerCommand('hledger.cli.balance', async () => {
         await services.cliCommands.insertBalance();
-      }),
+      })
     );
 
     context.subscriptions.push(
-      vscode.commands.registerCommand("hledger.cli.stats", async () => {
+      vscode.commands.registerCommand('hledger.cli.stats', async () => {
         await services.cliCommands.insertStats();
-      }),
+      })
     );
 
     context.subscriptions.push(
-      vscode.commands.registerCommand(
-        "hledger.cli.incomestatement",
-        async () => {
-          await services.cliCommands.insertIncomestatement();
-        },
-      ),
+      vscode.commands.registerCommand('hledger.cli.incomestatement', async () => {
+        await services.cliCommands.insertIncomestatement();
+      })
     );
 
     // Register import commands
     context.subscriptions.push(
-      vscode.commands.registerCommand(
-        "hledger.import.fromSelection",
-        async () => {
-          await services.importCommands.importFromSelection();
-        },
-      ),
+      vscode.commands.registerCommand('hledger.import.fromSelection', async () => {
+        await services.importCommands.importFromSelection();
+      })
     );
 
     context.subscriptions.push(
-      vscode.commands.registerCommand("hledger.import.fromFile", async () => {
+      vscode.commands.registerCommand('hledger.import.fromFile', async () => {
         await services.importCommands.importFromFile();
-      }),
+      })
     );
 
     // Extension activation complete
   } catch (error) {
-    console.error("HLedger extension activation failed:", error);
+    console.error('HLedger extension activation failed:', error);
   }
 }
 
@@ -216,10 +197,10 @@ export function deactivate(): void {
 }
 
 // Public API exports
-export { HLedgerConfig } from "./HLedgerConfig";
-export { HLedgerParser } from "./HLedgerParser";
-export { SimpleProjectCache as WorkspaceCache } from "./SimpleProjectCache";
-export { SimpleFuzzyMatcher, FuzzyMatch } from "./SimpleFuzzyMatcher";
+export { HLedgerConfig } from './HLedgerConfig';
+export { HLedgerParser } from './HLedgerParser';
+export { SimpleProjectCache as WorkspaceCache } from './SimpleProjectCache';
+export { SimpleFuzzyMatcher, FuzzyMatch } from './SimpleFuzzyMatcher';
 
 /**
  * Helper function for fuzzy matching that wraps SimpleFuzzyMatcher.
@@ -232,7 +213,7 @@ export { SimpleFuzzyMatcher, FuzzyMatch } from "./SimpleFuzzyMatcher";
  */
 export function fuzzyMatch<T extends string>(
   query: string,
-  items: readonly T[],
+  items: readonly T[]
 ): Array<{ item: T; score: number }> {
   const matcher = new SimpleFuzzyMatcher();
   return matcher.match(query, items);

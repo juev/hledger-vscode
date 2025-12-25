@@ -12,27 +12,27 @@ import {
   createTagName,
   createTagValue,
   createCommodityCode,
-} from "../types";
-import { RegexPatterns } from "../RegexPatterns";
+} from '../types';
+import { RegexPatterns } from '../RegexPatterns';
 
 /**
  * Represents different types of hledger lines/tokens
  */
 export enum TokenType {
-  COMMENT = "comment",
-  EMPTY = "empty",
-  TRANSACTION = "transaction",
-  POSTING = "posting",
-  INCLUDE_DIRECTIVE = "include",
-  ALIAS_DIRECTIVE = "alias",
-  COMMODITY_DIRECTIVE = "commodity",
-  FORMAT_DIRECTIVE = "format",
-  DECIMAL_MARK_DIRECTIVE = "decimal-mark",
-  DEFAULT_COMMODITY_DIRECTIVE = "default-commodity",
-  ACCOUNT_DIRECTIVE = "account",
-  PAYEE_DIRECTIVE = "payee",
-  TAG_DIRECTIVE = "tag",
-  UNKNOWN = "unknown",
+  COMMENT = 'comment',
+  EMPTY = 'empty',
+  TRANSACTION = 'transaction',
+  POSTING = 'posting',
+  INCLUDE_DIRECTIVE = 'include',
+  ALIAS_DIRECTIVE = 'alias',
+  COMMODITY_DIRECTIVE = 'commodity',
+  FORMAT_DIRECTIVE = 'format',
+  DECIMAL_MARK_DIRECTIVE = 'decimal-mark',
+  DEFAULT_COMMODITY_DIRECTIVE = 'default-commodity',
+  ACCOUNT_DIRECTIVE = 'account',
+  PAYEE_DIRECTIVE = 'payee',
+  TAG_DIRECTIVE = 'tag',
+  UNKNOWN = 'unknown',
 }
 
 /**
@@ -52,7 +52,7 @@ export interface HLedgerToken {
   readonly aliasTo?: AccountName | undefined;
   readonly commoditySymbol?: string | undefined;
   readonly formatPattern?: string | undefined;
-  readonly decimalMark?: "." | "," | null | undefined;
+  readonly decimalMark?: '.' | ',' | null | undefined;
 }
 
 /**
@@ -97,7 +97,7 @@ export class HLedgerLexer {
     }
 
     // Comment line
-    if (trimmedLine.startsWith(";") || trimmedLine.startsWith("#")) {
+    if (trimmedLine.startsWith(';') || trimmedLine.startsWith('#')) {
       return {
         type: TokenType.COMMENT,
         rawLine: line,
@@ -106,47 +106,47 @@ export class HLedgerLexer {
     }
 
     // Include directive
-    if (trimmedLine.startsWith("include ")) {
+    if (trimmedLine.startsWith('include ')) {
       return this.tokenizeIncludeDirective(line, trimmedLine);
     }
 
     // Alias directive
-    if (trimmedLine.startsWith("alias ")) {
+    if (trimmedLine.startsWith('alias ')) {
       return this.tokenizeAliasDirective(line, trimmedLine);
     }
 
     // Commodity directive
-    if (trimmedLine.startsWith("commodity ")) {
+    if (trimmedLine.startsWith('commodity ')) {
       return this.tokenizeCommodityDirective(line, trimmedLine);
     }
 
     // Format directive
-    if (trimmedLine.startsWith("format ")) {
+    if (trimmedLine.startsWith('format ')) {
       return this.tokenizeFormatDirective(line, trimmedLine);
     }
 
     // Decimal mark directive
-    if (trimmedLine.startsWith("decimal-mark ")) {
+    if (trimmedLine.startsWith('decimal-mark ')) {
       return this.tokenizeDecimalMarkDirective(line, trimmedLine);
     }
 
     // Default commodity directive
-    if (trimmedLine.startsWith("default commodity ")) {
+    if (trimmedLine.startsWith('default commodity ')) {
       return this.tokenizeDefaultCommodityDirective(line, trimmedLine);
     }
 
     // Account directive
-    if (trimmedLine.startsWith("account ")) {
+    if (trimmedLine.startsWith('account ')) {
       return this.tokenizeAccountDirective(line, trimmedLine);
     }
 
     // Payee directive
-    if (trimmedLine.startsWith("payee ")) {
+    if (trimmedLine.startsWith('payee ')) {
       return this.tokenizePayeeDirective(line, trimmedLine);
     }
 
     // Tag directive
-    if (trimmedLine.startsWith("tag ")) {
+    if (trimmedLine.startsWith('tag ')) {
       return this.tokenizeTagDirective(line, trimmedLine);
     }
 
@@ -189,7 +189,7 @@ export class HLedgerLexer {
    * Tokenizes an entire hledger file content
    */
   public tokenizeContent(content: string): HLedgerToken[] {
-    const lines = content.split("\n");
+    const lines = content.split('\n');
     return lines.map((line, index) => this.tokenizeLine(line, index + 1));
   }
 
@@ -198,8 +198,7 @@ export class HLedgerLexer {
    */
   public isTransactionLine(line: string): boolean {
     // Date pattern check: YYYY-MM-DD, YYYY/MM/DD, YYYY.MM.DD, or MM-DD, MM/DD, MM.DD
-    const datePattern =
-      /^(?:\d{4}[-/.]\d{1,2}[-/.]\d{1,2}|\d{1,2}[-/.]\d{1,2})/;
+    const datePattern = /^(?:\d{4}[-/.]\d{1,2}[-/.]\d{1,2}|\d{1,2}[-/.]\d{1,2})/;
     return datePattern.test(line);
   }
 
@@ -219,9 +218,9 @@ export class HLedgerLexer {
     // Posting lines are indented and contain account information
     return (
       line.length > 0 &&
-      (line[0] === " " || line[0] === "\t") &&
-      !line.trim().startsWith(";") &&
-      !line.trim().startsWith("#")
+      (line[0] === ' ' || line[0] === '\t') &&
+      !line.trim().startsWith(';') &&
+      !line.trim().startsWith('#')
     );
   }
 
@@ -234,9 +233,9 @@ export class HLedgerLexer {
 
     if (parts.length === 0) {
       return {
-        date: "",
-        description: "",
-        payee: createPayeeName("Unknown"),
+        date: '',
+        description: '',
+        payee: createPayeeName('Unknown'),
         tags: new Map(),
       };
     }
@@ -256,25 +255,23 @@ export class HLedgerLexer {
     // Extract code (in parentheses)
     let code: string | undefined;
     const codePart = parts[currentIndex];
-    if (codePart && codePart.startsWith("(") && codePart.endsWith(")")) {
+    if (codePart && codePart.startsWith('(') && codePart.endsWith(')')) {
       code = codePart;
       currentIndex++;
     }
 
     // Rest is description
-    const description = parts.slice(currentIndex).join(" ");
+    const description = parts.slice(currentIndex).join(' ');
 
     // Strip comments from description for payee extraction
-    const payeeDescription = description
-      ? (description.split(/[;#]/)[0]?.trim() ?? "")
-      : "";
+    const payeeDescription = description ? (description.split(/[;#]/)[0]?.trim() ?? '') : '';
 
     return {
-      date: date ?? "",
+      date: date ?? '',
       status: status,
       code: code,
-      description: description ?? "",
-      payee: createPayeeName(payeeDescription || "Unknown"),
+      description: description ?? '',
+      payee: createPayeeName(payeeDescription || 'Unknown'),
       tags: new Map(),
     };
   }
@@ -298,13 +295,11 @@ export class HLedgerLexer {
 
     // Extract amount if present
     const amountMatch = trimmed.match(/\s+([+-]?\s*[\d,.]+\s*[A-Za-z$€£¥₽%]*)/);
-    const amount = amountMatch?.[1]?.replace(/\s+/g, "") ?? "";
+    const amount = amountMatch?.[1]?.replace(/\s+/g, '') ?? '';
 
     // Extract commodity from amount
     const commodityMatch = amount.match(/[A-Za-z$€£¥₽%]+$/);
-    const commodity = commodityMatch?.[0]
-      ? createCommodityCode(commodityMatch[0])
-      : undefined;
+    const commodity = commodityMatch?.[0] ? createCommodityCode(commodityMatch[0]) : undefined;
 
     return {
       account: createAccountName(accountName),
@@ -323,8 +318,8 @@ export class HLedgerLexer {
     const tagMatches = line.matchAll(/#(\w+)(?::([^#\s]+))?/g);
 
     for (const match of tagMatches) {
-      const tagName = createTagName(match[1] ?? "");
-      const tagValue = match[2] ? createTagValue(match[2]) : createTagValue("");
+      const tagName = createTagName(match[1] ?? '');
+      const tagValue = match[2] ? createTagValue(match[2]) : createTagValue('');
 
       if (!tags.has(tagName)) {
         tags.set(tagName, new Set());
@@ -338,10 +333,7 @@ export class HLedgerLexer {
   /**
    * Tokenizes include directive
    */
-  private tokenizeIncludeDirective(
-    rawLine: string,
-    trimmedLine: string,
-  ): HLedgerToken {
+  private tokenizeIncludeDirective(rawLine: string, trimmedLine: string): HLedgerToken {
     return {
       type: TokenType.INCLUDE_DIRECTIVE,
       rawLine,
@@ -352,10 +344,7 @@ export class HLedgerLexer {
   /**
    * Tokenizes alias directive
    */
-  private tokenizeAliasDirective(
-    rawLine: string,
-    trimmedLine: string,
-  ): HLedgerToken {
+  private tokenizeAliasDirective(rawLine: string, trimmedLine: string): HLedgerToken {
     const match = trimmedLine.match(RegexPatterns.ALIAS_DIRECTIVE);
     if (match?.[1] && match[2]) {
       return {
@@ -377,10 +366,7 @@ export class HLedgerLexer {
   /**
    * Tokenizes commodity directive
    */
-  private tokenizeCommodityDirective(
-    rawLine: string,
-    trimmedLine: string,
-  ): HLedgerToken {
+  private tokenizeCommodityDirective(rawLine: string, trimmedLine: string): HLedgerToken {
     const match = trimmedLine.match(/^commodity\s+([A-Za-z$€£¥₽%]+)/);
     return {
       type: TokenType.COMMODITY_DIRECTIVE,
@@ -393,10 +379,7 @@ export class HLedgerLexer {
   /**
    * Tokenizes format directive
    */
-  private tokenizeFormatDirective(
-    rawLine: string,
-    trimmedLine: string,
-  ): HLedgerToken {
+  private tokenizeFormatDirective(rawLine: string, trimmedLine: string): HLedgerToken {
     const match = trimmedLine.match(/^format\s+(.+)$/);
     return {
       type: TokenType.FORMAT_DIRECTIVE,
@@ -409,12 +392,9 @@ export class HLedgerLexer {
   /**
    * Tokenizes decimal mark directive
    */
-  private tokenizeDecimalMarkDirective(
-    rawLine: string,
-    trimmedLine: string,
-  ): HLedgerToken {
+  private tokenizeDecimalMarkDirective(rawLine: string, trimmedLine: string): HLedgerToken {
     const match = trimmedLine.match(/^decimal-mark\s+([.,])/);
-    const decimalMark = match?.[1] as "." | "," | undefined;
+    const decimalMark = match?.[1] as '.' | ',' | undefined;
 
     return {
       type: TokenType.DECIMAL_MARK_DIRECTIVE,
@@ -427,10 +407,7 @@ export class HLedgerLexer {
   /**
    * Tokenizes default commodity directive
    */
-  private tokenizeDefaultCommodityDirective(
-    rawLine: string,
-    trimmedLine: string,
-  ): HLedgerToken {
+  private tokenizeDefaultCommodityDirective(rawLine: string, trimmedLine: string): HLedgerToken {
     const match = trimmedLine.match(/^default commodity\s+([A-Za-z$€£¥₽%]+)/);
     const commodity = match?.[1] ? createCommodityCode(match[1]) : undefined;
 
@@ -445,14 +422,9 @@ export class HLedgerLexer {
   /**
    * Tokenizes account directive
    */
-  private tokenizeAccountDirective(
-    rawLine: string,
-    trimmedLine: string,
-  ): HLedgerToken {
+  private tokenizeAccountDirective(rawLine: string, trimmedLine: string): HLedgerToken {
     const match = trimmedLine.match(/^account\s+(.+)$/);
-    const accountName = match?.[1]
-      ? (match[1].split(/[;#]/)[0]?.trim() ?? "")
-      : "";
+    const accountName = match?.[1] ? (match[1].split(/[;#]/)[0]?.trim() ?? '') : '';
     const account = accountName ? createAccountName(accountName) : undefined;
 
     return {
@@ -466,10 +438,7 @@ export class HLedgerLexer {
   /**
    * Tokenizes payee directive
    */
-  private tokenizePayeeDirective(
-    rawLine: string,
-    trimmedLine: string,
-  ): HLedgerToken {
+  private tokenizePayeeDirective(rawLine: string, trimmedLine: string): HLedgerToken {
     const match = trimmedLine.match(/^payee\s+(.+)$/);
     const payee = match?.[1] ? createPayeeName(match[1]) : undefined;
 
@@ -484,10 +453,7 @@ export class HLedgerLexer {
   /**
    * Tokenizes tag directive
    */
-  private tokenizeTagDirective(
-    rawLine: string,
-    trimmedLine: string,
-  ): HLedgerToken {
+  private tokenizeTagDirective(rawLine: string, trimmedLine: string): HLedgerToken {
     const match = trimmedLine.match(/^tag\s+(\w+)(?:\s+(.+))?$/);
     const tagName = match?.[1] ? createTagName(match[1]) : undefined;
 

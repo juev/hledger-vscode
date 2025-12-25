@@ -5,17 +5,17 @@
  * 1. Payee completion (typing after date)
  * 2. Transaction template insertion (complete payee entered)
  */
-import * as vscode from "vscode";
-import { PayeeName } from "../types";
+import * as vscode from 'vscode';
+import { PayeeName } from '../types';
 
 /**
  * Discriminated union representing inline completion context.
  * Enables type-safe handling of different completion scenarios.
  */
 export type InlineContext =
-  | { type: "none" }
-  | { type: "payee"; prefix: string; payeeStartPos: number }
-  | { type: "template"; payee: PayeeName; insertPosition: vscode.Position };
+  | { type: 'none' }
+  | { type: 'payee'; prefix: string; payeeStartPos: number }
+  | { type: 'template'; payee: PayeeName; insertPosition: vscode.Position };
 
 /**
  * Analyzes cursor position to determine inline completion context.
@@ -66,7 +66,7 @@ export class InlinePositionAnalyzer {
   analyzePosition(
     document: vscode.TextDocument,
     position: vscode.Position,
-    knownPayees: ReadonlySet<string>,
+    knownPayees: ReadonlySet<string>
   ): InlineContext {
     const line = document.lineAt(position.line).text;
 
@@ -78,23 +78,23 @@ export class InlinePositionAnalyzer {
 
     // Check for indented lines (posting lines) - no inline completion
     if (InlinePositionAnalyzer.INDENTED_LINE.test(line)) {
-      return { type: "none" };
+      return { type: 'none' };
     }
 
     // Check for comment lines
     if (InlinePositionAnalyzer.COMMENT_LINE.test(line.trimStart())) {
-      return { type: "none" };
+      return { type: 'none' };
     }
 
     // Check for directive lines
     if (InlinePositionAnalyzer.DIRECTIVE_LINE.test(line)) {
-      return { type: "none" };
+      return { type: 'none' };
     }
 
     // Try to match date pattern for payee completion
     const dateMatch = line.match(InlinePositionAnalyzer.DATE_IN_TRANSACTION);
     if (!dateMatch) {
-      return { type: "none" };
+      return { type: 'none' };
     }
 
     const dateEndPos = dateMatch[0].length;
@@ -102,7 +102,7 @@ export class InlinePositionAnalyzer {
 
     // Cursor must be at or after date end
     if (cursorPos < dateEndPos) {
-      return { type: "none" };
+      return { type: 'none' };
     }
 
     // Extract payee portion (from date end to cursor)
@@ -113,18 +113,18 @@ export class InlinePositionAnalyzer {
 
     // Require minimum characters for payee prefix (configurable)
     if (prefix.length < this.minPayeeChars) {
-      return { type: "none" };
+      return { type: 'none' };
     }
 
     // If prefix exactly matches a known payee and cursor at end of line,
     // return none - template will be offered on next line after Enter
     const isCursorAtEnd = cursorPos >= line.trimEnd().length;
     if (isCursorAtEnd && knownPayees.has(prefix)) {
-      return { type: "none" };
+      return { type: 'none' };
     }
 
     return {
-      type: "payee",
+      type: 'payee',
       prefix,
       payeeStartPos: dateEndPos + payeePortion.indexOf(prefix.charAt(0)),
     };
@@ -142,30 +142,30 @@ export class InlinePositionAnalyzer {
   private checkTemplateContext(
     document: vscode.TextDocument,
     position: vscode.Position,
-    knownPayees: ReadonlySet<string>,
+    knownPayees: ReadonlySet<string>
   ): InlineContext {
     const prevLine = document.lineAt(position.line - 1).text;
 
     // Previous line must be a transaction header (date + payee)
     const dateMatch = prevLine.match(InlinePositionAnalyzer.DATE_IN_TRANSACTION);
     if (!dateMatch) {
-      return { type: "none" };
+      return { type: 'none' };
     }
 
     // Extract and validate payee
     const payee = prevLine.substring(dateMatch[0].length).trim();
     if (!payee || !knownPayees.has(payee)) {
-      return { type: "none" };
+      return { type: 'none' };
     }
 
     // Check that transaction doesn't already have postings
     // (no indented lines following the header)
     if (!this.isValidTemplateContext(document, position.line - 1)) {
-      return { type: "none" };
+      return { type: 'none' };
     }
 
     return {
-      type: "template",
+      type: 'template',
       payee: payee as PayeeName,
       insertPosition: position,
     };
@@ -179,10 +179,7 @@ export class InlinePositionAnalyzer {
    * @param currentLine - Current line number
    * @returns true if template insertion is valid
    */
-  private isValidTemplateContext(
-    document: vscode.TextDocument,
-    currentLine: number,
-  ): boolean {
+  private isValidTemplateContext(document: vscode.TextDocument, currentLine: number): boolean {
     // If we're at the last line of the document, template is valid
     if (currentLine >= document.lineCount - 1) {
       return true;

@@ -24,7 +24,7 @@ describe('Grammar Snapshot Tests', () => {
     const registry = new Registry({
       onigLib: Promise.resolve({
         createOnigScanner: (sources: string[]) => new OnigScanner(sources),
-        createOnigString: (str: string) => new OnigString(str)
+        createOnigString: (str: string) => new OnigString(str),
       }),
       loadGrammar: async (scopeName: string) => {
         if (scopeName === 'source.hledger') {
@@ -33,7 +33,7 @@ describe('Grammar Snapshot Tests', () => {
           return JSON.parse(grammarJson);
         }
         return null;
-      }
+      },
     });
 
     const loadedGrammar = await registry.loadGrammar('source.hledger');
@@ -80,7 +80,7 @@ describe('Grammar Snapshot Tests', () => {
       const lines = [
         '2025-11-22 Grocery Store',
         '    Expenses:Food              50 USD',
-        '    Assets:Checking'
+        '    Assets:Checking',
       ];
 
       const result = tokenizeLines(lines);
@@ -92,7 +92,7 @@ describe('Grammar Snapshot Tests', () => {
         '2025-11-22 * (CHECK-123) Grocery Store | Weekly shopping',
         '    ; project: personal',
         '    Expenses:Food:Groceries      50 USD',
-        '    Assets:Checking             -50 USD = 1000 USD'
+        '    Assets:Checking             -50 USD = 1000 USD',
       ];
 
       const result = tokenizeLines(lines);
@@ -103,7 +103,7 @@ describe('Grammar Snapshot Tests', () => {
       const lines = [
         '2025-11-22 Stock Purchase',
         '    Assets:Stock             10 AAPL @ $150',
-        '    Assets:Cash             -$1500'
+        '    Assets:Cash             -$1500',
       ];
 
       const result = tokenizeLines(lines);
@@ -111,21 +111,14 @@ describe('Grammar Snapshot Tests', () => {
     });
 
     it('should tokenize periodic transaction', () => {
-      const lines = [
-        '~ monthly',
-        '    Expenses:Rent              1000 USD',
-        '    Assets:Checking'
-      ];
+      const lines = ['~ monthly', '    Expenses:Rent              1000 USD', '    Assets:Checking'];
 
       const result = tokenizeLines(lines);
       expect(result).toMatchSnapshot();
     });
 
     it('should tokenize auto transaction', () => {
-      const lines = [
-        '= expenses:food',
-        '    (Budget:Food)              1.0'
-      ];
+      const lines = ['= expenses:food', '    (Budget:Food)              1.0'];
 
       const result = tokenizeLines(lines);
       expect(result).toMatchSnapshot();
@@ -140,7 +133,7 @@ describe('Grammar Snapshot Tests', () => {
         '    Liabilities:CreditCard',
         '    Equity:Opening',
         '    Income:Salary',
-        '    Revenue:Sales'
+        '    Revenue:Sales',
       ];
 
       const result = tokenizeLines(lines);
@@ -153,7 +146,7 @@ describe('Grammar Snapshot Tests', () => {
         '    Расходы:Еда',
         '    Пассивы:Кредит',
         '    Собственные:Начальный',
-        '    Доходы:Зарплата'
+        '    Доходы:Зарплата',
       ];
 
       const result = tokenizeLines(lines);
@@ -161,10 +154,7 @@ describe('Grammar Snapshot Tests', () => {
     });
 
     it('should tokenize virtual accounts', () => {
-      const lines = [
-        '    (Assets:Virtual Cash)',
-        '    [Assets:Budget]'
-      ];
+      const lines = ['    (Assets:Virtual Cash)', '    [Assets:Budget]'];
 
       const result = tokenizeLines(lines);
       expect(result).toMatchSnapshot();
@@ -174,7 +164,7 @@ describe('Grammar Snapshot Tests', () => {
       const lines = [
         '    Assets:Bank Account',
         '    Expenses:Food Items',
-        '    Assets:Банковский Счет'
+        '    Assets:Банковский Счет',
       ];
 
       const result = tokenizeLines(lines);
@@ -184,31 +174,21 @@ describe('Grammar Snapshot Tests', () => {
 
   describe('Directive Snapshots', () => {
     it('should tokenize account directive', () => {
-      const lines = [
-        'account Assets:Cash',
-        '    note: Main cash account',
-        '    alias: cash'
-      ];
+      const lines = ['account Assets:Cash', '    note: Main cash account', '    alias: cash'];
 
       const result = tokenizeLines(lines);
       expect(result).toMatchSnapshot();
     });
 
     it('should tokenize commodity directive', () => {
-      const lines = [
-        'commodity USD',
-        '    format $1,000.00'
-      ];
+      const lines = ['commodity USD', '    format $1,000.00'];
 
       const result = tokenizeLines(lines);
       expect(result).toMatchSnapshot();
     });
 
     it('should tokenize price directive', () => {
-      const lines = [
-        'P 2025-11-22 USD 1.2 EUR',
-        'P 2025-11-22 AAPL $150.00'
-      ];
+      const lines = ['P 2025-11-22 USD 1.2 EUR', 'P 2025-11-22 AAPL $150.00'];
 
       const result = tokenizeLines(lines);
       expect(result).toMatchSnapshot();
@@ -221,7 +201,7 @@ describe('Grammar Snapshot Tests', () => {
         'Y 2025',
         'alias checking = Assets:Bank:Checking',
         'payee Grocery Store',
-        'tag project'
+        'tag project',
       ];
 
       const result = tokenizeLines(lines);
@@ -235,7 +215,7 @@ describe('Grammar Snapshot Tests', () => {
         '; This is a semicolon comment',
         '# This is a hash comment',
         '; URL: https://example.com',
-        '; project: hledger-vscode'
+        '; project: hledger-vscode',
       ];
 
       const result = tokenizeLines(lines);
@@ -249,7 +229,7 @@ describe('Grammar Snapshot Tests', () => {
         'with multiple lines',
         'and a URL: https://example.com',
         'and a tag: project: test',
-        'end comment'
+        'end comment',
       ];
 
       const result = tokenizeLines(lines);
@@ -266,7 +246,7 @@ describe('Grammar Snapshot Tests', () => {
         '    Assets:Cash              1,000 USD',
         "    Assets:Cash              1'000 CHF",
         '    Assets:Cash              100.50 USD',
-        '    Assets:Cash              100,50 EUR'
+        '    Assets:Cash              100,50 EUR',
       ];
 
       const result = tokenizeLines(lines);
@@ -278,7 +258,7 @@ describe('Grammar Snapshot Tests', () => {
         '    Assets:Cash              $100',
         '    Assets:Cash              100 USD',
         '    Assets:Cash              €50',
-        '    Assets:Cash              "CUSTOM COIN" 100'
+        '    Assets:Cash              "CUSTOM COIN" 100',
       ];
 
       const result = tokenizeLines(lines);
@@ -297,7 +277,7 @@ describe('Grammar Snapshot Tests', () => {
         'newest-first',
         'decimal-mark .',
         'fields date, description, amount',
-        'if %description COFFEE'
+        'if %description COFFEE',
       ];
 
       const result = tokenizeLines(lines);
@@ -310,7 +290,7 @@ describe('Grammar Snapshot Tests', () => {
       const lines = [
         'i 2025-11-22 09:00:00 Project Work',
         'o 2025-11-22 17:00:00',
-        'h 2025-11-22 09:00:00 $50'
+        'h 2025-11-22 09:00:00 $50',
       ];
 
       const result = tokenizeLines(lines);
@@ -340,7 +320,7 @@ describe('Grammar Snapshot Tests', () => {
         '    Expenses:Food:Groceries      $50.00',
         '    Assets:Checking             -$50.00 = $950.00',
         '',
-        'P 2025-11-23 EUR $1.20'
+        'P 2025-11-23 EUR $1.20',
       ];
 
       const result = tokenizeLines(lines);

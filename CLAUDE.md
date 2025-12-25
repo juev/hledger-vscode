@@ -29,7 +29,16 @@ npm run test:watch     # Tests in watch mode
 npm run test:coverage  # Tests with coverage report
 npm run lint           # ESLint check
 npm run lint:fix       # ESLint with auto-fix
+npm run format         # Format code with Prettier
+npm run format:check   # Check code formatting
 npm run package        # Create VSIX for distribution
+```
+
+### Code Formatting
+
+After completing any code changes, run:
+```bash
+npm run format
 ```
 
 ### Running Single Tests

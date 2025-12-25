@@ -1,16 +1,16 @@
 // TransactionTemplateCompleter.ts - Transaction template completion logic
 // Provides complete transaction suggestions based on historical payee-account patterns
 
-import * as vscode from "vscode";
-import { HLedgerConfig } from "../HLedgerConfig";
+import * as vscode from 'vscode';
+import { HLedgerConfig } from '../HLedgerConfig';
 import {
   CompletionContext,
   PayeeName,
   TransactionTemplate,
   TemplateKey,
   generateTemplateKey,
-} from "../types";
-import { SimpleFuzzyMatcher, FuzzyMatch } from "../SimpleFuzzyMatcher";
+} from '../types';
+import { SimpleFuzzyMatcher, FuzzyMatch } from '../SimpleFuzzyMatcher';
 
 /**
  * Maximum number of transaction templates to return in completions.
@@ -77,10 +77,7 @@ export class TransactionTemplateCompleter {
 
     // Re-assign sortText after sorting
     items.forEach((item, index) => {
-      item.sortText = this.getSortText(
-        (item as CompletionItemWithUsage).recentUsage ?? 0,
-        index,
-      );
+      item.sortText = this.getSortText((item as CompletionItemWithUsage).recentUsage ?? 0, index);
     });
 
     return items;
@@ -93,19 +90,16 @@ export class TransactionTemplateCompleter {
   private createCompletionItem(
     template: TransactionTemplate,
     context: CompletionContext,
-    index: number,
+    index: number
   ): CompletionItemWithUsage {
     const item = new vscode.CompletionItem(
       template.payee,
-      vscode.CompletionItemKind.Snippet,
+      vscode.CompletionItemKind.Snippet
     ) as CompletionItemWithUsage;
 
     // Get recent frequency count for this template
     const templateKey = this.getTemplateKey(template);
-    const recentFrequency = this.config.getRecentTemplateFrequency(
-      template.payee,
-      templateKey,
-    );
+    const recentFrequency = this.config.getRecentTemplateFrequency(template.payee, templateKey);
 
     item.detail = `Transaction template (${recentFrequency} recent, ${template.usageCount} total)`;
 
@@ -114,7 +108,7 @@ export class TransactionTemplateCompleter {
     item.insertText = new vscode.SnippetString(snippetText);
 
     // Use identical filterText for all items (gopls hack)
-    item.filterText = context.query || "";
+    item.filterText = context.query || '';
 
     // Initial sortText (will be reassigned after sorting)
     item.sortText = this.getSortText(recentFrequency, index);
@@ -146,17 +140,14 @@ export class TransactionTemplateCompleter {
     let tabstopIndex = 1;
 
     for (const posting of template.postings) {
-      const amountPart =
-        posting.amount !== null
-          ? `  \${${tabstopIndex++}:${posting.amount}}`
-          : "";
+      const amountPart = posting.amount !== null ? `  \${${tabstopIndex++}:${posting.amount}}` : '';
       lines.push(`    ${posting.account}${amountPart}`);
     }
 
     // Final tabstop for cursor position
     lines.push(`$0`);
 
-    return lines.join("\n");
+    return lines.join('\n');
   }
 
   /**
@@ -164,14 +155,14 @@ export class TransactionTemplateCompleter {
    */
   private buildDocumentation(
     template: TransactionTemplate,
-    recentFrequency: number,
+    recentFrequency: number
   ): vscode.MarkdownString {
     const doc = new vscode.MarkdownString();
     doc.appendMarkdown(`**Payee:** ${template.payee}\n\n`);
     doc.appendMarkdown(`**Accounts:**\n`);
 
     for (const posting of template.postings) {
-      const amountStr = posting.amount ?? "(inferred)";
+      const amountStr = posting.amount ?? '(inferred)';
       doc.appendMarkdown(`- ${posting.account}: ${amountStr}\n`);
     }
 
@@ -179,9 +170,7 @@ export class TransactionTemplateCompleter {
       doc.appendMarkdown(`\n**Last used:** ${template.lastUsedDate}`);
     }
 
-    doc.appendMarkdown(
-      `\n**Recent frequency:** ${recentFrequency} (last 50 transactions)`,
-    );
+    doc.appendMarkdown(`\n**Recent frequency:** ${recentFrequency} (last 50 transactions)`);
     doc.appendMarkdown(`\n**Total usage:** ${template.usageCount}`);
 
     return doc;
@@ -192,10 +181,10 @@ export class TransactionTemplateCompleter {
    * Uses index-based sorting with usage count as secondary key.
    */
   private getSortText(usageCount: number, index: number): string {
-    const indexStr = index.toString().padStart(5, "0");
+    const indexStr = index.toString().padStart(5, '0');
     // Cap score and invert for lexicographic ordering (higher usage = lower number = first)
     const cappedScore = Math.min(usageCount, 999);
-    const scoreStr = (1000 - cappedScore).toString().padStart(4, "0");
+    const scoreStr = (1000 - cappedScore).toString().padStart(4, '0');
     return `${indexStr}_${scoreStr}`;
   }
 }

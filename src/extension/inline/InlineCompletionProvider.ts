@@ -5,18 +5,16 @@
  * 1. Payee completion - shows remainder of most-used matching payee
  * 2. Template completion - shows transaction postings for complete payee with snippet tabstops
  */
-import * as vscode from "vscode";
-import { HLedgerConfig } from "../HLedgerConfig";
-import { InlinePositionAnalyzer } from "./InlinePositionAnalyzer";
-import { TransactionTemplate, PayeeName, TemplatePosting } from "../types";
+import * as vscode from 'vscode';
+import { HLedgerConfig } from '../HLedgerConfig';
+import { InlinePositionAnalyzer } from './InlinePositionAnalyzer';
+import { TransactionTemplate, PayeeName, TemplatePosting } from '../types';
 
 /**
  * Provides inline (ghost text) completions for hledger files.
  * Implements VS Code's InlineCompletionItemProvider interface.
  */
-export class InlineCompletionProvider
-  implements vscode.InlineCompletionItemProvider
-{
+export class InlineCompletionProvider implements vscode.InlineCompletionItemProvider {
   private analyzer: InlinePositionAnalyzer;
 
   constructor(private config: HLedgerConfig) {
@@ -28,8 +26,8 @@ export class InlineCompletionProvider
    * Clamps value to valid range 1-10 to ensure safe runtime behavior.
    */
   private getMinPayeeChars(): number {
-    const config = vscode.workspace.getConfiguration("hledger");
-    const value = config.get<number>("inlineCompletion.minPayeeChars", 2);
+    const config = vscode.workspace.getConfiguration('hledger');
+    const value = config.get<number>('inlineCompletion.minPayeeChars', 2);
     return Math.max(1, Math.min(10, value));
   }
 
@@ -41,7 +39,7 @@ export class InlineCompletionProvider
     document: vscode.TextDocument,
     position: vscode.Position,
     context: vscode.InlineCompletionContext,
-    token: vscode.CancellationToken,
+    token: vscode.CancellationToken
   ): vscode.InlineCompletionItem[] | undefined {
     // Update config for current document, excluding current line
     this.config.getConfigForDocument(document, position.line);
@@ -51,21 +49,13 @@ export class InlineCompletionProvider
     const payeeSet = new Set<string>(payees);
 
     // Analyze position to determine context
-    const inlineContext = this.analyzer.analyzePosition(
-      document,
-      position,
-      payeeSet,
-    );
+    const inlineContext = this.analyzer.analyzePosition(document, position, payeeSet);
 
     // Route to appropriate handler
     switch (inlineContext.type) {
-      case "payee":
-        return this.providePayeeCompletion(
-          inlineContext.prefix,
-          payees,
-          position,
-        );
-      case "template":
+      case 'payee':
+        return this.providePayeeCompletion(inlineContext.prefix, payees, position);
+      case 'template':
         return this.provideTemplateCompletion(inlineContext.payee, position);
       default:
         return undefined;
@@ -83,7 +73,7 @@ export class InlineCompletionProvider
   private providePayeeCompletion(
     prefix: string,
     payees: PayeeName[],
-    position: vscode.Position,
+    position: vscode.Position
   ): vscode.InlineCompletionItem[] | undefined {
     const lowerPrefix = prefix.toLowerCase();
 
@@ -102,10 +92,7 @@ export class InlineCompletionProvider
       return undefined;
     }
 
-    const item = new vscode.InlineCompletionItem(
-      remainder,
-      new vscode.Range(position, position),
-    );
+    const item = new vscode.InlineCompletionItem(remainder, new vscode.Range(position, position));
 
     return [item];
   }
@@ -119,7 +106,7 @@ export class InlineCompletionProvider
    */
   private provideTemplateCompletion(
     payee: PayeeName,
-    position: vscode.Position,
+    position: vscode.Position
   ): vscode.InlineCompletionItem[] | undefined {
     const templates = this.config.getTemplatesForPayee(payee);
 
@@ -139,10 +126,7 @@ export class InlineCompletionProvider
     // The range replaces from start of line to cursor, ensuring 4-space indent
     const startOfLine = new vscode.Position(position.line, 0);
 
-    const item = new vscode.InlineCompletionItem(
-      snippet,
-      new vscode.Range(startOfLine, position),
-    );
+    const item = new vscode.InlineCompletionItem(snippet, new vscode.Range(startOfLine, position));
 
     // No command needed - SnippetString tabstops handle cursor positioning
 
@@ -154,7 +138,7 @@ export class InlineCompletionProvider
    * In snippet syntax, $, }, and \ are special characters that must be escaped.
    */
   private escapeSnippetText(text: string): string {
-    return text.replace(/\\/g, "\\\\").replace(/\$/g, "\\$").replace(/}/g, "\\}");
+    return text.replace(/\\/g, '\\\\').replace(/\$/g, '\\$').replace(/}/g, '\\}');
   }
 
   /**
@@ -177,7 +161,7 @@ export class InlineCompletionProvider
       const amountPart =
         posting.amount !== null
           ? `  \${${tabstopIndex++}:${this.escapeSnippetText(posting.amount)}}`
-          : "";
+          : '';
 
       // First line: no leading newline (cursor already on new line)
       // Subsequent lines: add newline before
@@ -189,9 +173,9 @@ export class InlineCompletionProvider
     }
 
     // Final tabstop for exiting snippet mode
-    parts.push("\n$0");
+    parts.push('\n$0');
 
-    return new vscode.SnippetString(parts.join(""));
+    return new vscode.SnippetString(parts.join(''));
   }
 
   /**

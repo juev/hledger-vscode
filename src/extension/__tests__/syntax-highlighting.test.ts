@@ -21,8 +21,8 @@ const syntaxTestCases: SyntaxTestCase[] = [
     expectedScopes: {
       account: 'entity.name.type.account.assets.hledger',
       amount: 'constant.numeric.amount.hledger',
-      commodity: 'entity.name.type.commodity.hledger'
-    }
+      commodity: 'entity.name.type.commodity.hledger',
+    },
   },
   {
     description: 'Account name with single space',
@@ -30,8 +30,8 @@ const syntaxTestCases: SyntaxTestCase[] = [
     expectedScopes: {
       account: 'entity.name.type.account.assets.hledger',
       amount: 'constant.numeric.amount.hledger',
-      commodity: 'entity.name.type.commodity.hledger'
-    }
+      commodity: 'entity.name.type.commodity.hledger',
+    },
   },
   {
     description: 'Account name with multiple spaces',
@@ -39,8 +39,8 @@ const syntaxTestCases: SyntaxTestCase[] = [
     expectedScopes: {
       account: 'entity.name.type.account.assets.hledger',
       amount: 'constant.numeric.amount.hledger',
-      commodity: 'entity.name.type.commodity.hledger'
-    }
+      commodity: 'entity.name.type.commodity.hledger',
+    },
   },
   {
     description: 'Russian account name with spaces',
@@ -48,8 +48,8 @@ const syntaxTestCases: SyntaxTestCase[] = [
     expectedScopes: {
       account: 'entity.name.type.account.expenses.hledger',
       amount: 'constant.numeric.amount.hledger',
-      commodity: 'entity.name.type.commodity.hledger'
-    }
+      commodity: 'entity.name.type.commodity.hledger',
+    },
   },
   {
     description: 'Virtual account with parentheses',
@@ -57,8 +57,8 @@ const syntaxTestCases: SyntaxTestCase[] = [
     expectedScopes: {
       account: 'variable.other.account.virtual.hledger',
       amount: 'constant.numeric.amount.hledger',
-      commodity: 'entity.name.type.commodity.hledger'
-    }
+      commodity: 'entity.name.type.commodity.hledger',
+    },
   },
   {
     description: 'Virtual account with brackets',
@@ -66,15 +66,15 @@ const syntaxTestCases: SyntaxTestCase[] = [
     expectedScopes: {
       account: 'variable.other.account.virtual.hledger',
       amount: 'constant.numeric.amount.hledger',
-      commodity: 'entity.name.type.commodity.hledger'
-    }
+      commodity: 'entity.name.type.commodity.hledger',
+    },
   },
   {
     description: 'Account-only posting (no amount)',
     line: '    Assets:Cash Account',
     expectedScopes: {
-      account: 'entity.name.type.account.assets.hledger'
-    }
+      account: 'entity.name.type.account.assets.hledger',
+    },
   },
   {
     description: 'Posting with balance assertion',
@@ -82,8 +82,8 @@ const syntaxTestCases: SyntaxTestCase[] = [
     expectedScopes: {
       account: 'entity.name.type.account.assets.hledger',
       amount: 'constant.numeric.amount.hledger',
-      commodity: 'entity.name.type.commodity.hledger'
-    }
+      commodity: 'entity.name.type.commodity.hledger',
+    },
   },
   {
     description: 'Hierarchical account name with spaces',
@@ -91,8 +91,8 @@ const syntaxTestCases: SyntaxTestCase[] = [
     expectedScopes: {
       account: 'entity.name.type.account.expenses.hledger',
       amount: 'constant.numeric.amount.hledger',
-      commodity: 'entity.name.type.commodity.hledger'
-    }
+      commodity: 'entity.name.type.commodity.hledger',
+    },
   },
   {
     description: 'Mixed language account name',
@@ -100,9 +100,9 @@ const syntaxTestCases: SyntaxTestCase[] = [
     expectedScopes: {
       account: 'entity.name.type.account.assets.hledger',
       amount: 'constant.numeric.amount.hledger',
-      commodity: 'entity.name.type.commodity.hledger'
-    }
-  }
+      commodity: 'entity.name.type.commodity.hledger',
+    },
+  },
 ];
 
 describe('Syntax Highlighting Tests', () => {
@@ -129,8 +129,8 @@ describe('Syntax Highlighting Tests', () => {
         // Verify account name follows hledger rules
         assert.ok(
           /^[\p{L}][\p{L}\p{N}\s_-]*(?::[\p{L}][\p{L}\p{N}\s_-]*)*$/u.test(accountName) ||
-          /^\([^)]+\)$/.test(accountName) ||
-          /^\[[^\]]+\]$/.test(accountName),
+            /^\([^)]+\)$/.test(accountName) ||
+            /^\[[^\]]+\]$/.test(accountName),
           `Account name "${accountName}" should be valid in: ${testCase.description}`
         );
 
@@ -153,10 +153,7 @@ describe('Syntax Highlighting Tests', () => {
     const postingPattern = /^\s+([^\s;]+(?:\s+[^\s;]+)*?)\s{2,}([^;]+)(?=;|$)/;
     const match = invalidLine.match(postingPattern);
 
-    assert.ok(
-      !match,
-      'Line with single space separation should not match posting pattern'
-    );
+    assert.ok(!match, 'Line with single space separation should not match posting pattern');
   });
 
   test('Account name regex patterns should handle spaces correctly', () => {
@@ -164,10 +161,13 @@ describe('Syntax Highlighting Tests', () => {
     const accountPatterns = [
       { name: 'assets', pattern: /\b(Assets?|Активы)(?::[\p{L}][\p{L}\p{N}\s_-]*)*/u },
       { name: 'expenses', pattern: /\b(Expenses?|Расходы)(?::[\p{L}][\p{L}\p{N}\s_-]*)*/u },
-      { name: 'liabilities', pattern: /\b(Liabilit(?:y|ies)|Пассивы)(?::[\p{L}][\p{L}\p{N}\s_-]*)*/u },
+      {
+        name: 'liabilities',
+        pattern: /\b(Liabilit(?:y|ies)|Пассивы)(?::[\p{L}][\p{L}\p{N}\s_-]*)*/u,
+      },
       { name: 'equity', pattern: /\b(Equity|Собственные)(?::[\p{L}][\p{L}\p{N}\s_-]*)*/u },
       { name: 'income', pattern: /\b(Income|Revenue|Доходы)(?::[\p{L}][\p{L}\p{N}\s_-]*)*/u },
-      { name: 'generic', pattern: /[\p{L}][\p{L}\p{N}\s_-]*(?::[\p{L}][\p{L}\p{N}\s_-]*)*/u }
+      { name: 'generic', pattern: /[\p{L}][\p{L}\p{N}\s_-]*(?::[\p{L}][\p{L}\p{N}\s_-]*)*/u },
     ];
 
     const testAccounts = [
@@ -178,7 +178,7 @@ describe('Syntax Highlighting Tests', () => {
       'Assets:Банковский Счет',
       'Expenses:Food:Groceries:Fruits',
       '(Assets:Virtual Cash)',
-      '[Assets:Reserved Funds]'
+      '[Assets:Reserved Funds]',
     ];
 
     for (const account of testAccounts) {
@@ -191,10 +191,7 @@ describe('Syntax Highlighting Tests', () => {
         }
       }
 
-      assert.ok(
-        matched,
-        `Account "${account}" should match one of the account patterns`
-      );
+      assert.ok(matched, `Account "${account}" should match one of the account patterns`);
     }
   });
 });
@@ -208,16 +205,13 @@ describe('hledger Specification Compliance', () => {
       'Expenses:Food Items',
       'Расходы:Продукты Питания',
       'Income:Salary Main',
-      'Assets:Банковский Счет'
+      'Assets:Банковский Счет',
     ];
 
     const accountPattern = /^[\p{L}][\p{L}\p{N}\s_-]*(?::[\p{L}][\p{L}\p{N}\s_-]*)*$/u;
 
     for (const account of validAccounts) {
-      assert.ok(
-        accountPattern.test(account),
-        `Valid account "${account}" should match pattern`
-      );
+      assert.ok(accountPattern.test(account), `Valid account "${account}" should match pattern`);
     }
 
     // Test that the pattern works for our test cases
@@ -225,14 +219,11 @@ describe('hledger Specification Compliance', () => {
       'Assets:Bank Account',
       'Expenses:Food Items',
       'Расходы:Продукты Питания',
-      'Assets:Банковский Счет'
+      'Assets:Банковский Счет',
     ];
 
     for (const account of testCases) {
-      assert.ok(
-        accountPattern.test(account),
-        `Test account "${account}" should match pattern`
-      );
+      assert.ok(accountPattern.test(account), `Test account "${account}" should match pattern`);
     }
   });
 
@@ -242,13 +233,13 @@ describe('hledger Specification Compliance', () => {
       '    Assets:Cash              100 USD',
       '    Expenses:Food           -50 USD',
       '    Assets:Bank Account     200 USD',
-      '    Расходы:Продукты        -300 USD'
+      '    Расходы:Продукты        -300 USD',
     ];
 
     const invalidPostings = [
-      '    Assets:Cash 100 USD',        // Only 1 space
-      '    Expenses:Food -50 USD',       // Only 1 space
-      '    Assets:Bank Account 200 USD' // Only 1 space
+      '    Assets:Cash 100 USD', // Only 1 space
+      '    Expenses:Food -50 USD', // Only 1 space
+      '    Assets:Bank Account 200 USD', // Only 1 space
     ];
 
     const postingPattern = /^\s+([^\s;]+(?:\s+[^\s;]+)*?)\s{2,}([^;]+)(?=;|$)/;

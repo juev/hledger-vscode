@@ -1,8 +1,8 @@
 // HLedgerCliCommands.ts - CLI command handlers for hledger
 
-import * as vscode from "vscode";
-import * as fs from "fs";
-import { HLedgerCliService } from "./services/HLedgerCliService";
+import * as vscode from 'vscode';
+import * as fs from 'fs';
+import { HLedgerCliService } from './services/HLedgerCliService';
 
 export class HLedgerCliCommands implements vscode.Disposable {
   private cliService: HLedgerCliService;
@@ -21,29 +21,27 @@ export class HLedgerCliCommands implements vscode.Disposable {
   }
 
   public async insertBalance(): Promise<void> {
-    await this.insertCliReport("balance");
+    await this.insertCliReport('balance');
   }
 
   public async insertStats(): Promise<void> {
-    await this.insertCliReport("stats");
+    await this.insertCliReport('stats');
   }
 
   public async insertIncomestatement(): Promise<void> {
-    await this.insertCliReport("incomestatement");
+    await this.insertCliReport('incomestatement');
   }
 
   private async insertCliReport(command: string): Promise<void> {
     const editor = vscode.window.activeTextEditor;
     if (!editor) {
-      vscode.window.showErrorMessage("No active editor found.");
+      vscode.window.showErrorMessage('No active editor found.');
       return;
     }
 
     const document = editor.document;
-    if (document.languageId !== "hledger") {
-      vscode.window.showErrorMessage(
-        "This command is only available in hledger files.",
-      );
+    if (document.languageId !== 'hledger') {
+      vscode.window.showErrorMessage('This command is only available in hledger files.');
       return;
     }
 
@@ -67,38 +65,35 @@ export class HLedgerCliCommands implements vscode.Disposable {
           let output: string;
           let cliCommandName: string;
           switch (command) {
-            case "balance":
+            case 'balance':
               output = await this.cliService.runBalance(journalFile);
-              cliCommandName = "bs";
+              cliCommandName = 'bs';
               break;
-            case "stats":
+            case 'stats':
               output = await this.cliService.runStats(journalFile);
-              cliCommandName = "stats";
+              cliCommandName = 'stats';
               break;
-            case "incomestatement":
+            case 'incomestatement':
               output = await this.cliService.runIncomestatement(journalFile);
-              cliCommandName = "incomestatement";
+              cliCommandName = 'incomestatement';
               break;
             default:
               throw new Error(`Unknown command: ${command}`);
           }
 
           // Format as comment and insert
-          const comment = this.cliService.formatAsComment(
-            output,
-            cliCommandName,
-          );
+          const comment = this.cliService.formatAsComment(output, cliCommandName);
           await this.insertCommentAtCursor(editor, comment);
 
           vscode.window.showInformationMessage(
-            `hledger ${cliCommandName} report inserted successfully.`,
+            `hledger ${cliCommandName} report inserted successfully.`
           );
         } catch (error: unknown) {
           vscode.window.showErrorMessage(
-            `Failed to run hledger ${command}: ${error instanceof Error ? error.message : String(error)}`,
+            `Failed to run hledger ${command}: ${error instanceof Error ? error.message : String(error)}`
           );
         }
-      },
+      }
     );
   }
 
@@ -108,28 +103,25 @@ export class HLedgerCliCommands implements vscode.Disposable {
       return true;
     }
 
-    const installMessage =
-      "hledger CLI not found. Would you like to install it?";
+    const installMessage = 'hledger CLI not found. Would you like to install it?';
 
     while (!isAvailable) {
       const installChoice = await vscode.window.showInformationMessage(
         installMessage,
-        "Open Installation Guide",
-        "Configure Path",
+        'Open Installation Guide',
+        'Configure Path'
       );
 
-      if (installChoice === "Open Installation Guide") {
-        void vscode.env.openExternal(
-          vscode.Uri.parse("https://hledger.org/install.html"),
-        );
+      if (installChoice === 'Open Installation Guide') {
+        void vscode.env.openExternal(vscode.Uri.parse('https://hledger.org/install.html'));
         return false;
       }
 
-      if (installChoice === "Configure Path") {
-        const config = vscode.workspace.getConfiguration("hledger");
+      if (installChoice === 'Configure Path') {
+        const config = vscode.workspace.getConfiguration('hledger');
         const customPath = await vscode.window.showInputBox({
-          prompt: "Enter the path to hledger executable",
-          placeHolder: "/usr/local/bin/hledger",
+          prompt: 'Enter the path to hledger executable',
+          placeHolder: '/usr/local/bin/hledger',
         });
 
         const trimmedPath = customPath?.trim();
@@ -137,11 +129,7 @@ export class HLedgerCliCommands implements vscode.Disposable {
           return false;
         }
 
-        await config.update(
-          "cli.path",
-          trimmedPath,
-          vscode.ConfigurationTarget.Global,
-        );
+        await config.update('cli.path', trimmedPath, vscode.ConfigurationTarget.Global);
 
         isAvailable = await this.cliService.isHledgerAvailable();
         if (isAvailable) {
@@ -149,7 +137,7 @@ export class HLedgerCliCommands implements vscode.Disposable {
         }
 
         vscode.window.showErrorMessage(
-          "Configured hledger path could not be verified. Please check the path and try again.",
+          'Configured hledger path could not be verified. Please check the path and try again.'
         );
         continue;
       }
@@ -206,8 +194,8 @@ export class HLedgerCliCommands implements vscode.Disposable {
     }
 
     // Second, try to get from extension configuration
-    const config = vscode.workspace.getConfiguration("hledger");
-    const journalFileFromConfig = config.get<string>("cli.journalFile", "");
+    const config = vscode.workspace.getConfiguration('hledger');
+    const journalFileFromConfig = config.get<string>('cli.journalFile', '');
     if (journalFileFromConfig?.trim()) {
       return this.sanitizeJournalPath(journalFileFromConfig.trim());
     }
@@ -216,10 +204,7 @@ export class HLedgerCliCommands implements vscode.Disposable {
     return document.uri.fsPath;
   }
 
-  private async insertCommentAtCursor(
-    editor: vscode.TextEditor,
-    comment: string,
-  ): Promise<void> {
+  private async insertCommentAtCursor(editor: vscode.TextEditor, comment: string): Promise<void> {
     const position = editor.selection.active;
     await editor.edit((editBuilder) => {
       editBuilder.insert(position, comment);
