@@ -61,7 +61,7 @@ describe('Fuzzy Matching', () => {
 
     test('should match prefix patterns', () => {
         const results = fuzzyMatch('Goog', payees);
-        expect(results.length).toBeGreaterThan(0); 
+        expect(results.length).toBeGreaterThan(0);
         // Should match "Google Play" (starts with "Goog")
         const items = results.map(r => r.item);
         expect(items).toContain('Google Play');
@@ -73,21 +73,25 @@ describe('Fuzzy Matching', () => {
         expect(results[0]!.item).toBe('Amazon');
     });
 
-    test('should support prefix matching', () => {
+    test('should support sequential character matching', () => {
         const results = fuzzyMatch('Mag', ['Grocery Store', 'Magazine', 'Amazing Store']);
         expect(results.length).toBeGreaterThan(0);
         const items = results.map(r => r.item);
-        expect(items).toContain('Magazine'); // Should match "Mag**azine**"
-        expect(items).not.toContain('Amazing Store'); // Should NOT match because it doesn't start with "Mag"
+        expect(items).toContain('Magazine'); // "Mag" at start - best score
+        expect(items).toContain('Amazing Store'); // "m-a-...-g" found sequentially
+        // Magazine should rank higher (fewer gaps)
+        expect(items[0]).toBe('Magazine');
     });
 
-    test('should handle cyrillic prefix matching', () => {
+    test('should handle cyrillic sequential matching', () => {
         const cyrillicPayees = ['Магазин', 'Супермагазин', 'Мегамолл'];
         const results = fuzzyMatch('Маг', cyrillicPayees);
         expect(results.length).toBeGreaterThan(0);
         const items = results.map(r => r.item);
-        expect(items).toContain('Магазин'); // Should match "**Маг**азин"
-        expect(items).not.toContain('Супермагазин'); // Should NOT match because it doesn't start with "Маг"
+        expect(items).toContain('Магазин'); // "Маг" at start - best score
+        expect(items).toContain('Супермагазин'); // "м-а-г" found sequentially
+        // Магазин should rank higher (fewer gaps)
+        expect(items[0]).toBe('Магазин');
     });
 
     test('should prioritize exact matches over prefix matches', () => {
