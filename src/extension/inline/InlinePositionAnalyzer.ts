@@ -46,6 +46,16 @@ export class InlinePositionAnalyzer {
     /^(account|alias|commodity|payee|tag|include|year|apply|end|default|format|note|assert|check)\s/;
 
   /**
+   * Minimum characters required before showing inline payee completion.
+   * Configurable via hledger.inlineCompletion.minPayeeChars setting.
+   */
+  private readonly minPayeeChars: number;
+
+  constructor(minPayeeChars: number = 2) {
+    this.minPayeeChars = minPayeeChars;
+  }
+
+  /**
    * Analyzes the cursor position and returns the appropriate inline context.
    *
    * @param document - The text document being edited
@@ -101,8 +111,8 @@ export class InlinePositionAnalyzer {
     // Check for payee prefix (partial match)
     const prefix = payeePortion.trim();
 
-    // Require at least 1 character for payee prefix
-    if (prefix.length < 1) {
+    // Require minimum characters for payee prefix (configurable)
+    if (prefix.length < this.minPayeeChars) {
       return { type: "none" };
     }
 

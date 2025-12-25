@@ -22,7 +22,7 @@ interface ParsedHLedgerData {
   readonly tagValueUsage: ReadonlyMap<string, UsageCount>;
   readonly defaultCommodity: CommodityCode | null;
   readonly lastDate: string | null;
-  readonly payeeRecentTemplates: ReadonlyMap<PayeeName, readonly TemplateKey[]>;
+  readonly payeeRecentTemplates: ReadonlyMap<PayeeName, RecentTemplateBuffer>;
 }
 
 /**
@@ -89,9 +89,38 @@ export interface TransactionTemplate {
 
 /**
  * Key for identifying unique transaction templates.
- * Format: sorted account names joined by "|" (e.g., "Account1|Account2")
+ * Format: sorted account names joined by "||" (e.g., "Account1||Account2")
+ * Double-pipe delimiter prevents collisions with account names containing single pipes.
  */
 export type TemplateKey = string;
+
+/**
+ * Circular buffer for tracking recent templates per payee.
+ * Stores up to MAX_RECENT_TRANSACTIONS_PER_PAYEE template keys.
+ * Used to determine the most frequently used template in recent history.
+ */
+export interface RecentTemplateBuffer {
+  readonly keys: readonly TemplateKey[];
+  readonly writeIndex: number;
+}
+
+/**
+ * Mutable version of RecentTemplateBuffer for building during AST construction.
+ */
+export interface MutableRecentTemplateBuffer {
+  keys: TemplateKey[];
+  writeIndex: number;
+}
+
+/**
+ * Generates a consistent template key from account names.
+ * Accounts are sorted alphabetically and joined with double-pipe delimiter.
+ * @param accounts - Array of account names from transaction postings
+ * @returns TemplateKey for template identification
+ */
+export function generateTemplateKey(accounts: readonly string[]): TemplateKey {
+  return [...accounts].sort().join("||") as TemplateKey;
+}
 
 // Enhanced completion context interface with type safety
 export interface CompletionContext {

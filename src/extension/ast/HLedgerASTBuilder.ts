@@ -4,7 +4,8 @@
 import {
     AccountName, PayeeName, TagName, TagValue, CommodityCode, UsageCount,
     TemplatePosting, TransactionTemplate, TemplateKey,
-    createPayeeName, createCommodityCode, createUsageCount
+    RecentTemplateBuffer, MutableRecentTemplateBuffer,
+    createPayeeName, createCommodityCode, createUsageCount, generateTemplateKey
 } from '../types';
 import { NumberFormatService, CommodityFormat } from '../services/NumberFormatService';
 import { HLedgerToken, TokenType } from '../lexer/HLedgerLexer';
@@ -27,10 +28,21 @@ interface MutableTransactionTemplate {
 const MAX_TEMPLATES_PER_PAYEE = 5;
 
 /**
- * Maximum number of recent transactions to track per payee.
- * Used for relevance-based sorting in completions.
+ * Maximum number of recent transactions to track per payee in the circular buffer.
+ * Used to determine most frequently used template in recent history.
  */
 const MAX_RECENT_TRANSACTIONS_PER_PAYEE = 50;
+
+/**
+ * Memory bounds documentation:
+ * - Templates per payee: Limited to MAX_TEMPLATES_PER_PAYEE (5)
+ * - Total payees: Bounded by unique payees in journal (finite in practice)
+ * - payeeRecentTemplates: One TemplateKey per payee (~50 bytes each)
+ *
+ * For a journal with 10,000 unique payees: ~500KB memory usage.
+ * This is acceptable for typical hledger workflows.
+ * No explicit global cap needed since payee count is inherently limited.
+ */
 
 /**
  * Internal mutable interface for building parsed data during AST construction
@@ -61,8 +73,8 @@ interface MutableParsedHLedgerData {
     // Transaction templates for autocomplete
     transactionTemplates: Map<PayeeName, Map<TemplateKey, MutableTransactionTemplate>>;
 
-    // Recent template usage tracking for relevance-based sorting
-    payeeRecentTemplates: Map<PayeeName, TemplateKey[]>;
+    // Circular buffer tracking recent templates per payee for frequency-based sorting
+    payeeRecentTemplates: Map<PayeeName, MutableRecentTemplateBuffer>;
 
     // Format information for number formatting and commodity display
     commodityFormats: Map<CommodityCode, CommodityFormat>;
@@ -101,8 +113,8 @@ export interface ParsedHLedgerData {
     // Transaction templates for autocomplete
     readonly transactionTemplates: ReadonlyMap<PayeeName, ReadonlyMap<TemplateKey, TransactionTemplate>>;
 
-    // Recent template usage tracking for relevance-based sorting
-    readonly payeeRecentTemplates: ReadonlyMap<PayeeName, readonly TemplateKey[]>;
+    // Circular buffer tracking recent templates per payee for frequency-based sorting
+    readonly payeeRecentTemplates: ReadonlyMap<PayeeName, RecentTemplateBuffer>;
 
     // Number format information
     readonly commodityFormats: ReadonlyMap<CommodityCode, CommodityFormat>;
@@ -468,11 +480,10 @@ export class HLedgerASTBuilder {
 
         const normalizedPayee = context.transactionPayee.normalize('NFC') as PayeeName;
 
-        // Generate template key from sorted account names
-        const accountNames = context.currentTransactionPostings
-            .map(p => p.account)
-            .sort()
-            .join('|') as TemplateKey;
+        // Generate template key using shared utility function (double-pipe delimiter)
+        const templateKey = generateTemplateKey(
+            context.currentTransactionPostings.map(p => p.account)
+        );
 
         // Get or create payee's template map
         if (!data.transactionTemplates.has(normalizedPayee)) {
@@ -481,7 +492,7 @@ export class HLedgerASTBuilder {
         const payeeTemplates = data.transactionTemplates.get(normalizedPayee)!;
 
         // Update existing template or create new one
-        const existingTemplate = payeeTemplates.get(accountNames);
+        const existingTemplate = payeeTemplates.get(templateKey);
         if (existingTemplate) {
             // Update usage count
             existingTemplate.usageCount = createUsageCount(existingTemplate.usageCount + 1);
@@ -505,7 +516,7 @@ export class HLedgerASTBuilder {
                 usageCount: createUsageCount(1),
                 lastUsedDate: context.currentTransactionDate
             };
-            payeeTemplates.set(accountNames, newTemplate);
+            payeeTemplates.set(templateKey, newTemplate);
 
             // Enforce MAX_TEMPLATES_PER_PAYEE limit
             if (payeeTemplates.size > MAX_TEMPLATES_PER_PAYEE) {
@@ -513,16 +524,21 @@ export class HLedgerASTBuilder {
             }
         }
 
-        // Track recent template usage for relevance-based sorting
-        if (!data.payeeRecentTemplates.has(normalizedPayee)) {
-            data.payeeRecentTemplates.set(normalizedPayee, []);
+        // Track template in circular buffer for frequency-based sorting
+        let buffer = data.payeeRecentTemplates.get(normalizedPayee);
+        if (!buffer) {
+            buffer = { keys: [], writeIndex: 0 };
+            data.payeeRecentTemplates.set(normalizedPayee, buffer);
         }
-        const recentList = data.payeeRecentTemplates.get(normalizedPayee)!;
-        recentList.push(accountNames);
-        // Keep only last MAX_RECENT_TRANSACTIONS_PER_PAYEE entries (FIFO)
-        while (recentList.length > MAX_RECENT_TRANSACTIONS_PER_PAYEE) {
-            recentList.shift();
+
+        if (buffer.keys.length < MAX_RECENT_TRANSACTIONS_PER_PAYEE) {
+            // Buffer not full yet, append
+            buffer.keys.push(templateKey);
+        } else {
+            // Buffer full, overwrite at writeIndex
+            buffer.keys[buffer.writeIndex] = templateKey;
         }
+        buffer.writeIndex = (buffer.writeIndex + 1) % MAX_RECENT_TRANSACTIONS_PER_PAYEE;
 
         // Reset context for next transaction
         context.inTransaction = false;
@@ -647,15 +663,28 @@ export class HLedgerASTBuilder {
             }
         });
 
-        // Merge recent templates - concatenate and keep last MAX_RECENT_TRANSACTIONS_PER_PAYEE
-        source.payeeRecentTemplates.forEach((sourceRecent, payee) => {
-            const targetRecent = target.payeeRecentTemplates.get(payee) ?? [];
-            const combined = [...targetRecent, ...sourceRecent];
-            // Keep only last MAX_RECENT_TRANSACTIONS_PER_PAYEE entries
-            target.payeeRecentTemplates.set(
-                payee,
-                combined.slice(-MAX_RECENT_TRANSACTIONS_PER_PAYEE)
-            );
+        // Merge recent template buffers - combine keys and respect MAX limit
+        source.payeeRecentTemplates.forEach((sourceBuffer, payee) => {
+            const targetBuffer = target.payeeRecentTemplates.get(payee);
+            if (!targetBuffer) {
+                // No existing entry, clone source buffer
+                target.payeeRecentTemplates.set(payee, {
+                    keys: [...sourceBuffer.keys],
+                    writeIndex: sourceBuffer.writeIndex
+                });
+            } else {
+                // Combine keys from both buffers, keeping only the last MAX entries
+                // Source entries are considered more recent
+                const combinedKeys = [...targetBuffer.keys, ...sourceBuffer.keys];
+                if (combinedKeys.length <= MAX_RECENT_TRANSACTIONS_PER_PAYEE) {
+                    targetBuffer.keys = combinedKeys;
+                    targetBuffer.writeIndex = combinedKeys.length % MAX_RECENT_TRANSACTIONS_PER_PAYEE;
+                } else {
+                    // Keep only the last MAX entries (source entries are more recent)
+                    targetBuffer.keys = combinedKeys.slice(-MAX_RECENT_TRANSACTIONS_PER_PAYEE);
+                    targetBuffer.writeIndex = 0;
+                }
+            }
         });
 
         // Update other properties
@@ -743,14 +772,15 @@ export class HLedgerASTBuilder {
      * Used by tests and for data aggregation across files.
      */
     public createMutableFromReadonly(data: ParsedHLedgerData): MutableParsedHLedgerData {
-        // Deep clone transaction templates
+        // Deep clone transaction templates including posting objects
         const clonedTemplates = new Map<PayeeName, Map<TemplateKey, MutableTransactionTemplate>>();
         data.transactionTemplates.forEach((templates, payee) => {
             const clonedInner = new Map<TemplateKey, MutableTransactionTemplate>();
             templates.forEach((template, key) => {
                 clonedInner.set(key, {
                     payee: template.payee,
-                    postings: [...template.postings],
+                    // Deep clone each posting object to prevent shared references
+                    postings: template.postings.map(p => ({ ...p })),
                     usageCount: template.usageCount,
                     lastUsedDate: template.lastUsedDate
                 });
@@ -775,9 +805,12 @@ export class HLedgerASTBuilder {
             payeeAccounts: new Map(Array.from(data.payeeAccounts.entries()).map(([k, v]) => [k, new Set(v)])),
             payeeAccountPairUsage: new Map(data.payeeAccountPairUsage),
             transactionTemplates: clonedTemplates,
+            // Deep clone buffer structures to prevent shared references
             payeeRecentTemplates: new Map(
-                Array.from(data.payeeRecentTemplates.entries())
-                    .map(([k, v]) => [k, [...v]])
+                Array.from(data.payeeRecentTemplates.entries()).map(([payee, buffer]) => [
+                    payee,
+                    { keys: [...buffer.keys], writeIndex: buffer.writeIndex }
+                ])
             ),
             commodityFormats: new Map(data.commodityFormats),
             decimalMark: data.decimalMark,

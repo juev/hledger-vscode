@@ -20,7 +20,17 @@ export class InlineCompletionProvider
   private analyzer: InlinePositionAnalyzer;
 
   constructor(private config: HLedgerConfig) {
-    this.analyzer = new InlinePositionAnalyzer();
+    this.analyzer = new InlinePositionAnalyzer(this.getMinPayeeChars());
+  }
+
+  /**
+   * Gets the minimum payee characters config with bounds validation.
+   * Clamps value to valid range 1-10 to ensure safe runtime behavior.
+   */
+  private getMinPayeeChars(): number {
+    const config = vscode.workspace.getConfiguration("hledger");
+    const value = config.get<number>("inlineCompletion.minPayeeChars", 2);
+    return Math.max(1, Math.min(10, value));
   }
 
   /**

@@ -8,6 +8,7 @@ import {
   PayeeName,
   TransactionTemplate,
   TemplateKey,
+  generateTemplateKey,
 } from "../types";
 import { SimpleFuzzyMatcher, FuzzyMatch } from "../SimpleFuzzyMatcher";
 
@@ -99,14 +100,14 @@ export class TransactionTemplateCompleter {
       vscode.CompletionItemKind.Snippet,
     ) as CompletionItemWithUsage;
 
-    // Get recent usage count for this template
+    // Get recent frequency count for this template
     const templateKey = this.getTemplateKey(template);
-    const recentUsage = this.config.getRecentTemplateUsage(
+    const recentFrequency = this.config.getRecentTemplateFrequency(
       template.payee,
       templateKey,
     );
 
-    item.detail = `Transaction template (${recentUsage} recent, ${template.usageCount} total)`;
+    item.detail = `Transaction template (${recentFrequency} recent, ${template.usageCount} total)`;
 
     // Build snippet with tabstops for amounts
     const snippetText = this.buildSnippet(template);
@@ -116,27 +117,24 @@ export class TransactionTemplateCompleter {
     item.filterText = context.query || "";
 
     // Initial sortText (will be reassigned after sorting)
-    item.sortText = this.getSortText(recentUsage, index);
+    item.sortText = this.getSortText(recentFrequency, index);
 
     // Store usage counts for sorting
     item.usageCount = template.usageCount;
-    item.recentUsage = recentUsage;
+    item.recentUsage = recentFrequency;
 
     // Documentation showing template preview
-    item.documentation = this.buildDocumentation(template, recentUsage);
+    item.documentation = this.buildDocumentation(template, recentFrequency);
 
     return item;
   }
 
   /**
    * Generates a template key from a template's postings.
-   * Format: sorted account names joined by "|".
+   * Uses shared utility function with double-pipe delimiter.
    */
   private getTemplateKey(template: TransactionTemplate): TemplateKey {
-    return template.postings
-      .map((p) => p.account)
-      .sort()
-      .join("|") as TemplateKey;
+    return generateTemplateKey(template.postings.map((p) => p.account));
   }
 
   /**
@@ -166,7 +164,7 @@ export class TransactionTemplateCompleter {
    */
   private buildDocumentation(
     template: TransactionTemplate,
-    recentUsage: number,
+    recentFrequency: number,
   ): vscode.MarkdownString {
     const doc = new vscode.MarkdownString();
     doc.appendMarkdown(`**Payee:** ${template.payee}\n\n`);
@@ -181,7 +179,9 @@ export class TransactionTemplateCompleter {
       doc.appendMarkdown(`\n**Last used:** ${template.lastUsedDate}`);
     }
 
-    doc.appendMarkdown(`\n**Recent usage:** ${recentUsage} (last 50 transactions)`);
+    doc.appendMarkdown(
+      `\n**Recent frequency:** ${recentFrequency} (last 50 transactions)`,
+    );
     doc.appendMarkdown(`\n**Total usage:** ${template.usageCount}`);
 
     return doc;

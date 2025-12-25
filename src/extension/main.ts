@@ -68,7 +68,15 @@ export function activate(context: vscode.ExtensionContext): void {
       vscode.commands.registerTextEditorCommand(
         "hledger.positionCursorAfterTemplate",
         (editor, _edit, line: number, column: number) => {
-          const newPosition = new vscode.Position(line, column);
+          // Bounds check: clamp line to valid document range
+          const maxLine = editor.document.lineCount - 1;
+          const safeLine = Math.min(Math.max(0, line), maxLine);
+
+          // Bounds check: clamp column to valid line length
+          const lineText = editor.document.lineAt(safeLine).text;
+          const safeColumn = Math.min(Math.max(0, column), lineText.length);
+
+          const newPosition = new vscode.Position(safeLine, safeColumn);
           editor.selection = new vscode.Selection(newPosition, newPosition);
         },
       ),

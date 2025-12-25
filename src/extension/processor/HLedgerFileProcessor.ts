@@ -644,7 +644,7 @@ export class HLedgerFileProcessor {
             transactionTemplates: clonedTemplates,
             payeeRecentTemplates: new Map(
                 Array.from(data.payeeRecentTemplates.entries())
-                    .map(([k, v]) => [k, [...v]])
+                    .map(([k, v]) => [k, { keys: [...v.keys], writeIndex: v.writeIndex }])
             ),
             commodityFormats: new Map(data.commodityFormats),
             decimalMark: data.decimalMark,
