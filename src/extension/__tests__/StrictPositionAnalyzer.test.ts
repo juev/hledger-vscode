@@ -982,6 +982,78 @@ describe('StrictPositionAnalyzer', () => {
             });
         });
     });
+
+    describe('AfterDate context with short date format', () => {
+        it('should detect AfterDate context with short date and space', () => {
+            const document = new MockTextDocument(['12-24 ']);
+            const position = new vscode.Position(0, 6);
+
+            const result = analyzer.analyzePosition(document, position);
+
+            expect(result.lineContext).toBe(LineContext.AfterDate);
+            expect(result.allowedTypes).toContain('payee');
+        });
+
+        it('should detect AfterDate context with short date and payee text', () => {
+            const document = new MockTextDocument(['12-24 Test']);
+            const position = new vscode.Position(0, 10);
+
+            const result = analyzer.analyzePosition(document, position);
+
+            expect(result.lineContext).toBe(LineContext.AfterDate);
+            expect(result.allowedTypes).toContain('payee');
+        });
+
+        it('should detect AfterDate context with short date and Cyrillic payee', () => {
+            const document = new MockTextDocument(['12-24 Вкуссвил']);
+            const position = new vscode.Position(0, 14);
+
+            const result = analyzer.analyzePosition(document, position);
+
+            expect(result.lineContext).toBe(LineContext.AfterDate);
+            expect(result.allowedTypes).toContain('payee');
+        });
+
+        it('should detect AfterDate context with short date and status marker', () => {
+            const document = new MockTextDocument(['12-24 * Payee']);
+            const position = new vscode.Position(0, 13);
+
+            const result = analyzer.analyzePosition(document, position);
+
+            expect(result.lineContext).toBe(LineContext.AfterDate);
+            expect(result.allowedTypes).toContain('payee');
+        });
+
+        it('should detect AfterDate context with MM/DD format', () => {
+            const document = new MockTextDocument(['12/24 Test']);
+            const position = new vscode.Position(0, 10);
+
+            const result = analyzer.analyzePosition(document, position);
+
+            expect(result.lineContext).toBe(LineContext.AfterDate);
+            expect(result.allowedTypes).toContain('payee');
+        });
+
+        it('should detect AfterDate context with full date and space', () => {
+            const document = new MockTextDocument(['2024-12-24 ']);
+            const position = new vscode.Position(0, 11);
+
+            const result = analyzer.analyzePosition(document, position);
+
+            expect(result.lineContext).toBe(LineContext.AfterDate);
+            expect(result.allowedTypes).toContain('payee');
+        });
+
+        it('should detect AfterDate context with full date and payee', () => {
+            const document = new MockTextDocument(['2024-12-24 Grocery Store']);
+            const position = new vscode.Position(0, 24);
+
+            const result = analyzer.analyzePosition(document, position);
+
+            expect(result.lineContext).toBe(LineContext.AfterDate);
+            expect(result.allowedTypes).toContain('payee');
+        });
+    });
 });
 
 describe('RegexCache', () => {

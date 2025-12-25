@@ -97,6 +97,23 @@
           "default": true,
           "description": "Enable diagnostics validation for hledger files (account checks, tag format, amount format)"
         },
+        "hledger.autoCompletion.transactionTemplates.enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable transaction template completion. When typing a payee name, suggests complete transactions with accounts and amounts based on history."
+        },
+        "hledger.inlineCompletion.enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable inline ghost text completions for payees and transaction templates"
+        },
+        "hledger.inlineCompletion.minPayeeChars": {
+          "type": "number",
+          "default": 2,
+          "minimum": 1,
+          "maximum": 10,
+          "description": "Minimum characters to type before showing inline payee completion"
+        },
         "hledger.import.defaultDebitAccount": {
           "type": "string",
           "default": "expenses:unknown",
@@ -114,7 +131,15 @@
         },
         "hledger.import.dateFormat": {
           "type": "string",
-          "enum": ["auto", "YYYY-MM-DD", "YYYY/MM/DD", "DD/MM/YYYY", "MM/DD/YYYY", "DD.MM.YYYY", "DD-MM-YYYY"],
+          "enum": [
+            "auto",
+            "YYYY-MM-DD",
+            "YYYY/MM/DD",
+            "DD/MM/YYYY",
+            "MM/DD/YYYY",
+            "DD.MM.YYYY",
+            "DD-MM-YYYY"
+          ],
           "default": "auto",
           "description": "Expected date format in import data. Use 'auto' for automatic detection"
         },
@@ -254,7 +279,12 @@
       {
         "command": "hledger.onTab",
         "key": "tab",
-        "when": "editorTextFocus && editorLangId == hledger && !suggestWidgetVisible && !inSnippetMode && !parameterHintsVisible"
+        "when": "editorTextFocus && editorLangId == hledger && !suggestWidgetVisible && !inSnippetMode && !parameterHintsVisible && !inlineSuggestionVisible"
+      },
+      {
+        "command": "editor.action.inlineSuggest.commit",
+        "key": "enter",
+        "when": "editorTextFocus && editorLangId == hledger && inlineSuggestionVisible"
       }
     ],
     "configurationDefaults": {
@@ -355,5 +385,8 @@
     "url": "https://github.com/juev/hledger-vscode/issues"
   },
   "homepage": "https://github.com/juev/hledger-vscode#readme",
-  "icon": "images/icon.png"
+  "icon": "images/icon.png",
+  "dependencies": {
+    "string-width": "^8.1.0"
+  }
 }

@@ -1,0 +1,203 @@
+/**
+ * InlineCompletionProvider - Provides inline ghost text completions.
+ *
+ * Supports two completion modes:
+ * 1. Payee completion - shows remainder of most-used matching payee
+ * 2. Template completion - shows transaction postings for complete payee with snippet tabstops
+ */
+import * as vscode from "vscode";
+import { HLedgerConfig } from "../HLedgerConfig";
+import { InlinePositionAnalyzer } from "./InlinePositionAnalyzer";
+import { TransactionTemplate, PayeeName, TemplatePosting } from "../types";
+
+/**
+ * Provides inline (ghost text) completions for hledger files.
+ * Implements VS Code's InlineCompletionItemProvider interface.
+ */
+export class InlineCompletionProvider
+  implements vscode.InlineCompletionItemProvider
+{
+  private analyzer: InlinePositionAnalyzer;
+
+  constructor(private config: HLedgerConfig) {
+    this.analyzer = new InlinePositionAnalyzer(this.getMinPayeeChars());
+  }
+
+  /**
+   * Gets the minimum payee characters config with bounds validation.
+   * Clamps value to valid range 1-10 to ensure safe runtime behavior.
+   */
+  private getMinPayeeChars(): number {
+    const config = vscode.workspace.getConfiguration("hledger");
+    const value = config.get<number>("inlineCompletion.minPayeeChars", 2);
+    return Math.max(1, Math.min(10, value));
+  }
+
+  /**
+   * Provides inline completion items for the current cursor position.
+   * Returns at most one completion item (the best match).
+   */
+  provideInlineCompletionItems(
+    document: vscode.TextDocument,
+    position: vscode.Position,
+    context: vscode.InlineCompletionContext,
+    token: vscode.CancellationToken,
+  ): vscode.InlineCompletionItem[] | undefined {
+    // Update config for current document, excluding current line
+    this.config.getConfigForDocument(document, position.line);
+
+    // Get known payees for exact matching
+    const payees = this.config.getPayeesByUsage();
+    const payeeSet = new Set<string>(payees);
+
+    // Analyze position to determine context
+    const inlineContext = this.analyzer.analyzePosition(
+      document,
+      position,
+      payeeSet,
+    );
+
+    // Route to appropriate handler
+    switch (inlineContext.type) {
+      case "payee":
+        return this.providePayeeCompletion(
+          inlineContext.prefix,
+          payees,
+          position,
+        );
+      case "template":
+        return this.provideTemplateCompletion(inlineContext.payee, position);
+      default:
+        return undefined;
+    }
+  }
+
+  /**
+   * Provides payee completion by finding the first matching payee.
+   * Returns only the remainder (ghost text) of the payee name.
+   *
+   * @param prefix - The typed prefix to match against
+   * @param payees - Payees sorted by usage (most used first)
+   * @param position - Current cursor position
+   */
+  private providePayeeCompletion(
+    prefix: string,
+    payees: PayeeName[],
+    position: vscode.Position,
+  ): vscode.InlineCompletionItem[] | undefined {
+    const lowerPrefix = prefix.toLowerCase();
+
+    // Find first matching payee (already sorted by usage)
+    const match = payees.find((p) => p.toLowerCase().startsWith(lowerPrefix));
+
+    if (!match) {
+      return undefined;
+    }
+
+    // Calculate remainder (ghost text)
+    const remainder = match.slice(prefix.length);
+
+    // No ghost text if prefix matches entire payee
+    if (!remainder) {
+      return undefined;
+    }
+
+    const item = new vscode.InlineCompletionItem(
+      remainder,
+      new vscode.Range(position, position),
+    );
+
+    return [item];
+  }
+
+  /**
+   * Provides template completion for a complete payee.
+   * Returns the most frequently used template as a SnippetString with tabstops for amounts.
+   *
+   * @param payee - The complete payee name
+   * @param position - Current cursor position
+   */
+  private provideTemplateCompletion(
+    payee: PayeeName,
+    position: vscode.Position,
+  ): vscode.InlineCompletionItem[] | undefined {
+    const templates = this.config.getTemplatesForPayee(payee);
+
+    if (templates.length === 0) {
+      return undefined;
+    }
+
+    // Use the first template (already sorted by usage, highest first)
+    const template = templates[0];
+    if (!template) {
+      return undefined;
+    }
+
+    const snippet = this.buildTemplateSnippet(template);
+
+    // Normalize position to column 0 to ensure proper indentation
+    // The range replaces from start of line to cursor, ensuring 4-space indent
+    const startOfLine = new vscode.Position(position.line, 0);
+
+    const item = new vscode.InlineCompletionItem(
+      snippet,
+      new vscode.Range(startOfLine, position),
+    );
+
+    // No command needed - SnippetString tabstops handle cursor positioning
+
+    return [item];
+  }
+
+  /**
+   * Escapes special snippet characters in text.
+   * In snippet syntax, $, }, and \ are special characters that must be escaped.
+   */
+  private escapeSnippetText(text: string): string {
+    return text.replace(/\\/g, "\\\\").replace(/\$/g, "\\$").replace(/}/g, "\\}");
+  }
+
+  /**
+   * Builds a SnippetString for a transaction template.
+   * Amount fields are wrapped in tabstops (${1:amount}, ${2:amount}, etc.)
+   * to enable Tab navigation after insertion.
+   */
+  private buildTemplateSnippet(template: TransactionTemplate): vscode.SnippetString {
+    const parts: string[] = [];
+    let tabstopIndex = 1;
+
+    for (let i = 0; i < template.postings.length; i++) {
+      const posting: TemplatePosting | undefined = template.postings[i];
+      if (!posting) continue;
+
+      // Escape special snippet characters in account name
+      const escapedAccount = this.escapeSnippetText(posting.account);
+
+      // Tabstop for amount if exists, with escaped amount text
+      const amountPart =
+        posting.amount !== null
+          ? `  \${${tabstopIndex++}:${this.escapeSnippetText(posting.amount)}}`
+          : "";
+
+      // First line: no leading newline (cursor already on new line)
+      // Subsequent lines: add newline before
+      if (i === 0) {
+        parts.push(`    ${escapedAccount}${amountPart}`);
+      } else {
+        parts.push(`\n    ${escapedAccount}${amountPart}`);
+      }
+    }
+
+    // Final tabstop for exiting snippet mode
+    parts.push("\n$0");
+
+    return new vscode.SnippetString(parts.join(""));
+  }
+
+  /**
+   * Cleanup method for resource disposal.
+   */
+  dispose(): void {
+    // Currently no resources to dispose
+  }
+}

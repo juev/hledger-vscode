@@ -3,10 +3,46 @@
 
 import {
     AccountName, PayeeName, TagName, TagValue, CommodityCode, UsageCount,
-    createPayeeName, createCommodityCode, createUsageCount
+    TemplatePosting, TransactionTemplate, TemplateKey,
+    RecentTemplateBuffer, MutableRecentTemplateBuffer,
+    createPayeeName, createCommodityCode, createUsageCount, generateTemplateKey
 } from '../types';
 import { NumberFormatService, CommodityFormat } from '../services/NumberFormatService';
 import { HLedgerToken, TokenType } from '../lexer/HLedgerLexer';
+
+/**
+ * Mutable interface for transaction template during AST construction.
+ * Allows updating amounts and usage counts as transactions are processed.
+ */
+interface MutableTransactionTemplate {
+    payee: PayeeName;
+    postings: TemplatePosting[];
+    usageCount: UsageCount;
+    lastUsedDate: string | null;
+}
+
+/**
+ * Maximum number of different account combinations to store per payee.
+ * Keeps only the most frequently used templates.
+ */
+const MAX_TEMPLATES_PER_PAYEE = 5;
+
+/**
+ * Maximum number of recent transactions to track per payee in the circular buffer.
+ * Used to determine most frequently used template in recent history.
+ */
+const MAX_RECENT_TRANSACTIONS_PER_PAYEE = 50;
+
+/**
+ * Memory bounds documentation:
+ * - Templates per payee: Limited to MAX_TEMPLATES_PER_PAYEE (5)
+ * - Total payees: Bounded by unique payees in journal (finite in practice)
+ * - payeeRecentTemplates: One TemplateKey per payee (~50 bytes each)
+ *
+ * For a journal with 10,000 unique payees: ~500KB memory usage.
+ * This is acceptable for typical hledger workflows.
+ * No explicit global cap needed since payee count is inherently limited.
+ */
 
 /**
  * Internal mutable interface for building parsed data during AST construction
@@ -33,6 +69,12 @@ interface MutableParsedHLedgerData {
     // Payee-to-account mappings for import history
     payeeAccounts: Map<PayeeName, Set<AccountName>>;
     payeeAccountPairUsage: Map<string, UsageCount>;
+
+    // Transaction templates for autocomplete
+    transactionTemplates: Map<PayeeName, Map<TemplateKey, MutableTransactionTemplate>>;
+
+    // Circular buffer tracking recent templates per payee for frequency-based sorting
+    payeeRecentTemplates: Map<PayeeName, MutableRecentTemplateBuffer>;
 
     // Format information for number formatting and commodity display
     commodityFormats: Map<CommodityCode, CommodityFormat>;
@@ -68,6 +110,12 @@ export interface ParsedHLedgerData {
     readonly payeeAccounts: ReadonlyMap<PayeeName, ReadonlySet<AccountName>>;
     readonly payeeAccountPairUsage: ReadonlyMap<string, UsageCount>;
 
+    // Transaction templates for autocomplete
+    readonly transactionTemplates: ReadonlyMap<PayeeName, ReadonlyMap<TemplateKey, TransactionTemplate>>;
+
+    // Circular buffer tracking recent templates per payee for frequency-based sorting
+    readonly payeeRecentTemplates: ReadonlyMap<PayeeName, RecentTemplateBuffer>;
+
     // Number format information
     readonly commodityFormats: ReadonlyMap<CommodityCode, CommodityFormat>;
     readonly decimalMark: '.' | ',' | null;
@@ -83,6 +131,8 @@ interface BuildingContext {
     transactionPayee: PayeeName;
     pendingFormatDirective: string | null;
     lastDate: string | null;
+    currentTransactionPostings: TemplatePosting[];
+    currentTransactionDate: string | null;
 }
 
 /**
@@ -104,12 +154,17 @@ export class HLedgerASTBuilder {
             inTransaction: false,
             transactionPayee: createPayeeName(''),
             pendingFormatDirective: null,
-            lastDate: null
+            lastDate: null,
+            currentTransactionPostings: [],
+            currentTransactionDate: null
         };
 
         for (const token of tokens) {
             this.processToken(token, data, context);
         }
+
+        // Finalize the last transaction if any
+        this.finalizeTransaction(data, context);
 
         return this.toReadonly(data);
     }
@@ -179,6 +234,9 @@ export class HLedgerASTBuilder {
      * Processes transaction tokens
      */
     private handleTransactionToken(token: HLedgerToken, data: MutableParsedHLedgerData, context: BuildingContext): void {
+        // Finalize previous transaction before starting a new one
+        this.finalizeTransaction(data, context);
+
         if (token.payee) {
             this.addPayee(token.payee, data);
         }
@@ -188,14 +246,16 @@ export class HLedgerASTBuilder {
             this.processTags(token.tags, data);
         }
 
-        // Update context
+        // Update context for new transaction
         context.inTransaction = true;
         context.transactionPayee = token.payee || createPayeeName('Unknown');
+        context.currentTransactionPostings = [];
 
         // Extract date from transaction line (support both full and short date formats)
         const dateMatch = token.trimmedLine.match(/^(\d{4}[-\/\.]\d{1,2}[-\/\.]\d{1,2}|\d{1,2}[-\/\.]\d{1,2})/);
         if (dateMatch?.[1]) {
             context.lastDate = dateMatch[1];
+            context.currentTransactionDate = dateMatch[1];
             data.lastDate = dateMatch[1];
         }
     }
@@ -210,6 +270,15 @@ export class HLedgerASTBuilder {
             // Track payee-account relationship for import history
             if (context.inTransaction && context.transactionPayee) {
                 this.addPayeeAccountMapping(context.transactionPayee, token.account, data);
+            }
+
+            // Accumulate posting for transaction template
+            if (context.inTransaction) {
+                context.currentTransactionPostings.push({
+                    account: token.account,
+                    amount: token.amount || null,
+                    commodity: token.commodity || null
+                });
             }
         }
 
@@ -397,6 +466,102 @@ export class HLedgerASTBuilder {
     }
 
     /**
+     * Finalizes the current transaction and creates/updates template.
+     * Called when a new transaction starts or at end of token processing.
+     */
+    private finalizeTransaction(data: MutableParsedHLedgerData, context: BuildingContext): void {
+        // Skip if not in a transaction or fewer than 2 postings
+        if (!context.inTransaction || context.currentTransactionPostings.length < 2) {
+            context.inTransaction = false;
+            context.currentTransactionPostings = [];
+            context.currentTransactionDate = null;
+            return;
+        }
+
+        const normalizedPayee = context.transactionPayee.normalize('NFC') as PayeeName;
+
+        // Generate template key using shared utility function (double-pipe delimiter)
+        const templateKey = generateTemplateKey(
+            context.currentTransactionPostings.map(p => p.account)
+        );
+
+        // Get or create payee's template map
+        if (!data.transactionTemplates.has(normalizedPayee)) {
+            data.transactionTemplates.set(normalizedPayee, new Map());
+        }
+        const payeeTemplates = data.transactionTemplates.get(normalizedPayee)!;
+
+        // Update existing template or create new one
+        const existingTemplate = payeeTemplates.get(templateKey);
+        if (existingTemplate) {
+            // Update usage count
+            existingTemplate.usageCount = createUsageCount(existingTemplate.usageCount + 1);
+            existingTemplate.lastUsedDate = context.currentTransactionDate;
+
+            // Update amounts with latest values
+            existingTemplate.postings = context.currentTransactionPostings.map(posting => ({
+                account: posting.account,
+                amount: posting.amount,
+                commodity: posting.commodity
+            }));
+        } else {
+            // Create new template
+            const newTemplate: MutableTransactionTemplate = {
+                payee: normalizedPayee,
+                postings: context.currentTransactionPostings.map(posting => ({
+                    account: posting.account,
+                    amount: posting.amount,
+                    commodity: posting.commodity
+                })),
+                usageCount: createUsageCount(1),
+                lastUsedDate: context.currentTransactionDate
+            };
+            payeeTemplates.set(templateKey, newTemplate);
+
+            // Enforce MAX_TEMPLATES_PER_PAYEE limit
+            if (payeeTemplates.size > MAX_TEMPLATES_PER_PAYEE) {
+                this.pruneTemplates(payeeTemplates);
+            }
+        }
+
+        // Track template in circular buffer for frequency-based sorting
+        let buffer = data.payeeRecentTemplates.get(normalizedPayee);
+        if (!buffer) {
+            buffer = { keys: [], writeIndex: 0 };
+            data.payeeRecentTemplates.set(normalizedPayee, buffer);
+        }
+
+        if (buffer.keys.length < MAX_RECENT_TRANSACTIONS_PER_PAYEE) {
+            // Buffer not full yet, append
+            buffer.keys.push(templateKey);
+        } else {
+            // Buffer full, overwrite at writeIndex
+            buffer.keys[buffer.writeIndex] = templateKey;
+        }
+        buffer.writeIndex = (buffer.writeIndex + 1) % MAX_RECENT_TRANSACTIONS_PER_PAYEE;
+
+        // Reset context for next transaction
+        context.inTransaction = false;
+        context.currentTransactionPostings = [];
+        context.currentTransactionDate = null;
+    }
+
+    /**
+     * Removes least frequently used templates to maintain limit.
+     */
+    private pruneTemplates(templates: Map<TemplateKey, MutableTransactionTemplate>): void {
+        const entries = Array.from(templates.entries())
+            .sort((a, b) => a[1].usageCount - b[1].usageCount);
+
+        while (templates.size > MAX_TEMPLATES_PER_PAYEE && entries.length > 0) {
+            const lowestEntry = entries.shift();
+            if (lowestEntry) {
+                templates.delete(lowestEntry[0]);
+            }
+        }
+    }
+
+    /**
      * Adds a payee-account mapping for import history tracking.
      * Uses double-colon separator to avoid conflicts with account names containing colons.
      */
@@ -466,6 +631,62 @@ export class HLedgerASTBuilder {
         });
         this.mergeUsageData(target.payeeAccountPairUsage, source.payeeAccountPairUsage);
 
+        // Merge transaction templates
+        source.transactionTemplates.forEach((sourceTemplates, payee) => {
+            if (!target.transactionTemplates.has(payee)) {
+                target.transactionTemplates.set(payee, new Map());
+            }
+            const targetTemplates = target.transactionTemplates.get(payee)!;
+
+            sourceTemplates.forEach((template, key) => {
+                const existingTemplate = targetTemplates.get(key);
+                if (existingTemplate) {
+                    // Combine usage counts, keep newer amounts
+                    existingTemplate.usageCount = createUsageCount(existingTemplate.usageCount + template.usageCount);
+                    if (template.lastUsedDate && (!existingTemplate.lastUsedDate || template.lastUsedDate > existingTemplate.lastUsedDate)) {
+                        existingTemplate.lastUsedDate = template.lastUsedDate;
+                        existingTemplate.postings = [...template.postings];
+                    }
+                } else {
+                    targetTemplates.set(key, {
+                        payee: template.payee,
+                        postings: [...template.postings],
+                        usageCount: template.usageCount,
+                        lastUsedDate: template.lastUsedDate
+                    });
+                }
+            });
+
+            // Enforce MAX_TEMPLATES_PER_PAYEE after merge
+            if (targetTemplates.size > MAX_TEMPLATES_PER_PAYEE) {
+                this.pruneTemplates(targetTemplates);
+            }
+        });
+
+        // Merge recent template buffers - combine keys and respect MAX limit
+        source.payeeRecentTemplates.forEach((sourceBuffer, payee) => {
+            const targetBuffer = target.payeeRecentTemplates.get(payee);
+            if (!targetBuffer) {
+                // No existing entry, clone source buffer
+                target.payeeRecentTemplates.set(payee, {
+                    keys: [...sourceBuffer.keys],
+                    writeIndex: sourceBuffer.writeIndex
+                });
+            } else {
+                // Combine keys from both buffers, keeping only the last MAX entries
+                // Source entries are considered more recent
+                const combinedKeys = [...targetBuffer.keys, ...sourceBuffer.keys];
+                if (combinedKeys.length <= MAX_RECENT_TRANSACTIONS_PER_PAYEE) {
+                    targetBuffer.keys = combinedKeys;
+                    targetBuffer.writeIndex = combinedKeys.length % MAX_RECENT_TRANSACTIONS_PER_PAYEE;
+                } else {
+                    // Keep only the last MAX entries (source entries are more recent)
+                    targetBuffer.keys = combinedKeys.slice(-MAX_RECENT_TRANSACTIONS_PER_PAYEE);
+                    targetBuffer.writeIndex = 0;
+                }
+            }
+        });
+
         // Update other properties
         if (source.defaultCommodity && !target.defaultCommodity) {
             target.defaultCommodity = source.defaultCommodity;
@@ -508,6 +729,8 @@ export class HLedgerASTBuilder {
             commodityUsage: new Map(),
             payeeAccounts: new Map(),
             payeeAccountPairUsage: new Map(),
+            transactionTemplates: new Map(),
+            payeeRecentTemplates: new Map(),
             commodityFormats: new Map(),
             decimalMark: null,
             defaultCommodity: null,
@@ -535,10 +758,72 @@ export class HLedgerASTBuilder {
             commodityUsage: data.commodityUsage,
             payeeAccounts: data.payeeAccounts,
             payeeAccountPairUsage: data.payeeAccountPairUsage,
+            transactionTemplates: data.transactionTemplates,
+            payeeRecentTemplates: data.payeeRecentTemplates,
             commodityFormats: data.commodityFormats,
             decimalMark: data.decimalMark,
             defaultCommodity: data.defaultCommodity,
             lastDate: data.lastDate
         };
+    }
+
+    /**
+     * Creates a mutable copy from readonly data for merging.
+     * Used by tests and for data aggregation across files.
+     */
+    public createMutableFromReadonly(data: ParsedHLedgerData): MutableParsedHLedgerData {
+        // Deep clone transaction templates including posting objects
+        const clonedTemplates = new Map<PayeeName, Map<TemplateKey, MutableTransactionTemplate>>();
+        data.transactionTemplates.forEach((templates, payee) => {
+            const clonedInner = new Map<TemplateKey, MutableTransactionTemplate>();
+            templates.forEach((template, key) => {
+                clonedInner.set(key, {
+                    payee: template.payee,
+                    // Deep clone each posting object to prevent shared references
+                    postings: template.postings.map(p => ({ ...p })),
+                    usageCount: template.usageCount,
+                    lastUsedDate: template.lastUsedDate
+                });
+            });
+            clonedTemplates.set(payee, clonedInner);
+        });
+
+        return {
+            accounts: new Set(data.accounts),
+            definedAccounts: new Set(data.definedAccounts),
+            usedAccounts: new Set(data.usedAccounts),
+            payees: new Set(data.payees),
+            tags: new Set(data.tags),
+            commodities: new Set(data.commodities),
+            aliases: new Map(data.aliases),
+            tagValues: new Map(Array.from(data.tagValues.entries()).map(([k, v]) => [k, new Set(v)])),
+            tagValueUsage: new Map(data.tagValueUsage),
+            accountUsage: new Map(data.accountUsage),
+            payeeUsage: new Map(data.payeeUsage),
+            tagUsage: new Map(data.tagUsage),
+            commodityUsage: new Map(data.commodityUsage),
+            payeeAccounts: new Map(Array.from(data.payeeAccounts.entries()).map(([k, v]) => [k, new Set(v)])),
+            payeeAccountPairUsage: new Map(data.payeeAccountPairUsage),
+            transactionTemplates: clonedTemplates,
+            // Deep clone buffer structures to prevent shared references
+            payeeRecentTemplates: new Map(
+                Array.from(data.payeeRecentTemplates.entries()).map(([payee, buffer]) => [
+                    payee,
+                    { keys: [...buffer.keys], writeIndex: buffer.writeIndex }
+                ])
+            ),
+            commodityFormats: new Map(data.commodityFormats),
+            decimalMark: data.decimalMark,
+            defaultCommodity: data.defaultCommodity,
+            lastDate: data.lastDate
+        };
+    }
+
+    /**
+     * Converts mutable data back to readonly.
+     * Public wrapper for toReadonly for use by tests.
+     */
+    public toReadonlyData(data: MutableParsedHLedgerData): ParsedHLedgerData {
+        return this.toReadonly(data);
     }
 }

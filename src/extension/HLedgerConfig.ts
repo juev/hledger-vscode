@@ -14,6 +14,8 @@ import {
   TagValue,
   CommodityCode,
   UsageCount,
+  TransactionTemplate,
+  TemplateKey,
   createUsageCount,
   createCacheKey,
 } from "./types";
@@ -225,7 +227,7 @@ export class HLedgerConfig {
    *
    * Shared (read-only, never mutated):
    *   definedAccounts, aliases, payeeAccounts, payeeAccountPairUsage,
-   *   tagValues, tagValueUsage, commodityFormats, decimalMark, defaultCommodity, lastDate
+   *   transactionTemplates, tagValues, tagValueUsage, commodityFormats, decimalMark, defaultCommodity, lastDate
    */
   private cloneData(data: ParsedHLedgerData): ParsedHLedgerData {
     return {
@@ -245,6 +247,8 @@ export class HLedgerConfig {
       aliases: data.aliases,
       payeeAccounts: data.payeeAccounts,
       payeeAccountPairUsage: data.payeeAccountPairUsage,
+      transactionTemplates: data.transactionTemplates,
+      payeeRecentTemplates: data.payeeRecentTemplates,
       tagValues: data.tagValues,
       tagValueUsage: data.tagValueUsage,
       commodityFormats: data.commodityFormats,
@@ -406,6 +410,128 @@ export class HLedgerConfig {
       payeeAccounts: this.data.payeeAccounts,
       pairUsage: this.data.payeeAccountPairUsage,
     };
+  }
+
+  // Transaction templates for autocomplete
+  getTransactionTemplates(): ReadonlyMap<
+    PayeeName,
+    ReadonlyMap<TemplateKey, TransactionTemplate>
+  > | null {
+    return this.data?.transactionTemplates ?? null;
+  }
+
+  /**
+   * Gets all templates for a specific payee, sorted by frequency in recent buffer.
+   * Falls back to lastUsedDate, then to total usage count.
+   * Returns empty array if no templates exist for the payee.
+   */
+  getTemplatesForPayee(payee: PayeeName): TransactionTemplate[] {
+    const templates = this.data?.transactionTemplates?.get(payee);
+    if (!templates) return [];
+
+    return Array.from(templates.entries())
+      .map(([key, template]) => ({
+        key,
+        template,
+        frequency: this.getRecentTemplateFrequency(payee, key),
+      }))
+      .sort((a, b) => {
+        // Sort by recent frequency first (higher = better)
+        if (a.frequency !== b.frequency) return b.frequency - a.frequency;
+        // Then by lastUsedDate (most recent first)
+        const aDate = a.template.lastUsedDate ?? "";
+        const bDate = b.template.lastUsedDate ?? "";
+        if (aDate !== bDate) return bDate.localeCompare(aDate);
+        // Fall back to total usage
+        return b.template.usageCount - a.template.usageCount;
+      })
+      .map(({ template }) => template);
+  }
+
+  /**
+   * Gets the frequency count of a template in the recent buffer.
+   * Returns the number of times this template appears in the last 50 transactions.
+   */
+  getRecentTemplateFrequency(payee: PayeeName, templateKey: TemplateKey): number {
+    const buffer = this.data?.payeeRecentTemplates?.get(payee);
+    if (!buffer?.keys.length) return 0;
+
+    return buffer.keys.filter((k) => k === templateKey).length;
+  }
+
+  /**
+   * Gets the most frequently used template key for a payee from recent transactions.
+   * Returns undefined if no buffer exists or is empty.
+   */
+  getMostFrequentTemplateKey(payee: PayeeName): TemplateKey | undefined {
+    const buffer = this.data?.payeeRecentTemplates?.get(payee);
+    if (!buffer?.keys.length) return undefined;
+
+    const frequency = new Map<TemplateKey, number>();
+    for (const key of buffer.keys) {
+      frequency.set(key, (frequency.get(key) ?? 0) + 1);
+    }
+
+    let maxKey: TemplateKey | undefined;
+    let maxCount = 0;
+    for (const [key, count] of frequency) {
+      if (count > maxCount) {
+        maxCount = count;
+        maxKey = key;
+      }
+    }
+    return maxKey;
+  }
+
+  /**
+   * @deprecated Use getRecentTemplateFrequency instead.
+   * Checks if a template is the most recently used for a payee.
+   * Returns 1 if this is the most recent template, 0 otherwise.
+   */
+  getRecentTemplateUsage(payee: PayeeName, templateKey: TemplateKey): number {
+    return this.getRecentTemplateFrequency(payee, templateKey);
+  }
+
+  /**
+   * Gets all payees that have transaction templates.
+   * Returns payees sorted by most frequent template in recent buffer, falling back to total usage.
+   */
+  getPayeesWithTemplates(): PayeeName[] {
+    if (!this.data?.transactionTemplates) return [];
+
+    return Array.from(this.data.transactionTemplates.keys()).sort((a, b) => {
+      // Sort by most frequent template's last used date first
+      const aMostFrequentKey = this.getMostFrequentTemplateKey(a);
+      const bMostFrequentKey = this.getMostFrequentTemplateKey(b);
+      const aDate =
+        aMostFrequentKey != null
+          ? (this.data!.transactionTemplates.get(a)?.get(aMostFrequentKey)
+              ?.lastUsedDate ?? "")
+          : "";
+      const bDate =
+        bMostFrequentKey != null
+          ? (this.data!.transactionTemplates.get(b)?.get(bMostFrequentKey)
+              ?.lastUsedDate ?? "")
+          : "";
+      if (aDate !== bDate) return bDate.localeCompare(aDate);
+
+      // Fall back to total usage
+      const aTemplates = this.data!.transactionTemplates.get(a);
+      const bTemplates = this.data!.transactionTemplates.get(b);
+      const aTotal = aTemplates
+        ? Array.from(aTemplates.values()).reduce(
+            (sum, t) => sum + t.usageCount,
+            0,
+          )
+        : 0;
+      const bTotal = bTemplates
+        ? Array.from(bTemplates.values()).reduce(
+            (sum, t) => sum + t.usageCount,
+            0,
+          )
+        : 0;
+      return bTotal - aTotal;
+    });
   }
 
   // Context detection for completion

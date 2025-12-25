@@ -14,6 +14,7 @@ import { createServices } from "./services";
 import { SimpleFuzzyMatcher } from "./SimpleFuzzyMatcher";
 import { HLedgerCodeActionProvider } from "./actions/HLedgerCodeActionProvider";
 import { HLedgerDiagnosticsProvider } from "./diagnostics/HLedgerDiagnosticsProvider";
+import { InlineCompletionProvider } from "./inline/InlineCompletionProvider";
 
 // Main activation function
 export function activate(context: vscode.ExtensionContext): void {
@@ -51,6 +52,35 @@ export function activate(context: vscode.ExtensionContext): void {
 
     // Register the provider itself for proper disposal (prevents RegexCache memory leak)
     context.subscriptions.push(strictProvider);
+
+    // Register inline completion provider for ghost text completions
+    const inlineProvider = new InlineCompletionProvider(services.config);
+    context.subscriptions.push(
+      vscode.languages.registerInlineCompletionItemProvider(
+        "hledger",
+        inlineProvider,
+      ),
+    );
+    context.subscriptions.push(inlineProvider);
+
+    // Register command to position cursor after template insertion
+    context.subscriptions.push(
+      vscode.commands.registerTextEditorCommand(
+        "hledger.positionCursorAfterTemplate",
+        (editor, _edit, line: number, column: number) => {
+          // Bounds check: clamp line to valid document range
+          const maxLine = editor.document.lineCount - 1;
+          const safeLine = Math.min(Math.max(0, line), maxLine);
+
+          // Bounds check: clamp column to valid line length
+          const lineText = editor.document.lineAt(safeLine).text;
+          const safeColumn = Math.min(Math.max(0, column), lineText.length);
+
+          const newPosition = new vscode.Position(safeLine, safeColumn);
+          editor.selection = new vscode.Selection(newPosition, newPosition);
+        },
+      ),
+    );
 
     // Register code action provider for balance assertions and quick fixes
     const codeActionProvider = new HLedgerCodeActionProvider(services.config);

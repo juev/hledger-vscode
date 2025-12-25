@@ -23,6 +23,7 @@ Transform your plain text accounting experience with powerful IDE capabilities:
 
 - **Context-aware** suggestions based on cursor position
 - **Frequency-based** prioritization for accounts and payees
+- **Transaction templates** - type a payee name to insert complete transactions with accounts and amounts based on history
 - Complete support for dates, accounts, payees, commodities, tags, and directives
 - Works as you type - no keyboard shortcuts needed
 
@@ -189,15 +190,16 @@ Import bank statements and transaction data from CSV/TSV files.
   // Auto-completion
   "hledger.autoCompletion.enabled": true,
   "hledger.autoCompletion.maxResults": 25,
-  
+  "hledger.autoCompletion.transactionTemplates.enabled": true,  // Suggest full transactions based on history
+
   // Smart features
   "hledger.smartIndent.enabled": true,
   "editor.formatOnSave": true,  // Enable auto-formatting
-  
+
   // CLI integration
   "hledger.cli.path": "",  // Auto-detected if empty
   "hledger.cli.journalFile": "",  // Uses LEDGER_FILE if empty
-  
+
   // Optional: Enhanced syntax highlighting
   "hledger.semanticHighlighting.enabled": false,  // Enable for more precision
 
