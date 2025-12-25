@@ -207,7 +207,7 @@ describe("SimpleFuzzyMatcher - Gap-Based Algorithm", () => {
 
       expect(result.length).toBe(2);
       // "Tax" should score higher (consecutive ta) than "Testing:Account"
-      expect(result[0]?.score).toBeGreaterThan(result[1]?.score);
+      expect(result[0]?.score).toBeGreaterThan(result[1]?.score ?? 0);
     });
   });
 });

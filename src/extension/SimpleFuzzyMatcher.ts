@@ -144,8 +144,8 @@ export class SimpleFuzzyMatcher {
     // Early start bonus: matches starting at position 0-9 get bonus points
     const startBonus = Math.max(0, 10 - firstMatchPos);
 
-    // Score: base - gap penalty + start bonus
-    const score = 1000 - totalGap + startBonus;
+    // Score: base - gap penalty + start bonus (floor at 0 for very long gaps)
+    const score = Math.max(0, 1000 - totalGap + startBonus);
 
     return { matches: true, score };
   }
@@ -162,6 +162,8 @@ export class SimpleFuzzyMatcher {
     usageCount: number,
   ): CompletionScore {
     // Usage multiplier of 20 ensures frequency has significant impact
-    return createCompletionScore(gapScore + usageCount * 20);
+    // Cap at 9999 to prevent overflow in sortText (see AccountCompleter.getSortText)
+    const rawScore = gapScore + usageCount * 20;
+    return createCompletionScore(Math.min(rawScore, 9999));
   }
 }

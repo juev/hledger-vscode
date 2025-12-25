@@ -170,10 +170,12 @@ describe("SimpleFuzzyMatcher - Sequential Matching", () => {
     test("returns empty for query with characters not in sequence", () => {
       const items = ["Expenses:Food"];
 
-      // "exof" cannot match because 'o' comes before 'f' in the item
-      // but query has 'o' after 'x' which comes before 'f'
-      // Actually "Expenses:Food" has e-x-p-e-n-s-e-s-:-F-o-o-d
-      // So 'e' at 0, 'x' at 1, 'o' at 10, 'f' at 9 - 'f' before 'o'!
+      // "exof" requires characters in sequence: e, x, o, f
+      // "Expenses:Food" = E(0), x(1), p, e, n, s, e, s, :, F(9), o(10), o, d
+      // After matching e(0)->E, x(1)->x, next we need 'o'
+      // First 'o' appears at position 10, but 'f' in query must come after 'o'
+      // The only 'f' is at position 9, which comes BEFORE position 10
+      // Therefore sequential matching fails - characters not in order
       const result = matcher.match("exof", items);
 
       expect(result.length).toBe(0);
