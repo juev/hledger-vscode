@@ -179,7 +179,7 @@ export class InlineCompletionProvider
       // Calculate spacing for alignment
       let amountPart = "";
       if (posting.amount !== null) {
-        const accountPartLength = indent.length + posting.account.length;
+        const accountPartLength = indent.length + escapedAccount.length;
         const spacesToAdd = Math.max(2, alignmentColumn - accountPartLength);
         const spacing = " ".repeat(spacesToAdd);
         amountPart = `${spacing}\${${tabstopIndex++}:${this.escapeSnippetText(posting.amount)}}`;
