@@ -16,9 +16,16 @@ import {
   UsageCount,
   TransactionTemplate,
   TemplateKey,
+  FormattingProfile,
+  CharacterPosition,
   createUsageCount,
   createCacheKey,
+  createCharacterPosition,
 } from "./types";
+import {
+  calculateAlignmentColumn,
+  DEFAULT_AMOUNT_ALIGNMENT_COLUMN,
+} from "./utils/formattingUtils";
 
 // CompletionContext is now imported from types.ts
 export { CompletionContext } from "./types";
@@ -223,7 +230,7 @@ export class HLedgerConfig {
    *
    * Cloned (mutated by mergeCurrentData):
    *   accounts, usedAccounts, payees, tags, commodities,
-   *   accountUsage, payeeUsage, tagUsage, commodityUsage
+   *   accountUsage, payeeUsage, tagUsage, commodityUsage, formattingProfile
    *
    * Shared (read-only, never mutated):
    *   definedAccounts, aliases, payeeAccounts, payeeAccountPairUsage,
@@ -255,6 +262,8 @@ export class HLedgerConfig {
       decimalMark: data.decimalMark,
       defaultCommodity: data.defaultCommodity,
       lastDate: data.lastDate,
+      // Shallow clone is safe: formattingProfile contains only primitives
+      formattingProfile: { ...data.formattingProfile },
     };
   }
 
@@ -294,6 +303,29 @@ export class HLedgerConfig {
         mutableData.commodityUsage.get(key) ?? createUsageCount(0);
       mutableData.commodityUsage.set(key, createUsageCount(existing + count));
     });
+
+    // Incrementally update maxAccountNameLength - only check new accounts from currentData
+    // Start with existing max from workspace data (already calculated)
+    // Note: this.data is guaranteed non-null here due to early return on line 272
+    const existingMax = this.data.formattingProfile.maxAccountNameLength;
+    let maxAccountNameLength = existingMax;
+
+    // Only iterate new accounts from currentData, not all accounts - O(m) vs O(n)
+    currentData.accounts.forEach((account) => {
+      if (account.length > maxAccountNameLength) {
+        maxAccountNameLength = account.length;
+      }
+    });
+
+    // Update formattingProfile via immutable clone to avoid readonly mutation
+    this.data = {
+      ...this.data,
+      formattingProfile: {
+        amountAlignmentColumn: calculateAlignmentColumn(maxAccountNameLength),
+        maxAccountNameLength: maxAccountNameLength,
+        isDefaultAlignment: maxAccountNameLength === 0,
+      },
+    };
   }
 
   // Account methods with enhanced type safety
@@ -391,6 +423,18 @@ export class HLedgerConfig {
   // Date methods
   getLastDate(): string | null {
     return this.data?.lastDate ?? null;
+  }
+
+  // Formatting profile methods
+  getAmountAlignmentColumn(): CharacterPosition {
+    return (
+      this.data?.formattingProfile?.amountAlignmentColumn ??
+      createCharacterPosition(DEFAULT_AMOUNT_ALIGNMENT_COLUMN)
+    );
+  }
+
+  getFormattingProfile(): FormattingProfile | null {
+    return this.data?.formattingProfile ?? null;
   }
 
   // Alias methods with enhanced type safety

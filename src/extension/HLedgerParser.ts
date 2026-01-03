@@ -15,11 +15,13 @@ import {
   TemplateKey,
   RecentTemplateBuffer,
   MutableRecentTemplateBuffer,
+  FormattingProfile,
   createTagName,
   createTagValue,
   createCommodityCode,
   createUsageCount,
 } from "./types";
+import { calculateAlignmentColumn, mergeFormattingProfiles } from "./utils/formattingUtils";
 import {
   NumberFormatService,
   CommodityFormat,
@@ -89,6 +91,9 @@ interface MutableParsedHLedgerData {
 
   defaultCommodity: CommodityCode | null;
   lastDate: string | null;
+
+  // Formatting profile tracking
+  maxAccountNameLength: number;
 }
 
 /**
@@ -133,6 +138,9 @@ export interface ParsedHLedgerData {
 
   readonly defaultCommodity: CommodityCode | null;
   readonly lastDate: string | null;
+
+  // Formatting profile for amount alignment
+  readonly formattingProfile: FormattingProfile;
 }
 
 /**
@@ -860,6 +868,7 @@ export class HLedgerParser {
       decimalMark: source.decimalMark,
       defaultCommodity: source.defaultCommodity,
       lastDate: source.lastDate,
+      maxAccountNameLength: source.formattingProfile.maxAccountNameLength,
     };
   }
 
@@ -1017,6 +1026,17 @@ export class HLedgerParser {
     if (source.defaultCommodity) {
       target.defaultCommodity = source.defaultCommodity;
     }
+
+    // Merge formatting profile using shared utility
+    const mergedProfile = mergeFormattingProfiles(
+      {
+        amountAlignmentColumn: calculateAlignmentColumn(target.maxAccountNameLength),
+        maxAccountNameLength: target.maxAccountNameLength,
+        isDefaultAlignment: target.maxAccountNameLength === 0,
+      },
+      source.formattingProfile,
+    );
+    target.maxAccountNameLength = mergedProfile.maxAccountNameLength;
   }
 
   private createEmptyData(): MutableParsedHLedgerData {
@@ -1042,11 +1062,19 @@ export class HLedgerParser {
       decimalMark: null,
       defaultCommodity: null,
       lastDate: null,
+      maxAccountNameLength: 0,
     };
   }
 
   private toReadonly(data: MutableParsedHLedgerData): ParsedHLedgerData {
-    return data as ParsedHLedgerData;
+    return {
+      ...data,
+      formattingProfile: {
+        amountAlignmentColumn: calculateAlignmentColumn(data.maxAccountNameLength),
+        maxAccountNameLength: data.maxAccountNameLength,
+        isDefaultAlignment: data.maxAccountNameLength === 0,
+      },
+    } as ParsedHLedgerData;
   }
 
   // ==================== Public Utility Methods ====================

@@ -57,7 +57,8 @@ describe('SimpleProjectCache - Incremental Updates', () => {
                 defaultCommodity: null,
                 transactionTemplates: new Map(),
                 payeeRecentTemplates: new Map(),
-                lastDate: '2025-01-15'
+                lastDate: '2025-01-15',
+                formattingProfile: { amountAlignmentColumn: 40, maxAccountNameLength: 0, isDefaultAlignment: true }
             };
 
             // Cache the data
@@ -96,7 +97,8 @@ describe('SimpleProjectCache - Incremental Updates', () => {
                 defaultCommodity: null,
                 transactionTemplates: new Map(),
                 payeeRecentTemplates: new Map(),
-                lastDate: '2025-01-15'
+                lastDate: '2025-01-15',
+                formattingProfile: { amountAlignmentColumn: 40, maxAccountNameLength: 0, isDefaultAlignment: true }
             };
 
             // Get the file's mtimeMs
@@ -140,7 +142,8 @@ describe('SimpleProjectCache - Incremental Updates', () => {
                 defaultCommodity: null,
                 transactionTemplates: new Map(),
                 payeeRecentTemplates: new Map(),
-                lastDate: '2025-01-15'
+                lastDate: '2025-01-15',
+                formattingProfile: { amountAlignmentColumn: 40, maxAccountNameLength: 0, isDefaultAlignment: true }
             };
 
             // Cache the data
@@ -183,7 +186,8 @@ describe('SimpleProjectCache - Incremental Updates', () => {
                 defaultCommodity: null,
                 transactionTemplates: new Map(),
                 payeeRecentTemplates: new Map(),
-                lastDate: '2025-01-15'
+                lastDate: '2025-01-15',
+                formattingProfile: { amountAlignmentColumn: 40, maxAccountNameLength: 0, isDefaultAlignment: true }
             };
 
             const mockData2: ParsedHLedgerData = {
@@ -207,7 +211,8 @@ describe('SimpleProjectCache - Incremental Updates', () => {
                 defaultCommodity: null,
                 transactionTemplates: new Map(),
                 payeeRecentTemplates: new Map(),
-                lastDate: '2025-01-15'
+                lastDate: '2025-01-15',
+                formattingProfile: { amountAlignmentColumn: 40, maxAccountNameLength: 0, isDefaultAlignment: true }
             };
 
             // Cache both files
@@ -257,7 +262,8 @@ describe('SimpleProjectCache - Incremental Updates', () => {
                 defaultCommodity: null,
                 transactionTemplates: new Map(),
                 payeeRecentTemplates: new Map(),
-                lastDate: null
+                lastDate: null,
+                formattingProfile: { amountAlignmentColumn: 40, maxAccountNameLength: 0, isDefaultAlignment: true }
             };
 
             cache.set(testFile1, mockData);
@@ -292,7 +298,8 @@ describe('SimpleProjectCache - Incremental Updates', () => {
                 defaultCommodity: null,
                 transactionTemplates: new Map(),
                 payeeRecentTemplates: new Map(),
-                lastDate: null
+                lastDate: null,
+                formattingProfile: { amountAlignmentColumn: 40, maxAccountNameLength: 0, isDefaultAlignment: true }
             };
 
             cache.set(testFile1, mockData);

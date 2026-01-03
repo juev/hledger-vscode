@@ -65,6 +65,7 @@ describe("InlineCompletionProvider", () => {
       getConfigForDocument: jest.fn(),
       getPayeesByUsage: jest.fn().mockReturnValue([]),
       getTemplatesForPayee: jest.fn().mockReturnValue([]),
+      getAmountAlignmentColumn: jest.fn().mockReturnValue(40),
     } as unknown as jest.Mocked<HLedgerConfig>;
 
     provider = new InlineCompletionProvider(mockConfig);
@@ -696,6 +697,76 @@ describe("InlineCompletionProvider", () => {
         // Should have Assets:Cash without tabstop
         expect(snippet.value).toContain("Assets:Cash");
         expect(snippet.value).not.toContain("Assets:Cash  ${");
+      });
+
+      it("should align amounts to configured alignment column", () => {
+        // Set alignment column to 50
+        mockConfig.getAmountAlignmentColumn.mockReturnValue(50);
+
+        mockConfig.getPayeesByUsage.mockReturnValue(["Store" as PayeeName]);
+        mockConfig.getTemplatesForPayee.mockReturnValue([
+          createTemplate("Store", [
+            { account: "Expenses:Food", amount: "100 USD", commodity: "USD" },
+            { account: "Assets:Cash", amount: null, commodity: null },
+          ]),
+        ]);
+
+        const document = new MockTextDocument(["2024-12-23 Store", ""]);
+        const position = new Position(1, 0);
+
+        const result = provider.provideInlineCompletionItems(
+          document,
+          position,
+          createInlineContext(),
+          createCancellationToken(),
+        );
+
+        const snippet = result![0]!.insertText as SnippetString;
+        // "    Expenses:Food" is 4 + 13 = 17 characters
+        // To align to column 50, need 50 - 17 = 33 spaces
+        // But minimum is 2 spaces, so calculate expected spacing
+        const indent = "    "; // 4 spaces
+        const account = "Expenses:Food";
+        const expectedSpaces = Math.max(2, 50 - (indent.length + account.length));
+        const expectedSpacing = " ".repeat(expectedSpaces);
+
+        expect(snippet.value).toContain(
+          `${indent}${account}${expectedSpacing}\${1:100 USD}`,
+        );
+      });
+
+      it("should use minimum 2 spaces when account is longer than alignment column", () => {
+        // Set alignment column to 30
+        mockConfig.getAmountAlignmentColumn.mockReturnValue(30);
+
+        mockConfig.getPayeesByUsage.mockReturnValue(["Store" as PayeeName]);
+        mockConfig.getTemplatesForPayee.mockReturnValue([
+          createTemplate("Store", [
+            {
+              account: "Expenses:Food:Groceries:Supermarket",
+              amount: "100 USD",
+              commodity: "USD",
+            },
+            { account: "Assets:Cash", amount: null, commodity: null },
+          ]),
+        ]);
+
+        const document = new MockTextDocument(["2024-12-23 Store", ""]);
+        const position = new Position(1, 0);
+
+        const result = provider.provideInlineCompletionItems(
+          document,
+          position,
+          createInlineContext(),
+          createCancellationToken(),
+        );
+
+        const snippet = result![0]!.insertText as SnippetString;
+        // Account "Expenses:Food:Groceries:Supermarket" (35 chars) + 4 indent = 39
+        // This exceeds alignment column 30, so minimum 2 spaces should be used
+        expect(snippet.value).toContain(
+          "    Expenses:Food:Groceries:Supermarket  ${1:100 USD}",
+        );
       });
     });
   });
