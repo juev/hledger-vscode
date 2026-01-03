@@ -650,7 +650,8 @@ export class HLedgerFileProcessor {
             commodityFormats: new Map(data.commodityFormats),
             decimalMark: data.decimalMark,
             defaultCommodity: data.defaultCommodity,
-            lastDate: data.lastDate
+            lastDate: data.lastDate,
+            maxAccountNameLength: data.formattingProfile?.maxAccountNameLength ?? 0
         };
     }
 
