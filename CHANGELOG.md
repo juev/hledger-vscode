@@ -1,5 +1,20 @@
 # Change Log
 
+## [0.4.8] - 2026-01-03
+
+### Added
+- feat: implement formatting profile for transaction templates
+- feat: add inline ghost text feature and update troubleshooting guide
+
+### Fixed
+- fix: use escaped account length for alignment calculation
+- fix: preserve maxAccountNameLength in createMutableData
+
+### Other
+- revert: use displayed account length for alignment
+- chore(deps): bump qs from 6.14.0 to 6.14.1
+
+
 ## [0.4.7] - 2025-12-25
 
 ### Added
