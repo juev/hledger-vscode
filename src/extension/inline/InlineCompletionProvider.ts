@@ -161,10 +161,13 @@ export class InlineCompletionProvider
    * Builds a SnippetString for a transaction template.
    * Amount fields are wrapped in tabstops (${1:amount}, ${2:amount}, etc.)
    * to enable Tab navigation after insertion.
+   * Aligns amounts to the configured alignment column.
    */
   private buildTemplateSnippet(template: TransactionTemplate): vscode.SnippetString {
+    const alignmentColumn = this.config.getAmountAlignmentColumn();
     const parts: string[] = [];
     let tabstopIndex = 1;
+    const indent = "    "; // 4 spaces
 
     for (let i = 0; i < template.postings.length; i++) {
       const posting: TemplatePosting | undefined = template.postings[i];
@@ -173,18 +176,21 @@ export class InlineCompletionProvider
       // Escape special snippet characters in account name
       const escapedAccount = this.escapeSnippetText(posting.account);
 
-      // Tabstop for amount if exists, with escaped amount text
-      const amountPart =
-        posting.amount !== null
-          ? `  \${${tabstopIndex++}:${this.escapeSnippetText(posting.amount)}}`
-          : "";
+      // Calculate spacing for alignment
+      let amountPart = "";
+      if (posting.amount !== null) {
+        const accountPartLength = indent.length + posting.account.length;
+        const spacesToAdd = Math.max(2, alignmentColumn - accountPartLength);
+        const spacing = " ".repeat(spacesToAdd);
+        amountPart = `${spacing}\${${tabstopIndex++}:${this.escapeSnippetText(posting.amount)}}`;
+      }
 
       // First line: no leading newline (cursor already on new line)
       // Subsequent lines: add newline before
       if (i === 0) {
-        parts.push(`    ${escapedAccount}${amountPart}`);
+        parts.push(`${indent}${escapedAccount}${amountPart}`);
       } else {
-        parts.push(`\n    ${escapedAccount}${amountPart}`);
+        parts.push(`\n${indent}${escapedAccount}${amountPart}`);
       }
     }
 

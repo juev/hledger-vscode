@@ -5,6 +5,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { ParsedHLedgerData, HLedgerASTBuilder } from '../ast/HLedgerASTBuilder';
 import { HLedgerLexer, TokenType } from '../lexer/HLedgerLexer';
+import { calculateAlignmentColumn } from '../utils/formattingUtils';
 
 /**
  * File processing options
@@ -657,6 +658,8 @@ export class HLedgerFileProcessor {
      * Converts mutable data back to readonly ParsedHLedgerData
      */
     private toReadonlyData(mutableData: any): ParsedHLedgerData {
+        const maxAccountNameLength = mutableData.maxAccountNameLength ?? 0;
+
         return {
             accounts: mutableData.accounts,
             definedAccounts: mutableData.definedAccounts,
@@ -678,7 +681,12 @@ export class HLedgerFileProcessor {
             commodityFormats: mutableData.commodityFormats,
             decimalMark: mutableData.decimalMark,
             defaultCommodity: mutableData.defaultCommodity,
-            lastDate: mutableData.lastDate
+            lastDate: mutableData.lastDate,
+            formattingProfile: {
+                amountAlignmentColumn: calculateAlignmentColumn(maxAccountNameLength),
+                maxAccountNameLength: maxAccountNameLength,
+                isDefaultAlignment: maxAccountNameLength === 0
+            }
         };
     }
 

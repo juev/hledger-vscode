@@ -245,7 +245,12 @@ account Assets:Bank
                 defaultCommodity: null,
                 transactionTemplates: new Map(),
                 payeeRecentTemplates: new Map(),
-                lastDate: null
+                lastDate: null,
+                formattingProfile: {
+                    amountAlignmentColumn: 40,
+                    maxAccountNameLength: 0,
+                    isDefaultAlignment: true
+                }
             };
 
             // Inject the shared cache that holds workspace data
@@ -370,7 +375,12 @@ account Assets:Bank
                 defaultCommodity: null,
                 transactionTemplates: new Map(),
                 payeeRecentTemplates: new Map(),
-                lastDate: null
+                lastDate: null,
+                formattingProfile: {
+                    amountAlignmentColumn: 40,
+                    maxAccountNameLength: 0,
+                    isDefaultAlignment: true
+                }
             };
 
             const sharedCache = new SimpleProjectCache();
@@ -448,6 +458,128 @@ prod
             const cachedData = sharedCache.get('/test/project');
             expect(cachedData).toBeDefined();
             expect(cachedData?.accounts.has('prod')).toBe(false);
+        });
+    });
+
+    describe('formattingProfile recalculation after merge', () => {
+        it('should recalculate formattingProfile when merging data with longer account names', () => {
+            // This test verifies that formattingProfile.amountAlignmentColumn is recalculated
+            // when mergeCurrentData() adds accounts with longer names than the cached data.
+            //
+            // The bug: mergeCurrentData() adds new accounts but doesn't recalculate formattingProfile.
+            // getAmountAlignmentColumn() returns the old value (40) instead of the correct value.
+            //
+            // Formula: alignmentColumn = Math.max(4 + maxAccountNameLength + 2, 40)
+            // For account "Expenses:VeryLongCategoryName:SubCategory" (44 chars):
+            // alignmentColumn = Math.max(4 + 44 + 2, 40) = 50
+
+            // Create workspace data with short account names
+            const workspaceData: ParsedHLedgerData = {
+                accounts: new Set(['Assets:Bank']), // 11 chars
+                definedAccounts: new Set(['Assets:Bank']),
+                usedAccounts: new Set<string>(),
+                payees: new Set(),
+                tags: new Set(),
+                commodities: new Set(),
+                aliases: new Map(),
+                accountUsage: new Map(),
+                payeeUsage: new Map(),
+                tagUsage: new Map(),
+                commodityUsage: new Map(),
+                tagValues: new Map(),
+                tagValueUsage: new Map(),
+                payeeAccounts: new Map(),
+                payeeAccountPairUsage: new Map(),
+                commodityFormats: new Map(),
+                decimalMark: null,
+                defaultCommodity: null,
+                transactionTemplates: new Map(),
+                payeeRecentTemplates: new Map(),
+                lastDate: null,
+                formattingProfile: {
+                    amountAlignmentColumn: 40, // Default alignment for short accounts
+                    maxAccountNameLength: 11, // 'Assets:Bank'.length = 11
+                    isDefaultAlignment: false
+                }
+            };
+
+            const sharedCache = new SimpleProjectCache();
+            sharedCache.set('/test/project', workspaceData);
+
+            const parser = new HLedgerParser();
+            const configWithSharedCache = new HLedgerConfig(parser, sharedCache);
+
+            // Set internal state to simulate a prior workspace parse
+            const internalConfig = configWithSharedCache as unknown as {
+                data: ParsedHLedgerData;
+                lastWorkspacePath: string;
+            };
+            internalConfig.data = workspaceData;
+            internalConfig.lastWorkspacePath = '/test/project';
+
+            // Verify initial alignment is 40
+            expect(configWithSharedCache.getAmountAlignmentColumn()).toBe(40);
+
+            // Create a document with a very long account name (44 chars)
+            const longAccountName = 'Expenses:VeryLongCategoryName:SubCategory';
+            expect(longAccountName.length).toBe(41); // Verify account name length
+
+            const documentContent = `2025-01-15 Test transaction
+    ${longAccountName}    100
+    Assets:Bank                               -100
+`;
+            const fileUri = {
+                scheme: 'file',
+                authority: '',
+                path: '/test/project/test.journal',
+                query: '',
+                fragment: '',
+                fsPath: '/test/project/test.journal',
+                with: jest.fn(),
+                toString: () => 'file:///test/project/test.journal',
+                toJSON: () => ({ $mid: 1, fsPath: '/test/project/test.journal', path: '/test/project/test.journal', scheme: 'file' })
+            };
+
+            const document = new MockTextDocument(documentContent.split('\n'), {
+                uri: fileUri as vscode.Uri,
+                fileName: '/test/project/test.journal',
+                languageId: 'hledger'
+            });
+
+            const workspaceFolder = {
+                uri: {
+                    scheme: 'file',
+                    fsPath: '/test/project',
+                    path: '/test/project',
+                    authority: '',
+                    query: '',
+                    fragment: '',
+                    with: jest.fn(),
+                    toString: () => 'file:///test/project',
+                    toJSON: () => ({})
+                },
+                name: 'project',
+                index: 0
+            };
+            (vscode.workspace.getWorkspaceFolder as jest.Mock).mockReturnValue(workspaceFolder);
+            (fs.existsSync as jest.Mock).mockReturnValue(true);
+            (fs.readdirSync as jest.Mock).mockReturnValue([]);
+
+            // Call getConfigForDocument which triggers mergeCurrentData
+            configWithSharedCache.getConfigForDocument(document, 3);
+
+            // Verify the long account was added
+            expect(configWithSharedCache.getAccounts()).toContain(longAccountName);
+
+            // CRITICAL ASSERTION: formattingProfile should be recalculated
+            // Formula: alignmentColumn = Math.max(4 + 41 + 2, 40) = 47
+            const expectedAlignment = Math.max(4 + longAccountName.length + 2, 40);
+            expect(configWithSharedCache.getAmountAlignmentColumn()).toBe(expectedAlignment);
+
+            // Also verify formattingProfile is no longer default
+            const profile = configWithSharedCache.getFormattingProfile();
+            expect(profile).toBeDefined();
+            expect(profile!.isDefaultAlignment).toBe(false);
         });
     });
 

@@ -4,9 +4,10 @@
 import {
     AccountName, PayeeName, TagName, TagValue, CommodityCode, UsageCount,
     TemplatePosting, TransactionTemplate, TemplateKey,
-    RecentTemplateBuffer, MutableRecentTemplateBuffer,
-    createPayeeName, createCommodityCode, createUsageCount, generateTemplateKey
+    RecentTemplateBuffer, MutableRecentTemplateBuffer, FormattingProfile,
+    createPayeeName, createCommodityCode, createUsageCount, generateTemplateKey,
 } from '../types';
+import { calculateAlignmentColumn, mergeFormattingProfiles } from '../utils/formattingUtils';
 import { NumberFormatService, CommodityFormat } from '../services/NumberFormatService';
 import { HLedgerToken, TokenType } from '../lexer/HLedgerLexer';
 
@@ -82,6 +83,9 @@ interface MutableParsedHLedgerData {
 
     defaultCommodity: CommodityCode | null;
     lastDate: string | null;
+
+    // Formatting profile tracking
+    maxAccountNameLength: number;
 }
 
 /**
@@ -121,6 +125,9 @@ export interface ParsedHLedgerData {
     readonly decimalMark: '.' | ',' | null;
     readonly defaultCommodity: CommodityCode | null;
     readonly lastDate: string | null;
+
+    // Formatting profile for amount alignment
+    readonly formattingProfile: FormattingProfile;
 }
 
 /**
@@ -266,6 +273,12 @@ export class HLedgerASTBuilder {
     private handlePostingToken(token: HLedgerToken, data: MutableParsedHLedgerData, context: BuildingContext): void {
         if (token.account) {
             this.addAccount(token.account, data);
+
+            // Track max account name length for formatting profile
+            const accountLength = token.account.length;
+            if (accountLength > data.maxAccountNameLength) {
+                data.maxAccountNameLength = accountLength;
+            }
 
             // Track payee-account relationship for import history
             if (context.inTransaction && context.transactionPayee) {
@@ -697,6 +710,17 @@ export class HLedgerASTBuilder {
         if (source.lastDate) {
             target.lastDate = source.lastDate;
         }
+
+        // Merge formatting profile using shared utility
+        const mergedProfile = mergeFormattingProfiles(
+            {
+                amountAlignmentColumn: calculateAlignmentColumn(target.maxAccountNameLength),
+                maxAccountNameLength: target.maxAccountNameLength,
+                isDefaultAlignment: target.maxAccountNameLength === 0,
+            },
+            source.formattingProfile,
+        );
+        target.maxAccountNameLength = mergedProfile.maxAccountNameLength;
     }
 
     /**
@@ -734,7 +758,8 @@ export class HLedgerASTBuilder {
             commodityFormats: new Map(),
             decimalMark: null,
             defaultCommodity: null,
-            lastDate: null
+            lastDate: null,
+            maxAccountNameLength: 0
         };
     }
 
@@ -763,7 +788,12 @@ export class HLedgerASTBuilder {
             commodityFormats: data.commodityFormats,
             decimalMark: data.decimalMark,
             defaultCommodity: data.defaultCommodity,
-            lastDate: data.lastDate
+            lastDate: data.lastDate,
+            formattingProfile: {
+                amountAlignmentColumn: calculateAlignmentColumn(data.maxAccountNameLength),
+                maxAccountNameLength: data.maxAccountNameLength,
+                isDefaultAlignment: data.maxAccountNameLength === 0
+            }
         };
     }
 
@@ -815,7 +845,8 @@ export class HLedgerASTBuilder {
             commodityFormats: new Map(data.commodityFormats),
             decimalMark: data.decimalMark,
             defaultCommodity: data.defaultCommodity,
-            lastDate: data.lastDate
+            lastDate: data.lastDate,
+            maxAccountNameLength: data.formattingProfile.maxAccountNameLength
         };
     }
 

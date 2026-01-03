@@ -113,6 +113,19 @@ export interface MutableRecentTemplateBuffer {
 }
 
 /**
+ * Formatting profile for transaction template alignment.
+ * Tracks the maximum account name length to determine where amounts should align.
+ */
+export interface FormattingProfile {
+  /** Column position where amounts should start in transaction templates */
+  readonly amountAlignmentColumn: CharacterPosition;
+  /** Length of the longest account name in the workspace */
+  readonly maxAccountNameLength: number;
+  /** True if using default alignment (no accounts parsed yet) */
+  readonly isDefaultAlignment: boolean;
+}
+
+/**
  * Generates a consistent template key from account names.
  * Accounts are sorted alphabetically and joined with double-pipe delimiter.
  * @param accounts - Array of account names from transaction postings

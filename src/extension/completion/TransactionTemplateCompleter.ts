@@ -140,17 +140,25 @@ export class TransactionTemplateCompleter {
   /**
    * Builds the snippet string for a transaction template.
    * Uses tabstops for amounts to allow easy editing.
+   * Aligns amounts to the configured alignment column.
    */
   private buildSnippet(template: TransactionTemplate): string {
+    const alignmentColumn = this.config.getAmountAlignmentColumn();
     const lines: string[] = [template.payee];
     let tabstopIndex = 1;
+    const indent = "    ";
 
     for (const posting of template.postings) {
-      const amountPart =
-        posting.amount !== null
-          ? `  \${${tabstopIndex++}:${posting.amount}}`
-          : "";
-      lines.push(`    ${posting.account}${amountPart}`);
+      if (posting.amount !== null) {
+        const accountPartLength = indent.length + posting.account.length;
+        const spacesToAdd = Math.max(2, alignmentColumn - accountPartLength);
+        const spacing = " ".repeat(spacesToAdd);
+        lines.push(
+          `${indent}${posting.account}${spacing}\${${tabstopIndex++}:${posting.amount}}`,
+        );
+      } else {
+        lines.push(`${indent}${posting.account}`);
+      }
     }
 
     // Final tabstop for cursor position

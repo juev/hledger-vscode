@@ -66,6 +66,7 @@ describe('TransactionTemplateCompleter', () => {
             getTemplatesForPayee: jest.fn().mockReturnValue([]),
             getRecentTemplateUsage: jest.fn().mockReturnValue(0),
             getRecentTemplateFrequency: jest.fn().mockReturnValue(0),
+            getAmountAlignmentColumn: jest.fn().mockReturnValue(40),
         } as unknown as jest.Mocked<HLedgerConfig>;
         completer = new TransactionTemplateCompleter(mockConfig);
     });
@@ -320,6 +321,91 @@ describe('TransactionTemplateCompleter', () => {
             const snippet = result[0]!.insertText as vscode.SnippetString;
             // Amount should be in a tabstop placeholder
             expect(snippet.value).toMatch(/\$\{\d+:100\.00USD\}/);
+        });
+    });
+
+    describe('amount alignment', () => {
+        it('should align amounts to configured alignment column', () => {
+            mockConfig.getPayeesWithTemplates.mockReturnValue(['Test Payee' as PayeeName]);
+            mockConfig.getTemplatesForPayee.mockReturnValue([
+                createTemplate('Test Payee', [
+                    { account: 'Expenses:Food', amount: '100.00', commodity: null },
+                    { account: 'Assets:Cash', amount: null, commodity: null }
+                ], 1)
+            ]);
+            // Mock alignment column at 50
+            (mockConfig as any).getAmountAlignmentColumn = jest.fn().mockReturnValue(50);
+
+            const context: CompletionContext = {
+                type: 'transaction_template',
+                query: 'Test'
+            };
+
+            const result = completer.complete(context);
+            const snippet = result[0]!.insertText as vscode.SnippetString;
+
+            // "    Expenses:Food" = 4 + 13 = 17 chars
+            // Need to reach column 50, so 50 - 17 = 33 spaces before amount
+            const lines = snippet.value.split('\n');
+            const expenseLine = lines.find(l => l.includes('Expenses:Food'));
+            expect(expenseLine).toBeDefined();
+
+            // Should have spacing to align amount at column 50
+            const amountIndex = expenseLine!.indexOf('${1:');
+            expect(amountIndex).toBe(50);
+        });
+
+        it('should use minimum 2-space gap when account exceeds alignment column', () => {
+            mockConfig.getPayeesWithTemplates.mockReturnValue(['Test Payee' as PayeeName]);
+            mockConfig.getTemplatesForPayee.mockReturnValue([
+                createTemplate('Test Payee', [
+                    { account: 'Expenses:This:Is:A:Very:Long:Account:Name', amount: '100.00', commodity: null },
+                    { account: 'Assets:Cash', amount: null, commodity: null }
+                ], 1)
+            ]);
+            // Mock alignment column at 40 (shorter than account + indent)
+            (mockConfig as any).getAmountAlignmentColumn = jest.fn().mockReturnValue(40);
+
+            const context: CompletionContext = {
+                type: 'transaction_template',
+                query: 'Test'
+            };
+
+            const result = completer.complete(context);
+            const snippet = result[0]!.insertText as vscode.SnippetString;
+
+            const lines = snippet.value.split('\n');
+            const expenseLine = lines.find(l => l.includes('Expenses:This:Is:A:Very:Long:Account:Name'));
+            expect(expenseLine).toBeDefined();
+
+            // Should have at least 2 spaces between account and amount
+            expect(expenseLine).toMatch(/Expenses:This:Is:A:Very:Long:Account:Name {2}\$\{1:/);
+        });
+
+        it('should not add spacing for postings without amounts', () => {
+            mockConfig.getPayeesWithTemplates.mockReturnValue(['Test Payee' as PayeeName]);
+            mockConfig.getTemplatesForPayee.mockReturnValue([
+                createTemplate('Test Payee', [
+                    { account: 'Expenses:Food', amount: '100.00', commodity: null },
+                    { account: 'Assets:Cash', amount: null, commodity: null }
+                ], 1)
+            ]);
+            (mockConfig as any).getAmountAlignmentColumn = jest.fn().mockReturnValue(50);
+
+            const context: CompletionContext = {
+                type: 'transaction_template',
+                query: 'Test'
+            };
+
+            const result = completer.complete(context);
+            const snippet = result[0]!.insertText as vscode.SnippetString;
+
+            const lines = snippet.value.split('\n');
+            const cashLine = lines.find(l => l.includes('Assets:Cash'));
+            expect(cashLine).toBeDefined();
+
+            // Should end with account name, no trailing spaces
+            expect(cashLine).toBe('    Assets:Cash');
         });
     });
 });
