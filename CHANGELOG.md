@@ -1,5 +1,13 @@
 # Change Log
 
+## [0.4.9] - 2026-01-04
+
+### Added
+- feat: add config options for align amount
+- feat: add full user-guide
+- feat: update CLAUDE.md file
+
+
 ## [0.4.8] - 2026-01-03
 
 ### Added
