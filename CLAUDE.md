@@ -80,7 +80,8 @@ Dual-layer system:
 - Position-based context detection in `strict/StrictPositionAnalyzer.ts`
 - `CompletionSuppressor` prevents completions in forbidden zones
 - Frequency-based prioritization for accounts/payees
-- Abbreviation matching (e.g., "ef" → "Expenses:Food")
+- FZF-style gap-based fuzzy matching (fewer gaps = higher score)
+- Transaction templates with SnippetString tabstops for cursor navigation
 
 ### VS Code Completion Sorting (gopls hack)
 
@@ -140,13 +141,31 @@ const scoreStr = (10000 - cappedScore).toString().padStart(5, '0');
 
 **Why usage count ≤ 2?** Low count (1-2) likely indicates incomplete typing that was saved; established accounts have higher counts.
 
+### Transaction Templates
+
+**Template key format**: Keys use `||` delimiter with sorted accounts: `generateTemplateKey(accounts).join("||")`. Prevents collision when same payee has different account combinations.
+
+**Buffer limits**:
+- `MAX_RECENT_TRANSACTIONS_PER_PAYEE = 50` - circular buffer for frequency-based sorting
+- `MAX_TEMPLATES_PER_PAYEE = 5` - only 5 unique templates kept per payee
+
+**Alignment preservation**: `maxAccountNameLength` must be preserved when cloning data in `createMutableData()`. Use displayed account length (not escaped) for alignment calculation.
+
+### Inline Ghost Text Completion
+
+**Trigger rules** (`InlineCompletionProvider.ts`):
+- Minimum 2 characters before showing payee ghost text (`minPayeeChars` setting)
+- Template ghost text uses `SnippetString` for tabstops, not plain text
+
 ### Key Directories
 
-- `src/extension/completion/` - Individual completers (Account, Commodity, Date, Payee, Tag)
+- `src/extension/completion/` - Individual completers (Account, Commodity, Date, Payee, Tag, TransactionTemplate)
+- `src/extension/inline/` - Ghost text completion (InlineCompletionProvider)
 - `src/extension/strict/` - Position analysis and validation
 - `src/extension/import/` - CSV/TSV import with account resolution
 - `src/extension/actions/` - Code actions (balance assertions, quick fixes)
 - `src/extension/diagnostics/` - Validation on save/open
+- `src/extension/services/` - NumberFormatService, HLedgerCliService
 
 ### Type System
 
