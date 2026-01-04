@@ -20,7 +20,13 @@ jest.mock('vscode', () => ({
     },
     workspace: {
         getConfiguration: jest.fn().mockReturnValue({
-            get: jest.fn().mockReturnValue(true)
+            get: jest.fn().mockImplementation((key: string, defaultValue?: unknown) => {
+                // Return appropriate defaults based on configuration key
+                if (key === 'formatting.amountAlignmentColumn') {
+                    return defaultValue ?? 0;
+                }
+                return defaultValue ?? true;
+            })
         })
     },
     Position: jest.fn().mockImplementation((line, character) => ({ line, character })),

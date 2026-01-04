@@ -209,7 +209,10 @@ Import bank statements and transaction data from CSV/TSV files.
   "hledger.semanticHighlighting.enabled": false,  // Enable for more precision
 
   // Validation diagnostics
-  "hledger.diagnostics.enabled": true  // Disable to turn off validation warnings
+  "hledger.diagnostics.enabled": true,  // Disable to turn off validation warnings
+
+  // Formatting
+  "hledger.formatting.amountAlignmentColumn": 40  // Column for amount alignment (20-120)
 }
 ```
 

@@ -97,6 +97,13 @@
           "default": true,
           "description": "Enable diagnostics validation for hledger files (account checks, tag format, amount format)"
         },
+        "hledger.formatting.amountAlignmentColumn": {
+          "type": "number",
+          "default": 40,
+          "minimum": 20,
+          "maximum": 120,
+          "description": "Minimum column position for amount alignment. Amounts align at least at this column, but may shift further right for long account names."
+        },
         "hledger.autoCompletion.transactionTemplates.enabled": {
           "type": "boolean",
           "default": true,

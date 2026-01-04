@@ -261,9 +261,12 @@ Press **Tab** after an account name to position cursor at the optimal amount col
 ```
 
 The amount column is calculated based on:
+- Configured minimum column (`hledger.formatting.amountAlignmentColumn`, default 40)
 - Maximum account name length in the transaction block
 - Multi-currency alignment requirements
 - Balance assertion space requirements
+
+The configured value is the **minimum** position. If accounts are longer than the configured column allows, alignment shifts further right to maintain the required 2-space gap.
 
 ### Completion Triggers
 
@@ -634,6 +637,14 @@ Map CSV category values to hledger accounts:
 | Setting | Type | Default | Description |
 |---------|------|---------|-------------|
 | `hledger.diagnostics.enabled` | boolean | `true` | Enable validation diagnostics |
+
+### Formatting Settings
+
+| Setting | Type | Default | Description |
+|---------|------|---------|-------------|
+| `hledger.formatting.amountAlignmentColumn` | number | `40` | Minimum column for amount alignment (20-120) |
+
+**Note:** The `amountAlignmentColumn` setting specifies the minimum column position. Amounts are aligned at least at this column, but may shift further right when account names are long enough to require additional space.
 
 ### Syntax Highlighting Settings
 

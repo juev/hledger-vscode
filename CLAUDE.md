@@ -218,6 +218,7 @@ Commands (`hledger.cli.balance`, `hledger.cli.incomestatement`, `hledger.cli.sta
 
 2. **README.md** - Update if:
    - Adding major new features (add to Features section)
+   - Adding/modifying configuration options (update Essential Settings section)
    - Changing installation instructions
    - Modifying quick start workflow
 
