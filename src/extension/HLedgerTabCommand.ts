@@ -1,5 +1,6 @@
 import * as vscode from "vscode";
 import { DocumentFormatter, TransactionBlock } from "./DocumentFormatter";
+import { DEFAULT_AMOUNT_ALIGNMENT_COLUMN } from "./utils/formattingUtils";
 
 /**
  * Handles Tab key press for amount alignment positioning in hledger files.
@@ -16,6 +17,16 @@ export class HLedgerTabCommand implements vscode.Disposable {
       this.onTab,
       this,
     );
+  }
+
+  /**
+   * Gets the configured minimum alignment column from VS Code settings.
+   * Falls back to DEFAULT_AMOUNT_ALIGNMENT_COLUMN if not configured.
+   */
+  private getConfiguredAlignmentColumn(): number {
+    const config = vscode.workspace.getConfiguration("hledger");
+    const value = config.get<number>("formatting.amountAlignmentColumn", 0);
+    return value > 0 ? value : DEFAULT_AMOUNT_ALIGNMENT_COLUMN;
   }
 
   private async onTab(
@@ -193,8 +204,8 @@ export class HLedgerTabCommand implements vscode.Disposable {
       const transactions = parseResult.data;
 
       if (transactions.length === 0) {
-        // For empty document, use default alignment
-        return 40;
+        // For empty document, use configured alignment column
+        return this.getConfiguredAlignmentColumn();
       }
 
       // Calculate document-wide alignment
@@ -296,8 +307,10 @@ export class HLedgerTabCommand implements vscode.Disposable {
   private calculateDocumentOptimalAlignment(
     transactions: TransactionBlock[],
   ): number {
+    const configuredColumn = this.getConfiguredAlignmentColumn();
+
     if (transactions.length === 0) {
-      return 40;
+      return configuredColumn;
     }
 
     // Find the maximum account name length among all postings with amounts across all transactions
@@ -312,8 +325,8 @@ export class HLedgerTabCommand implements vscode.Disposable {
       }
     }
 
-    // Add minimum spacing and ensure reasonable alignment
-    return Math.max(maxAccountLength + 2, 40);
+    // Add minimum spacing and ensure alignment meets configured minimum
+    return Math.max(maxAccountLength + 2, configuredColumn);
   }
 
   dispose(): void {

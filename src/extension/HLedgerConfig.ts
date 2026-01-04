@@ -426,7 +426,25 @@ export class HLedgerConfig {
   }
 
   // Formatting profile methods
+
+  /**
+   * Gets the user-configured alignment column from VS Code settings.
+   * Returns 0 if not configured, allowing caller to use default behavior.
+   */
+  private getConfiguredAlignmentColumn(): number {
+    const config = vscode.workspace.getConfiguration("hledger");
+    return config.get<number>("formatting.amountAlignmentColumn", 0);
+  }
+
   getAmountAlignmentColumn(): CharacterPosition {
+    const configuredColumn = this.getConfiguredAlignmentColumn();
+    const maxAccountLength = this.data?.formattingProfile?.maxAccountNameLength ?? 0;
+
+    // Recalculate with configured column to ensure user preference is applied
+    if (configuredColumn > 0) {
+      return calculateAlignmentColumn(maxAccountLength, configuredColumn);
+    }
+
     return (
       this.data?.formattingProfile?.amountAlignmentColumn ??
       createCharacterPosition(DEFAULT_AMOUNT_ALIGNMENT_COLUMN)
