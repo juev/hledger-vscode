@@ -275,6 +275,12 @@ New to hledger?
 
 ---
 
+## 📖 Full Documentation
+
+For complete documentation including all configuration options, keyboard shortcuts, and advanced features, see the **[User Guide](./docs/user-guide.md)**.
+
+---
+
 ## 🤝 Contributing
 
 Contributions are welcome! Feel free to:
