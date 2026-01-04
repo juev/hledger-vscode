@@ -23,8 +23,10 @@ testdata/**
 tsconfig*.json
 jest.config.js
 eslint.config.js
+eslint.config.mjs
 esbuild.js
 optimize-icon.js
+mise.toml
 *.log
 
 # Backup files
