@@ -203,3 +203,45 @@ Commands (`hledger.cli.balance`, `hledger.cli.incomestatement`, `hledger.cli.sta
 - **ReDoS Protection**: Pattern validation (max 100 chars, no nested quantifiers)
 - **DoS Protection**: Amount strings capped at 100 characters
 - **Memory Safety**: LRU cache with 100-entry limit
+
+## Documentation Requirements
+
+**IMPORTANT:** When making changes that affect user-facing behavior, you MUST update the documentation:
+
+1. **User Guide** (`docs/user-guide.md`) - Update if:
+   - Adding/removing/modifying configuration options
+   - Adding/removing/modifying commands
+   - Changing keyboard shortcuts or keybindings
+   - Adding/removing features
+   - Changing behavior of existing features
+   - Modifying completion triggers or behavior
+
+2. **README.md** - Update if:
+   - Adding major new features (add to Features section)
+   - Changing installation instructions
+   - Modifying quick start workflow
+
+3. **TROUBLESHOOTING.md** - Update if:
+   - Discovering new common issues
+   - Changing error handling or messages
+   - Adding workarounds for known issues
+
+4. **CHANGELOG.md** - Update for all releases following Keep a Changelog format
+
+### Documentation Locations
+
+| Document | Purpose | Audience |
+|----------|---------|----------|
+| `docs/user-guide.md` | Complete feature reference | End users |
+| `README.md` | Quick overview and getting started | New users |
+| `TROUBLESHOOTING.md` | Problem solving guide | Users with issues |
+| `docs/hledger.md` | hledger syntax reference | Developers |
+| `CLAUDE.md` | Development guidelines | AI/developers |
+
+### Documentation Style
+
+- Use clear, concise language
+- Include code examples where helpful
+- Maintain consistent formatting (tables, headers)
+- Keep configuration reference tables up-to-date
+- Test all example code snippets
