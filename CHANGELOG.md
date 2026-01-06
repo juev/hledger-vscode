@@ -1,5 +1,15 @@
 # Change Log
 
+## [0.4.10] - 2026-01-06
+
+### Added
+- feat: enhance amount tokenization in grammar tests and update regex patterns
+- feat: update grammar syntax for currency
+
+### Fixed
+- fix: exclude some dev files
+
+
 ## [0.4.9] - 2026-01-04
 
 ### Added
