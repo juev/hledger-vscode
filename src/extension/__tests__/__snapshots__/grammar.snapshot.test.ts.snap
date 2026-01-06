@@ -80,9 +80,9 @@ exports[`Grammar Snapshot Tests Amount and Commodity Snapshots should tokenize c
 "Line:     Assets:Cash              $100
   Token: "Assets:Cash"
     Scopes: source.hledger, meta.posting.with-amount.hledger, entity.name.type.account.hledger
-  Token: "$10"
+  Token: "$"
     Scopes: source.hledger, meta.posting.with-amount.hledger, meta.amount.prefix.hledger, entity.name.type.commodity.hledger
-  Token: "0"
+  Token: "100"
     Scopes: source.hledger, meta.posting.with-amount.hledger, meta.amount.prefix.hledger, constant.numeric.amount.hledger
 
 Line:     Assets:Cash              100 USD
@@ -96,9 +96,9 @@ Line:     Assets:Cash              100 USD
 Line:     Assets:Cash              €50
   Token: "Assets:Cash"
     Scopes: source.hledger, meta.posting.with-amount.hledger, entity.name.type.account.hledger
-  Token: "€5"
+  Token: "€"
     Scopes: source.hledger, meta.posting.with-amount.hledger, meta.amount.prefix.hledger, entity.name.type.commodity.hledger
-  Token: "0"
+  Token: "50"
     Scopes: source.hledger, meta.posting.with-amount.hledger, meta.amount.prefix.hledger, constant.numeric.amount.hledger
 
 Line:     Assets:Cash              "CUSTOM COIN" 100
@@ -351,9 +351,9 @@ Line: 2025-11-22 * Opening Balance
 Line:     Assets:Checking             $1000.00
   Token: "Assets:Checking"
     Scopes: source.hledger, meta.posting.with-amount.hledger, entity.name.type.account.hledger
-  Token: "$100"
+  Token: "$"
     Scopes: source.hledger, meta.posting.with-amount.hledger, meta.amount.prefix.hledger, entity.name.type.commodity.hledger
-  Token: "0.00"
+  Token: "1000.00"
     Scopes: source.hledger, meta.posting.with-amount.hledger, meta.amount.prefix.hledger, constant.numeric.amount.hledger
 
 Line:     Equity:Opening
@@ -383,9 +383,9 @@ Line:     ; project: personal
 Line:     Expenses:Food:Groceries      $50.00
   Token: "Expenses:Food:Groceries"
     Scopes: source.hledger, meta.posting.with-amount.hledger, entity.name.type.account.hledger
-  Token: "$5"
+  Token: "$"
     Scopes: source.hledger, meta.posting.with-amount.hledger, meta.amount.prefix.hledger, entity.name.type.commodity.hledger
-  Token: "0.00"
+  Token: "50.00"
     Scopes: source.hledger, meta.posting.with-amount.hledger, meta.amount.prefix.hledger, constant.numeric.amount.hledger
 
 Line:     Assets:Checking             -$50.00 = $950.00
@@ -393,15 +393,15 @@ Line:     Assets:Checking             -$50.00 = $950.00
     Scopes: source.hledger, meta.posting.with-amount.hledger, entity.name.type.account.hledger
   Token: "-"
     Scopes: source.hledger, meta.posting.with-amount.hledger
-  Token: "$5"
+  Token: "$"
     Scopes: source.hledger, meta.posting.with-amount.hledger, meta.amount.prefix.hledger, entity.name.type.commodity.hledger
-  Token: "0.00"
+  Token: "50.00"
     Scopes: source.hledger, meta.posting.with-amount.hledger, meta.amount.prefix.hledger, constant.numeric.amount.hledger
   Token: " = "
     Scopes: source.hledger, meta.posting.with-amount.hledger
-  Token: "$95"
+  Token: "$"
     Scopes: source.hledger, meta.posting.with-amount.hledger, meta.amount.prefix.hledger, entity.name.type.commodity.hledger
-  Token: "0.00"
+  Token: "950.00"
     Scopes: source.hledger, meta.posting.with-amount.hledger, meta.amount.prefix.hledger, constant.numeric.amount.hledger
 
 Line: 
@@ -560,9 +560,7 @@ exports[`Grammar Snapshot Tests Transaction Snapshots should tokenize periodic t
 Line:     Expenses:Rent              1000 USD
   Token: "Expenses:Rent"
     Scopes: source.hledger, meta.posting.with-amount.hledger, entity.name.type.account.hledger
-  Token: "100"
-    Scopes: source.hledger, meta.posting.with-amount.hledger, meta.amount.suffix.hledger, constant.numeric.amount.hledger
-  Token: "0"
+  Token: "1000"
     Scopes: source.hledger, meta.posting.with-amount.hledger, meta.amount.suffix.hledger, constant.numeric.amount.hledger
   Token: "USD"
     Scopes: source.hledger, meta.posting.with-amount.hledger, meta.amount.suffix.hledger, entity.name.type.commodity.hledger
@@ -657,9 +655,9 @@ Line:     Assets:Stock             10 AAPL @ $150
     Scopes: source.hledger, meta.posting.with-amount.hledger, meta.amount.suffix.hledger, entity.name.type.commodity.hledger
   Token: "@"
     Scopes: source.hledger, meta.posting.with-amount.hledger, meta.cost.unit.hledger, keyword.operator.cost.hledger
-  Token: "$15"
+  Token: "$"
     Scopes: source.hledger, meta.posting.with-amount.hledger, meta.cost.unit.hledger, meta.amount.prefix.hledger, entity.name.type.commodity.hledger
-  Token: "0"
+  Token: "150"
     Scopes: source.hledger, meta.posting.with-amount.hledger, meta.cost.unit.hledger, meta.amount.prefix.hledger, constant.numeric.amount.hledger
 
 Line:     Assets:Cash             -$1500
@@ -667,9 +665,9 @@ Line:     Assets:Cash             -$1500
     Scopes: source.hledger, meta.posting.with-amount.hledger, entity.name.type.account.hledger
   Token: "-"
     Scopes: source.hledger, meta.posting.with-amount.hledger
-  Token: "$150"
+  Token: "$"
     Scopes: source.hledger, meta.posting.with-amount.hledger, meta.amount.prefix.hledger, entity.name.type.commodity.hledger
-  Token: "0"
+  Token: "1500"
     Scopes: source.hledger, meta.posting.with-amount.hledger, meta.amount.prefix.hledger, constant.numeric.amount.hledger
 "
 `;
