@@ -353,10 +353,8 @@ Line:     Assets:Checking             $1000.00
     Scopes: source.hledger, meta.posting.with-amount.hledger, entity.name.type.account.hledger
   Token: "$"
     Scopes: source.hledger, meta.posting.with-amount.hledger, meta.amount.prefix.hledger, entity.name.type.commodity.hledger
-  Token: "100"
+  Token: "1000.00"
     Scopes: source.hledger, meta.posting.with-amount.hledger, meta.amount.prefix.hledger, constant.numeric.amount.hledger
-  Token: "0.00"
-    Scopes: source.hledger, meta.posting.with-amount.hledger, meta.amount.suffix.hledger, constant.numeric.amount.hledger
 
 Line:     Equity:Opening
   Token: "Equity:Opening"
@@ -562,9 +560,7 @@ exports[`Grammar Snapshot Tests Transaction Snapshots should tokenize periodic t
 Line:     Expenses:Rent              1000 USD
   Token: "Expenses:Rent"
     Scopes: source.hledger, meta.posting.with-amount.hledger, entity.name.type.account.hledger
-  Token: "100"
-    Scopes: source.hledger, meta.posting.with-amount.hledger, meta.amount.suffix.hledger, constant.numeric.amount.hledger
-  Token: "0"
+  Token: "1000"
     Scopes: source.hledger, meta.posting.with-amount.hledger, meta.amount.suffix.hledger, constant.numeric.amount.hledger
   Token: "USD"
     Scopes: source.hledger, meta.posting.with-amount.hledger, meta.amount.suffix.hledger, entity.name.type.commodity.hledger
@@ -671,9 +667,7 @@ Line:     Assets:Cash             -$1500
     Scopes: source.hledger, meta.posting.with-amount.hledger
   Token: "$"
     Scopes: source.hledger, meta.posting.with-amount.hledger, meta.amount.prefix.hledger, entity.name.type.commodity.hledger
-  Token: "150"
+  Token: "1500"
     Scopes: source.hledger, meta.posting.with-amount.hledger, meta.amount.prefix.hledger, constant.numeric.amount.hledger
-  Token: "0"
-    Scopes: source.hledger, meta.posting.with-amount.hledger, meta.amount.suffix.hledger, constant.numeric.amount.hledger
 "
 `;

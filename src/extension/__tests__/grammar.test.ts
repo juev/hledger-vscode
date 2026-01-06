@@ -559,6 +559,76 @@ describe('TextMate Grammar Tests', () => {
     });
   });
 
+  describe('Amount Tokenization Without Separators (PR #58 review)', () => {
+    /**
+     * Helper to find amount token in prefix-style commodity and extract its text
+     */
+    function getAmountTextAfterCurrency(line: string): string | undefined {
+      const { tokens } = tokenizeLine(line);
+      for (let i = 0; i < tokens.length; i++) {
+        const token = tokens[i]!;
+        if (
+          token.scopes.includes('constant.numeric.amount.hledger') &&
+          token.scopes.includes('meta.amount.prefix.hledger')
+        ) {
+          const nextToken = tokens[i + 1];
+          const start = token.startIndex;
+          const end = nextToken ? nextToken.startIndex : line.length;
+          return line.substring(start, end);
+        }
+      }
+      return undefined;
+    }
+
+    it('should tokenize $1000.00 with full amount (not split at 3 digits)', () => {
+      const line = '    Assets:Cash              $1000.00';
+      const amountText = getAmountTextAfterCurrency(line);
+      expect(amountText).toBe('1000.00');
+    });
+
+    it('should tokenize $1000 without decimals correctly', () => {
+      const line = '    Assets:Cash              $1000';
+      const amountText = getAmountTextAfterCurrency(line);
+      expect(amountText).toBe('1000');
+    });
+
+    it('should tokenize $1500 correctly', () => {
+      const line = '    Assets:Cash              $1500';
+      const amountText = getAmountTextAfterCurrency(line);
+      expect(amountText).toBe('1500');
+    });
+
+    it('should tokenize $100 (3 digits) correctly', () => {
+      const line = '    Assets:Cash              $100';
+      const amountText = getAmountTextAfterCurrency(line);
+      expect(amountText).toBe('100');
+    });
+
+    it('should tokenize $10 (2 digits) correctly', () => {
+      const line = '    Assets:Cash              $10';
+      const amountText = getAmountTextAfterCurrency(line);
+      expect(amountText).toBe('10');
+    });
+
+    it('should still tokenize $1,000.00 with comma separator correctly', () => {
+      const line = '    Assets:Cash              $1,000.00';
+      const amountText = getAmountTextAfterCurrency(line);
+      expect(amountText).toBe('1,000.00');
+    });
+
+    it('should still tokenize $1,000,000 with multiple separators correctly', () => {
+      const line = '    Assets:Cash              $1,000,000';
+      const amountText = getAmountTextAfterCurrency(line);
+      expect(amountText).toBe('1,000,000');
+    });
+
+    it("should tokenize $1'000.00 with apostrophe separator correctly", () => {
+      const line = "    Assets:Cash              $1'000.00";
+      const amountText = getAmountTextAfterCurrency(line);
+      expect(amountText).toBe("1'000.00");
+    });
+  });
+
   describe('Edge Cases', () => {
     it('should handle empty lines', () => {
       const { tokens } = tokenizeLine('');
