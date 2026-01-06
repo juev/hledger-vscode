@@ -472,6 +472,93 @@ describe('TextMate Grammar Tests', () => {
     });
   });
 
+  describe('Currency Symbol Tokenization (Issue #57)', () => {
+    /**
+     * Helper to extract text for a token by finding the next token's start index
+     */
+    function extractTokenText(line: string, tokens: IToken[], tokenIndex: number): string {
+      const token = tokens[tokenIndex]!;
+      const nextToken = tokens[tokenIndex + 1];
+      const start = token.startIndex;
+      const end = nextToken ? nextToken.startIndex : line.length;
+      return line.substring(start, end);
+    }
+
+    /**
+     * Helper to find commodity token and extract its text
+     */
+    function getCommodityText(line: string): string | undefined {
+      const { tokens } = tokenizeLine(line);
+      for (let i = 0; i < tokens.length; i++) {
+        const token = tokens[i]!;
+        if (token.scopes.includes('entity.name.type.commodity.hledger')) {
+          return extractTokenText(line, tokens, i);
+        }
+      }
+      return undefined;
+    }
+
+    it('should tokenize $ separately from amount digits', () => {
+      const line = '    Assets:Cash              $445.51';
+      const commodityText = getCommodityText(line);
+      expect(commodityText).toBe('$');
+    });
+
+    it('should tokenize € separately from amount digits', () => {
+      const line = '    Assets:Cash              €50.00';
+      const commodityText = getCommodityText(line);
+      expect(commodityText).toBe('€');
+    });
+
+    it('should tokenize ¥ separately from amount digits', () => {
+      const line = '    Assets:Cash              ¥10000';
+      const commodityText = getCommodityText(line);
+      expect(commodityText).toBe('¥');
+    });
+
+    it('should tokenize £ separately from amount digits', () => {
+      const line = '    Assets:Cash              £100.50';
+      const commodityText = getCommodityText(line);
+      expect(commodityText).toBe('£');
+    });
+
+    it('should tokenize $ with negative amount ($-50)', () => {
+      const line = '    Expenses:Food            $-50';
+      const commodityText = getCommodityText(line);
+      expect(commodityText).toBe('$');
+    });
+
+    it('should tokenize $ with thousand separators ($1,000.00)', () => {
+      const line = '    Assets:Cash              $1,000.00';
+      const commodityText = getCommodityText(line);
+      expect(commodityText).toBe('$');
+    });
+
+    it('should tokenize $ with negative and thousand separators ($-1,000.00)', () => {
+      const line = '    Expenses:Food            $-1,000.00';
+      const commodityText = getCommodityText(line);
+      expect(commodityText).toBe('$');
+    });
+
+    it('should still work with suffix-style letter commodities (100 USD)', () => {
+      const line = '    Assets:Cash              100 USD';
+      const commodityText = getCommodityText(line);
+      expect(commodityText).toBe('USD');
+    });
+
+    it('should still work with multi-character letter commodities (AAPL)', () => {
+      const line = '    Assets:Stock             10 AAPL';
+      const commodityText = getCommodityText(line);
+      expect(commodityText).toBe('AAPL');
+    });
+
+    it('should still work with quoted commodities', () => {
+      const line = '    Assets:Cash              100 "CUSTOM"';
+      const commodityText = getCommodityText(line);
+      expect(commodityText).toBe('"CUSTOM"');
+    });
+  });
+
   describe('Edge Cases', () => {
     it('should handle empty lines', () => {
       const { tokens } = tokenizeLine('');
