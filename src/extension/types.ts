@@ -13,6 +13,7 @@ interface ParsedHLedgerData {
   readonly payees: ReadonlySet<PayeeName>;
   readonly tags: ReadonlySet<TagName>;
   readonly commodities: ReadonlySet<CommodityCode>;
+  readonly definedCommodities: ReadonlySet<CommodityCode>;
   readonly aliases: ReadonlyMap<AccountName, AccountName>;
   readonly accountUsage: ReadonlyMap<AccountName, UsageCount>;
   readonly payeeUsage: ReadonlyMap<PayeeName, UsageCount>;

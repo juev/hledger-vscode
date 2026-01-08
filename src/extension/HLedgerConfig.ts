@@ -251,6 +251,7 @@ export class HLedgerConfig {
 
       // Shared: read-only references (CoW optimization)
       definedAccounts: data.definedAccounts,
+      definedCommodities: data.definedCommodities,
       aliases: data.aliases,
       payeeAccounts: data.payeeAccounts,
       payeeAccountPairUsage: data.payeeAccountPairUsage,
@@ -350,6 +351,10 @@ export class HLedgerConfig {
 
   getDefinedAccounts(): AccountName[] {
     return this.data ? Array.from(this.data.definedAccounts) : [];
+  }
+
+  getDefinedCommodities(): CommodityCode[] {
+    return this.data ? Array.from(this.data.definedCommodities) : [];
   }
 
   getUsedAccounts(): AccountName[] {
