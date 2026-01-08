@@ -316,11 +316,23 @@ export class HLedgerASTBuilder {
     }
 
     /**
-     * Processes commodity directives
+     * Processes commodity directives.
+     * Handles both simple directives ("commodity EUR") and format templates ("commodity 1.000,00 EUR")
      */
     private handleCommodityDirective(token: HLedgerToken, data: MutableParsedHLedgerData): void {
         if (token.commoditySymbol) {
             const commodity = createCommodityCode(token.commoditySymbol);
+
+            // Parse format template FIRST if present (contains numbers)
+            // Format from directive takes precedence over auto-detected format
+            const content = token.trimmedLine.substring(10).trim(); // Remove "commodity "
+            if (content && /\d/.test(content)) {
+                const formatResult = this.numberFormatService.parseFormatTemplate(content);
+                if (formatResult.success) {
+                    data.commodityFormats.set(commodity, formatResult.data);
+                }
+            }
+
             this.addCommodity(commodity, data);
         }
     }
