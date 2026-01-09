@@ -55,6 +55,7 @@ interface MutableParsedHLedgerData {
     payees: Set<PayeeName>;
     tags: Set<TagName>;
     commodities: Set<CommodityCode>;
+    definedCommodities: Set<CommodityCode>;
     aliases: Map<AccountName, AccountName>;
 
     // Tag value mappings and usage tracking
@@ -98,6 +99,7 @@ export interface ParsedHLedgerData {
     readonly payees: ReadonlySet<PayeeName>;
     readonly tags: ReadonlySet<TagName>;
     readonly commodities: ReadonlySet<CommodityCode>;
+    readonly definedCommodities: ReadonlySet<CommodityCode>;
     readonly aliases: ReadonlyMap<AccountName, AccountName>;
 
     // Tag value mappings with frequency data
@@ -316,11 +318,26 @@ export class HLedgerASTBuilder {
     }
 
     /**
-     * Processes commodity directives
+     * Processes commodity directives.
+     * Handles both simple directives ("commodity EUR") and format templates ("commodity 1.000,00 EUR")
      */
     private handleCommodityDirective(token: HLedgerToken, data: MutableParsedHLedgerData): void {
         if (token.commoditySymbol) {
             const commodity = createCommodityCode(token.commoditySymbol);
+
+            // Track as explicitly defined commodity
+            data.definedCommodities.add(commodity);
+
+            // Parse format template FIRST if present (contains numbers)
+            // Format from directive takes precedence over auto-detected format
+            const content = token.trimmedLine.substring(10).trim(); // Remove "commodity "
+            if (content && /\d/.test(content)) {
+                const formatResult = this.numberFormatService.parseFormatTemplate(content);
+                if (formatResult.success) {
+                    data.commodityFormats.set(commodity, formatResult.data);
+                }
+            }
+
             this.addCommodity(commodity, data);
         }
     }
@@ -350,6 +367,7 @@ export class HLedgerASTBuilder {
     private handleDefaultCommodityDirective(token: HLedgerToken, data: MutableParsedHLedgerData): void {
         if (token.commodity) {
             data.defaultCommodity = token.commodity;
+            data.definedCommodities.add(token.commodity);
             this.addCommodity(token.commodity, data);
         }
     }
@@ -609,6 +627,7 @@ export class HLedgerASTBuilder {
         source.payees.forEach(payee => target.payees.add(payee));
         source.tags.forEach(tag => target.tags.add(tag));
         source.commodities.forEach(comm => target.commodities.add(comm));
+        source.definedCommodities.forEach(comm => target.definedCommodities.add(comm));
 
         // Merge maps
         source.aliases.forEach((value, key) => target.aliases.set(key, value));
@@ -744,6 +763,7 @@ export class HLedgerASTBuilder {
             payees: new Set(),
             tags: new Set(),
             commodities: new Set(),
+            definedCommodities: new Set(),
             aliases: new Map(),
             tagValues: new Map(),
             tagValueUsage: new Map(),
@@ -774,6 +794,7 @@ export class HLedgerASTBuilder {
             payees: data.payees,
             tags: data.tags,
             commodities: data.commodities,
+            definedCommodities: data.definedCommodities,
             aliases: data.aliases,
             tagValues: data.tagValues,
             tagValueUsage: data.tagValueUsage,
@@ -825,6 +846,7 @@ export class HLedgerASTBuilder {
             payees: new Set(data.payees),
             tags: new Set(data.tags),
             commodities: new Set(data.commodities),
+            definedCommodities: new Set(data.definedCommodities),
             aliases: new Map(data.aliases),
             tagValues: new Map(Array.from(data.tagValues.entries()).map(([k, v]) => [k, new Set(v)])),
             tagValueUsage: new Map(data.tagValueUsage),

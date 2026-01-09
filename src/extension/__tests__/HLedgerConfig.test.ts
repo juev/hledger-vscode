@@ -231,6 +231,7 @@ account Assets:Bank
                 payees: new Set(),
                 tags: new Set(),
                 commodities: new Set(),
+                definedCommodities: new Set(),
                 aliases: new Map(),
                 accountUsage: new Map(),
                 payeeUsage: new Map(),
@@ -358,6 +359,7 @@ account Assets:Bank
                 payees: new Set(),
                 tags: new Set(),
                 commodities: new Set(),
+                definedCommodities: new Set(),
                 aliases: new Map(),
                 accountUsage: new Map([
                     [createAccountName('Assets:Bank'), createUsageCount(50)],
@@ -481,6 +483,7 @@ prod
                 payees: new Set(),
                 tags: new Set(),
                 commodities: new Set(),
+                definedCommodities: new Set(),
                 aliases: new Map(),
                 accountUsage: new Map(),
                 payeeUsage: new Map(),

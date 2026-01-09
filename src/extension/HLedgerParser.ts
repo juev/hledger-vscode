@@ -63,6 +63,7 @@ interface MutableParsedHLedgerData {
   payees: Set<PayeeName>;
   tags: Set<TagName>;
   commodities: Set<CommodityCode>;
+  definedCommodities: Set<CommodityCode>;
   aliases: Map<AccountName, AccountName>;
 
   // Tag value mappings and usage tracking
@@ -107,6 +108,7 @@ export interface ParsedHLedgerData {
   readonly payees: ReadonlySet<PayeeName>;
   readonly tags: ReadonlySet<TagName>;
   readonly commodities: ReadonlySet<CommodityCode>;
+  readonly definedCommodities: ReadonlySet<CommodityCode>;
   readonly aliases: ReadonlyMap<AccountName, AccountName>;
 
   // Tag value mappings and usage tracking
@@ -838,6 +840,7 @@ export class HLedgerParser {
       payees: new Set(source.payees),
       tags: new Set(source.tags),
       commodities: new Set(source.commodities),
+      definedCommodities: new Set(source.definedCommodities),
       aliases: new Map(source.aliases),
       tagValues: new Map(
         Array.from(source.tagValues.entries()).map(([k, v]) => [k, new Set(v)]),
@@ -883,6 +886,7 @@ export class HLedgerParser {
     source.payees.forEach((p) => target.payees.add(p));
     source.tags.forEach((t) => target.tags.add(t));
     source.commodities.forEach((c) => target.commodities.add(c));
+    source.definedCommodities.forEach((c) => target.definedCommodities.add(c));
 
     // Merge maps
     source.aliases.forEach((value, key) => target.aliases.set(key, value));
@@ -1047,6 +1051,7 @@ export class HLedgerParser {
       payees: new Set<PayeeName>(),
       tags: new Set<TagName>(),
       commodities: new Set<CommodityCode>(),
+      definedCommodities: new Set<CommodityCode>(),
       aliases: new Map<AccountName, AccountName>(),
       tagValues: new Map<TagName, Set<TagValue>>(),
       tagValueUsage: new Map<string, UsageCount>(),

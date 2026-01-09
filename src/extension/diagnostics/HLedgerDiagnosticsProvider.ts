@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 import { HLedgerConfig } from '../HLedgerConfig';
-import { AccountName } from '../types';
+import { AccountName, CommodityCode } from '../types';
 
 /**
  * Diagnostic codes for hledger validation errors.
@@ -8,7 +8,8 @@ import { AccountName } from '../types';
 export enum HLedgerDiagnosticCode {
     UndefinedAccount = 'undefined-account',
     InvalidTagFormat = 'invalid-tag-format',
-    InvalidAmountFormat = 'invalid-amount-format'
+    InvalidAmountFormat = 'invalid-amount-format',
+    UndeclaredCommodity = 'undeclared-commodity'
 }
 
 /**
@@ -102,6 +103,7 @@ export class HLedgerDiagnosticsProvider implements vscode.Disposable {
         this.config.getConfigForDocument(document);
 
         const definedAccounts = new Set(this.config.getDefinedAccounts());
+        const definedCommodities = new Set(this.config.getDefinedCommodities());
         const diagnostics: vscode.Diagnostic[] = [];
 
         for (let i = 0; i < document.lineCount; i++) {
@@ -121,6 +123,11 @@ export class HLedgerDiagnosticsProvider implements vscode.Disposable {
             const amountDiag = this.validateAmountFormat(lineText, i);
             if (amountDiag) {
                 diagnostics.push(amountDiag);
+            }
+
+            const commodityDiag = this.validateCommodityDeclaration(lineText, i, definedCommodities);
+            if (commodityDiag) {
+                diagnostics.push(commodityDiag);
             }
         }
 
@@ -281,6 +288,78 @@ export class HLedgerDiagnosticsProvider implements vscode.Disposable {
             diagnostic.code = HLedgerDiagnosticCode.InvalidAmountFormat;
             diagnostic.source = 'hledger';
             return diagnostic;
+        }
+
+        return undefined;
+    }
+
+    private validateCommodityDeclaration(
+        lineText: string,
+        lineNumber: number,
+        definedCommodities: ReadonlySet<CommodityCode>
+    ): vscode.Diagnostic | undefined {
+        // Only validate if commodities are explicitly defined
+        if (definedCommodities.size === 0) {
+            return undefined;
+        }
+
+        // Only check posting lines (indented with 2+ spaces)
+        if (!/^\s{2,}/.test(lineText)) {
+            return undefined;
+        }
+
+        // Skip comment lines
+        if (/^\s*[;#]/.test(lineText)) {
+            return undefined;
+        }
+
+        // Extract commodity from amount patterns
+        // Pattern 1: "100 USD" or "100.00 EUR" (suffix with space)
+        const suffixMatch = lineText.match(/\s(\d[\d.,]*)\s+([A-Z]{2,})\b/);
+        if (suffixMatch?.[2]) {
+            const commodity = suffixMatch[2];
+            if (!definedCommodities.has(commodity as CommodityCode)) {
+                const commodityIndex = lineText.lastIndexOf(commodity);
+                const range = new vscode.Range(
+                    lineNumber,
+                    commodityIndex,
+                    lineNumber,
+                    commodityIndex + commodity.length
+                );
+
+                const diagnostic = new vscode.Diagnostic(
+                    range,
+                    `Commodity '${commodity}' is used but not declared with 'commodity' directive`,
+                    vscode.DiagnosticSeverity.Warning
+                );
+                diagnostic.code = HLedgerDiagnosticCode.UndeclaredCommodity;
+                diagnostic.source = 'hledger';
+                return diagnostic;
+            }
+        }
+
+        // Pattern 2: "$100" or "€100" (prefix symbol)
+        const prefixMatch = lineText.match(/\s([$€£¥₽₹])(\d[\d.,]*)/);
+        if (prefixMatch?.[1]) {
+            const commodity = prefixMatch[1];
+            if (!definedCommodities.has(commodity as CommodityCode)) {
+                const commodityIndex = lineText.indexOf(prefixMatch[0]) + 1;
+                const range = new vscode.Range(
+                    lineNumber,
+                    commodityIndex,
+                    lineNumber,
+                    commodityIndex + commodity.length
+                );
+
+                const diagnostic = new vscode.Diagnostic(
+                    range,
+                    `Commodity '${commodity}' is used but not declared with 'commodity' directive`,
+                    vscode.DiagnosticSeverity.Warning
+                );
+                diagnostic.code = HLedgerDiagnosticCode.UndeclaredCommodity;
+                diagnostic.source = 'hledger';
+                return diagnostic;
+            }
         }
 
         return undefined;

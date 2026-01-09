@@ -375,13 +375,35 @@ export class HLedgerLexer {
   }
 
   /**
-   * Tokenizes commodity directive
+   * Tokenizes commodity directive.
+   * Handles both simple commodities ("commodity EUR") and format templates ("commodity 1.000,00 EUR")
    */
   private tokenizeCommodityDirective(
     rawLine: string,
     trimmedLine: string,
   ): HLedgerToken {
-    const match = trimmedLine.match(/^commodity\s+([A-Za-z$€£¥₽%]+)/);
+    // Try simple commodity first: "commodity EUR" or "commodity $"
+    let match = trimmedLine.match(/^commodity\s+([A-Za-z$€£¥₽%]+)$/);
+
+    if (!match) {
+      // Try format template: "commodity 1.000,00 EUR" or "commodity $1,000.00"
+      const content = trimmedLine.substring(10).trim(); // Remove "commodity "
+
+      if (content) {
+        // Prefix symbol: $, €, etc. at the start (e.g., "$1,000.00")
+        const prefixMatch = content.match(/^([$€£¥₽])/);
+        if (prefixMatch?.[1]) {
+          match = [trimmedLine, prefixMatch[1]];
+        } else {
+          // Suffix symbol: EUR, USD, etc. at the end (e.g., "1.000,00 EUR")
+          const suffixMatch = content.match(/\s([A-Za-z]+)$/);
+          if (suffixMatch?.[1]) {
+            match = [trimmedLine, suffixMatch[1]];
+          }
+        }
+      }
+    }
+
     return {
       type: TokenType.COMMODITY_DIRECTIVE,
       rawLine,

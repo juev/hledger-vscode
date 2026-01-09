@@ -629,6 +629,7 @@ export class HLedgerFileProcessor {
             payees: new Set(data.payees),
             tags: new Set(data.tags),
             commodities: new Set(data.commodities),
+            definedCommodities: new Set(data.definedCommodities),
             aliases: new Map(data.aliases),
             tagValues: new Map(
                 Array.from(data.tagValues.entries()).map(([k, v]) => [k, new Set(v)])
@@ -668,6 +669,7 @@ export class HLedgerFileProcessor {
             payees: mutableData.payees,
             tags: mutableData.tags,
             commodities: mutableData.commodities,
+            definedCommodities: mutableData.definedCommodities,
             aliases: mutableData.aliases,
             tagValues: mutableData.tagValues,
             tagValueUsage: mutableData.tagValueUsage,

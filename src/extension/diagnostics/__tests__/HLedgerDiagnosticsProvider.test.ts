@@ -1314,4 +1314,164 @@ account Assets:Cash
             expect(provider.diagnosticCollection.get(doc2.uri)).toBeUndefined();
         });
     });
+
+    describe('Commodity Declaration Validation', () => {
+        test('warns about undeclared commodity when definitions exist', () => {
+            const content = `
+commodity USD
+commodity EUR
+
+2024-01-01 Test
+    Expenses:Food  10.00 GBP
+    Assets:Cash
+`;
+            config.parseContent(content, '/test');
+
+            const document = new MockTextDocument(content.split('\n'), {
+                uri: vscode.Uri.file('/test/test.journal'),
+                languageId: 'hledger'
+            });
+
+            provider['validateDocument'](document);
+
+            const diagnostics = provider.diagnosticCollection.get(document.uri);
+
+            expect(diagnostics).toBeDefined();
+            const commodityDiag = diagnostics?.find(d => d.message.includes('GBP'));
+            expect(commodityDiag).toBeDefined();
+            expect(commodityDiag?.severity).toBe(vscode.DiagnosticSeverity.Warning);
+            expect(commodityDiag?.code).toBe('undeclared-commodity');
+        });
+
+        test('no warning when no commodities are explicitly defined', () => {
+            const content = `
+2024-01-01 Test
+    Expenses:Food  10.00 GBP
+    Assets:Cash  -10.00 GBP
+`;
+            config.parseContent(content, '/test');
+
+            const document = new MockTextDocument(content.split('\n'), {
+                uri: vscode.Uri.file('/test/test.journal'),
+                languageId: 'hledger'
+            });
+
+            provider['validateDocument'](document);
+
+            const diagnostics = provider.diagnosticCollection.get(document.uri);
+            const commodityDiags = diagnostics?.filter(d => d.code === 'undeclared-commodity') ?? [];
+            expect(commodityDiags.length).toBe(0);
+        });
+
+        test('no warning for declared commodity', () => {
+            const content = `
+commodity USD
+
+2024-01-01 Test
+    Expenses:Food  10.00 USD
+    Assets:Cash
+`;
+            config.parseContent(content, '/test');
+
+            const document = new MockTextDocument(content.split('\n'), {
+                uri: vscode.Uri.file('/test/test.journal'),
+                languageId: 'hledger'
+            });
+
+            provider['validateDocument'](document);
+
+            const diagnostics = provider.diagnosticCollection.get(document.uri);
+            const commodityDiags = diagnostics?.filter(d => d.code === 'undeclared-commodity') ?? [];
+            expect(commodityDiags.length).toBe(0);
+        });
+
+        test('warns about undeclared prefix currency symbol', () => {
+            const content = `
+commodity $
+
+2024-01-01 Test
+    Expenses:Food  €10.00
+    Assets:Cash
+`;
+            config.parseContent(content, '/test');
+
+            const document = new MockTextDocument(content.split('\n'), {
+                uri: vscode.Uri.file('/test/test.journal'),
+                languageId: 'hledger'
+            });
+
+            provider['validateDocument'](document);
+
+            const diagnostics = provider.diagnosticCollection.get(document.uri);
+            const commodityDiag = diagnostics?.find(d => d.message.includes('€'));
+            expect(commodityDiag).toBeDefined();
+            expect(commodityDiag?.code).toBe('undeclared-commodity');
+        });
+
+        test('no warning for declared prefix currency symbol', () => {
+            const content = `
+commodity $
+
+2024-01-01 Test
+    Expenses:Food  $10.00
+    Assets:Cash
+`;
+            config.parseContent(content, '/test');
+
+            const document = new MockTextDocument(content.split('\n'), {
+                uri: vscode.Uri.file('/test/test.journal'),
+                languageId: 'hledger'
+            });
+
+            provider['validateDocument'](document);
+
+            const diagnostics = provider.diagnosticCollection.get(document.uri);
+            const commodityDiags = diagnostics?.filter(d => d.code === 'undeclared-commodity') ?? [];
+            expect(commodityDiags.length).toBe(0);
+        });
+
+        test('handles commodity from format template', () => {
+            const content = `
+commodity 1.000,00 EUR
+
+2024-01-01 Test
+    Expenses:Food  100,00 EUR
+    Assets:Cash
+`;
+            config.parseContent(content, '/test');
+
+            const document = new MockTextDocument(content.split('\n'), {
+                uri: vscode.Uri.file('/test/test.journal'),
+                languageId: 'hledger'
+            });
+
+            provider['validateDocument'](document);
+
+            const diagnostics = provider.diagnosticCollection.get(document.uri);
+            const commodityDiags = diagnostics?.filter(d => d.code === 'undeclared-commodity') ?? [];
+            expect(commodityDiags.length).toBe(0);
+        });
+
+        test('handles default commodity directive', () => {
+            const content = `
+default commodity USD
+
+2024-01-01 Test
+    Expenses:Food  10.00 USD
+    Assets:Cash
+`;
+            config.parseContent(content, '/test');
+
+            const document = new MockTextDocument(content.split('\n'), {
+                uri: vscode.Uri.file('/test/test.journal'),
+                languageId: 'hledger'
+            });
+
+            provider['validateDocument'](document);
+
+            const diagnostics = provider.diagnosticCollection.get(document.uri);
+            const commodityDiags = diagnostics?.filter(d => d.code === 'undeclared-commodity') ?? [];
+            expect(commodityDiags.length).toBe(0);
+        });
+    });
 });
