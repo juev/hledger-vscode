@@ -72,6 +72,7 @@ Legacy parsing (`enhanceWithLegacyParsing()`) handles commodity format templates
 ### Highlighting
 
 Dual-layer system:
+
 - **TextMate Grammar** (`syntaxes/hledger.tmLanguage.json`): Always active
 - **Semantic Tokens** (optional): 14 token types, enabled via `hledger.semanticHighlighting.enabled`
 
@@ -103,6 +104,7 @@ item.sortText = `${index.toString().padStart(5, '0')}_${scoreStr}_${match.item}`
 ```
 
 **Score inversion for lexicographic ordering:**
+
 ```typescript
 // High score = low sortText number = appears first
 const cappedScore = Math.min(Math.round(match.score), 9999);
@@ -121,6 +123,7 @@ const scoreStr = (10000 - cappedScore).toString().padStart(5, '0');
 **Solution (two-part fix):**
 
 1. **Cache isolation** (`HLedgerConfig.ts`): Clone workspace data before merging current document data
+
    ```typescript
    // When currentLine is provided, clone first to avoid cache mutation
    if (currentLine !== undefined && this.data) {
@@ -130,6 +133,7 @@ const scoreStr = (10000 - cappedScore).toString().padStart(5, '0');
    ```
 
 2. **Filter low-usage exact matches** (`AccountCompleter.ts`):
+
    ```typescript
    const filteredMatches = matches.filter(match => {
      const isExactQueryMatch = match.item.toLowerCase() === context.query.toLowerCase();
@@ -146,6 +150,7 @@ const scoreStr = (10000 - cappedScore).toString().padStart(5, '0');
 **Template key format**: Keys use `||` delimiter with sorted accounts: `generateTemplateKey(accounts).join("||")`. Prevents collision when same payee has different account combinations.
 
 **Buffer limits**:
+
 - `MAX_RECENT_TRANSACTIONS_PER_PAYEE = 50` - circular buffer for frequency-based sorting
 - `MAX_TEMPLATES_PER_PAYEE = 5` - only 5 unique templates kept per payee
 
@@ -154,6 +159,7 @@ const scoreStr = (10000 - cappedScore).toString().padStart(5, '0');
 ### Inline Ghost Text Completion
 
 **Trigger rules** (`InlineCompletionProvider.ts`):
+
 - Minimum 2 characters before showing payee ghost text (`minPayeeChars` setting)
 - Template ghost text uses `SnippetString` for tabstops, not plain text
 
@@ -192,6 +198,7 @@ Branded types for domain safety: `AccountName`, `PayeeName`, `TagName`, `Commodi
 Commands (`hledger.cli.balance`, `hledger.cli.incomestatement`, `hledger.cli.stats`) insert results as comments.
 
 **Journal file resolution priority:**
+
 1. `LEDGER_FILE` environment variable
 2. `hledger.cli.journalFile` setting
 3. Current open file
@@ -238,6 +245,8 @@ Commands (`hledger.cli.balance`, `hledger.cli.incomestatement`, `hledger.cli.sta
 | `TROUBLESHOOTING.md` | Problem solving guide | Users with issues |
 | `docs/hledger.md` | hledger syntax reference | Developers |
 | `CLAUDE.md` | Development guidelines | AI/developers |
+
+CHANGELOG.md updated automatically by ci/cd. Do not edit directly.
 
 ### Documentation Style
 
