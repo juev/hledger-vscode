@@ -1,5 +1,22 @@
 # Change Log
 
+## [0.4.11] - 2026-01-09
+
+### Added
+- feat: do not update CHANGELOG.md
+- feat: separate amount and commodity in template tabstops
+- docs: add commodity validation to diagnostics documentation
+- feat: add defined commodities support and validation in HLedger processing
+- feat: enhance commodity directive handling and add tests for include functionality
+
+### Changed
+- refactor: extract amount parsing utilities to shared module
+
+### Fixed
+- fix: handle prefix commodity symbols and escape regex metacharacters
+- fix: preserve space between amount and commodity in transaction templates
+
+
 ## [0.4.10] - 2026-01-06
 
 ### Added
