@@ -114,7 +114,8 @@ export class HLedgerEnterCommand implements vscode.Disposable {
 
         // Try to format the current line before inserting newline
         if (this.amountFormatter) {
-          const formattedLine = this.amountFormatter.formatPostingLine(currentLineText);
+          const alignmentColumn = this.amountFormatter.getAlignmentColumn();
+          const formattedLine = this.amountFormatter.formatPostingLine(currentLineText, alignmentColumn);
           if (formattedLine !== null && formattedLine !== currentLineText) {
             // Replace the entire line with formatted version
             const lineRange = currentLine.range;

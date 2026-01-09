@@ -194,6 +194,67 @@ describe('AmountFormatterService', () => {
                 expect(result).toBe('    Assets:Bank  1 234,56 RUB');
             });
         });
+
+        describe('alignment column', () => {
+            beforeEach(() => {
+                const formats = new Map<CommodityCode, CommodityFormat>();
+                formats.set(createCommodityCode('RUB'), rubFormat);
+                mockConfig.getCommodityFormats.mockReturnValue(formats);
+                mockConfig.getDefaultCommodity.mockReturnValue(createCommodityCode('RUB'));
+            });
+
+            it('should align amount to specified column', () => {
+                // Account "Assets:Bank" = 11 chars + 4 indent = 15 chars
+                // Column 40 means amount starts at position 40
+                // Spacing = 40 - 15 = 25 spaces
+                const result = service.formatPostingLine('    Assets:Bank  1000 RUB', 40);
+
+                // Count characters before amount
+                const amountStart = result?.indexOf('1 000,00');
+                expect(amountStart).toBe(40);
+            });
+
+            it('should use minimum 2 spaces when account is longer than alignment column', () => {
+                // Long account name that exceeds column 40
+                const result = service.formatPostingLine('    Расходы:Супермаркет:Продукты:Молочные  1000 RUB', 40);
+
+                // Should have at least 2 spaces before amount
+                expect(result).toMatch(/Молочные {2,}\d/);
+            });
+
+            it('should align short account names correctly', () => {
+                // Short account "A:B" = 3 chars + 4 indent = 7 chars
+                // Column 40 means 33 spaces
+                const result = service.formatPostingLine('    A:B  1000 RUB', 40);
+
+                const amountStart = result?.indexOf('1 000,00');
+                expect(amountStart).toBe(40);
+            });
+
+            it('should use default alignment when column not specified', () => {
+                // Without column argument, should use 2 spaces (current behavior)
+                const result = service.formatPostingLine('    Assets:Bank  1000 RUB');
+
+                // Should have exactly 2 spaces after account (current default)
+                expect(result).toBe('    Assets:Bank  1 000,00 RUB');
+            });
+
+            it('should align amounts without commodity symbol', () => {
+                const result = service.formatPostingLine('    Assets:Bank  1000', 40);
+
+                // Amount without symbol should also be aligned
+                const amountStart = result?.indexOf('1 000,00');
+                expect(amountStart).toBe(40);
+            });
+
+            it('should handle negative amounts with alignment', () => {
+                const result = service.formatPostingLine('    Assets:Bank  -1000 RUB', 40);
+
+                // Negative sign should be at alignment column
+                const signStart = result?.indexOf('-1 000,00');
+                expect(signStart).toBe(40);
+            });
+        });
     });
 
     describe('formatDocumentContent', () => {

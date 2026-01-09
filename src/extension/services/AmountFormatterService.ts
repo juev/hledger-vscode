@@ -14,13 +14,22 @@ export class AmountFormatterService {
     ) {}
 
     /**
+     * Gets the current alignment column from config.
+     * @returns The alignment column position
+     */
+    getAlignmentColumn(): number {
+        return this.config.getAmountAlignmentColumn?.() ?? 40;
+    }
+
+    /**
      * Formats the amount in a posting line according to commodity format.
      * Returns null if the line is not a posting, has no amount, or no format is defined.
      *
      * @param line The posting line to format
+     * @param alignmentColumn Optional column position for amount alignment (default: 2 spaces after account)
      * @returns Formatted line or null if formatting not applicable
      */
-    formatPostingLine(line: string): string | null {
+    formatPostingLine(line: string, alignmentColumn?: number): string | null {
         // Check if this is a posting line (starts with whitespace)
         if (!line || !line.match(/^\s+\S/)) {
             return null;
@@ -105,8 +114,17 @@ export class AmountFormatterService {
             formattedAmount = this.numberFormatService.formatNumber(numericValue, format.format);
         }
 
+        // Calculate spacing for alignment
+        const accountLength = indent.length + accountPart.length;
+        let spacing = '  '; // Default: 2 spaces
+
+        if (alignmentColumn !== undefined && alignmentColumn > 0) {
+            const spacingNeeded = Math.max(2, alignmentColumn - accountLength);
+            spacing = ' '.repeat(spacingNeeded);
+        }
+
         // Reconstruct the line
-        return `${indent}${accountPart}  ${formattedAmount}`;
+        return `${indent}${accountPart}${spacing}${formattedAmount}`;
     }
 
     /**

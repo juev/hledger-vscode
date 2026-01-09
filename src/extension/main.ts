@@ -119,6 +119,75 @@ export function activate(context: vscode.ExtensionContext): void {
     const tabCommand = new HLedgerTabCommand();
     context.subscriptions.push(tabCommand);
 
+    // Selection change listener for formatting posting lines when cursor leaves
+    // This handles template completion where Tab navigates between tabstops
+    let lastPostingLineNumber: number | null = null;
+    let lastPostingLineContent: string | null = null;
+
+    const selectionChangeListener = vscode.window.onDidChangeTextEditorSelection(
+      async (event) => {
+        const editor = event.textEditor;
+        if (editor.document.languageId !== "hledger") {
+          lastPostingLineNumber = null;
+          lastPostingLineContent = null;
+          return;
+        }
+
+        const currentLine = event.selections[0]?.active.line;
+        if (currentLine === undefined) {
+          return;
+        }
+
+        // If cursor was on a posting line and moved to a different line
+        if (
+          lastPostingLineNumber !== null &&
+          lastPostingLineNumber !== currentLine &&
+          lastPostingLineContent !== null
+        ) {
+          try {
+            // Check if line still exists and has changed (user typed something)
+            if (lastPostingLineNumber < editor.document.lineCount) {
+              const line = editor.document.lineAt(lastPostingLineNumber);
+              const currentContent = line.text;
+
+              // Only format if content changed from when we first tracked it
+              if (currentContent !== lastPostingLineContent) {
+                const alignmentColumn = amountFormatterService.getAlignmentColumn();
+                const formatted = amountFormatterService.formatPostingLine(
+                  currentContent,
+                  alignmentColumn,
+                );
+
+                if (formatted !== null && formatted !== currentContent) {
+                  await editor.edit(
+                    (editBuilder) => {
+                      editBuilder.replace(line.range, formatted);
+                    },
+                    { undoStopBefore: false, undoStopAfter: true },
+                  );
+                }
+              }
+            }
+          } catch {
+            // Ignore errors during formatting
+          }
+        }
+
+        // Track current line if it's a posting line
+        const currentLineText = editor.document.lineAt(currentLine).text;
+        const isPostingLine = /^\s+\S/.test(currentLineText);
+
+        if (isPostingLine) {
+          lastPostingLineNumber = currentLine;
+          lastPostingLineContent = currentLineText;
+        } else {
+          lastPostingLineNumber = null;
+          lastPostingLineContent = null;
+        }
+      },
+    );
+    context.subscriptions.push(selectionChangeListener);
+
     // Register semantic tokens provider for dynamic coloring with range support
     const semanticProvider = new HledgerSemanticTokensProvider();
     context.subscriptions.push(
