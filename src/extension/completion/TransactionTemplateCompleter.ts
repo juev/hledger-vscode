@@ -138,6 +138,43 @@ export class TransactionTemplateCompleter {
   }
 
   /**
+   * Escapes special regex characters in a string.
+   */
+  private escapeRegExp(str: string): string {
+    return str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  }
+
+  /**
+   * Extracts numeric amount from amount string, handling both prefix and suffix commodities.
+   * Returns the amount without commodity and the commodity part for snippet formatting.
+   */
+  private extractAmountParts(
+    amount: string,
+    commodity: string | undefined,
+  ): { amountOnly: string; commodityPart: string } {
+    if (!commodity) {
+      return { amountOnly: amount, commodityPart: "" };
+    }
+
+    const escaped = this.escapeRegExp(commodity);
+    let amountOnly = amount;
+
+    // Try suffix first (e.g., "100 USD" or "100USD")
+    const suffixResult = amount.replace(new RegExp(`\\s*${escaped}$`), "");
+    if (suffixResult !== amount) {
+      amountOnly = suffixResult;
+    } else {
+      // Try prefix (e.g., "$100" or "$ 100")
+      amountOnly = amount.replace(new RegExp(`^${escaped}\\s*`), "");
+    }
+
+    return {
+      amountOnly,
+      commodityPart: ` ${commodity}`,
+    };
+  }
+
+  /**
    * Builds the snippet string for a transaction template.
    * Uses tabstops for amounts to allow easy editing.
    * Aligns amounts to the configured alignment column.
@@ -153,11 +190,10 @@ export class TransactionTemplateCompleter {
         const accountPartLength = indent.length + posting.account.length;
         const spacesToAdd = Math.max(2, alignmentColumn - accountPartLength);
         const spacing = " ".repeat(spacesToAdd);
-        const amountOnly =
-          posting.commodity && posting.amount
-            ? posting.amount.replace(new RegExp(`\\s*${posting.commodity}$`), "")
-            : posting.amount;
-        const commodityPart = posting.commodity ? ` ${posting.commodity}` : "";
+        const { amountOnly, commodityPart } = this.extractAmountParts(
+          posting.amount,
+          posting.commodity ?? undefined,
+        );
         lines.push(
           `${indent}${posting.account}${spacing}\${${tabstopIndex++}:${amountOnly}}${commodityPart}`,
         );

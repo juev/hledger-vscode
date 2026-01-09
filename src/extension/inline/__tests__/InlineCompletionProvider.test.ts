@@ -616,7 +616,7 @@ describe("InlineCompletionProvider", () => {
         expect(snippet.value).toContain("Expenses:Store\\}Name");
       });
 
-      it("should escape special characters in amount values", () => {
+      it("should handle prefix commodity symbols like $ in amount values", () => {
         mockConfig.getPayeesByUsage.mockReturnValue([
           "Dollar Store" as PayeeName,
         ]);
@@ -638,8 +638,10 @@ describe("InlineCompletionProvider", () => {
         );
 
         const snippet = result![0]!.insertText as SnippetString;
-        // $ in amount should be escaped as \$
-        expect(snippet.value).toContain("${1:\\$10.00}");
+        // $ is prefix commodity, extracted and placed outside tabstop
+        expect(snippet.value).toContain("${1:10.00} $");
+        // Should NOT duplicate $ symbol
+        expect(snippet.value).not.toContain("${1:\\$10.00} $");
       });
 
       it("should not have command for cursor positioning (snippet handles it)", () => {

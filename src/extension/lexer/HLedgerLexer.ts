@@ -298,7 +298,7 @@ export class HLedgerLexer {
 
     // Extract amount if present
     const amountMatch = trimmed.match(/\s+([+-]?\s*[\d,.]+\s*[A-Za-z$€£¥₽%]*)/);
-    const amount = amountMatch?.[1]?.trim().replace(/\s+/g, " ") ?? "";
+    const amount = amountMatch?.[1]?.replace(/\s+/g, " ") ?? "";
 
     // Extract commodity from amount
     const commodityMatch = amount.match(/[A-Za-z$€£¥₽%]+$/);

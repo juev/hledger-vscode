@@ -154,6 +154,72 @@ describe('TransactionTemplateCompleter', () => {
             expect(snippet.value).not.toContain('${1:5.00 USD}');
         });
 
+        it('should handle prefix commodity symbols like $', () => {
+            mockConfig.getPayeesWithTemplates.mockReturnValue(['Coffee Shop' as PayeeName]);
+            mockConfig.getTemplatesForPayee.mockReturnValue([
+                createTemplate('Coffee Shop', [
+                    { account: 'Expenses:Food:Coffee', amount: '$10.00', commodity: '$' },
+                    { account: 'Assets:Cash', amount: null, commodity: null }
+                ], 5)
+            ]);
+
+            const context: CompletionContext = {
+                type: 'transaction_template',
+                query: 'Coffee'
+            };
+
+            const result = completer.complete(context);
+
+            expect(result.length).toBe(1);
+            const snippet = result[0]!.insertText as vscode.SnippetString;
+            // $ is prefix, should be extracted and placed outside tabstop
+            expect(snippet.value).toContain('${1:10.00} $');
+            // Should NOT duplicate the $ symbol
+            expect(snippet.value).not.toContain('${1:$10.00} $');
+        });
+
+        it('should handle prefix commodity with space like $ 100', () => {
+            mockConfig.getPayeesWithTemplates.mockReturnValue(['Store' as PayeeName]);
+            mockConfig.getTemplatesForPayee.mockReturnValue([
+                createTemplate('Store', [
+                    { account: 'Expenses:Shopping', amount: '$ 50.00', commodity: '$' },
+                    { account: 'Assets:Cash', amount: null, commodity: null }
+                ], 3)
+            ]);
+
+            const context: CompletionContext = {
+                type: 'transaction_template',
+                query: 'Store'
+            };
+
+            const result = completer.complete(context);
+
+            expect(result.length).toBe(1);
+            const snippet = result[0]!.insertText as vscode.SnippetString;
+            expect(snippet.value).toContain('${1:50.00} $');
+        });
+
+        it('should handle euro prefix symbol', () => {
+            mockConfig.getPayeesWithTemplates.mockReturnValue(['Cafe' as PayeeName]);
+            mockConfig.getTemplatesForPayee.mockReturnValue([
+                createTemplate('Cafe', [
+                    { account: 'Expenses:Food', amount: '€25.00', commodity: '€' },
+                    { account: 'Assets:Cash', amount: null, commodity: null }
+                ], 2)
+            ]);
+
+            const context: CompletionContext = {
+                type: 'transaction_template',
+                query: 'Cafe'
+            };
+
+            const result = completer.complete(context);
+
+            expect(result.length).toBe(1);
+            const snippet = result[0]!.insertText as vscode.SnippetString;
+            expect(snippet.value).toContain('${1:25.00} €');
+        });
+
         it('should sort by usage count (highest first)', () => {
             mockConfig.getPayeesWithTemplates.mockReturnValue([
                 'Store A' as PayeeName,
