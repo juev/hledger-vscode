@@ -15,6 +15,8 @@ import { SimpleFuzzyMatcher } from "./SimpleFuzzyMatcher";
 import { HLedgerCodeActionProvider } from "./actions/HLedgerCodeActionProvider";
 import { HLedgerDiagnosticsProvider } from "./diagnostics/HLedgerDiagnosticsProvider";
 import { InlineCompletionProvider } from "./inline/InlineCompletionProvider";
+import { AmountFormatterService } from "./services/AmountFormatterService";
+import { NumberFormatService } from "./services/NumberFormatService";
 
 // Main activation function
 export function activate(context: vscode.ExtensionContext): void {
@@ -102,8 +104,15 @@ export function activate(context: vscode.ExtensionContext): void {
     // Register formatting providers for hledger files
     registerFormattingProviders(context);
 
-    // Register Enter key handler for smart indentation
-    const enterCommand = new HLedgerEnterCommand();
+    // Create amount formatting services
+    const numberFormatService = new NumberFormatService();
+    const amountFormatterService = new AmountFormatterService(
+      services.config,
+      numberFormatService,
+    );
+
+    // Register Enter key handler for smart indentation and amount formatting
+    const enterCommand = new HLedgerEnterCommand(amountFormatterService);
     context.subscriptions.push(enterCommand);
 
     // Register Tab key handler for amount alignment positioning
@@ -203,6 +212,32 @@ export function activate(context: vscode.ExtensionContext): void {
       vscode.commands.registerCommand("hledger.import.fromFile", async () => {
         await services.importCommands.importFromFile();
       }),
+    );
+
+    // Register amount formatting command
+    context.subscriptions.push(
+      vscode.commands.registerTextEditorCommand(
+        "hledger.formatAmounts",
+        async (editor) => {
+          const document = editor.document;
+          if (document.languageId !== "hledger") {
+            return;
+          }
+
+          const content = document.getText();
+          const formatted = amountFormatterService.formatDocumentContent(content);
+
+          if (formatted !== content) {
+            const fullRange = new vscode.Range(
+              document.positionAt(0),
+              document.positionAt(content.length),
+            );
+            await editor.edit((editBuilder) => {
+              editBuilder.replace(fullRange, formatted);
+            });
+          }
+        },
+      ),
     );
 
     // Extension activation complete

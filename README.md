@@ -39,6 +39,7 @@ Transform your plain text accounting experience with powerful IDE capabilities:
 - **Smart alignment** for amounts and comments
 - **Format on save** - keep your journals tidy automatically
 - **Multi-currency support** with international number formats
+- **Commodity-aware formatting** - amounts formatted according to `commodity` directives
 - Preserves balance assertions, virtual postings, and metadata
 
 ### 🔧 **Smart Editing**

@@ -270,6 +270,12 @@
         "command": "hledger.import.fromFile",
         "title": "HLedger: Import Tabular Data from File",
         "category": "HLedger"
+      },
+      {
+        "command": "hledger.formatAmounts",
+        "title": "HLedger: Format Amounts by Commodity",
+        "category": "HLedger",
+        "when": "editorTextFocus && editorLangId == hledger"
       }
     ],
     "keybindings": [

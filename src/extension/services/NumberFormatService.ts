@@ -287,10 +287,10 @@ export class NumberFormatService {
 
     /**
      * Validates if a string represents a valid number in any supported format.
-     * 
+     *
      * @param input The string to validate
      * @returns ValidationResult with detailed error information
-     * 
+     *
      * @example
      * ```typescript
      * const service = new NumberFormatService();
@@ -304,7 +304,7 @@ export class NumberFormatService {
      */
     validateAmount(input: string): ValidationResult<ParsedAmount> {
         const parseResult = this.parseAmount(input);
-        
+
         if (parseResult.success) {
             return validationSuccess(parseResult.data);
         } else {
@@ -314,6 +314,98 @@ export class NumberFormatService {
             }
             return validationFailure(['Unknown parsing error']);
         }
+    }
+
+    /**
+     * Formats a numeric value according to the specified number format.
+     * Does not include commodity symbol - use formatAmount for that.
+     *
+     * @param value The numeric value to format
+     * @param format The number format to use
+     * @returns Formatted string (e.g., "1 000,00" for European format)
+     *
+     * @example
+     * ```typescript
+     * const service = new NumberFormatService();
+     * const euroFormat = { decimalMark: ',', groupSeparator: ' ', decimalPlaces: 2, useGrouping: true };
+     * console.log(service.formatNumber(1234.56, euroFormat)); // "1 234,56"
+     * ```
+     */
+    formatNumber(value: number, format: NumberFormat): string {
+        const { decimalMark, groupSeparator, decimalPlaces, useGrouping } = format;
+
+        const isNegative = value < 0;
+        const absValue = Math.abs(value);
+
+        // Round to specified decimal places
+        const roundedValue = Number(absValue.toFixed(decimalPlaces));
+
+        // Split into integer and decimal parts
+        const [integerPart, decimalPart] = roundedValue.toFixed(decimalPlaces).split('.');
+
+        // Apply group separator to integer part (groups of 3 from right)
+        let formattedInteger = integerPart ?? '0';
+        if (useGrouping && groupSeparator && formattedInteger.length > 3) {
+            formattedInteger = this.addGroupSeparators(formattedInteger, groupSeparator);
+        }
+
+        // Build the result
+        let result = formattedInteger;
+        if (decimalPlaces > 0 && decimalPart !== undefined) {
+            result += decimalMark + decimalPart;
+        }
+
+        return isNegative ? '-' + result : result;
+    }
+
+    /**
+     * Formats a numeric value with commodity symbol according to the specified format.
+     *
+     * @param value The numeric value to format
+     * @param commodityFormat The commodity format including symbol position
+     * @returns Formatted string with symbol (e.g., "1 000,00 RUB" or "$1,000.00")
+     *
+     * @example
+     * ```typescript
+     * const service = new NumberFormatService();
+     * const rubFormat = { format: {...}, symbol: 'RUB', symbolBefore: false, symbolSpacing: true, template: '...' };
+     * console.log(service.formatAmount(1000, rubFormat)); // "1 000,00 RUB"
+     * ```
+     */
+    formatAmount(value: number, commodityFormat: CommodityFormat): string {
+        const { format, symbol, symbolBefore, symbolSpacing } = commodityFormat;
+
+        const isNegative = value < 0;
+        const formattedNumber = this.formatNumber(Math.abs(value), format);
+
+        const spacing = symbolSpacing ? ' ' : '';
+
+        let result: string;
+        if (symbolBefore) {
+            result = symbol + spacing + formattedNumber;
+        } else {
+            result = formattedNumber + spacing + symbol;
+        }
+
+        return isNegative ? '-' + result : result;
+    }
+
+    /**
+     * Adds group separators to an integer string (from right, groups of 3).
+     * @private
+     */
+    private addGroupSeparators(integerStr: string, separator: string): string {
+        const chars = integerStr.split('');
+        const result: string[] = [];
+
+        for (let i = chars.length - 1, count = 0; i >= 0; i--, count++) {
+            if (count > 0 && count % 3 === 0) {
+                result.unshift(separator);
+            }
+            result.unshift(chars[i] ?? '');
+        }
+
+        return result.join('');
     }
 
     /**
