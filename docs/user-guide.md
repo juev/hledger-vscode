@@ -408,6 +408,7 @@ The extension validates your journal files and shows warnings/errors.
 | Type | Description |
 |------|-------------|
 | Account validation | Checks for undefined accounts |
+| Commodity validation | Checks for undeclared commodities (when `commodity` directives exist) |
 | Amount format | Validates complex amount patterns |
 | Tag format | Validates tag syntax |
 
