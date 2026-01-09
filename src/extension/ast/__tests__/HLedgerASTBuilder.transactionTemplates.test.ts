@@ -76,7 +76,7 @@ describe('HLedgerASTBuilder - Transaction Templates', () => {
             const template = Array.from(payeeTemplates!.values())[0];
 
             const expensePosting = template!.postings.find(p => p.account === 'Expenses:Food:Coffee');
-            expect(expensePosting?.amount).toBe('6.00USD');
+            expect(expensePosting?.amount).toBe('6.00 USD');
         });
 
         it('should group templates by account combination', () => {

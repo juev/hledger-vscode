@@ -95,7 +95,7 @@ describe("HLedgerLexer", () => {
 
       it("should extract amount with commodity", () => {
         const result = lexer.parsePostingInfo("Assets:Cash  100 USD");
-        expect(result.amount).toBe("100USD");
+        expect(result.amount).toBe("100 USD");
       });
 
       it("should extract negative amount", () => {
@@ -105,7 +105,7 @@ describe("HLedgerLexer", () => {
 
       it("should extract amount with decimal", () => {
         const result = lexer.parsePostingInfo("Assets:Bank  1,234.56 EUR");
-        expect(result.amount).toBe("1,234.56EUR");
+        expect(result.amount).toBe("1,234.56 EUR");
       });
 
       it("should handle posting without amount", () => {
