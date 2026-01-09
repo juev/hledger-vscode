@@ -11,6 +11,7 @@ import {
   generateTemplateKey,
 } from "../types";
 import { SimpleFuzzyMatcher, FuzzyMatch } from "../SimpleFuzzyMatcher";
+import { extractAmountParts } from "../utils/amountUtils";
 
 /**
  * Maximum number of transaction templates to return in completions.
@@ -153,8 +154,12 @@ export class TransactionTemplateCompleter {
         const accountPartLength = indent.length + posting.account.length;
         const spacesToAdd = Math.max(2, alignmentColumn - accountPartLength);
         const spacing = " ".repeat(spacesToAdd);
+        const { amountOnly, commodityPart } = extractAmountParts(
+          posting.amount,
+          posting.commodity ?? undefined,
+        );
         lines.push(
-          `${indent}${posting.account}${spacing}\${${tabstopIndex++}:${posting.amount}}`,
+          `${indent}${posting.account}${spacing}\${${tabstopIndex++}:${amountOnly}}${commodityPart}`,
         );
       } else {
         lines.push(`${indent}${posting.account}`);

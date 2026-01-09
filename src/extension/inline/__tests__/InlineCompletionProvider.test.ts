@@ -293,7 +293,7 @@ describe("InlineCompletionProvider", () => {
       const item = result![0]!;
       expect(item.insertText).toBeInstanceOf(SnippetString);
       const snippetValue = (item.insertText as SnippetString).value;
-      expect(snippetValue).toContain("100 RUB");
+      expect(snippetValue).toContain("${1:100} RUB");
     });
 
     it("should return undefined when no templates for payee", () => {
@@ -499,8 +499,8 @@ describe("InlineCompletionProvider", () => {
         );
 
         const snippet = result![0]!.insertText as SnippetString;
-        // Should have tabstop with amount as placeholder: ${1:5.00 USD}
-        expect(snippet.value).toContain("${1:5.00 USD}");
+        // Amount in tabstop, commodity outside: ${1:5.00} USD
+        expect(snippet.value).toContain("${1:5.00} USD");
       });
 
       it("should have sequential tabstops for multiple amounts", () => {
@@ -523,9 +523,9 @@ describe("InlineCompletionProvider", () => {
         );
 
         const snippet = result![0]!.insertText as SnippetString;
-        // Should have $1 for first amount, $2 for second
-        expect(snippet.value).toContain("${1:100 USD}");
-        expect(snippet.value).toContain("${2:-100 USD}");
+        // Should have $1 for first amount, $2 for second; commodity outside tabstop
+        expect(snippet.value).toContain("${1:100} USD");
+        expect(snippet.value).toContain("${2:-100} USD");
       });
 
       it("should include final tabstop $0 for exiting snippet mode", () => {
@@ -616,7 +616,7 @@ describe("InlineCompletionProvider", () => {
         expect(snippet.value).toContain("Expenses:Store\\}Name");
       });
 
-      it("should escape special characters in amount values", () => {
+      it("should handle prefix commodity symbols like $ in amount values", () => {
         mockConfig.getPayeesByUsage.mockReturnValue([
           "Dollar Store" as PayeeName,
         ]);
@@ -638,8 +638,10 @@ describe("InlineCompletionProvider", () => {
         );
 
         const snippet = result![0]!.insertText as SnippetString;
-        // $ in amount should be escaped as \$
-        expect(snippet.value).toContain("${1:\\$10.00}");
+        // $ is prefix commodity, extracted and placed outside tabstop
+        expect(snippet.value).toContain("${1:10.00} $");
+        // Should NOT duplicate $ symbol
+        expect(snippet.value).not.toContain("${1:\\$10.00} $");
       });
 
       it("should not have command for cursor positioning (snippet handles it)", () => {
@@ -731,7 +733,7 @@ describe("InlineCompletionProvider", () => {
         const expectedSpacing = " ".repeat(expectedSpaces);
 
         expect(snippet.value).toContain(
-          `${indent}${account}${expectedSpacing}\${1:100 USD}`,
+          `${indent}${account}${expectedSpacing}\${1:100} USD`,
         );
       });
 
@@ -765,7 +767,7 @@ describe("InlineCompletionProvider", () => {
         // Account "Expenses:Food:Groceries:Supermarket" (35 chars) + 4 indent = 39
         // This exceeds alignment column 30, so minimum 2 spaces should be used
         expect(snippet.value).toContain(
-          "    Expenses:Food:Groceries:Supermarket  ${1:100 USD}",
+          "    Expenses:Food:Groceries:Supermarket  ${1:100} USD",
         );
       });
     });

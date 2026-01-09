@@ -9,6 +9,7 @@ import * as vscode from "vscode";
 import { HLedgerConfig } from "../HLedgerConfig";
 import { InlinePositionAnalyzer } from "./InlinePositionAnalyzer";
 import { TransactionTemplate, PayeeName, TemplatePosting } from "../types";
+import { extractAmountParts } from "../utils/amountUtils";
 
 /**
  * Provides inline (ghost text) completions for hledger files.
@@ -182,7 +183,11 @@ export class InlineCompletionProvider
         const accountPartLength = indent.length + posting.account.length;
         const spacesToAdd = Math.max(2, alignmentColumn - accountPartLength);
         const spacing = " ".repeat(spacesToAdd);
-        amountPart = `${spacing}\${${tabstopIndex++}:${this.escapeSnippetText(posting.amount)}}`;
+        const { amountOnly, commodityPart } = extractAmountParts(
+          posting.amount,
+          posting.commodity ?? undefined,
+        );
+        amountPart = `${spacing}\${${tabstopIndex++}:${this.escapeSnippetText(amountOnly)}}${commodityPart}`;
       }
 
       // First line: no leading newline (cursor already on new line)
