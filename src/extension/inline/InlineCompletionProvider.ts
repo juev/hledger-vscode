@@ -9,6 +9,7 @@ import * as vscode from "vscode";
 import { HLedgerConfig } from "../HLedgerConfig";
 import { InlinePositionAnalyzer } from "./InlinePositionAnalyzer";
 import { TransactionTemplate, PayeeName, TemplatePosting } from "../types";
+import { extractAmountParts } from "../utils/amountUtils";
 
 /**
  * Provides inline (ghost text) completions for hledger files.
@@ -158,43 +159,6 @@ export class InlineCompletionProvider
   }
 
   /**
-   * Escapes special regex characters in a string.
-   */
-  private escapeRegExp(str: string): string {
-    return str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-  }
-
-  /**
-   * Extracts numeric amount from amount string, handling both prefix and suffix commodities.
-   * Returns the amount without commodity and the commodity part for snippet formatting.
-   */
-  private extractAmountParts(
-    amount: string,
-    commodity: string | undefined,
-  ): { amountOnly: string; commodityPart: string } {
-    if (!commodity) {
-      return { amountOnly: amount, commodityPart: "" };
-    }
-
-    const escaped = this.escapeRegExp(commodity);
-    let amountOnly = amount;
-
-    // Try suffix first (e.g., "100 USD" or "100USD")
-    const suffixResult = amount.replace(new RegExp(`\\s*${escaped}$`), "");
-    if (suffixResult !== amount) {
-      amountOnly = suffixResult;
-    } else {
-      // Try prefix (e.g., "$100" or "$ 100")
-      amountOnly = amount.replace(new RegExp(`^${escaped}\\s*`), "");
-    }
-
-    return {
-      amountOnly,
-      commodityPart: ` ${commodity}`,
-    };
-  }
-
-  /**
    * Builds a SnippetString for a transaction template.
    * Amount fields are wrapped in tabstops (${1:amount}, ${2:amount}, etc.)
    * to enable Tab navigation after insertion.
@@ -219,7 +183,7 @@ export class InlineCompletionProvider
         const accountPartLength = indent.length + posting.account.length;
         const spacesToAdd = Math.max(2, alignmentColumn - accountPartLength);
         const spacing = " ".repeat(spacesToAdd);
-        const { amountOnly, commodityPart } = this.extractAmountParts(
+        const { amountOnly, commodityPart } = extractAmountParts(
           posting.amount,
           posting.commodity ?? undefined,
         );
