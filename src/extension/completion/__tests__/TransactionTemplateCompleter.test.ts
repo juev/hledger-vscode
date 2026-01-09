@@ -132,6 +132,28 @@ describe('TransactionTemplateCompleter', () => {
             expect(snippet.value).toContain('Assets:Cash');
         });
 
+        it('should separate amount and commodity in tabstop', () => {
+            mockConfig.getPayeesWithTemplates.mockReturnValue(['Coffee Shop' as PayeeName]);
+            mockConfig.getTemplatesForPayee.mockReturnValue([
+                createTemplate('Coffee Shop', [
+                    { account: 'Expenses:Food:Coffee', amount: '5.00 USD', commodity: 'USD' },
+                    { account: 'Assets:Cash', amount: null, commodity: null }
+                ], 5)
+            ]);
+
+            const context: CompletionContext = {
+                type: 'transaction_template',
+                query: 'Coffee'
+            };
+
+            const result = completer.complete(context);
+
+            expect(result.length).toBe(1);
+            const snippet = result[0]!.insertText as vscode.SnippetString;
+            expect(snippet.value).toContain('${1:5.00} USD');
+            expect(snippet.value).not.toContain('${1:5.00 USD}');
+        });
+
         it('should sort by usage count (highest first)', () => {
             mockConfig.getPayeesWithTemplates.mockReturnValue([
                 'Store A' as PayeeName,
@@ -306,7 +328,7 @@ describe('TransactionTemplateCompleter', () => {
             mockConfig.getPayeesWithTemplates.mockReturnValue(['Test Payee' as PayeeName]);
             mockConfig.getTemplatesForPayee.mockReturnValue([
                 createTemplate('Test Payee', [
-                    { account: 'Expenses:Test', amount: '100.00USD', commodity: 'USD' },
+                    { account: 'Expenses:Test', amount: '100.00 USD', commodity: 'USD' },
                     { account: 'Assets:Cash', amount: null, commodity: null }
                 ], 1)
             ]);
@@ -319,8 +341,8 @@ describe('TransactionTemplateCompleter', () => {
             const result = completer.complete(context);
 
             const snippet = result[0]!.insertText as vscode.SnippetString;
-            // Amount should be in a tabstop placeholder
-            expect(snippet.value).toMatch(/\$\{\d+:100\.00USD\}/);
+            // Amount should be in a tabstop placeholder, commodity outside
+            expect(snippet.value).toMatch(/\$\{\d+:100\.00\} USD/);
         });
     });
 

@@ -182,7 +182,12 @@ export class InlineCompletionProvider
         const accountPartLength = indent.length + posting.account.length;
         const spacesToAdd = Math.max(2, alignmentColumn - accountPartLength);
         const spacing = " ".repeat(spacesToAdd);
-        amountPart = `${spacing}\${${tabstopIndex++}:${this.escapeSnippetText(posting.amount)}}`;
+        const amountOnly =
+          posting.commodity && posting.amount
+            ? posting.amount.replace(new RegExp(`\\s*${posting.commodity}$`), "")
+            : posting.amount;
+        const commodityPart = posting.commodity ? ` ${posting.commodity}` : "";
+        amountPart = `${spacing}\${${tabstopIndex++}:${this.escapeSnippetText(amountOnly)}}${commodityPart}`;
       }
 
       // First line: no leading newline (cursor already on new line)
