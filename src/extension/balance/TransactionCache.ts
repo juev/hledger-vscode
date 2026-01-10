@@ -17,6 +17,9 @@ interface CachedTransaction {
 }
 
 export class TransactionCache {
+    private static readonly MAX_LINE_DIFF_FOR_INCREMENTAL = 50;
+    private static readonly MAX_AFFECTED_RATIO = 0.7;
+
     private readonly cache = new Map<string, CachedDocument>();
     private readonly extractor = new TransactionExtractor();
 
@@ -91,7 +94,7 @@ export class TransactionCache {
 
         // If massive changes or line count differs significantly, do full re-parse
         const lineDiff = Math.abs(newLines.length - cached.contentLines.length);
-        if (changedRanges.length > cached.transactions.length / 2 || lineDiff > 50) {
+        if (changedRanges.length > cached.transactions.length / 2 || lineDiff > TransactionCache.MAX_LINE_DIFF_FOR_INCREMENTAL) {
             return this.fullParse(documentUri, content, newLines, formatContext, formatContextHash);
         }
 
@@ -103,7 +106,7 @@ export class TransactionCache {
         );
 
         // If all or most transactions affected, do full re-parse
-        if (affectedIndices.size >= cached.transactions.length * 0.7) {
+        if (affectedIndices.size >= cached.transactions.length * TransactionCache.MAX_AFFECTED_RATIO) {
             return this.fullParse(documentUri, content, newLines, formatContext, formatContextHash);
         }
 

@@ -72,6 +72,8 @@ export class HLedgerDiagnosticsProvider implements vscode.Disposable {
         return new RegExp(patternString, 'u');
     })();
 
+    private static readonly DEFAULT_BALANCE_TOLERANCE = 1e-10;
+
     public readonly diagnosticCollection: vscode.DiagnosticCollection;
     private disposables: vscode.Disposable[] = [];
     private readonly transactionCache: TransactionCache;
@@ -382,7 +384,7 @@ export class HLedgerDiagnosticsProvider implements vscode.Disposable {
         const content = document.getText();
 
         const vsconfig = vscode.workspace.getConfiguration('hledger');
-        const tolerance = vsconfig.get<number>('diagnostics.balanceTolerance')!;
+        const tolerance = vsconfig.get<number>('diagnostics.balanceTolerance') ?? HLedgerDiagnosticsProvider.DEFAULT_BALANCE_TOLERANCE;
         const transactionBalancer = new TransactionBalancer(tolerance);
 
         const commodityFormats = this.config.getCommodityFormats();

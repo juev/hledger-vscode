@@ -186,7 +186,7 @@ export class AmountParser {
                 decimalMark = null;
                 groupSeparator = null;
             } else {
-                // Defensive fallback for unexpected cases - EU format
+                // Defensive fallback when heuristics cannot determine format
                 decimalMark = ',';
                 groupSeparator = '.';
             }
