@@ -240,6 +240,40 @@ account Expenses:Gas
         });
     });
 
+    describe('Balance assertions', () => {
+        it('should not modify alignment for lines with balance assertions', () => {
+            const content = `2025-01-15 * Test transaction
+    Assets:Bank  1000 RUB = 5000 RUB
+    Expenses:Food  -500 RUB`;
+
+            const result = formatter.formatContent(content);
+            expect(result.success).toBe(true);
+
+            if (result.success) {
+                const lines = result.data.split('\n');
+                // Line with = should preserve original spacing between account and amount
+                expect(lines[1]).toContain('Assets:Bank  1000 RUB = 5000 RUB');
+            }
+        });
+
+        it('should not modify various balance assertion operators', () => {
+            const content = `2025-01-15 * Test
+    Assets:Bank  100 USD = 500 USD
+    Assets:Cash  50 USD == 100 USD
+    Assets:Gold  10 oz =* 20 oz`;
+
+            const result = formatter.formatContent(content);
+            expect(result.success).toBe(true);
+
+            if (result.success) {
+                const lines = result.data.split('\n');
+                expect(lines[1]).toContain('Assets:Bank  100 USD = 500 USD');
+                expect(lines[2]).toContain('Assets:Cash  50 USD == 100 USD');
+                expect(lines[3]).toContain('Assets:Gold  10 oz =* 20 oz');
+            }
+        });
+    });
+
     describe('Edge cases', () => {
         it('should handle empty content', () => {
             const result = formatter.formatContent('');

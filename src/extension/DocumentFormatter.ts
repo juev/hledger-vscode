@@ -419,6 +419,11 @@ export class DocumentFormatter {
       return line;
     }
 
+    // Skip lines with balance assertions to preserve user's alignment
+    if (line.includes("=")) {
+      return line;
+    }
+
     // Find comment position first
     const commentIndex = line.indexOf(";");
     const hasComment = commentIndex !== -1;
