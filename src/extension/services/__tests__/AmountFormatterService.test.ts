@@ -180,7 +180,8 @@ describe('AmountFormatterService', () => {
 
                 const result = service.formatPostingLine('    Assets:Bank  1 000,00 RUB');
 
-                expect(result).toBe('    Assets:Bank  1 000,00 RUB');
+                // Returns null when amount is already correctly formatted (no changes needed)
+                expect(result).toBeNull();
             });
 
             it('should handle decimal amounts', () => {
@@ -424,9 +425,10 @@ describe('AmountFormatterService', () => {
 
             const result = service.formatDocumentContent(content);
 
-            expect(result).toContain('    Expenses:Food  1 000,00 RUB');
-            expect(result).toContain('    Assets:Cash  -1 000,00');
-            expect(result).toContain('    Assets:Bank  50 000,00');
+            // Check formatted amounts with flexible whitespace (alignment may vary)
+            expect(result).toMatch(/Expenses:Food\s+1 000,00 RUB/);
+            expect(result).toMatch(/Assets:Cash\s+-1 000,00/);
+            expect(result).toMatch(/Assets:Bank\s+50 000,00/);
             // Income:Salary has no amount, should be unchanged
             expect(result).toContain('    Income:Salary');
         });
@@ -441,6 +443,82 @@ describe('AmountFormatterService', () => {
             const result = service.formatDocumentContent(content);
 
             expect(result).toBe(content);
+        });
+
+        it('should pass alignment column to formatPostingLine', () => {
+            const formats = new Map<CommodityCode, CommodityFormat>();
+            formats.set(createCommodityCode('RUB'), rubFormat);
+            mockConfig.getCommodityFormats.mockReturnValue(formats);
+            mockConfig.getDefaultCommodity.mockReturnValue(createCommodityCode('RUB'));
+            (mockConfig as unknown as { getAmountAlignmentColumn: () => number }).getAmountAlignmentColumn = jest.fn().mockReturnValue(40);
+
+            const content = `2024-01-01 Test
+    Assets:Bank  1000 RUB`;
+
+            const result = service.formatDocumentContent(content);
+
+            // Amount should be aligned to column 40
+            const lines = result.split('\n');
+            const postingLine = lines[1];
+            const amountStart = postingLine?.indexOf('1 000,00');
+            expect(amountStart).toBe(40);
+        });
+    });
+
+    describe('ReDoS protection', () => {
+        beforeEach(() => {
+            const formats = new Map<CommodityCode, CommodityFormat>();
+            formats.set(createCommodityCode('RUB'), rubFormat);
+            mockConfig.getCommodityFormats.mockReturnValue(formats);
+            mockConfig.getDefaultCommodity.mockReturnValue(createCommodityCode('RUB'));
+        });
+
+        it('should handle long account names efficiently', () => {
+            const longAccount = 'a'.repeat(1000);
+            const line = `    ${longAccount}  100 RUB`;
+            const start = performance.now();
+            service.formatPostingLine(line);
+            const elapsed = performance.now() - start;
+            expect(elapsed).toBeLessThan(100); // Should complete in <100ms
+        });
+
+        it('should handle long lines without delimiters efficiently', () => {
+            const longContent = 'x'.repeat(500);
+            const line = `    Account  100 RUB ${longContent}`;
+            const start = performance.now();
+            service.formatPostingLine(line);
+            const elapsed = performance.now() - start;
+            expect(elapsed).toBeLessThan(100);
+        });
+
+        it('should handle lines with many potential assertion markers', () => {
+            // Line with many = characters that could trigger backtracking
+            const manyEquals = '='.repeat(100);
+            const line = `    Account${manyEquals}  100 RUB`;
+            const start = performance.now();
+            service.formatPostingLine(line);
+            const elapsed = performance.now() - start;
+            expect(elapsed).toBeLessThan(100);
+        });
+
+        it('should handle lines with many @ characters', () => {
+            // Line with many @ characters that could trigger backtracking
+            const manyAts = '@'.repeat(100);
+            const line = `    Account${manyAts}  100 RUB`;
+            const start = performance.now();
+            service.formatPostingLine(line);
+            const elapsed = performance.now() - start;
+            expect(elapsed).toBeLessThan(100);
+        });
+
+        it('should handle lines with many semicolons', () => {
+            // Line with many ; characters that could trigger backtracking
+            const manySemis = ';'.repeat(100);
+            const line = `    Account  100 RUB ${manySemis}`;
+            const start = performance.now();
+            service.formatPostingLine(line);
+            const elapsed = performance.now() - start;
+            expect(elapsed).toBeLessThan(100);
         });
     });
 });

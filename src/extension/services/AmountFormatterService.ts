@@ -8,6 +8,8 @@ import { CommodityCode } from '../types';
  * Supports both explicit commodity formatting and default commodity formatting.
  */
 export class AmountFormatterService {
+    private commodityRegexCache = new Map<CommodityCode, { prefix: RegExp; suffix: RegExp }>();
+
     constructor(
         private readonly config: HLedgerConfig,
         private readonly numberFormatService: NumberFormatService
@@ -43,19 +45,21 @@ export class AmountFormatterService {
         const trimmedLine = line.trim();
 
         // Step 1: Extract inline comment (must be preceded by 2+ spaces or at start after amount)
+        // Using negated character class [^;] to prevent ReDoS
         let comment = '';
         let lineWithoutComment = trimmedLine;
-        const commentMatch = trimmedLine.match(/^(.+?)(\s{2,};.*)$/);
+        const commentMatch = trimmedLine.match(/^([^;]+)(\s{2,};.*)$/);
         if (commentMatch) {
             lineWithoutComment = commentMatch[1]?.trim() ?? trimmedLine;
             comment = commentMatch[2] ?? '';
         }
 
         // Step 2: Extract balance assertion (=, ==, =*, ==*)
+        // Using negated character class [^=] to prevent ReDoS
         let balanceAssertion = '';
         let balanceAssertionAmount = '';
         let lineWithoutAssertion = lineWithoutComment;
-        const assertionMatch = lineWithoutComment.match(/^(.+?)\s+(==?\*?)\s+(.+)$/);
+        const assertionMatch = lineWithoutComment.match(/^([^=]+)\s+(==?\*?)\s+(.+)$/);
         if (assertionMatch) {
             lineWithoutAssertion = assertionMatch[1]?.trim() ?? lineWithoutComment;
             balanceAssertion = assertionMatch[2] ?? '';
@@ -63,10 +67,11 @@ export class AmountFormatterService {
         }
 
         // Step 3: Extract cost notation (@, @@)
+        // Using negated character class [^@] to prevent ReDoS
         let costNotation = '';
         let costAmount = '';
         let lineWithoutCost = lineWithoutAssertion;
-        const costMatch = lineWithoutAssertion.match(/^(.+?)\s+(@@?)\s+(.+)$/);
+        const costMatch = lineWithoutAssertion.match(/^([^@]+)\s+(@@?)\s+(.+)$/);
         if (costMatch) {
             lineWithoutCost = costMatch[1]?.trim() ?? lineWithoutAssertion;
             costNotation = costMatch[2] ?? '';
@@ -128,19 +133,14 @@ export class AmountFormatterService {
             return null;
         }
 
-        // Check if formatting failed for all amounts (no format found)
-        const mainAmountFailed = mainAmount && formattedMainAmount === mainAmount && !this.formatSingleAmount(mainAmount, commodityFormats);
-        const costAmountFailed = costAmount && formattedCostAmount === costAmount && !this.formatSingleAmount(costAmount, commodityFormats);
-        const assertionAmountFailed = balanceAssertionAmount && formattedAssertionAmount === balanceAssertionAmount && !this.formatSingleAmount(balanceAssertionAmount, commodityFormats);
+        // Check if any formatting actually changed something
+        const anyFormatChanged =
+            (mainAmount && formattedMainAmount !== mainAmount) ||
+            (costAmount && formattedCostAmount !== costAmount) ||
+            (balanceAssertionAmount && formattedAssertionAmount !== balanceAssertionAmount);
 
-        // Return null only if ALL amounts failed to find a format
-        if (mainAmountFailed && !costAmount && !balanceAssertionAmount) {
-            return null;
-        }
-        if (costAmountFailed && !mainAmount && !balanceAssertionAmount) {
-            return null;
-        }
-        if (assertionAmountFailed && !mainAmount && !costAmount) {
+        // Return null if nothing changed (no applicable format found)
+        if (!anyFormatChanged) {
             return null;
         }
 
@@ -186,6 +186,23 @@ export class AmountFormatterService {
     }
 
     /**
+     * Gets cached regex patterns for a commodity.
+     * Creates and caches them if not already cached.
+     */
+    private getCommodityRegex(commodity: CommodityCode): { prefix: RegExp; suffix: RegExp } {
+        let cached = this.commodityRegexCache.get(commodity);
+        if (!cached) {
+            const escaped = this.escapeRegex(commodity);
+            cached = {
+                suffix: new RegExp(`${escaped}$`),
+                prefix: new RegExp(`^${escaped}`)
+            };
+            this.commodityRegexCache.set(commodity, cached);
+        }
+        return cached;
+    }
+
+    /**
      * Formats a single amount string (with or without commodity).
      * @returns Formatted amount or null if no format applicable
      */
@@ -194,16 +211,16 @@ export class AmountFormatterService {
         let hasCommodity = false;
         let actualCommodity: CommodityCode | undefined;
 
-        // Try to find commodity in amount string
+        // Try to find commodity in amount string (using cached regexes)
         for (const [commodity] of commodityFormats) {
-            const escaped = this.escapeRegex(commodity);
+            const regex = this.getCommodityRegex(commodity);
             // Check suffix: "100 RUB" or "100RUB"
-            if (new RegExp(`${escaped}$`).test(amountStr)) {
+            if (regex.suffix.test(amountStr)) {
                 actualCommodity = commodity;
                 break;
             }
             // Check prefix: "$100" or "$ 100"
-            if (new RegExp(`^${escaped}`).test(amountStr)) {
+            if (regex.prefix.test(amountStr)) {
                 actualCommodity = commodity;
                 break;
             }
@@ -243,9 +260,10 @@ export class AmountFormatterService {
      * @returns Formatted content
      */
     formatDocumentContent(content: string): string {
+        const alignmentColumn = this.getAlignmentColumn();
         const lines = content.split('\n');
         const formattedLines = lines.map(line => {
-            const formatted = this.formatPostingLine(line);
+            const formatted = this.formatPostingLine(line, alignmentColumn);
             return formatted ?? line;
         });
         return formattedLines.join('\n');
