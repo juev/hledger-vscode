@@ -1,5 +1,36 @@
 # Change Log
 
+## [0.4.12] - 2026-01-10
+
+### Added
+- feat: add incremental transaction caching for improved validation performance
+- feat: add transaction balance validation on save
+- feat: add automatic amount formatting by commodity directives
+
+### Changed
+- refactor: extract magic numbers to named constants and improve code clarity
+- refactor: improve code quality and add configurable balance tolerance
+- refactor: switch to Format on Save for commodity formatting
+
+### Fixed
+- fix: invalidate transaction cache when commodity format context changes
+- fix: address code review issues for balance validation
+- fix: preserve user alignment for balance assertion lines in DocumentFormatter
+- fix: skip formatting for lines with balance assertions
+- fix: validate format match before parsing amounts in AmountFormatterService
+- fix: use explicit commodity format for number parsing in AmountFormatterService
+- fix: use commodity format context for number parsing in balance validation
+- fix: support multi-commodity transactions with inferred amounts
+- fix: address code review issues in balance module
+- fix: address code review feedback for balance module
+- fix: use spread syntax for optional cost in test helper
+- fix: resolve TypeScript strict mode errors in balance module
+- fix: address code review issues in AmountFormatterService
+- fix: add debounced formatting for snippet tabstops
+- fix: initialize config before formatting amounts
+- fix: align amounts to configured column on Enter and cursor leave
+
+
 ## [0.4.11] - 2026-01-09
 
 ### Added
