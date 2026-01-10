@@ -171,6 +171,7 @@ const scoreStr = (10000 - cappedScore).toString().padStart(5, '0');
 - `src/extension/import/` - CSV/TSV import with account resolution
 - `src/extension/actions/` - Code actions (balance assertions, quick fixes)
 - `src/extension/diagnostics/` - Validation on save/open
+- `src/extension/balance/` - Transaction balance validation (AmountParser, TransactionExtractor, TransactionBalancer)
 - `src/extension/services/` - NumberFormatService, HLedgerCliService
 
 ### Type System

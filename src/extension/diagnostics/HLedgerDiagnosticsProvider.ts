@@ -1,6 +1,8 @@
 import * as vscode from 'vscode';
 import { HLedgerConfig } from '../HLedgerConfig';
 import { AccountName, CommodityCode } from '../types';
+import { TransactionExtractor } from '../balance/TransactionExtractor';
+import { TransactionBalancer } from '../balance/TransactionBalancer';
 
 /**
  * Diagnostic codes for hledger validation errors.
@@ -9,7 +11,8 @@ export enum HLedgerDiagnosticCode {
     UndefinedAccount = 'undefined-account',
     InvalidTagFormat = 'invalid-tag-format',
     InvalidAmountFormat = 'invalid-amount-format',
-    UndeclaredCommodity = 'undeclared-commodity'
+    UndeclaredCommodity = 'undeclared-commodity',
+    UnbalancedTransaction = 'unbalanced-transaction'
 }
 
 /**
@@ -70,8 +73,12 @@ export class HLedgerDiagnosticsProvider implements vscode.Disposable {
 
     public readonly diagnosticCollection: vscode.DiagnosticCollection;
     private disposables: vscode.Disposable[] = [];
+    private readonly transactionExtractor: TransactionExtractor;
+    private readonly transactionBalancer: TransactionBalancer;
 
     constructor(private config: HLedgerConfig) {
+        this.transactionExtractor = new TransactionExtractor();
+        this.transactionBalancer = new TransactionBalancer();
         this.diagnosticCollection = vscode.languages.createDiagnosticCollection('hledger');
 
         this.disposables.push(
@@ -130,6 +137,9 @@ export class HLedgerDiagnosticsProvider implements vscode.Disposable {
                 diagnostics.push(commodityDiag);
             }
         }
+
+        const balanceDiagnostics = this.validateTransactionBalance(document);
+        diagnostics.push(...balanceDiagnostics);
 
         if (diagnostics.length > 0) {
             this.diagnosticCollection.set(document.uri, diagnostics);
@@ -363,6 +373,56 @@ export class HLedgerDiagnosticsProvider implements vscode.Disposable {
         }
 
         return undefined;
+    }
+
+    private validateTransactionBalance(document: vscode.TextDocument): vscode.Diagnostic[] {
+        const diagnostics: vscode.Diagnostic[] = [];
+        const content = document.getText();
+        const transactions = this.transactionExtractor.extractTransactions(content);
+
+        for (const transaction of transactions) {
+            const result = this.transactionBalancer.checkBalance(transaction);
+
+            if (result.status === 'unbalanced') {
+                for (const error of result.errors) {
+                    const lineText = document.lineAt(transaction.headerLineNumber).text;
+                    const range = new vscode.Range(
+                        transaction.headerLineNumber,
+                        0,
+                        transaction.headerLineNumber,
+                        lineText.length
+                    );
+
+                    const diagnostic = new vscode.Diagnostic(
+                        range,
+                        error.message,
+                        vscode.DiagnosticSeverity.Error
+                    );
+                    diagnostic.code = HLedgerDiagnosticCode.UnbalancedTransaction;
+                    diagnostic.source = 'hledger';
+                    diagnostics.push(diagnostic);
+                }
+            } else if (result.status === 'error') {
+                const lineText = document.lineAt(transaction.headerLineNumber).text;
+                const range = new vscode.Range(
+                    transaction.headerLineNumber,
+                    0,
+                    transaction.headerLineNumber,
+                    lineText.length
+                );
+
+                const diagnostic = new vscode.Diagnostic(
+                    range,
+                    result.message,
+                    vscode.DiagnosticSeverity.Error
+                );
+                diagnostic.code = HLedgerDiagnosticCode.UnbalancedTransaction;
+                diagnostic.source = 'hledger';
+                diagnostics.push(diagnostic);
+            }
+        }
+
+        return diagnostics;
     }
 
     public clearDiagnostics(document: vscode.TextDocument): void {

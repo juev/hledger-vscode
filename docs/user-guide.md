@@ -440,6 +440,21 @@ The extension validates your journal files and shows warnings/errors.
 | Commodity validation | Checks for undeclared commodities (when `commodity` directives exist) |
 | Amount format | Validates complex amount patterns |
 | Tag format | Validates tag syntax |
+| Transaction balance | Checks that transactions balance to zero |
+
+### Transaction Balance Validation
+
+The extension checks that all transactions balance correctly:
+
+- **Each commodity balances separately** - All postings with the same commodity must sum to zero
+- **One inferred amount allowed** - At most one posting can omit its amount
+- **Virtual postings handled**:
+  - `(account)` - Unbalanced virtual postings are ignored
+  - `[account]` - Balanced virtual postings must balance among themselves
+- **Cost notation supported** - `@` and `@@` price conversions are properly handled
+- **Balance assertions** - `= $500`, `== $500`, `:= $500` are recognized
+
+When a transaction doesn't balance, the error appears on the transaction date line with details about the imbalance (e.g., "Transaction is unbalanced in USD; difference is 10.50").
 
 ### Validated Amount Patterns
 
