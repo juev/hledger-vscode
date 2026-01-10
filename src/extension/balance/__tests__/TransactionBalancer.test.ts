@@ -16,7 +16,7 @@ function createPosting(
             value: amount.value ?? 0,
             commodity: (amount.commodity ?? '') as CommodityCode,
             precision: amount.precision ?? 2,
-            cost: amount.cost,
+            ...(amount.cost && { cost: amount.cost }),
             isBalanceAssertionOnly: amount.isBalanceAssertionOnly ?? false,
         } : null,
         lineNumber,
