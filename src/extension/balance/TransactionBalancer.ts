@@ -1,10 +1,14 @@
 import { CommodityCode } from '../types';
 import { ParsedTransaction, ParsedPosting, BalanceResult, BalanceError } from './types';
+import { NumberFormatContext } from './AmountParser';
 
 export class TransactionBalancer {
-    private static readonly BALANCE_TOLERANCE = 1e-10;
+    private static readonly DEFAULT_TOLERANCE = 1e-10;
+    private static readonly CURRENCY_SYMBOL_PATTERN = /^[\p{Sc}]$/u;
 
-    checkBalance(transaction: ParsedTransaction): BalanceResult {
+    constructor(private readonly tolerance: number = TransactionBalancer.DEFAULT_TOLERANCE) {}
+
+    checkBalance(transaction: ParsedTransaction, formatContext?: NumberFormatContext): BalanceResult {
         if (transaction.postings.length === 0) {
             return { status: 'balanced' };
         }
@@ -14,11 +18,11 @@ export class TransactionBalancer {
 
         const errors: BalanceError[] = [];
 
-        const realResult = this.checkPostingGroup(realPostings, 'real');
+        const realResult = this.checkPostingGroup(realPostings, 'real', formatContext);
         errors.push(...realResult);
 
         if (balancedVirtualPostings.length > 0) {
-            const virtualResult = this.checkPostingGroup(balancedVirtualPostings, 'balancedVirtual');
+            const virtualResult = this.checkPostingGroup(balancedVirtualPostings, 'balancedVirtual', formatContext);
             errors.push(...virtualResult);
         }
 
@@ -31,7 +35,8 @@ export class TransactionBalancer {
 
     private checkPostingGroup(
         postings: readonly ParsedPosting[],
-        group: 'real' | 'balancedVirtual'
+        group: 'real' | 'balancedVirtual',
+        formatContext?: NumberFormatContext
     ): BalanceError[] {
         const errors: BalanceError[] = [];
 
@@ -54,13 +59,13 @@ export class TransactionBalancer {
         for (const [commodity, balance] of commodityBalances) {
             const roundedSum = this.roundToPrecision(balance.sum, balance.precision);
 
-            if (Math.abs(roundedSum) > TransactionBalancer.BALANCE_TOLERANCE) {
+            if (Math.abs(roundedSum) > this.tolerance) {
                 if (inferredCount === 1) {
                     continue;
                 }
 
                 const commodityDisplay = commodity || 'no commodity';
-                const differenceDisplay = this.formatAmount(roundedSum, commodity, balance.precision);
+                const differenceDisplay = this.formatAmount(roundedSum, commodity, balance.precision, formatContext);
 
                 errors.push({
                     type: 'imbalanced',
@@ -119,17 +124,24 @@ export class TransactionBalancer {
         return Math.round(value * factor) / factor;
     }
 
-    private formatAmount(value: number, commodity: CommodityCode, precision: number): string {
+    private formatAmount(
+        value: number,
+        commodity: CommodityCode,
+        precision: number,
+        formatContext?: NumberFormatContext
+    ): string {
         const absValue = Math.abs(value);
         const sign = value < 0 ? '-' : '';
 
-        if (commodity) {
-            if (/^[$€£¥₽₹]$/.test(commodity)) {
-                return `${sign}${commodity}${absValue.toFixed(precision)}`;
-            }
-            return `${sign}${absValue.toFixed(precision)} ${commodity}`;
+        if (!commodity) {
+            return `${sign}${absValue.toFixed(precision)}`;
         }
 
-        return `${sign}${absValue.toFixed(precision)}`;
+        const format = formatContext?.commodityFormats?.get(commodity);
+        const symbolBefore = format?.symbolBefore ?? TransactionBalancer.CURRENCY_SYMBOL_PATTERN.test(commodity);
+
+        return symbolBefore
+            ? `${sign}${commodity}${absValue.toFixed(precision)}`
+            : `${sign}${absValue.toFixed(precision)} ${commodity}`;
     }
 }

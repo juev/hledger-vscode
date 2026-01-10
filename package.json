@@ -102,6 +102,12 @@
           "default": true,
           "description": "Check that transactions balance correctly (all postings sum to zero per commodity)"
         },
+        "hledger.diagnostics.balanceTolerance": {
+          "type": "number",
+          "default": 0.0000000001,
+          "minimum": 0,
+          "description": "Tolerance for balance validation (default: 1e-10). Useful for high-precision accounting with cryptocurrencies."
+        },
         "hledger.formatting.amountAlignmentColumn": {
           "type": "number",
           "default": 40,

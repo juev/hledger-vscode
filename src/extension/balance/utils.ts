@@ -21,17 +21,14 @@ export const BALANCE_ASSERTION_PATTERN = /\s+(:?={1,2}\*?)\s+/;
 export function hasBalanceAssertion(line: string): boolean {
     const trimmed = line.trimStart();
 
-    // Skip comment-only lines
     if (trimmed.startsWith(';')) {
         return false;
     }
 
-    // Skip directive lines (commodity, account, etc.)
     if (/^(commodity|account|alias|include|P)\s/.test(trimmed)) {
         return false;
     }
 
-    // Skip transaction header lines (date at start)
     if (/^\d{4}[-/]/.test(trimmed)) {
         return false;
     }

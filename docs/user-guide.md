@@ -710,6 +710,7 @@ Map CSV category values to hledger accounts:
 |---------|------|---------|-------------|
 | `hledger.diagnostics.enabled` | boolean | `true` | Enable validation diagnostics |
 | `hledger.diagnostics.checkBalance` | boolean | `true` | Check that transactions balance correctly |
+| `hledger.diagnostics.balanceTolerance` | number | `1e-10` | Tolerance for balance validation. Useful for high-precision accounting with cryptocurrencies |
 
 ### Formatting Settings
 

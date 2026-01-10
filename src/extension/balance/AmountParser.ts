@@ -12,29 +12,14 @@ export class AmountParser {
 
     private static readonly BALANCE_ASSERTION_ONLY = /^(:?={1,2}\*?)\s*(.+)$/;
     private static readonly BALANCE_ASSERTION_SUFFIX = /\s*:?={1,2}\*?\s*[^@]+$/;
+    private static readonly SCIENTIFIC_NOTATION_PART = /^[eE]\d*$/;
 
     private getFormatForCommodity(commodity?: CommodityCode | string): NumberFormat | null {
-        if (!this.formatContext?.commodityFormats) {
-            return null;
-        }
+        const formats = this.formatContext?.commodityFormats;
+        if (!formats) return null;
 
-        const formats = this.formatContext.commodityFormats;
-
-        if (commodity) {
-            const format = formats.get(commodity as CommodityCode);
-            if (format) {
-                return format.format;
-            }
-        }
-
-        if (!commodity && this.formatContext.defaultCommodity) {
-            const defaultFormat = formats.get(this.formatContext.defaultCommodity as CommodityCode);
-            if (defaultFormat) {
-                return defaultFormat.format;
-            }
-        }
-
-        return null;
+        const key = commodity ?? this.formatContext?.defaultCommodity;
+        return key ? formats.get(key as CommodityCode)?.format ?? null : null;
     }
 
     parsePostingAmount(input: string): ParsedPostingAmount | null {
@@ -120,7 +105,7 @@ export class AmountParser {
         const prefixCommodityMatch = str.match(/^([\p{Sc}]|[A-Za-z\p{L}]+)\s*/u);
         if (prefixCommodityMatch && !/^\d/.test(prefixCommodityMatch[1]!)) {
             const potentialCommodity = prefixCommodityMatch[1]!;
-            if (!/^[eE]$/.test(potentialCommodity)) {
+            if (!AmountParser.SCIENTIFIC_NOTATION_PART.test(potentialCommodity)) {
                 commodity = potentialCommodity as CommodityCode;
                 str = str.slice(prefixCommodityMatch[0].length);
             }
@@ -135,7 +120,7 @@ export class AmountParser {
         const suffixCommodityMatch = str.match(/\s+([\p{Sc}]|[A-Za-z\p{L}]+)$/u);
         if (suffixCommodityMatch) {
             const potentialCommodity = suffixCommodityMatch[1]!;
-            if (!/^[eE]\d*$/.test(potentialCommodity)) {
+            if (!AmountParser.SCIENTIFIC_NOTATION_PART.test(potentialCommodity)) {
                 if (!commodity) {
                     commodity = potentialCommodity as CommodityCode;
                 }

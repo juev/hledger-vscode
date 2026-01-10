@@ -75,11 +75,9 @@ export class HLedgerDiagnosticsProvider implements vscode.Disposable {
     public readonly diagnosticCollection: vscode.DiagnosticCollection;
     private disposables: vscode.Disposable[] = [];
     private readonly transactionExtractor: TransactionExtractor;
-    private readonly transactionBalancer: TransactionBalancer;
 
     constructor(private config: HLedgerConfig) {
         this.transactionExtractor = new TransactionExtractor();
-        this.transactionBalancer = new TransactionBalancer();
         this.diagnosticCollection = vscode.languages.createDiagnosticCollection('hledger');
 
         this.disposables.push(
@@ -383,10 +381,12 @@ export class HLedgerDiagnosticsProvider implements vscode.Disposable {
         const diagnostics: vscode.Diagnostic[] = [];
         const content = document.getText();
 
+        const vsconfig = vscode.workspace.getConfiguration('hledger');
+        const tolerance = vsconfig.get<number>('diagnostics.balanceTolerance', 1e-10);
+        const transactionBalancer = new TransactionBalancer(tolerance);
+
         const commodityFormats = this.config.getCommodityFormats();
 
-        // Create formatContext only if commodity formats are defined
-        // Otherwise use heuristic parsing (formatContext = undefined)
         const formatContext: NumberFormatContext | undefined =
             commodityFormats && commodityFormats.size > 0
                 ? {
@@ -398,7 +398,7 @@ export class HLedgerDiagnosticsProvider implements vscode.Disposable {
         const transactions = this.transactionExtractor.extractTransactions(content, formatContext);
 
         for (const transaction of transactions) {
-            const result = this.transactionBalancer.checkBalance(transaction);
+            const result = transactionBalancer.checkBalance(transaction, formatContext);
 
             if (result.status === 'unbalanced') {
                 for (const error of result.errors) {
