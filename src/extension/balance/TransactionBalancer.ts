@@ -92,6 +92,9 @@ export class TransactionBalancer {
             const { value, commodity, precision, cost } = posting.amount;
 
             if (cost) {
+                // cost.value is always positive (sign stripped in AmountParser).
+                // Calculate total cost: for unit price (@) multiply by quantity,
+                // for total price (@@) use directly. Then apply original value's sign.
                 const costValue = cost.isTotal ? cost.value : Math.abs(value) * cost.value;
                 const convertedValue = value >= 0 ? costValue : -costValue;
 

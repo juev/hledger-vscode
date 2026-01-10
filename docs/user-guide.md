@@ -483,6 +483,15 @@ If you prefer to use hledger CLI for validation, you can disable balance checkin
 }
 ```
 
+**Tolerance configuration**
+For cryptocurrencies with 8+ decimal places, increase tolerance to avoid false positives:
+
+```json
+{
+  "hledger.diagnostics.balanceTolerance": 1e-8
+}
+```
+
 ### Validated Amount Patterns
 
 The extension recognizes all valid hledger amount formats:

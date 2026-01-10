@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
 import { HLedgerConfig } from '../HLedgerConfig';
 import { AccountName, CommodityCode } from '../types';
-import { TransactionExtractor } from '../balance/TransactionExtractor';
+import { TransactionCache } from '../balance/TransactionCache';
 import { TransactionBalancer } from '../balance/TransactionBalancer';
 import { NumberFormatContext } from '../balance/AmountParser';
 
@@ -74,10 +74,10 @@ export class HLedgerDiagnosticsProvider implements vscode.Disposable {
 
     public readonly diagnosticCollection: vscode.DiagnosticCollection;
     private disposables: vscode.Disposable[] = [];
-    private readonly transactionExtractor: TransactionExtractor;
+    private readonly transactionCache: TransactionCache;
 
     constructor(private config: HLedgerConfig) {
-        this.transactionExtractor = new TransactionExtractor();
+        this.transactionCache = new TransactionCache();
         this.diagnosticCollection = vscode.languages.createDiagnosticCollection('hledger');
 
         this.disposables.push(
@@ -382,7 +382,7 @@ export class HLedgerDiagnosticsProvider implements vscode.Disposable {
         const content = document.getText();
 
         const vsconfig = vscode.workspace.getConfiguration('hledger');
-        const tolerance = vsconfig.get<number>('diagnostics.balanceTolerance', 1e-10);
+        const tolerance = vsconfig.get<number>('diagnostics.balanceTolerance')!;
         const transactionBalancer = new TransactionBalancer(tolerance);
 
         const commodityFormats = this.config.getCommodityFormats();
@@ -395,7 +395,8 @@ export class HLedgerDiagnosticsProvider implements vscode.Disposable {
                 }
                 : undefined;
 
-        const transactions = this.transactionExtractor.extractTransactions(content, formatContext);
+        const documentUri = document.uri.toString();
+        const transactions = this.transactionCache.getTransactions(documentUri, content, formatContext);
 
         for (const transaction of transactions) {
             const result = transactionBalancer.checkBalance(transaction, formatContext);
@@ -450,7 +451,12 @@ export class HLedgerDiagnosticsProvider implements vscode.Disposable {
         this.diagnosticCollection.clear();
     }
 
+    public invalidateTransactionCache(uri: vscode.Uri): void {
+        this.transactionCache.invalidate(uri.toString());
+    }
+
     dispose(): void {
+        this.transactionCache.clear();
         this.diagnosticCollection.dispose();
         this.disposables.forEach(d => d.dispose());
     }

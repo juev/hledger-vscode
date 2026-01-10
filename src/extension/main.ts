@@ -137,11 +137,13 @@ export function activate(context: vscode.ExtensionContext): void {
     const watcher = vscode.workspace.createFileSystemWatcher(
       "**/*.{journal,hledger,ledger}",
     );
-    const onFsChange = (): void => {
+    const onFsChange = (uri: vscode.Uri): void => {
       try {
         // Reset data without clearing cache - SimpleProjectCache.get() validates mtimeMs automatically
         // This provides ~50x speedup for large projects by avoiding full workspace reparsing
         services.config.resetData();
+        // Invalidate transaction cache for the specific file that changed
+        diagnosticsProvider.invalidateTransactionCache(uri);
       } catch (err) {
         console.error("HLedger: data reset failed after FS change", err);
       }

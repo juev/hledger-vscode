@@ -93,10 +93,6 @@ export class TransactionExtractor {
             }
 
             if (currentTransaction && this.lexer.isPostingLine(line)) {
-                if (this.isCommentLine(trimmed)) {
-                    continue;
-                }
-
                 const posting = amountParser.parsePostingLine(line, i);
                 if (posting) {
                     currentPostings.push(posting);

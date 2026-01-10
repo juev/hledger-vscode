@@ -104,9 +104,9 @@
         },
         "hledger.diagnostics.balanceTolerance": {
           "type": "number",
-          "default": 0.0000000001,
+          "default": 1e-10,
           "minimum": 0,
-          "description": "Tolerance for balance validation (default: 1e-10). Useful for high-precision accounting with cryptocurrencies."
+          "description": "Tolerance for balance validation (default: 1e-10). Increase for high-precision cryptocurrencies (e.g., 1e-8 for Bitcoin)."
         },
         "hledger.formatting.amountAlignmentColumn": {
           "type": "number",

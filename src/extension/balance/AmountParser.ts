@@ -185,6 +185,10 @@ export class AmountParser {
             } else if (lastDot === -1 && lastComma === -1) {
                 decimalMark = null;
                 groupSeparator = null;
+            } else {
+                // Defensive fallback for unexpected cases - EU format
+                decimalMark = ',';
+                groupSeparator = '.';
             }
         }
 
