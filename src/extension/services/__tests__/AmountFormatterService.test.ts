@@ -291,29 +291,29 @@ describe('AmountFormatterService', () => {
         });
 
         describe('balance assertions', () => {
-            it('should format both posting amount and balance assertion', () => {
+            it('should skip formatting for lines with balance assertion', () => {
                 const result = service.formatPostingLine('    Assets:Bank  1000 RUB = 5000 RUB');
-                expect(result).toBe('    Assets:Bank  1 000,00 RUB = 5 000,00 RUB');
+                expect(result).toBeNull();
             });
 
-            it('should format balance assertion without posting amount', () => {
+            it('should skip formatting for balance assertion without posting amount', () => {
                 const result = service.formatPostingLine('    Assets:Bank  = 5000 RUB');
-                expect(result).toBe('    Assets:Bank  = 5 000,00 RUB');
+                expect(result).toBeNull();
             });
 
-            it('should handle == (total assertion)', () => {
+            it('should skip formatting for == (total assertion)', () => {
                 const result = service.formatPostingLine('    Assets:Bank  1000 RUB == 5000 RUB');
-                expect(result).toBe('    Assets:Bank  1 000,00 RUB == 5 000,00 RUB');
+                expect(result).toBeNull();
             });
 
-            it('should handle =* (inclusive assertion)', () => {
+            it('should skip formatting for =* (inclusive assertion)', () => {
                 const result = service.formatPostingLine('    Assets:Bank  1000 RUB =* 5000 RUB');
-                expect(result).toBe('    Assets:Bank  1 000,00 RUB =* 5 000,00 RUB');
+                expect(result).toBeNull();
             });
 
-            it('should handle ==* (total inclusive assertion)', () => {
+            it('should skip formatting for ==* (total inclusive assertion)', () => {
                 const result = service.formatPostingLine('    Assets:Bank  1000 RUB ==* 5000 RUB');
-                expect(result).toBe('    Assets:Bank  1 000,00 RUB ==* 5 000,00 RUB');
+                expect(result).toBeNull();
             });
         });
 
@@ -350,9 +350,9 @@ describe('AmountFormatterService', () => {
                 expect(result).toBe('    (Tracking)  1 000,00 RUB');
             });
 
-            it('should format virtual posting with balance assertion', () => {
+            it('should skip formatting for virtual posting with balance assertion', () => {
                 const result = service.formatPostingLine('    [Budget:Food]  -1000 RUB = -5000 RUB');
-                expect(result).toBe('    [Budget:Food]  -1 000,00 RUB = -5 000,00 RUB');
+                expect(result).toBeNull();
             });
         });
 
@@ -362,9 +362,9 @@ describe('AmountFormatterService', () => {
                 expect(result).toBe('    Expenses:Food  1 000,00 RUB  ; groceries');
             });
 
-            it('should preserve comment with balance assertion', () => {
+            it('should skip formatting for line with balance assertion and comment', () => {
                 const result = service.formatPostingLine('    Assets:Bank  1000 RUB = 5000 RUB  ; check balance');
-                expect(result).toBe('    Assets:Bank  1 000,00 RUB = 5 000,00 RUB  ; check balance');
+                expect(result).toBeNull();
             });
 
             it('should preserve comment with cost notation', () => {
@@ -384,26 +384,26 @@ describe('AmountFormatterService', () => {
                 expect(result).toBe('    Assets:USD  100,00 @ 95,50');
             });
 
-            it('should format amount without commodity in balance assertion', () => {
+            it('should skip formatting for balance assertion without commodity', () => {
                 const result = service.formatPostingLine('    Assets:Cash  1000 = 5000');
-                expect(result).toBe('    Assets:Cash  1 000,00 = 5 000,00');
+                expect(result).toBeNull();
             });
 
-            it('should format balance assertion without posting amount using D directive', () => {
+            it('should skip formatting for balance assertion without posting amount', () => {
                 const result = service.formatPostingLine('    Assets:Cash  = 5000');
-                expect(result).toBe('    Assets:Cash  = 5 000,00');
+                expect(result).toBeNull();
             });
         });
 
         describe('combined syntax', () => {
-            it('should format all amounts in combined syntax', () => {
+            it('should skip formatting for cost + assertion', () => {
                 const result = service.formatPostingLine('    Assets:USD  100 USD @ 95.50 RUB = 500 USD  ; purchase');
-                expect(result).toBe('    Assets:USD  100,00 USD @ 95,50 RUB = 500,00 USD  ; purchase');
+                expect(result).toBeNull();
             });
 
-            it('should handle complex posting with cost and assertion', () => {
+            it('should skip formatting for complex posting with cost and assertion', () => {
                 const result = service.formatPostingLine('    Assets:Stocks  10 AAPL @@ 1500 USD = 20 AAPL');
-                expect(result).toBe('    Assets:Stocks  10 AAPL @@ 1 500,00 USD = 20 AAPL');
+                expect(result).toBeNull();
             });
         });
     });
