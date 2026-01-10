@@ -112,7 +112,7 @@ export function activate(context: vscode.ExtensionContext): void {
     );
 
     // Register Enter key handler for smart indentation and amount formatting
-    const enterCommand = new HLedgerEnterCommand(amountFormatterService);
+    const enterCommand = new HLedgerEnterCommand(amountFormatterService, services.config);
     context.subscriptions.push(enterCommand);
 
     // Register Tab key handler for amount alignment positioning
@@ -152,6 +152,7 @@ export function activate(context: vscode.ExtensionContext): void {
 
               // Only format if content changed from when we first tracked it
               if (currentContent !== lastPostingLineContent) {
+                services.config.getConfigForDocument(editor.document);
                 const alignmentColumn = amountFormatterService.getAlignmentColumn();
                 const formatted = amountFormatterService.formatPostingLine(
                   currentContent,
