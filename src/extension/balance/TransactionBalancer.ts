@@ -2,6 +2,8 @@ import { CommodityCode } from '../types';
 import { ParsedTransaction, ParsedPosting, BalanceResult, BalanceError } from './types';
 
 export class TransactionBalancer {
+    private static readonly BALANCE_TOLERANCE = 1e-10;
+
     checkBalance(transaction: ParsedTransaction): BalanceResult {
         if (transaction.postings.length === 0) {
             return { status: 'balanced' };
@@ -52,8 +54,8 @@ export class TransactionBalancer {
         for (const [commodity, balance] of commodityBalances) {
             const roundedSum = this.roundToPrecision(balance.sum, balance.precision);
 
-            if (Math.abs(roundedSum) > 1e-10) {
-                if (inferredCount === 1 && commodityBalances.size === 1) {
+            if (Math.abs(roundedSum) > TransactionBalancer.BALANCE_TOLERANCE) {
+                if (inferredCount === 1) {
                     continue;
                 }
 

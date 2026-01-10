@@ -164,6 +164,31 @@ describe('TransactionBalancer', () => {
                 expect(result.errors.length).toBe(2);
             }
         });
+
+        it('should return balanced for multi-commodity with single inferred amount (closing balances)', () => {
+            const transaction = createTransaction([
+                createPosting('Assets:Wallet', { value: -561200, commodity: 'RUB', precision: 2 }),
+                createPosting('Assets:Cash', { value: -530, commodity: 'RUB', precision: 2 }),
+                createPosting('Assets:Bank:USD', { value: 0, commodity: 'USD', precision: 2 }),
+                createPosting('Assets:Bank:EUR', { value: 0, commodity: 'EUR', precision: 2 }),
+                createPosting('equity:opening/closing balances', null),
+            ]);
+
+            const result = balancer.checkBalance(transaction);
+            expect(result.status).toBe('balanced');
+        });
+
+        it('should return balanced for multi-commodity closing with non-zero amounts in each currency', () => {
+            const transaction = createTransaction([
+                createPosting('Assets:RUB', { value: -1000, commodity: 'RUB', precision: 2 }),
+                createPosting('Assets:USD', { value: -500, commodity: 'USD', precision: 2 }),
+                createPosting('Assets:EUR', { value: -300, commodity: 'EUR', precision: 2 }),
+                createPosting('equity:opening', null),
+            ]);
+
+            const result = balancer.checkBalance(transaction);
+            expect(result.status).toBe('balanced');
+        });
     });
 
     describe('cost notation', () => {

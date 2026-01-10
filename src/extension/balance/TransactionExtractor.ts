@@ -3,6 +3,23 @@ import { AmountParser } from './AmountParser';
 import { ParsedTransaction, ParsedPosting } from './types';
 
 export class TransactionExtractor {
+    private static readonly KNOWN_DIRECTIVES = [
+        'account ',
+        'commodity ',
+        'payee ',
+        'tag ',
+        'alias ',
+        'include ',
+        'decimal-mark ',
+        'default commodity ',
+        'Y ',
+        'P ',
+        'apply account',
+        'end apply account',
+        'comment',
+        'end comment',
+    ] as const;
+
     private readonly lexer: HLedgerLexer;
     private readonly amountParser: AmountParser;
 
@@ -92,24 +109,7 @@ export class TransactionExtractor {
     }
 
     private isDirective(line: string): boolean {
-        const directives = [
-            'account ',
-            'commodity ',
-            'payee ',
-            'tag ',
-            'alias ',
-            'include ',
-            'decimal-mark ',
-            'default commodity ',
-            'Y ',
-            'P ',
-            'apply account',
-            'end apply account',
-            'comment',
-            'end comment',
-        ];
-
-        return directives.some(d => line.startsWith(d));
+        return TransactionExtractor.KNOWN_DIRECTIVES.some(d => line.startsWith(d));
     }
 
     private parseTransactionHeader(line: string): { date: string; description: string } {

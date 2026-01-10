@@ -169,7 +169,8 @@ export class AmountParser {
                 str = str.replace(/,/g, '').replace(/\.$/, '');
             } else {
                 str = str.replace(/\./g, '').replace(',', '.');
-                precision = str.includes('.') ? str.split('.')[1]!.length : 0;
+                const parts = str.split('.');
+                precision = parts.length > 1 ? (parts[1]?.length ?? 0) : 0;
             }
         } else if (decimalMark === ',') {
             const afterDecimal = str.slice(lastComma + 1);
