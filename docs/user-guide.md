@@ -440,6 +440,57 @@ The extension validates your journal files and shows warnings/errors.
 | Commodity validation | Checks for undeclared commodities (when `commodity` directives exist) |
 | Amount format | Validates complex amount patterns |
 | Tag format | Validates tag syntax |
+| Transaction balance | Checks that transactions balance to zero |
+
+### Transaction Balance Validation
+
+The extension checks that all transactions balance correctly:
+
+- **Each commodity balances separately** - All postings with the same commodity must sum to zero
+- **One inferred amount allowed** - At most one posting can omit its amount
+- **Virtual postings handled**:
+  - `(account)` - Unbalanced virtual postings are ignored
+  - `[account]` - Balanced virtual postings must balance among themselves
+- **Cost notation supported** - `@` and `@@` price conversions are properly handled
+- **Balance assertions** - `= $500`, `== $500`, `:= $500` are recognized
+
+When a transaction doesn't balance, the error appears on the transaction date line with details about the imbalance (e.g., "Transaction is unbalanced in USD; difference is 10.50").
+
+#### Troubleshooting Balance Errors
+
+**"Transaction has N postings without amounts"**
+- hledger allows only one posting to omit its amount (inferred from others)
+- Solution: Add explicit amounts to all but one posting
+
+**"Transaction is unbalanced in X; difference is Y"**
+- The sum of all postings for commodity X doesn't equal zero
+- Common causes:
+  - Typo in amount
+  - Missing posting
+  - Incorrect cost notation (`@` vs `@@`)
+- For small differences (e.g., `$0.01`), check decimal precision in your amounts
+
+**Cost notation (`@` vs `@@`)**
+- `@` = unit price: `10 AAPL @ $150` means each unit costs $150 (total: $1500)
+- `@@` = total price: `10 AAPL @@ $1500` means all units together cost $1500
+
+**Disable balance checking**
+If you prefer to use hledger CLI for validation, you can disable balance checking:
+
+```json
+{
+  "hledger.diagnostics.checkBalance": false
+}
+```
+
+**Tolerance configuration**
+For cryptocurrencies with 8+ decimal places, increase tolerance to avoid false positives:
+
+```json
+{
+  "hledger.diagnostics.balanceTolerance": 1e-8
+}
+```
 
 ### Validated Amount Patterns
 
@@ -667,6 +718,8 @@ Map CSV category values to hledger accounts:
 | Setting | Type | Default | Description |
 |---------|------|---------|-------------|
 | `hledger.diagnostics.enabled` | boolean | `true` | Enable validation diagnostics |
+| `hledger.diagnostics.checkBalance` | boolean | `true` | Check that transactions balance correctly |
+| `hledger.diagnostics.balanceTolerance` | number | `1e-10` | Tolerance for balance validation. Useful for high-precision accounting with cryptocurrencies |
 
 ### Formatting Settings
 
@@ -784,6 +837,7 @@ If experiencing slowness:
 {
   "hledger.semanticHighlighting.enabled": false,
   "hledger.diagnostics.enabled": false,
+  "hledger.diagnostics.checkBalance": false,
   "hledger.autoCompletion.transactionTemplates.enabled": false
 }
 ```

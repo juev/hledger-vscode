@@ -14,6 +14,7 @@ import {
 } from "./services/NumberFormatService";
 import { AmountFormatterService } from "./services/AmountFormatterService";
 import { HLedgerConfig } from "./HLedgerConfig";
+import { hasBalanceAssertion } from "./balance/utils";
 
 /**
  * Interface representing a posting line with amount information
@@ -416,6 +417,11 @@ export class DocumentFormatter {
   ): string {
     // Skip if this is a comment-only line
     if (line.trimStart().startsWith(";")) {
+      return line;
+    }
+
+    // Skip lines with balance assertions to preserve user's alignment
+    if (hasBalanceAssertion(line)) {
       return line;
     }
 

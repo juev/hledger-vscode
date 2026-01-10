@@ -240,6 +240,80 @@ account Expenses:Gas
         });
     });
 
+    describe('Balance assertions', () => {
+        it('should not modify alignment for lines with balance assertions', () => {
+            const content = `2025-01-15 * Test transaction
+    Assets:Bank  1000 RUB = 5000 RUB
+    Expenses:Food  -500 RUB`;
+
+            const result = formatter.formatContent(content);
+            expect(result.success).toBe(true);
+
+            if (result.success) {
+                const lines = result.data.split('\n');
+                // Line with = should preserve original spacing between account and amount
+                expect(lines[1]).toContain('Assets:Bank  1000 RUB = 5000 RUB');
+            }
+        });
+
+        it('should not modify various balance assertion operators', () => {
+            const content = `2025-01-15 * Test
+    Assets:Bank  100 USD = 500 USD
+    Assets:Cash  50 USD == 100 USD
+    Assets:Gold  10 oz =* 20 oz`;
+
+            const result = formatter.formatContent(content);
+            expect(result.success).toBe(true);
+
+            if (result.success) {
+                const lines = result.data.split('\n');
+                expect(lines[1]).toContain('Assets:Bank  100 USD = 500 USD');
+                expect(lines[2]).toContain('Assets:Cash  50 USD == 100 USD');
+                expect(lines[3]).toContain('Assets:Gold  10 oz =* 20 oz');
+            }
+        });
+
+        it('should format account names containing equals sign', () => {
+            // Note: The account with = has poor alignment that needs fixing
+            const content = `2025-01-15 * Test transaction
+    Expenses:Meeting=Food     100 USD
+    Assets:Cash               -100 USD`;
+
+            const result = formatter.formatContent(content);
+            expect(result.success).toBe(true);
+
+            if (result.success) {
+                const lines = result.data.split('\n');
+                // Account name with = should still be formatted (aligned properly)
+                // Both accounts should have same amount alignment column
+                expect(lines[1]).toMatch(/^\s+Expenses:Meeting=Food\s+100 USD$/);
+                expect(lines[2]).toMatch(/^\s+Assets:Cash\s+-100 USD$/);
+
+                // Verify both amounts start at same column (proper alignment)
+                const amount1Pos = lines[1]?.indexOf('100 USD') ?? -1;
+                const amount2Pos = lines[2]?.indexOf('-100 USD') ?? -1;
+                expect(amount1Pos).toBeGreaterThan(0);
+                expect(amount2Pos).toBeGreaterThan(0);
+                // The "-" is part of amount, so positions should align at the digit
+                expect(amount1Pos).toBe(amount2Pos + 1); // -100 has extra char
+            }
+        });
+
+        it('should format account names with multiple equals signs', () => {
+            const content = `2025-01-15 * Test
+    Expenses:Key=Value=Data  50 EUR
+    Assets:Bank  -50 EUR`;
+
+            const result = formatter.formatContent(content);
+            expect(result.success).toBe(true);
+
+            if (result.success) {
+                const lines = result.data.split('\n');
+                expect(lines[1]).toMatch(/^\s+Expenses:Key=Value=Data\s+50 EUR$/);
+            }
+        });
+    });
+
     describe('Edge cases', () => {
         it('should handle empty content', () => {
             const result = formatter.formatContent('');

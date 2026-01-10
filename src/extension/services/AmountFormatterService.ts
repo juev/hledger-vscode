@@ -1,6 +1,6 @@
 // AmountFormatterService.ts - Formats amounts according to commodity directives
 import { HLedgerConfig } from '../HLedgerConfig';
-import { NumberFormatService, CommodityFormat } from './NumberFormatService';
+import { NumberFormatService, CommodityFormat, NumberFormat } from './NumberFormatService';
 import { CommodityCode } from '../types';
 
 /**
@@ -54,26 +54,21 @@ export class AmountFormatterService {
             comment = commentMatch[2] ?? '';
         }
 
-        // Step 2: Extract balance assertion (=, ==, =*, ==*)
-        // Using negated character class [^=] to prevent ReDoS
-        let balanceAssertion = '';
-        let balanceAssertionAmount = '';
-        let lineWithoutAssertion = lineWithoutComment;
+        // Step 2: Check for balance assertion (=, ==, =*, ==*)
+        // Skip formatting for lines with balance assertions to preserve user's alignment
         const assertionMatch = lineWithoutComment.match(/^([^=]+)\s+(==?\*?)\s+(.+)$/);
         if (assertionMatch) {
-            lineWithoutAssertion = assertionMatch[1]?.trim() ?? lineWithoutComment;
-            balanceAssertion = assertionMatch[2] ?? '';
-            balanceAssertionAmount = assertionMatch[3]?.trim() ?? '';
+            return null;
         }
 
         // Step 3: Extract cost notation (@, @@)
         // Using negated character class [^@] to prevent ReDoS
         let costNotation = '';
         let costAmount = '';
-        let lineWithoutCost = lineWithoutAssertion;
-        const costMatch = lineWithoutAssertion.match(/^([^@]+)\s+(@@?)\s+(.+)$/);
+        let lineWithoutCost = lineWithoutComment;
+        const costMatch = lineWithoutComment.match(/^([^@]+)\s+(@@?)\s+(.+)$/);
         if (costMatch) {
-            lineWithoutCost = costMatch[1]?.trim() ?? lineWithoutAssertion;
+            lineWithoutCost = costMatch[1]?.trim() ?? lineWithoutComment;
             costNotation = costMatch[2] ?? '';
             costAmount = costMatch[3]?.trim() ?? '';
         }
@@ -116,17 +111,8 @@ export class AmountFormatterService {
             }
         }
 
-        // Format balance assertion amount (if present)
-        let formattedAssertionAmount = balanceAssertionAmount;
-        if (balanceAssertionAmount) {
-            const formatted = this.formatSingleAmount(balanceAssertionAmount, commodityFormats);
-            if (formatted !== null) {
-                formattedAssertionAmount = formatted;
-            }
-        }
-
         // Check if we have any amounts that could be formatted
-        const hasAmountToFormat = mainAmount || costAmount || balanceAssertionAmount;
+        const hasAmountToFormat = mainAmount || costAmount;
 
         // Return null if there's nothing to format
         if (!hasAmountToFormat) {
@@ -136,8 +122,7 @@ export class AmountFormatterService {
         // Check if any formatting actually changed something
         const anyFormatChanged =
             (mainAmount && formattedMainAmount !== mainAmount) ||
-            (costAmount && formattedCostAmount !== costAmount) ||
-            (balanceAssertionAmount && formattedAssertionAmount !== balanceAssertionAmount);
+            (costAmount && formattedCostAmount !== costAmount);
 
         // Return null if nothing changed (no applicable format found)
         if (!anyFormatChanged) {
@@ -166,16 +151,6 @@ export class AmountFormatterService {
                 result += spacing;
             }
             result += ` ${costNotation} ${formattedCostAmount}`;
-        }
-
-        if (balanceAssertion && formattedAssertionAmount) {
-            if (!formattedMainAmount && !costNotation) {
-                // Balance assertion without main amount (e.g., "Assets:Bank  = 5000 RUB")
-                // Use spacing (2 spaces by default) before assertion
-                result += `${spacing}${balanceAssertion} ${formattedAssertionAmount}`;
-            } else {
-                result += ` ${balanceAssertion} ${formattedAssertionAmount}`;
-            }
         }
 
         if (comment) {
@@ -241,7 +216,7 @@ export class AmountFormatterService {
             return null;
         }
 
-        const numericValue = this.parseNumericValue(amountStr, actualCommodity);
+        const numericValue = this.parseNumericValue(amountStr, actualCommodity, format.format);
         if (numericValue === null) {
             return null;
         }
@@ -272,20 +247,21 @@ export class AmountFormatterService {
     /**
      * Extracts the numeric value from an amount string.
      * Handles various formats: "1000", "-1000", "1,000.00", "1 000,00", etc.
+     * Uses the provided format to determine decimal and grouping separators.
      */
-    private parseNumericValue(amountStr: string, commodity: CommodityCode | undefined): number | null {
+    private parseNumericValue(amountStr: string, commodity: CommodityCode | undefined, format?: NumberFormat): number | null {
+        if (!format) {
+            return null;
+        }
+
         let cleanAmount = amountStr.trim();
 
         if (commodity) {
-            // Remove commodity from amount string (both prefix and suffix)
             const escaped = this.escapeRegex(commodity);
-            // Remove from end (suffix): "100 RUB" → "100"
             cleanAmount = cleanAmount.replace(new RegExp(`\\s*${escaped}$`), '').trim();
-            // Remove from start (prefix): "$100" → "100"
             cleanAmount = cleanAmount.replace(new RegExp(`^${escaped}\\s*`), '').trim();
         }
 
-        // Handle sign
         const isNegative = cleanAmount.startsWith('-');
         if (isNegative) {
             cleanAmount = cleanAmount.substring(1).trim();
@@ -293,28 +269,24 @@ export class AmountFormatterService {
             cleanAmount = cleanAmount.substring(1).trim();
         }
 
-        // Normalize number: remove grouping separators and standardize decimal
-        // First, try to detect the decimal separator
-        // If there's a comma followed by exactly 1-4 digits at the end, it's likely a decimal comma
-        // If there's a period followed by exactly 1-4 digits at the end, it's likely a decimal period
-
         let normalizedAmount = cleanAmount;
+        const decimalMark = format.decimalMark;
+        const groupSeparator = format.groupSeparator;
 
-        // European format: 1.234,56 or 1 234,56
-        if (/,\d{1,4}$/.test(cleanAmount)) {
-            // Comma is decimal separator - remove spaces and periods
-            normalizedAmount = cleanAmount
-                .replace(/[\s.]/g, '')  // Remove spaces and periods (group separators)
-                .replace(',', '.');     // Replace decimal comma with period
+        if (groupSeparator === '.') {
+            normalizedAmount = normalizedAmount.replace(/\./g, '');
+        } else if (groupSeparator === ',') {
+            normalizedAmount = normalizedAmount.replace(/,/g, '');
+        } else if (groupSeparator === ' ') {
+            normalizedAmount = normalizedAmount.replace(/\s/g, '');
         }
-        // US format: 1,234.56
-        else if (/\.\d{1,4}$/.test(cleanAmount)) {
-            // Period is decimal separator - remove commas and spaces
-            normalizedAmount = cleanAmount.replace(/[,\s]/g, '');
+
+        if (decimalMark === ',') {
+            normalizedAmount = normalizedAmount.replace(',', '.');
         }
-        // No decimal - just remove grouping
-        else {
-            normalizedAmount = cleanAmount.replace(/[,.\s]/g, '');
+
+        if (!/^\d+(\.\d+)?$/.test(normalizedAmount)) {
+            return null;
         }
 
         const value = parseFloat(normalizedAmount);
