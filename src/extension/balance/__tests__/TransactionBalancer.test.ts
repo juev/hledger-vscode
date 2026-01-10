@@ -417,4 +417,32 @@ describe('TransactionBalancer', () => {
             expect(result.status).toBe('balanced');
         });
     });
+
+    describe('error message formatting', () => {
+        it('should show high precision in error messages for crypto', () => {
+            const transaction = createTransaction([
+                createPosting('Assets:Crypto', { value: 0.00000010, commodity: 'BTC', precision: 8 }),
+                createPosting('Assets:Cash', { value: -0.00000001, commodity: 'BTC', precision: 8 }),
+            ]);
+
+            const result = balancer.checkBalance(transaction);
+            expect(result.status).toBe('unbalanced');
+            if (result.status === 'unbalanced') {
+                expect(result.errors[0]!.message).toContain('0.00000009');
+            }
+        });
+
+        it('should show at least 2 decimal places for regular currencies', () => {
+            const transaction = createTransaction([
+                createPosting('Expenses:Food', { value: 50, commodity: '$', precision: 0 }),
+                createPosting('Assets:Cash', { value: -40, commodity: '$', precision: 0 }),
+            ]);
+
+            const result = balancer.checkBalance(transaction);
+            expect(result.status).toBe('unbalanced');
+            if (result.status === 'unbalanced') {
+                expect(result.errors[0]!.message).toContain('$10.00');
+            }
+        });
+    });
 });

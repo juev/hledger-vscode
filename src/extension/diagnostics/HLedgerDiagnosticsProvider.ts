@@ -138,8 +138,11 @@ export class HLedgerDiagnosticsProvider implements vscode.Disposable {
             }
         }
 
-        const balanceDiagnostics = this.validateTransactionBalance(document);
-        diagnostics.push(...balanceDiagnostics);
+        const checkBalance = vsconfig.get<boolean>('diagnostics.checkBalance', true);
+        if (checkBalance) {
+            const balanceDiagnostics = this.validateTransactionBalance(document);
+            diagnostics.push(...balanceDiagnostics);
+        }
 
         if (diagnostics.length > 0) {
             this.diagnosticCollection.set(document.uri, diagnostics);

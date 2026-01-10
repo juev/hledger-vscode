@@ -456,6 +456,33 @@ The extension checks that all transactions balance correctly:
 
 When a transaction doesn't balance, the error appears on the transaction date line with details about the imbalance (e.g., "Transaction is unbalanced in USD; difference is 10.50").
 
+#### Troubleshooting Balance Errors
+
+**"Transaction has N postings without amounts"**
+- hledger allows only one posting to omit its amount (inferred from others)
+- Solution: Add explicit amounts to all but one posting
+
+**"Transaction is unbalanced in X; difference is Y"**
+- The sum of all postings for commodity X doesn't equal zero
+- Common causes:
+  - Typo in amount
+  - Missing posting
+  - Incorrect cost notation (`@` vs `@@`)
+- For small differences (e.g., `$0.01`), check decimal precision in your amounts
+
+**Cost notation (`@` vs `@@`)**
+- `@` = unit price: `10 AAPL @ $150` means each unit costs $150 (total: $1500)
+- `@@` = total price: `10 AAPL @@ $1500` means all units together cost $1500
+
+**Disable balance checking**
+If you prefer to use hledger CLI for validation, you can disable balance checking:
+
+```json
+{
+  "hledger.diagnostics.checkBalance": false
+}
+```
+
 ### Validated Amount Patterns
 
 The extension recognizes all valid hledger amount formats:
@@ -682,6 +709,7 @@ Map CSV category values to hledger accounts:
 | Setting | Type | Default | Description |
 |---------|------|---------|-------------|
 | `hledger.diagnostics.enabled` | boolean | `true` | Enable validation diagnostics |
+| `hledger.diagnostics.checkBalance` | boolean | `true` | Check that transactions balance correctly |
 
 ### Formatting Settings
 
@@ -799,6 +827,7 @@ If experiencing slowness:
 {
   "hledger.semanticHighlighting.enabled": false,
   "hledger.diagnostics.enabled": false,
+  "hledger.diagnostics.checkBalance": false,
   "hledger.autoCompletion.transactionTemplates.enabled": false
 }
 ```

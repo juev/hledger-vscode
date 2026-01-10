@@ -58,7 +58,7 @@ export class TransactionBalancer {
                 }
 
                 const commodityDisplay = commodity || 'no commodity';
-                const differenceDisplay = this.formatAmount(roundedSum, commodity);
+                const differenceDisplay = this.formatAmount(roundedSum, commodity, balance.precision);
 
                 errors.push({
                     type: 'imbalanced',
@@ -117,17 +117,18 @@ export class TransactionBalancer {
         return Math.round(value * factor) / factor;
     }
 
-    private formatAmount(value: number, commodity: CommodityCode): string {
+    private formatAmount(value: number, commodity: CommodityCode, precision: number): string {
         const absValue = Math.abs(value);
         const sign = value < 0 ? '-' : '';
+        const displayPrecision = Math.max(2, precision);
 
         if (commodity) {
             if (/^[$€£¥₽₹]$/.test(commodity)) {
-                return `${sign}${commodity}${absValue.toFixed(2)}`;
+                return `${sign}${commodity}${absValue.toFixed(displayPrecision)}`;
             }
-            return `${sign}${absValue.toFixed(2)} ${commodity}`;
+            return `${sign}${absValue.toFixed(displayPrecision)} ${commodity}`;
         }
 
-        return `${sign}${absValue.toFixed(2)}`;
+        return `${sign}${absValue.toFixed(displayPrecision)}`;
     }
 }

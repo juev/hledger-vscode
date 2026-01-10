@@ -97,6 +97,11 @@
           "default": true,
           "description": "Enable diagnostics validation for hledger files (account checks, tag format, amount format)"
         },
+        "hledger.diagnostics.checkBalance": {
+          "type": "boolean",
+          "default": true,
+          "description": "Check that transactions balance correctly (all postings sum to zero per commodity)"
+        },
         "hledger.formatting.amountAlignmentColumn": {
           "type": "number",
           "default": 40,
