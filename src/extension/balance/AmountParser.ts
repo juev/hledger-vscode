@@ -1,9 +1,41 @@
 import { AccountName, CommodityCode, createAccountName, createCommodityCode } from '../types';
+import { CommodityFormat, NumberFormat } from '../services/NumberFormatService';
 import { ParsedPostingAmount, ParsedPosting, PostingType } from './types';
 
+export interface NumberFormatContext {
+    readonly commodityFormats: ReadonlyMap<CommodityCode, CommodityFormat> | Map<string, CommodityFormat> | null;
+    readonly defaultCommodity: CommodityCode | string | null;
+}
+
 export class AmountParser {
+    constructor(private readonly formatContext?: NumberFormatContext) {}
+
     private static readonly BALANCE_ASSERTION_ONLY = /^(:?={1,2}\*?)\s*(.+)$/;
     private static readonly BALANCE_ASSERTION_SUFFIX = /\s*:?={1,2}\*?\s*[^@]+$/;
+
+    private getFormatForCommodity(commodity?: CommodityCode | string): NumberFormat | null {
+        if (!this.formatContext?.commodityFormats) {
+            return null;
+        }
+
+        const formats = this.formatContext.commodityFormats;
+
+        if (commodity) {
+            const format = formats.get(commodity as CommodityCode);
+            if (format) {
+                return format.format;
+            }
+        }
+
+        if (!commodity && this.formatContext.defaultCommodity) {
+            const defaultFormat = formats.get(this.formatContext.defaultCommodity as CommodityCode);
+            if (defaultFormat) {
+                return defaultFormat.format;
+            }
+        }
+
+        return null;
+    }
 
     parsePostingAmount(input: string): ParsedPostingAmount | null {
         const trimmed = input.trim();
@@ -117,7 +149,7 @@ export class AmountParser {
 
         str = str.trim();
 
-        const numberValue = this.parseNumber(str);
+        const numberValue = this.parseNumber(str, commodity || undefined);
         if (numberValue === null) {
             return null;
         }
@@ -129,7 +161,7 @@ export class AmountParser {
         };
     }
 
-    private parseNumber(input: string): { value: number; precision: number } | null {
+    private parseNumber(input: string, commodity?: CommodityCode | string): { value: number; precision: number } | null {
         let str = input.trim();
         if (!str) return null;
 
@@ -145,40 +177,61 @@ export class AmountParser {
 
         str = str.replace(/\s/g, '');
 
-        const lastDot = str.lastIndexOf('.');
-        const lastComma = str.lastIndexOf(',');
+        const format = this.getFormatForCommodity(commodity);
 
         let decimalMark: string | null = null;
+        let groupSeparator: string | null = null;
         let precision = 0;
 
-        if (lastDot > lastComma) {
-            decimalMark = '.';
-        } else if (lastComma > lastDot) {
-            decimalMark = ',';
-        } else if (lastDot === -1 && lastComma === -1) {
-            decimalMark = null;
+        if (format) {
+            decimalMark = format.decimalMark;
+            groupSeparator = format.groupSeparator;
+        } else if (this.formatContext) {
+            return null;
+        } else {
+            const lastDot = str.lastIndexOf('.');
+            const lastComma = str.lastIndexOf(',');
+
+            if (lastDot > lastComma) {
+                decimalMark = '.';
+                groupSeparator = ',';
+            } else if (lastComma > lastDot) {
+                decimalMark = ',';
+                groupSeparator = '.';
+            } else if (lastDot === -1 && lastComma === -1) {
+                decimalMark = null;
+                groupSeparator = null;
+            }
         }
 
         if (decimalMark === '.') {
-            const afterDecimal = str.slice(lastDot + 1);
-            if (afterDecimal.length > 0 && !/[,.]/.test(afterDecimal)) {
-                precision = afterDecimal.length;
-                str = str.replace(/,/g, '');
-            } else if (afterDecimal.length === 0) {
-                precision = 0;
-                str = str.replace(/,/g, '').replace(/\.$/, '');
+            const lastDot = str.lastIndexOf('.');
+            if (lastDot !== -1) {
+                const afterDecimal = str.slice(lastDot + 1);
+                if (afterDecimal.length > 0 && !/[,.]/.test(afterDecimal)) {
+                    precision = afterDecimal.length;
+                    str = str.replace(/,/g, '');
+                } else if (afterDecimal.length === 0) {
+                    precision = 0;
+                    str = str.replace(/,/g, '').replace(/\.$/, '');
+                }
             } else {
-                str = str.replace(/\./g, '').replace(',', '.');
-                const parts = str.split('.');
-                precision = parts.length > 1 ? (parts[1]?.length ?? 0) : 0;
+                str = str.replace(/,/g, '');
+                precision = 0;
             }
         } else if (decimalMark === ',') {
-            const afterDecimal = str.slice(lastComma + 1);
-            if (afterDecimal.length > 0 && !/[,.]/.test(afterDecimal)) {
-                precision = afterDecimal.length;
-                str = str.replace(/\./g, '').replace(',', '.');
+            const lastComma = str.lastIndexOf(',');
+            if (lastComma !== -1) {
+                const afterDecimal = str.slice(lastComma + 1);
+                if (afterDecimal.length > 0 && !/[,.]/.test(afterDecimal)) {
+                    precision = afterDecimal.length;
+                    str = str.replace(/\./g, '').replace(',', '.');
+                } else {
+                    str = str.replace(/,/g, '');
+                    precision = 0;
+                }
             } else {
-                str = str.replace(/,/g, '');
+                str = str.replace(/\./g, '');
                 precision = 0;
             }
         } else {

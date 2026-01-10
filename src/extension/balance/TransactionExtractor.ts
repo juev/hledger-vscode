@@ -1,5 +1,5 @@
 import { HLedgerLexer, TokenType } from '../lexer/HLedgerLexer';
-import { AmountParser } from './AmountParser';
+import { AmountParser, NumberFormatContext } from './AmountParser';
 import { ParsedTransaction, ParsedPosting } from './types';
 
 export class TransactionExtractor {
@@ -23,9 +23,13 @@ export class TransactionExtractor {
     private readonly lexer: HLedgerLexer;
     private readonly amountParser: AmountParser;
 
-    constructor() {
+    constructor(formatContext?: NumberFormatContext) {
         this.lexer = new HLedgerLexer();
-        this.amountParser = new AmountParser();
+        this.amountParser = new AmountParser(formatContext);
+    }
+
+    private isCommentLine(trimmedLine: string): boolean {
+        return trimmedLine.startsWith(';') || trimmedLine.startsWith('#');
     }
 
     extractTransactions(content: string): ParsedTransaction[] {
@@ -52,7 +56,7 @@ export class TransactionExtractor {
                 continue;
             }
 
-            if (trimmed.startsWith(';') || trimmed.startsWith('#')) {
+            if (this.isCommentLine(trimmed)) {
                 continue;
             }
 
@@ -90,7 +94,7 @@ export class TransactionExtractor {
             }
 
             if (currentTransaction && this.lexer.isPostingLine(line)) {
-                if (trimmed.startsWith(';') || trimmed.startsWith('#')) {
+                if (this.isCommentLine(trimmed)) {
                     continue;
                 }
 

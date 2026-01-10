@@ -446,4 +446,129 @@ describe('AmountParser', () => {
             expect(result!.amount!.value).toBe(100);
         });
     });
+
+    describe('European number format with commodity context', () => {
+        const europeanContext = {
+            commodityFormats: new Map([
+                ['RUB', {
+                    format: { decimalMark: ',' as const, groupSeparator: '.' as const, decimalPlaces: 2, useGrouping: true },
+                    symbol: 'RUB',
+                    symbolBefore: false,
+                    symbolSpacing: true,
+                    template: '1.000,00 RUB'
+                }],
+                ['EUR', {
+                    format: { decimalMark: ',' as const, groupSeparator: ' ' as const, decimalPlaces: 2, useGrouping: true },
+                    symbol: 'EUR',
+                    symbolBefore: false,
+                    symbolSpacing: true,
+                    template: '1 000,00 EUR'
+                }]
+            ]),
+            defaultCommodity: 'RUB'
+        };
+
+        it('should parse 1.614 RUB as 1614 (dot is thousands separator)', () => {
+            const parser = new AmountParser(europeanContext);
+            const result = parser.parsePostingAmount('1.614 RUB');
+            expect(result).not.toBeNull();
+            expect(result!.value).toBe(1614);
+            expect(result!.commodity).toBe('RUB');
+            expect(result!.precision).toBe(0);
+        });
+
+        it('should parse 1.614,50 RUB correctly with European format', () => {
+            const parser = new AmountParser(europeanContext);
+            const result = parser.parsePostingAmount('1.614,50 RUB');
+            expect(result).not.toBeNull();
+            expect(result!.value).toBe(1614.50);
+            expect(result!.precision).toBe(2);
+        });
+
+        it('should parse 1.700 RUB as 1700', () => {
+            const parser = new AmountParser(europeanContext);
+            const result = parser.parsePostingAmount('1.700 RUB');
+            expect(result).not.toBeNull();
+            expect(result!.value).toBe(1700);
+        });
+
+        it('should use default commodity format when commodity not specified', () => {
+            const parser = new AmountParser(europeanContext);
+            const result = parser.parsePostingAmount('1.614');
+            expect(result).not.toBeNull();
+            expect(result!.value).toBe(1614);
+        });
+
+        it('should parse EUR with space as grouping separator', () => {
+            const parser = new AmountParser(europeanContext);
+            const result = parser.parsePostingAmount('1 000,50 EUR');
+            expect(result).not.toBeNull();
+            expect(result!.value).toBe(1000.50);
+            expect(result!.commodity).toBe('EUR');
+        });
+    });
+
+    describe('unknown commodity format', () => {
+        const emptyContext = {
+            commodityFormats: new Map(),
+            defaultCommodity: null
+        };
+
+        it('should return null when commodity format is not known', () => {
+            const parser = new AmountParser(emptyContext);
+            const result = parser.parsePostingAmount('1.614 UNKNOWN');
+            expect(result).toBeNull();
+        });
+
+        it('should return null when no default commodity and no commodity specified', () => {
+            const parser = new AmountParser(emptyContext);
+            const result = parser.parsePostingAmount('1.614');
+            expect(result).toBeNull();
+        });
+    });
+
+    describe('mixed formats in context', () => {
+        const mixedContext = {
+            commodityFormats: new Map([
+                ['USD', {
+                    format: { decimalMark: '.' as const, groupSeparator: ',' as const, decimalPlaces: 2, useGrouping: true },
+                    symbol: 'USD',
+                    symbolBefore: true,
+                    symbolSpacing: false,
+                    template: '$1,000.00'
+                }],
+                ['RUB', {
+                    format: { decimalMark: ',' as const, groupSeparator: '.' as const, decimalPlaces: 2, useGrouping: true },
+                    symbol: 'RUB',
+                    symbolBefore: false,
+                    symbolSpacing: true,
+                    template: '1.000,00 RUB'
+                }]
+            ]),
+            defaultCommodity: 'RUB'
+        };
+
+        it('should parse US format correctly: 1,000.50 USD', () => {
+            const parser = new AmountParser(mixedContext);
+            const result = parser.parsePostingAmount('1,000.50 USD');
+            expect(result).not.toBeNull();
+            expect(result!.value).toBe(1000.50);
+            expect(result!.commodity).toBe('USD');
+        });
+
+        it('should parse EU format correctly: 1.000,50 RUB', () => {
+            const parser = new AmountParser(mixedContext);
+            const result = parser.parsePostingAmount('1.000,50 RUB');
+            expect(result).not.toBeNull();
+            expect(result!.value).toBe(1000.50);
+            expect(result!.commodity).toBe('RUB');
+        });
+
+        it('should use default (RUB) format when no commodity', () => {
+            const parser = new AmountParser(mixedContext);
+            const result = parser.parsePostingAmount('1.614');
+            expect(result).not.toBeNull();
+            expect(result!.value).toBe(1614);
+        });
+    });
 });

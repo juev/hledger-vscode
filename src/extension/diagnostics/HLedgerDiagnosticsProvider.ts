@@ -3,6 +3,7 @@ import { HLedgerConfig } from '../HLedgerConfig';
 import { AccountName, CommodityCode } from '../types';
 import { TransactionExtractor } from '../balance/TransactionExtractor';
 import { TransactionBalancer } from '../balance/TransactionBalancer';
+import { NumberFormatContext } from '../balance/AmountParser';
 
 /**
  * Diagnostic codes for hledger validation errors.
@@ -380,8 +381,26 @@ export class HLedgerDiagnosticsProvider implements vscode.Disposable {
 
     private validateTransactionBalance(document: vscode.TextDocument): vscode.Diagnostic[] {
         const diagnostics: vscode.Diagnostic[] = [];
+
+        const definedCommodities = this.config.getDefinedCommodities();
+        if (definedCommodities.length === 0) {
+            return diagnostics;
+        }
+
+        const commodityFormats = this.config.getCommodityFormats();
+        if (!commodityFormats || commodityFormats.size === 0) {
+            return diagnostics;
+        }
+
         const content = document.getText();
-        const transactions = this.transactionExtractor.extractTransactions(content);
+
+        const formatContext: NumberFormatContext = {
+            commodityFormats,
+            defaultCommodity: this.config.getDefaultCommodity()
+        };
+
+        const extractor = new TransactionExtractor(formatContext);
+        const transactions = extractor.extractTransactions(content);
 
         for (const transaction of transactions) {
             const result = this.transactionBalancer.checkBalance(transaction);
