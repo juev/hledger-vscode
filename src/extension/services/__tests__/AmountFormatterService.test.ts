@@ -465,6 +465,50 @@ describe('AmountFormatterService', () => {
         });
     });
 
+    describe('European format with dot as thousands separator', () => {
+        const europeanRubFormat: CommodityFormat = {
+            format: {
+                decimalMark: ',',
+                groupSeparator: '.',
+                decimalPlaces: 2,
+                useGrouping: true
+            },
+            symbol: 'RUB',
+            symbolBefore: false,
+            symbolSpacing: true,
+            template: '1.000,00 RUB'
+        };
+
+        beforeEach(() => {
+            const formats = new Map<CommodityCode, CommodityFormat>();
+            formats.set(createCommodityCode('RUB'), europeanRubFormat);
+            mockConfig.getCommodityFormats.mockReturnValue(formats);
+            mockConfig.getDefaultCommodity.mockReturnValue(createCommodityCode('RUB'));
+        });
+
+        it('should parse 1.614 RUB as 1614 (dot is thousands separator)', () => {
+            // Bug: 1.614 was incorrectly parsed as 1.614 (decimal) and formatted as 1,61
+            const result = service.formatPostingLine('    Assets:Bank  1.614 RUB');
+            expect(result).toBe('    Assets:Bank  1.614,00 RUB');
+        });
+
+        it('should parse 1.700 RUB as 1700', () => {
+            const result = service.formatPostingLine('    Assets:Bank  1.700 RUB');
+            expect(result).toBe('    Assets:Bank  1.700,00 RUB');
+        });
+
+        it('should return null for already formatted 1.614,50 RUB', () => {
+            // Already correctly formatted - returns null (no change needed)
+            const result = service.formatPostingLine('    Assets:Bank  1.614,50 RUB');
+            expect(result).toBeNull();
+        });
+
+        it('should parse plain number using default commodity format', () => {
+            const result = service.formatPostingLine('    Assets:Bank  1.614');
+            expect(result).toBe('    Assets:Bank  1.614,00');
+        });
+    });
+
     describe('ReDoS protection', () => {
         beforeEach(() => {
             const formats = new Map<CommodityCode, CommodityFormat>();

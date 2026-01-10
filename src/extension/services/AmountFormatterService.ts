@@ -1,6 +1,6 @@
 // AmountFormatterService.ts - Formats amounts according to commodity directives
 import { HLedgerConfig } from '../HLedgerConfig';
-import { NumberFormatService, CommodityFormat } from './NumberFormatService';
+import { NumberFormatService, CommodityFormat, NumberFormat } from './NumberFormatService';
 import { CommodityCode } from '../types';
 
 /**
@@ -241,7 +241,7 @@ export class AmountFormatterService {
             return null;
         }
 
-        const numericValue = this.parseNumericValue(amountStr, actualCommodity);
+        const numericValue = this.parseNumericValue(amountStr, actualCommodity, format.format);
         if (numericValue === null) {
             return null;
         }
@@ -272,20 +272,21 @@ export class AmountFormatterService {
     /**
      * Extracts the numeric value from an amount string.
      * Handles various formats: "1000", "-1000", "1,000.00", "1 000,00", etc.
+     * Uses the provided format to determine decimal and grouping separators.
      */
-    private parseNumericValue(amountStr: string, commodity: CommodityCode | undefined): number | null {
+    private parseNumericValue(amountStr: string, commodity: CommodityCode | undefined, format?: NumberFormat): number | null {
+        if (!format) {
+            return null;
+        }
+
         let cleanAmount = amountStr.trim();
 
         if (commodity) {
-            // Remove commodity from amount string (both prefix and suffix)
             const escaped = this.escapeRegex(commodity);
-            // Remove from end (suffix): "100 RUB" → "100"
             cleanAmount = cleanAmount.replace(new RegExp(`\\s*${escaped}$`), '').trim();
-            // Remove from start (prefix): "$100" → "100"
             cleanAmount = cleanAmount.replace(new RegExp(`^${escaped}\\s*`), '').trim();
         }
 
-        // Handle sign
         const isNegative = cleanAmount.startsWith('-');
         if (isNegative) {
             cleanAmount = cleanAmount.substring(1).trim();
@@ -293,28 +294,20 @@ export class AmountFormatterService {
             cleanAmount = cleanAmount.substring(1).trim();
         }
 
-        // Normalize number: remove grouping separators and standardize decimal
-        // First, try to detect the decimal separator
-        // If there's a comma followed by exactly 1-4 digits at the end, it's likely a decimal comma
-        // If there's a period followed by exactly 1-4 digits at the end, it's likely a decimal period
-
         let normalizedAmount = cleanAmount;
+        const decimalMark = format.decimalMark;
+        const groupSeparator = format.groupSeparator;
 
-        // European format: 1.234,56 or 1 234,56
-        if (/,\d{1,4}$/.test(cleanAmount)) {
-            // Comma is decimal separator - remove spaces and periods
-            normalizedAmount = cleanAmount
-                .replace(/[\s.]/g, '')  // Remove spaces and periods (group separators)
-                .replace(',', '.');     // Replace decimal comma with period
+        if (groupSeparator === '.') {
+            normalizedAmount = normalizedAmount.replace(/\./g, '');
+        } else if (groupSeparator === ',') {
+            normalizedAmount = normalizedAmount.replace(/,/g, '');
+        } else if (groupSeparator === ' ') {
+            normalizedAmount = normalizedAmount.replace(/\s/g, '');
         }
-        // US format: 1,234.56
-        else if (/\.\d{1,4}$/.test(cleanAmount)) {
-            // Period is decimal separator - remove commas and spaces
-            normalizedAmount = cleanAmount.replace(/[,\s]/g, '');
-        }
-        // No decimal - just remove grouping
-        else {
-            normalizedAmount = cleanAmount.replace(/[,.\s]/g, '');
+
+        if (decimalMark === ',') {
+            normalizedAmount = normalizedAmount.replace(',', '.');
         }
 
         const value = parseFloat(normalizedAmount);
