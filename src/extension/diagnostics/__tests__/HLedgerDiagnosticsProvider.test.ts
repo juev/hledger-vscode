@@ -1474,4 +1474,89 @@ default commodity USD
             expect(commodityDiags.length).toBe(0);
         });
     });
+
+    describe('Transaction Balance Validation', () => {
+        test('should detect unbalanced transaction without commodity directives', () => {
+            const content = `
+2024-01-01 Test
+    Expenses:Food  $100.00
+    Assets:Cash  -$50.00
+`;
+            config.parseContent(content, '/test');
+
+            const document = new MockTextDocument(content.split('\n'), {
+                uri: vscode.Uri.file('/test/test.journal'),
+                languageId: 'hledger'
+            });
+
+            provider['validateDocument'](document);
+
+            const diagnostics = provider.diagnosticCollection.get(document.uri);
+            const balanceDiags = diagnostics?.filter(d => d.code === 'unbalanced-transaction') ?? [];
+            expect(balanceDiags.length).toBe(1);
+            expect(balanceDiags[0]?.message).toContain('unbalanced');
+        });
+
+        test('should not report error for balanced transaction without commodity directives', () => {
+            const content = `
+2024-01-01 Test
+    Expenses:Food  $100.00
+    Assets:Cash  -$100.00
+`;
+            config.parseContent(content, '/test');
+
+            const document = new MockTextDocument(content.split('\n'), {
+                uri: vscode.Uri.file('/test/test.journal'),
+                languageId: 'hledger'
+            });
+
+            provider['validateDocument'](document);
+
+            const diagnostics = provider.diagnosticCollection.get(document.uri);
+            const balanceDiags = diagnostics?.filter(d => d.code === 'unbalanced-transaction') ?? [];
+            expect(balanceDiags.length).toBe(0);
+        });
+
+        test('should detect unbalanced transaction with EU format using heuristic', () => {
+            const content = `
+2024-01-01 Test
+    Expenses:Food  1.000,00 EUR
+    Assets:Cash  -500,00 EUR
+`;
+            config.parseContent(content, '/test');
+
+            const document = new MockTextDocument(content.split('\n'), {
+                uri: vscode.Uri.file('/test/test.journal'),
+                languageId: 'hledger'
+            });
+
+            provider['validateDocument'](document);
+
+            const diagnostics = provider.diagnosticCollection.get(document.uri);
+            const balanceDiags = diagnostics?.filter(d => d.code === 'unbalanced-transaction') ?? [];
+            expect(balanceDiags.length).toBe(1);
+        });
+
+        test('should check balance with commodity directive', () => {
+            const content = `
+commodity $1,000.00
+
+2024-01-01 Test
+    Expenses:Food  $100.00
+    Assets:Cash  -$50.00
+`;
+            config.parseContent(content, '/test');
+
+            const document = new MockTextDocument(content.split('\n'), {
+                uri: vscode.Uri.file('/test/test.journal'),
+                languageId: 'hledger'
+            });
+
+            provider['validateDocument'](document);
+
+            const diagnostics = provider.diagnosticCollection.get(document.uri);
+            const balanceDiags = diagnostics?.filter(d => d.code === 'unbalanced-transaction') ?? [];
+            expect(balanceDiags.length).toBe(1);
+        });
+    });
 });

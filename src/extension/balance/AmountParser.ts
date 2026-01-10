@@ -186,9 +186,8 @@ export class AmountParser {
         if (format) {
             decimalMark = format.decimalMark;
             groupSeparator = format.groupSeparator;
-        } else if (this.formatContext) {
-            return null;
         } else {
+            // Fallback to heuristic parsing for unknown commodities
             const lastDot = str.lastIndexOf('.');
             const lastComma = str.lastIndexOf(',');
 

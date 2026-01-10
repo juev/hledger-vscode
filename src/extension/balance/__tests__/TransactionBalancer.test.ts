@@ -457,16 +457,45 @@ describe('TransactionBalancer', () => {
             }
         });
 
-        it('should show at least 2 decimal places for regular currencies', () => {
+        it('should display integer amount without decimals for shares', () => {
             const transaction = createTransaction([
-                createPosting('Expenses:Food', { value: 50, commodity: '$', precision: 0 }),
-                createPosting('Assets:Cash', { value: -40, commodity: '$', precision: 0 }),
+                createPosting('Assets:Brokerage', { value: 10, commodity: 'AAPL', precision: 0 }),
+                createPosting('Assets:Cash', { value: -5, commodity: 'AAPL', precision: 0 }),
             ]);
 
             const result = balancer.checkBalance(transaction);
             expect(result.status).toBe('unbalanced');
             if (result.status === 'unbalanced') {
-                expect(result.errors[0]!.message).toContain('$10.00');
+                // Should show "5 AAPL" not "5.00 AAPL"
+                expect(result.errors[0]!.message).toContain('5 AAPL');
+                expect(result.errors[0]!.message).not.toContain('5.00 AAPL');
+            }
+        });
+
+        it('should display amount with actual precision from parsed amounts', () => {
+            const transaction = createTransaction([
+                createPosting('Expenses:Food', { value: 50.5, commodity: '$', precision: 1 }),
+                createPosting('Assets:Cash', { value: -40.3, commodity: '$', precision: 1 }),
+            ]);
+
+            const result = balancer.checkBalance(transaction);
+            expect(result.status).toBe('unbalanced');
+            if (result.status === 'unbalanced') {
+                // Should show precision 1: "10.2"
+                expect(result.errors[0]!.message).toContain('$10.2');
+            }
+        });
+
+        it('should display crypto amounts with 8 decimal precision', () => {
+            const transaction = createTransaction([
+                createPosting('Assets:Wallet', { value: 0.00000010, commodity: 'BTC', precision: 8 }),
+                createPosting('Assets:Exchange', { value: -0.00000001, commodity: 'BTC', precision: 8 }),
+            ]);
+
+            const result = balancer.checkBalance(transaction);
+            expect(result.status).toBe('unbalanced');
+            if (result.status === 'unbalanced') {
+                expect(result.errors[0]!.message).toContain('0.00000009 BTC');
             }
         });
     });

@@ -381,26 +381,21 @@ export class HLedgerDiagnosticsProvider implements vscode.Disposable {
 
     private validateTransactionBalance(document: vscode.TextDocument): vscode.Diagnostic[] {
         const diagnostics: vscode.Diagnostic[] = [];
-
-        const definedCommodities = this.config.getDefinedCommodities();
-        if (definedCommodities.length === 0) {
-            return diagnostics;
-        }
-
-        const commodityFormats = this.config.getCommodityFormats();
-        if (!commodityFormats || commodityFormats.size === 0) {
-            return diagnostics;
-        }
-
         const content = document.getText();
 
-        const formatContext: NumberFormatContext = {
-            commodityFormats,
-            defaultCommodity: this.config.getDefaultCommodity()
-        };
+        const commodityFormats = this.config.getCommodityFormats();
 
-        const extractor = new TransactionExtractor(formatContext);
-        const transactions = extractor.extractTransactions(content);
+        // Create formatContext only if commodity formats are defined
+        // Otherwise use heuristic parsing (formatContext = undefined)
+        const formatContext: NumberFormatContext | undefined =
+            commodityFormats && commodityFormats.size > 0
+                ? {
+                    commodityFormats,
+                    defaultCommodity: this.config.getDefaultCommodity()
+                }
+                : undefined;
+
+        const transactions = this.transactionExtractor.extractTransactions(content, formatContext);
 
         for (const transaction of transactions) {
             const result = this.transactionBalancer.checkBalance(transaction);

@@ -122,15 +122,14 @@ export class TransactionBalancer {
     private formatAmount(value: number, commodity: CommodityCode, precision: number): string {
         const absValue = Math.abs(value);
         const sign = value < 0 ? '-' : '';
-        const displayPrecision = Math.max(2, precision);
 
         if (commodity) {
             if (/^[$€£¥₽₹]$/.test(commodity)) {
-                return `${sign}${commodity}${absValue.toFixed(displayPrecision)}`;
+                return `${sign}${commodity}${absValue.toFixed(precision)}`;
             }
-            return `${sign}${absValue.toFixed(displayPrecision)} ${commodity}`;
+            return `${sign}${absValue.toFixed(precision)} ${commodity}`;
         }
 
-        return `${sign}${absValue.toFixed(displayPrecision)}`;
+        return `${sign}${absValue.toFixed(precision)}`;
     }
 }

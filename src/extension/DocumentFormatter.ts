@@ -14,6 +14,7 @@ import {
 } from "./services/NumberFormatService";
 import { AmountFormatterService } from "./services/AmountFormatterService";
 import { HLedgerConfig } from "./HLedgerConfig";
+import { hasBalanceAssertion } from "./balance/utils";
 
 /**
  * Interface representing a posting line with amount information
@@ -420,7 +421,7 @@ export class DocumentFormatter {
     }
 
     // Skip lines with balance assertions to preserve user's alignment
-    if (line.includes("=")) {
+    if (hasBalanceAssertion(line)) {
       return line;
     }
 

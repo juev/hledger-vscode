@@ -21,18 +21,17 @@ export class TransactionExtractor {
     ] as const;
 
     private readonly lexer: HLedgerLexer;
-    private readonly amountParser: AmountParser;
 
-    constructor(formatContext?: NumberFormatContext) {
+    constructor() {
         this.lexer = new HLedgerLexer();
-        this.amountParser = new AmountParser(formatContext);
     }
 
     private isCommentLine(trimmedLine: string): boolean {
         return trimmedLine.startsWith(';') || trimmedLine.startsWith('#');
     }
 
-    extractTransactions(content: string): ParsedTransaction[] {
+    extractTransactions(content: string, formatContext?: NumberFormatContext): ParsedTransaction[] {
+        const amountParser = new AmountParser(formatContext);
         const lines = content.split('\n');
         const transactions: ParsedTransaction[] = [];
 
@@ -98,7 +97,7 @@ export class TransactionExtractor {
                     continue;
                 }
 
-                const posting = this.amountParser.parsePostingLine(line, i);
+                const posting = amountParser.parsePostingLine(line, i);
                 if (posting) {
                     currentPostings.push(posting);
                 }

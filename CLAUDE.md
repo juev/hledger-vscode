@@ -70,6 +70,17 @@ npx jest src/extension/import/__tests__/
 
 Legacy parsing (`enhanceWithLegacyParsing()`) handles commodity format templates and complex tag extraction not yet migrated to AST.
 
+### Balance Assertion Detection
+
+Shared utility in `src/extension/balance/utils.ts`:
+
+```typescript
+export const BALANCE_ASSERTION_PATTERN = /\s+(:?={1,2}\*?)\s+/;
+export function hasBalanceAssertion(line: string): boolean;
+```
+
+Detects all assertion operators: `=`, `==`, `=*`, `==*`, `:=`. Requires whitespace around operator to avoid matching equals signs in account names (e.g., `Expenses:Meeting=Food`).
+
 ### Highlighting
 
 Dual-layer system:
@@ -172,7 +183,7 @@ const scoreStr = (10000 - cappedScore).toString().padStart(5, '0');
 - `src/extension/import/` - CSV/TSV import with account resolution
 - `src/extension/actions/` - Code actions (balance assertions, quick fixes)
 - `src/extension/diagnostics/` - Validation on save/open
-- `src/extension/balance/` - Transaction balance validation (AmountParser, TransactionExtractor, TransactionBalancer)
+- `src/extension/balance/` - Transaction balance validation (AmountParser, TransactionExtractor, TransactionBalancer, utils)
 - `src/extension/services/` - NumberFormatService, HLedgerCliService
 
 ### Type System

@@ -514,16 +514,55 @@ describe('AmountParser', () => {
             defaultCommodity: null
         };
 
-        it('should return null when commodity format is not known', () => {
+        it('should fallback to heuristic parsing when commodity format is not known', () => {
             const parser = new AmountParser(emptyContext);
             const result = parser.parsePostingAmount('1.614 UNKNOWN');
-            expect(result).toBeNull();
+            expect(result).not.toBeNull();
+            expect(result!.value).toBe(1.614);
+            expect(result!.commodity).toBe('UNKNOWN');
+            expect(result!.precision).toBe(3);
         });
 
-        it('should return null when no default commodity and no commodity specified', () => {
+        it('should fallback to heuristic when no default commodity and no commodity specified', () => {
             const parser = new AmountParser(emptyContext);
             const result = parser.parsePostingAmount('1.614');
-            expect(result).toBeNull();
+            expect(result).not.toBeNull();
+            expect(result!.value).toBe(1.614);
+            expect(result!.precision).toBe(3);
+        });
+
+        it('should parse unknown commodity with EU format using heuristic', () => {
+            const parser = new AmountParser(emptyContext);
+            const result = parser.parsePostingAmount('1.000,50 EUR');
+            expect(result).not.toBeNull();
+            expect(result!.value).toBe(1000.50);
+            expect(result!.commodity).toBe('EUR');
+        });
+
+        it('should prefer explicit format over heuristic when available', () => {
+            const contextWithUSD = {
+                commodityFormats: new Map([
+                    ['USD', {
+                        format: { decimalMark: '.' as const, groupSeparator: ',' as const, decimalPlaces: 2, useGrouping: true },
+                        symbol: 'USD',
+                        symbolBefore: true,
+                        symbolSpacing: false,
+                        template: '$1,000.00'
+                    }]
+                ]),
+                defaultCommodity: null
+            };
+            const parser = new AmountParser(contextWithUSD);
+
+            // USD uses explicit format
+            const usdResult = parser.parsePostingAmount('1,000.50 USD');
+            expect(usdResult).not.toBeNull();
+            expect(usdResult!.value).toBe(1000.50);
+
+            // EUR falls back to heuristic
+            const eurResult = parser.parsePostingAmount('1.000,50 EUR');
+            expect(eurResult).not.toBeNull();
+            expect(eurResult!.value).toBe(1000.50);
         });
     });
 
