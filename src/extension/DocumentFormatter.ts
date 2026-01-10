@@ -12,6 +12,8 @@ import {
   NumberFormatService,
   ParsedAmount,
 } from "./services/NumberFormatService";
+import { AmountFormatterService } from "./services/AmountFormatterService";
+import { HLedgerConfig } from "./HLedgerConfig";
 
 /**
  * Interface representing a posting line with amount information
@@ -142,6 +144,7 @@ export class DocumentFormatter {
   private readonly options: DocumentFormattingOptions;
   private readonly numberFormatService: NumberFormatService;
   private readonly amountOptions: AmountFormattingOptions;
+  private readonly amountFormatterService: AmountFormatterService | null;
 
   // Regex constants for performance optimization
   private static readonly LEADING_COMMODITY_REGEX = /^[\p{Sc}$€£¥₽₩]/u;
@@ -164,14 +167,19 @@ export class DocumentFormatter {
    *
    * @param options Optional formatting options
    * @param numberFormatService Optional number format service
+   * @param config Optional HLedgerConfig for commodity-aware formatting
    */
   constructor(
     options: Partial<DocumentFormattingOptions> = {},
     numberFormatService?: NumberFormatService,
+    config?: HLedgerConfig,
   ) {
     this.options = { ...DEFAULT_FORMATTING_OPTIONS, ...options };
     this.numberFormatService = numberFormatService ?? new NumberFormatService();
     this.amountOptions = DEFAULT_AMOUNT_FORMATTING_OPTIONS;
+    this.amountFormatterService = config
+      ? new AmountFormatterService(config, this.numberFormatService)
+      : null;
   }
 
   /**
@@ -192,7 +200,15 @@ export class DocumentFormatter {
         return formatResult;
       }
 
-      return success(formatResult.data);
+      let formattedContent = formatResult.data;
+
+      // Apply commodity-aware amount formatting if config is available
+      if (this.amountFormatterService) {
+        formattedContent =
+          this.amountFormatterService.formatDocumentContent(formattedContent);
+      }
+
+      return success(formattedContent);
     } catch (error) {
       return failure(
         new Error(

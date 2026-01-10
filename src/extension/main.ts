@@ -100,7 +100,7 @@ export function activate(context: vscode.ExtensionContext): void {
     context.subscriptions.push(diagnosticsProvider);
 
     // Register formatting providers for hledger files
-    registerFormattingProviders(context);
+    registerFormattingProviders(context, services.config);
 
     // Register Enter key handler for smart indentation
     const enterCommand = new HLedgerEnterCommand();

@@ -6,6 +6,7 @@ import * as vscode from "vscode";
 import * as path from "path";
 import { HLedgerParser, ParsedHLedgerData } from "./HLedgerParser";
 import { SimpleProjectCache } from "./SimpleProjectCache";
+import { CommodityFormat } from "./services/NumberFormatService";
 import {
   CompletionContext,
   AccountName,
@@ -423,6 +424,10 @@ export class HLedgerConfig {
 
   getDefaultCommodity(): CommodityCode | null {
     return this.data?.defaultCommodity ?? null;
+  }
+
+  getCommodityFormats(): ReadonlyMap<CommodityCode, CommodityFormat> | null {
+    return this.data?.commodityFormats ?? null;
   }
 
   // Date methods

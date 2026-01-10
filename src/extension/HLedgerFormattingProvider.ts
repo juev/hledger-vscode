@@ -4,6 +4,7 @@
 import * as vscode from "vscode";
 import { DocumentFormatter } from "./DocumentFormatter";
 import { isFailure } from "./types";
+import { HLedgerConfig } from "./HLedgerConfig";
 
 /**
  * VS Code Document Formatting Provider for hledger files.
@@ -13,9 +14,11 @@ export class HLedgerFormattingProvider
   implements vscode.DocumentFormattingEditProvider
 {
   private documentFormatter: DocumentFormatter;
+  private config: HLedgerConfig | null;
 
-  constructor() {
-    this.documentFormatter = new DocumentFormatter();
+  constructor(config?: HLedgerConfig) {
+    this.config = config ?? null;
+    this.documentFormatter = new DocumentFormatter({}, undefined, config);
   }
 
   /**
@@ -40,6 +43,11 @@ export class HLedgerFormattingProvider
     // Formatting is controlled by VS Code's global editor.formatOnSave setting
 
     try {
+      // Initialize config for the document to get commodity formats
+      if (this.config) {
+        this.config.getConfigForDocument(document);
+      }
+
       // Get document content
       const content = document.getText();
 
@@ -80,9 +88,11 @@ export class HLedgerRangeFormattingProvider
   implements vscode.DocumentRangeFormattingEditProvider
 {
   private documentFormatter: DocumentFormatter;
+  private config: HLedgerConfig | null;
 
-  constructor() {
-    this.documentFormatter = new DocumentFormatter();
+  constructor(config?: HLedgerConfig) {
+    this.config = config ?? null;
+    this.documentFormatter = new DocumentFormatter({}, undefined, config);
   }
 
   /**
@@ -129,6 +139,10 @@ export class HLedgerRangeFormattingProvider
     _options: vscode.FormattingOptions,
     _token: vscode.CancellationToken,
   ): Promise<vscode.TextEdit[]> {
+    if (this.config) {
+      this.config.getConfigForDocument(document);
+    }
+
     const content = document.getText();
     const formatResult = this.documentFormatter.formatContent(content);
 
@@ -158,9 +172,10 @@ export class HLedgerRangeFormattingProvider
  */
 export function registerFormattingProviders(
   context: vscode.ExtensionContext,
+  config?: HLedgerConfig,
 ): void {
   // Register document formatting provider
-  const documentFormatter = new HLedgerFormattingProvider();
+  const documentFormatter = new HLedgerFormattingProvider(config);
   const documentRegistration =
     vscode.languages.registerDocumentFormattingEditProvider(
       "hledger",
@@ -169,7 +184,7 @@ export function registerFormattingProviders(
   context.subscriptions.push(documentRegistration);
 
   // Register range formatting provider
-  const rangeFormatter = new HLedgerRangeFormattingProvider();
+  const rangeFormatter = new HLedgerRangeFormattingProvider(config);
   const rangeRegistration =
     vscode.languages.registerDocumentRangeFormattingEditProvider(
       "hledger",

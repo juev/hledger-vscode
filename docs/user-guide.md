@@ -326,6 +326,35 @@ The formatter handles multiple currencies intelligently:
     Assets:Bank:EUR            -€120.00
 ```
 
+### Amount Formatting by Commodity
+
+When you have `commodity` directives in your journal, amounts are automatically formatted according to their format specification on save.
+
+**Automatic Formatting**: Enable `editor.formatOnSave` in VS Code settings to format amounts automatically when saving the file.
+
+```hledger
+; Commodity directives define the format
+commodity RUB 1 000,00  ; space as group separator, comma as decimal
+commodity $1,000.00     ; comma as group separator, period as decimal
+
+; Default commodity for postings without explicit currency
+D RUB 1 000,00
+
+2025-01-15 Supermarket
+    ; Before save: "1000 RUB" → After save: "1 000,00 RUB"
+    Expenses:Food                          1 000,00 RUB
+    ; Before save: "1000" (no commodity) → After save: "1 000,00" (uses D directive)
+    Assets:Cash                           -1 000,00
+```
+
+**Behavior**:
+- With explicit commodity: formats number and keeps symbol (e.g., `1000 RUB` → `1 000,00 RUB`)
+- Without commodity: uses `D` directive format, formats only the number (e.g., `1000` → `1 000,00`)
+- All amounts in a posting are formatted: main amount, cost notation (`@ 95.50 USD`), balance assertion (`= 5000 RUB`)
+- Virtual postings (`()`, `[]`) are fully supported
+- No format defined: amount is not modified
+- Amounts are aligned to `hledger.formatting.amountAlignmentColumn` (default: 40)
+
 ### Manual Formatting
 
 - **Format Document**: `Ctrl+Shift+I` (or `Cmd+Shift+I` on macOS)
