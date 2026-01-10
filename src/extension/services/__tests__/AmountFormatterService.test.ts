@@ -509,6 +509,67 @@ describe('AmountFormatterService', () => {
         });
     });
 
+    describe('format mismatch handling', () => {
+        it('should return null when amount uses space separator but format expects dot', () => {
+            const dotFormat: CommodityFormat = {
+                format: {
+                    decimalMark: ',',
+                    groupSeparator: '.',
+                    decimalPlaces: 2,
+                    useGrouping: true
+                },
+                symbol: 'RUB',
+                symbolBefore: false,
+                symbolSpacing: true,
+                template: '1.000,00 RUB'
+            };
+
+            const formats = new Map<CommodityCode, CommodityFormat>();
+            formats.set(createCommodityCode('RUB'), dotFormat);
+            mockConfig.getCommodityFormats.mockReturnValue(formats);
+            mockConfig.getDefaultCommodity.mockReturnValue(null);
+
+            const result = service.formatPostingLine('    Assets:Bank  -561 200,00 RUB');
+
+            expect(result).toBeNull();
+        });
+
+        it('should return null when amount uses dot separator but format expects space', () => {
+            const formats = new Map<CommodityCode, CommodityFormat>();
+            formats.set(createCommodityCode('RUB'), rubFormat);
+            mockConfig.getCommodityFormats.mockReturnValue(formats);
+            mockConfig.getDefaultCommodity.mockReturnValue(null);
+
+            const result = service.formatPostingLine('    Assets:Bank  1.234,56 RUB');
+
+            expect(result).toBeNull();
+        });
+
+        it('should return null for large amount with space separator when format expects dot', () => {
+            const dotFormat: CommodityFormat = {
+                format: {
+                    decimalMark: ',',
+                    groupSeparator: '.',
+                    decimalPlaces: 2,
+                    useGrouping: true
+                },
+                symbol: 'RUB',
+                symbolBefore: false,
+                symbolSpacing: true,
+                template: '1.000,00 RUB'
+            };
+
+            const formats = new Map<CommodityCode, CommodityFormat>();
+            formats.set(createCommodityCode('RUB'), dotFormat);
+            mockConfig.getCommodityFormats.mockReturnValue(formats);
+            mockConfig.getDefaultCommodity.mockReturnValue(null);
+
+            const result = service.formatPostingLine('    Assets:Bank  -6 856 852,35 RUB');
+
+            expect(result).toBeNull();
+        });
+    });
+
     describe('ReDoS protection', () => {
         beforeEach(() => {
             const formats = new Map<CommodityCode, CommodityFormat>();

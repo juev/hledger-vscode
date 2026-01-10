@@ -310,6 +310,10 @@ export class AmountFormatterService {
             normalizedAmount = normalizedAmount.replace(',', '.');
         }
 
+        if (!/^\d+(\.\d+)?$/.test(normalizedAmount)) {
+            return null;
+        }
+
         const value = parseFloat(normalizedAmount);
 
         if (isNaN(value)) {
