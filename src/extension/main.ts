@@ -123,6 +123,37 @@ export function activate(context: vscode.ExtensionContext): void {
     // This handles template completion where Tab navigates between tabstops
     let lastPostingLineNumber: number | null = null;
     let lastPostingLineContent: string | null = null;
+    let formatTimeout: ReturnType<typeof setTimeout> | null = null;
+
+    const formatPostingLineIfNeeded = async (
+      editor: vscode.TextEditor,
+      lineNumber: number,
+    ): Promise<void> => {
+      try {
+        if (lineNumber >= editor.document.lineCount) return;
+
+        const line = editor.document.lineAt(lineNumber);
+        const currentContent = line.text;
+
+        services.config.getConfigForDocument(editor.document);
+        const alignmentColumn = amountFormatterService.getAlignmentColumn();
+        const formatted = amountFormatterService.formatPostingLine(
+          currentContent,
+          alignmentColumn,
+        );
+
+        if (formatted !== null && formatted !== currentContent) {
+          await editor.edit(
+            (editBuilder) => {
+              editBuilder.replace(line.range, formatted);
+            },
+            { undoStopBefore: false, undoStopAfter: true },
+          );
+        }
+      } catch {
+        // Ignore errors during formatting
+      }
+    };
 
     const selectionChangeListener = vscode.window.onDidChangeTextEditorSelection(
       async (event) => {
@@ -130,6 +161,10 @@ export function activate(context: vscode.ExtensionContext): void {
         if (editor.document.languageId !== "hledger") {
           lastPostingLineNumber = null;
           lastPostingLineContent = null;
+          if (formatTimeout) {
+            globalThis.clearTimeout(formatTimeout);
+            formatTimeout = null;
+          }
           return;
         }
 
@@ -138,39 +173,35 @@ export function activate(context: vscode.ExtensionContext): void {
           return;
         }
 
-        // If cursor was on a posting line and moved to a different line
-        if (
-          lastPostingLineNumber !== null &&
-          lastPostingLineNumber !== currentLine &&
-          lastPostingLineContent !== null
-        ) {
-          try {
-            // Check if line still exists and has changed (user typed something)
-            if (lastPostingLineNumber < editor.document.lineCount) {
-              const line = editor.document.lineAt(lastPostingLineNumber);
-              const currentContent = line.text;
+        // Clear any pending debounced format
+        if (formatTimeout) {
+          globalThis.clearTimeout(formatTimeout);
+          formatTimeout = null;
+        }
 
-              // Only format if content changed from when we first tracked it
-              if (currentContent !== lastPostingLineContent) {
-                services.config.getConfigForDocument(editor.document);
-                const alignmentColumn = amountFormatterService.getAlignmentColumn();
-                const formatted = amountFormatterService.formatPostingLine(
-                  currentContent,
-                  alignmentColumn,
-                );
+        // Check if we have a tracked posting line
+        if (lastPostingLineNumber !== null && lastPostingLineContent !== null) {
+          const trackedLineNumber = lastPostingLineNumber;
+          if (trackedLineNumber < editor.document.lineCount) {
+            const trackedLine = editor.document.lineAt(trackedLineNumber);
+            const currentContent = trackedLine.text;
 
-                if (formatted !== null && formatted !== currentContent) {
-                  await editor.edit(
-                    (editBuilder) => {
-                      editBuilder.replace(line.range, formatted);
-                    },
-                    { undoStopBefore: false, undoStopAfter: true },
-                  );
-                }
+            // Content changed from when we first tracked it
+            if (currentContent !== lastPostingLineContent) {
+              if (trackedLineNumber !== currentLine) {
+                // Moving to different line - format immediately
+                await formatPostingLineIfNeeded(editor, trackedLineNumber);
+              } else {
+                // Same line but content changed - debounced format (for snippet tabstops)
+                formatTimeout = setTimeout(async () => {
+                  await formatPostingLineIfNeeded(editor, trackedLineNumber);
+                  // Update tracked content after formatting
+                  if (trackedLineNumber < editor.document.lineCount) {
+                    lastPostingLineContent = editor.document.lineAt(trackedLineNumber).text;
+                  }
+                }, 500);
               }
             }
-          } catch {
-            // Ignore errors during formatting
           }
         }
 
