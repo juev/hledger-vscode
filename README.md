@@ -42,6 +42,14 @@ Transform your plain text accounting experience with powerful IDE capabilities:
 - **Commodity-aware formatting** - amounts formatted according to `commodity` directives
 - Preserves balance assertions, virtual postings, and metadata
 
+### ✅ **Transaction Validation**
+
+- **Real-time balance checking** - validates transactions on save
+- **Multi-commodity support** - each currency balanced separately
+- **Inferred amounts** - supports single posting without amount
+- **Cost notation** - supports `@` (unit cost) and `@@` (total cost)
+- **Balance assertions** - handles `=`, `==`, `=*` syntax
+
 ### 🔧 **Smart Editing**
 
 - **Auto-indent** for transactions and postings

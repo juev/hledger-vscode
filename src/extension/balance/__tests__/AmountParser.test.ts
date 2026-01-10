@@ -303,6 +303,46 @@ describe('AmountParser', () => {
                 expect(result!.precision).toBe(0);
             });
         });
+
+        describe('performance and security', () => {
+            it('should handle long string without @ quickly (ReDoS prevention)', () => {
+                const longString = '1' + '0'.repeat(1000) + ' USD';
+                const start = performance.now();
+                const result = parser.parsePostingAmount(longString);
+                const elapsed = performance.now() - start;
+                expect(elapsed).toBeLessThan(100);
+                expect(result).not.toBeNull();
+            });
+        });
+
+        describe('scientific notation boundary values', () => {
+            it('should parse exponent at boundary: 1E308', () => {
+                const result = parser.parsePostingAmount('1E308');
+                expect(result).not.toBeNull();
+                expect(result!.value).toBe(1e308);
+            });
+
+            it('should return null for exponent overflow: 1E309', () => {
+                const result = parser.parsePostingAmount('1E309');
+                expect(result).toBeNull();
+            });
+
+            it('should parse negative exponent at boundary: 1E-308', () => {
+                const result = parser.parsePostingAmount('1E-308');
+                expect(result).not.toBeNull();
+                expect(result!.value).toBeCloseTo(1e-308);
+            });
+
+            it('should return null for negative exponent overflow: 1E-309', () => {
+                const result = parser.parsePostingAmount('1E-309');
+                expect(result).toBeNull();
+            });
+
+            it('should return null for very large exponent: 1E999', () => {
+                const result = parser.parsePostingAmount('1E999');
+                expect(result).toBeNull();
+            });
+        });
     });
 
     describe('detectPostingType', () => {

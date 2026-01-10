@@ -5,10 +5,6 @@ export class AmountParser {
     private static readonly BALANCE_ASSERTION_ONLY = /^(:?={1,2}\*?)\s*(.+)$/;
     private static readonly BALANCE_ASSERTION_SUFFIX = /\s*:?={1,2}\*?\s*[^@]+$/;
 
-    private static readonly COMMODITY_QUOTED = /"[^"]+"/;
-    private static readonly COMMODITY_SYMBOL = /[\p{Sc}]/u;
-    private static readonly COMMODITY_WORD = /[\p{L}]+/u;
-
     parsePostingAmount(input: string): ParsedPostingAmount | null {
         const trimmed = input.trim();
         if (!trimmed) {
@@ -27,7 +23,7 @@ export class AmountParser {
 
         const amountWithoutAssertion = trimmed.replace(AmountParser.BALANCE_ASSERTION_SUFFIX, '').trim();
 
-        const costMatch = amountWithoutAssertion.match(/^(.+?)\s*(@{1,2})\s*(.+)$/);
+        const costMatch = amountWithoutAssertion.match(/^([^@]+?)\s*(@{1,2})\s*(.+)$/);
         let mainAmountStr = amountWithoutAssertion;
         let costInfo: ParsedPostingAmount['cost'] | undefined;
 
@@ -142,6 +138,9 @@ export class AmountParser {
         if (scientificMatch) {
             str = scientificMatch[1]!;
             scientificExponent = parseInt(scientificMatch[2]!, 10);
+            if (Math.abs(scientificExponent) > 308) {
+                return null;
+            }
         }
 
         str = str.replace(/\s/g, '');

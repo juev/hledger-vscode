@@ -30,6 +30,7 @@ npm run test:coverage  # Tests with coverage report
 npm run lint           # ESLint check
 npm run lint:fix       # ESLint with auto-fix
 npm run package        # Create VSIX for distribution
+npx tsc --noEmit       # TypeScript strict type check (run before committing)
 ```
 
 ### Running Single Tests
