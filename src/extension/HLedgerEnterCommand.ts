@@ -1,6 +1,4 @@
 import * as vscode from "vscode";
-import { AmountFormatterService } from "./services/AmountFormatterService";
-import { HLedgerConfig } from "./HLedgerConfig";
 
 /**
  * Utilities for handling Enter key press with smart indentation logic
@@ -63,25 +61,13 @@ export class HLedgerEnterKeyProvider {
  */
 export class HLedgerEnterCommand implements vscode.Disposable {
   private disposable: vscode.Disposable;
-  private amountFormatter: AmountFormatterService | null = null;
-  private config: HLedgerConfig | null = null;
 
-  constructor(amountFormatter?: AmountFormatterService, config?: HLedgerConfig) {
-    this.amountFormatter = amountFormatter ?? null;
-    this.config = config ?? null;
+  constructor() {
     this.disposable = vscode.commands.registerTextEditorCommand(
       "hledger.onEnter",
       this.onEnter,
       this,
     );
-  }
-
-  setAmountFormatter(formatter: AmountFormatterService): void {
-    this.amountFormatter = formatter;
-  }
-
-  setConfig(config: HLedgerConfig): void {
-    this.config = config;
   }
 
   private async onEnter(
@@ -116,20 +102,6 @@ export class HLedgerEnterCommand implements vscode.Disposable {
     await textEditor.edit((editBuilder) => {
       for (const { selection, action } of edits) {
         const position = selection.active;
-        const currentLine = document.lineAt(position.line);
-        const currentLineText = currentLine.text;
-
-        // Try to format the current line before inserting newline
-        if (this.amountFormatter && this.config) {
-          this.config.getConfigForDocument(document);
-          const alignmentColumn = this.amountFormatter.getAlignmentColumn();
-          const formattedLine = this.amountFormatter.formatPostingLine(currentLineText, alignmentColumn);
-          if (formattedLine !== null && formattedLine !== currentLineText) {
-            // Replace the entire line with formatted version
-            const lineRange = currentLine.range;
-            editBuilder.replace(lineRange, formattedLine);
-          }
-        }
 
         if (!action) {
           // Standard behavior for this cursor only

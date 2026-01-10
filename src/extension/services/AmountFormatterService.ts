@@ -22,8 +22,9 @@ export class AmountFormatterService {
     }
 
     /**
-     * Formats the amount in a posting line according to commodity format.
-     * Returns null if the line is not a posting, has no amount, or no format is defined.
+     * Formats all amounts in a posting line according to commodity format.
+     * Handles: main amount, cost notation (@, @@), balance assertions (=, ==, =*, ==*)
+     * Preserves inline comments.
      *
      * @param line The posting line to format
      * @param alignmentColumn Optional column position for amount alignment (default: 2 spaces after account)
@@ -39,79 +40,108 @@ export class AmountFormatterService {
         const indentMatch = line.match(/^(\s+)/);
         const indent = indentMatch?.[1] ?? '    ';
 
-        // Parse posting line manually (lexer has limitations with prefix symbols and space grouping)
         const trimmedLine = line.trim();
 
-        // Split account from amount using 2+ spaces or tab
-        const splitMatch = trimmedLine.match(/^(.+?)(?:\s{2,}|\t)(.+)$/);
-        if (!splitMatch) {
-            // No amount part found
-            return null;
+        // Step 1: Extract inline comment (must be preceded by 2+ spaces or at start after amount)
+        let comment = '';
+        let lineWithoutComment = trimmedLine;
+        const commentMatch = trimmedLine.match(/^(.+?)(\s{2,};.*)$/);
+        if (commentMatch) {
+            lineWithoutComment = commentMatch[1]?.trim() ?? trimmedLine;
+            comment = commentMatch[2] ?? '';
         }
 
-        const accountPart = splitMatch[1]?.trim() ?? '';
-        const amountPart = splitMatch[2]?.trim() ?? '';
-
-        if (!amountPart) {
-            return null;
+        // Step 2: Extract balance assertion (=, ==, =*, ==*)
+        let balanceAssertion = '';
+        let balanceAssertionAmount = '';
+        let lineWithoutAssertion = lineWithoutComment;
+        const assertionMatch = lineWithoutComment.match(/^(.+?)\s+(==?\*?)\s+(.+)$/);
+        if (assertionMatch) {
+            lineWithoutAssertion = assertionMatch[1]?.trim() ?? lineWithoutComment;
+            balanceAssertion = assertionMatch[2] ?? '';
+            balanceAssertionAmount = assertionMatch[3]?.trim() ?? '';
         }
 
-        // Determine the format to use
+        // Step 3: Extract cost notation (@, @@)
+        let costNotation = '';
+        let costAmount = '';
+        let lineWithoutCost = lineWithoutAssertion;
+        const costMatch = lineWithoutAssertion.match(/^(.+?)\s+(@@?)\s+(.+)$/);
+        if (costMatch) {
+            lineWithoutCost = costMatch[1]?.trim() ?? lineWithoutAssertion;
+            costNotation = costMatch[2] ?? '';
+            costAmount = costMatch[3]?.trim() ?? '';
+        }
+
+        // Step 4: Split account from main amount using 2+ spaces or tab
+        const splitMatch = lineWithoutCost.match(/^(.+?)(?:\s{2,}|\t)(.*)$/);
+
+        let accountPart = '';
+        let mainAmount = '';
+
+        if (splitMatch) {
+            accountPart = splitMatch[1]?.trim() ?? '';
+            mainAmount = splitMatch[2]?.trim() ?? '';
+        } else {
+            // No amount part - might be balance assertion without posting amount (e.g., "Assets:Bank  = 5000 RUB")
+            accountPart = lineWithoutCost;
+        }
+
+        // Get commodity formats
         const commodityFormats = this.config.getCommodityFormats();
         if (!commodityFormats) {
             return null;
         }
 
-        let format: CommodityFormat | undefined;
-        let hasCommodityInLine = false;
-        let actualCommodity: CommodityCode | undefined;
-
-        // Try to find commodity in amount part - check all known commodities
-        for (const [commodity] of commodityFormats) {
-            const escaped = this.escapeRegex(commodity);
-            // Check suffix: "100 RUB" or "100RUB"
-            if (new RegExp(`${escaped}$`).test(amountPart)) {
-                actualCommodity = commodity;
-                break;
-            }
-            // Check prefix: "$100" or "$ 100"
-            if (new RegExp(`^${escaped}`).test(amountPart)) {
-                actualCommodity = commodity;
-                break;
+        // Format main amount (if present)
+        let formattedMainAmount = mainAmount;
+        if (mainAmount) {
+            const formatted = this.formatSingleAmount(mainAmount, commodityFormats);
+            if (formatted !== null) {
+                formattedMainAmount = formatted;
             }
         }
 
-        if (actualCommodity) {
-            // Posting has explicit commodity - use its format
-            format = commodityFormats.get(actualCommodity);
-            hasCommodityInLine = true;
-        } else {
-            // No commodity in posting - try default commodity
-            const defaultCommodity = this.config.getDefaultCommodity();
-            if (defaultCommodity) {
-                format = commodityFormats.get(defaultCommodity);
+        // Format cost amount (if present)
+        let formattedCostAmount = costAmount;
+        if (costAmount) {
+            const formatted = this.formatSingleAmount(costAmount, commodityFormats);
+            if (formatted !== null) {
+                formattedCostAmount = formatted;
             }
         }
 
-        // No format found - don't modify
-        if (!format) {
+        // Format balance assertion amount (if present)
+        let formattedAssertionAmount = balanceAssertionAmount;
+        if (balanceAssertionAmount) {
+            const formatted = this.formatSingleAmount(balanceAssertionAmount, commodityFormats);
+            if (formatted !== null) {
+                formattedAssertionAmount = formatted;
+            }
+        }
+
+        // Check if we have any amounts that could be formatted
+        const hasAmountToFormat = mainAmount || costAmount || balanceAssertionAmount;
+
+        // Return null if there's nothing to format
+        if (!hasAmountToFormat) {
             return null;
         }
 
-        // Parse the numeric value from the amount string
-        const numericValue = this.parseNumericValue(amountPart, actualCommodity);
-        if (numericValue === null) {
+        // Check if formatting failed for all amounts (no format found)
+        const mainAmountFailed = mainAmount && formattedMainAmount === mainAmount && !this.formatSingleAmount(mainAmount, commodityFormats);
+        const costAmountFailed = costAmount && formattedCostAmount === costAmount && !this.formatSingleAmount(costAmount, commodityFormats);
+        const assertionAmountFailed = balanceAssertionAmount && formattedAssertionAmount === balanceAssertionAmount && !this.formatSingleAmount(balanceAssertionAmount, commodityFormats);
+
+        // Return null only if ALL amounts failed to find a format
+        if (mainAmountFailed && !costAmount && !balanceAssertionAmount) {
             return null;
         }
-
-        // Format the amount
-        let formattedAmount: string;
-        if (hasCommodityInLine) {
-            // Has commodity - format with symbol
-            formattedAmount = this.numberFormatService.formatAmount(numericValue, format);
-        } else {
-            // No commodity - format number only (don't add symbol)
-            formattedAmount = this.numberFormatService.formatNumber(numericValue, format.format);
+        if (costAmountFailed && !mainAmount && !balanceAssertionAmount) {
+            return null;
+        }
+        if (assertionAmountFailed && !mainAmount && !costAmount) {
+            return null;
         }
 
         // Calculate spacing for alignment
@@ -124,7 +154,86 @@ export class AmountFormatterService {
         }
 
         // Reconstruct the line
-        return `${indent}${accountPart}${spacing}${formattedAmount}`;
+        let result = `${indent}${accountPart}`;
+
+        if (formattedMainAmount) {
+            result += `${spacing}${formattedMainAmount}`;
+        }
+
+        if (costNotation && formattedCostAmount) {
+            if (!formattedMainAmount) {
+                // Cost without main amount (unusual but handle it)
+                result += spacing;
+            }
+            result += ` ${costNotation} ${formattedCostAmount}`;
+        }
+
+        if (balanceAssertion && formattedAssertionAmount) {
+            if (!formattedMainAmount && !costNotation) {
+                // Balance assertion without main amount (e.g., "Assets:Bank  = 5000 RUB")
+                // Use spacing (2 spaces by default) before assertion
+                result += `${spacing}${balanceAssertion} ${formattedAssertionAmount}`;
+            } else {
+                result += ` ${balanceAssertion} ${formattedAssertionAmount}`;
+            }
+        }
+
+        if (comment) {
+            result += comment;
+        }
+
+        return result;
+    }
+
+    /**
+     * Formats a single amount string (with or without commodity).
+     * @returns Formatted amount or null if no format applicable
+     */
+    private formatSingleAmount(amountStr: string, commodityFormats: ReadonlyMap<CommodityCode, CommodityFormat>): string | null {
+        let format: CommodityFormat | undefined;
+        let hasCommodity = false;
+        let actualCommodity: CommodityCode | undefined;
+
+        // Try to find commodity in amount string
+        for (const [commodity] of commodityFormats) {
+            const escaped = this.escapeRegex(commodity);
+            // Check suffix: "100 RUB" or "100RUB"
+            if (new RegExp(`${escaped}$`).test(amountStr)) {
+                actualCommodity = commodity;
+                break;
+            }
+            // Check prefix: "$100" or "$ 100"
+            if (new RegExp(`^${escaped}`).test(amountStr)) {
+                actualCommodity = commodity;
+                break;
+            }
+        }
+
+        if (actualCommodity) {
+            format = commodityFormats.get(actualCommodity);
+            hasCommodity = true;
+        } else {
+            // No commodity - try default
+            const defaultCommodity = this.config.getDefaultCommodity();
+            if (defaultCommodity) {
+                format = commodityFormats.get(defaultCommodity);
+            }
+        }
+
+        if (!format) {
+            return null;
+        }
+
+        const numericValue = this.parseNumericValue(amountStr, actualCommodity);
+        if (numericValue === null) {
+            return null;
+        }
+
+        if (hasCommodity) {
+            return this.numberFormatService.formatAmount(numericValue, format);
+        } else {
+            return this.numberFormatService.formatNumber(numericValue, format.format);
+        }
     }
 
     /**

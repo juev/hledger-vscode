@@ -257,6 +257,156 @@ describe('AmountFormatterService', () => {
         });
     });
 
+    describe('hledger syntax - format ALL amounts', () => {
+        beforeEach(() => {
+            const formats = new Map<CommodityCode, CommodityFormat>();
+            formats.set(createCommodityCode('RUB'), rubFormat);
+            formats.set(createCommodityCode('USD'), {
+                format: {
+                    decimalMark: ',',
+                    groupSeparator: ' ',
+                    decimalPlaces: 2,
+                    useGrouping: true
+                },
+                symbol: 'USD',
+                symbolBefore: false,
+                symbolSpacing: true,
+                template: '1 000,00 USD'
+            });
+            formats.set(createCommodityCode('AAPL'), {
+                format: {
+                    decimalMark: '.',
+                    groupSeparator: '',
+                    decimalPlaces: 0,
+                    useGrouping: false
+                },
+                symbol: 'AAPL',
+                symbolBefore: false,
+                symbolSpacing: true,
+                template: '10 AAPL'
+            });
+            mockConfig.getCommodityFormats.mockReturnValue(formats);
+            mockConfig.getDefaultCommodity.mockReturnValue(createCommodityCode('RUB'));
+        });
+
+        describe('balance assertions', () => {
+            it('should format both posting amount and balance assertion', () => {
+                const result = service.formatPostingLine('    Assets:Bank  1000 RUB = 5000 RUB');
+                expect(result).toBe('    Assets:Bank  1 000,00 RUB = 5 000,00 RUB');
+            });
+
+            it('should format balance assertion without posting amount', () => {
+                const result = service.formatPostingLine('    Assets:Bank  = 5000 RUB');
+                expect(result).toBe('    Assets:Bank  = 5 000,00 RUB');
+            });
+
+            it('should handle == (total assertion)', () => {
+                const result = service.formatPostingLine('    Assets:Bank  1000 RUB == 5000 RUB');
+                expect(result).toBe('    Assets:Bank  1 000,00 RUB == 5 000,00 RUB');
+            });
+
+            it('should handle =* (inclusive assertion)', () => {
+                const result = service.formatPostingLine('    Assets:Bank  1000 RUB =* 5000 RUB');
+                expect(result).toBe('    Assets:Bank  1 000,00 RUB =* 5 000,00 RUB');
+            });
+
+            it('should handle ==* (total inclusive assertion)', () => {
+                const result = service.formatPostingLine('    Assets:Bank  1000 RUB ==* 5000 RUB');
+                expect(result).toBe('    Assets:Bank  1 000,00 RUB ==* 5 000,00 RUB');
+            });
+        });
+
+        describe('cost notation', () => {
+            it('should format both quantity and price per unit @', () => {
+                const result = service.formatPostingLine('    Assets:USD  100 USD @ 95.50 RUB');
+                expect(result).toBe('    Assets:USD  100,00 USD @ 95,50 RUB');
+            });
+
+            it('should format both quantity and total cost @@', () => {
+                const result = service.formatPostingLine('    Assets:USD  100 USD @@ 9550 RUB');
+                expect(result).toBe('    Assets:USD  100,00 USD @@ 9 550,00 RUB');
+            });
+
+            it('should format stock purchase with @ price', () => {
+                const result = service.formatPostingLine('    Assets:Stocks  10 AAPL @ 150 USD');
+                expect(result).toBe('    Assets:Stocks  10 AAPL @ 150,00 USD');
+            });
+
+            it('should format stock purchase with @@ total', () => {
+                const result = service.formatPostingLine('    Assets:Stocks  10 AAPL @@ 1500 USD');
+                expect(result).toBe('    Assets:Stocks  10 AAPL @@ 1 500,00 USD');
+            });
+        });
+
+        describe('virtual postings', () => {
+            it('should format balanced virtual posting []', () => {
+                const result = service.formatPostingLine('    [Budget:Food]  -1000 RUB');
+                expect(result).toBe('    [Budget:Food]  -1 000,00 RUB');
+            });
+
+            it('should format unbalanced virtual posting ()', () => {
+                const result = service.formatPostingLine('    (Tracking)  1000 RUB');
+                expect(result).toBe('    (Tracking)  1 000,00 RUB');
+            });
+
+            it('should format virtual posting with balance assertion', () => {
+                const result = service.formatPostingLine('    [Budget:Food]  -1000 RUB = -5000 RUB');
+                expect(result).toBe('    [Budget:Food]  -1 000,00 RUB = -5 000,00 RUB');
+            });
+        });
+
+        describe('inline comments', () => {
+            it('should preserve inline comment after amount', () => {
+                const result = service.formatPostingLine('    Expenses:Food  1000 RUB  ; groceries');
+                expect(result).toBe('    Expenses:Food  1 000,00 RUB  ; groceries');
+            });
+
+            it('should preserve comment with balance assertion', () => {
+                const result = service.formatPostingLine('    Assets:Bank  1000 RUB = 5000 RUB  ; check balance');
+                expect(result).toBe('    Assets:Bank  1 000,00 RUB = 5 000,00 RUB  ; check balance');
+            });
+
+            it('should preserve comment with cost notation', () => {
+                const result = service.formatPostingLine('    Assets:USD  100 USD @ 95.50 RUB  ; exchange rate');
+                expect(result).toBe('    Assets:USD  100,00 USD @ 95,50 RUB  ; exchange rate');
+            });
+        });
+
+        describe('default commodity (D directive)', () => {
+            it('should format amount without explicit commodity using D directive', () => {
+                const result = service.formatPostingLine('    Expenses:Food  1000');
+                expect(result).toBe('    Expenses:Food  1 000,00');
+            });
+
+            it('should format amount without commodity in cost notation', () => {
+                const result = service.formatPostingLine('    Assets:USD  100 @ 95.50');
+                expect(result).toBe('    Assets:USD  100,00 @ 95,50');
+            });
+
+            it('should format amount without commodity in balance assertion', () => {
+                const result = service.formatPostingLine('    Assets:Cash  1000 = 5000');
+                expect(result).toBe('    Assets:Cash  1 000,00 = 5 000,00');
+            });
+
+            it('should format balance assertion without posting amount using D directive', () => {
+                const result = service.formatPostingLine('    Assets:Cash  = 5000');
+                expect(result).toBe('    Assets:Cash  = 5 000,00');
+            });
+        });
+
+        describe('combined syntax', () => {
+            it('should format all amounts in combined syntax', () => {
+                const result = service.formatPostingLine('    Assets:USD  100 USD @ 95.50 RUB = 500 USD  ; purchase');
+                expect(result).toBe('    Assets:USD  100,00 USD @ 95,50 RUB = 500,00 USD  ; purchase');
+            });
+
+            it('should handle complex posting with cost and assertion', () => {
+                const result = service.formatPostingLine('    Assets:Stocks  10 AAPL @@ 1500 USD = 20 AAPL');
+                expect(result).toBe('    Assets:Stocks  10 AAPL @@ 1 500,00 USD = 20 AAPL');
+            });
+        });
+    });
+
     describe('formatDocumentContent', () => {
         it('should format all postings in document', () => {
             const formats = new Map<CommodityCode, CommodityFormat>();

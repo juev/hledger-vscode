@@ -247,11 +247,9 @@ When `hledger.smartIndent.enabled` is `true` (default):
 | Context | Behavior |
 |---------|----------|
 | After transaction date line | Adds 4-space indent for posting |
-| After posting line | Formats amount by commodity, preserves indent for next posting |
+| After posting line | Preserves indent for next posting |
 | Empty line with only spaces | Removes indent (outdents) |
 | Empty line | Normal new line |
-
-**Amount Formatting on Enter**: When you press Enter on a posting line with an amount, the amount is automatically formatted according to the commodity directive (if defined) and aligned to the configured column.
 
 ### Smart Tab
 
@@ -330,13 +328,9 @@ The formatter handles multiple currencies intelligently:
 
 ### Amount Formatting by Commodity
 
-When you have `commodity` directives in your journal, amounts are automatically formatted according to their format specification.
+When you have `commodity` directives in your journal, amounts are automatically formatted according to their format specification on save.
 
-**Automatic Formatting Triggers**:
-- **On Enter Key**: When you press Enter after typing a posting line, the amount is formatted and aligned
-- **On Cursor Leave**: When you move the cursor away from a posting line (e.g., after filling in a template), the amount is formatted and aligned
-
-**Format Amounts Command**: Use `HLedger: Format Amounts by Commodity` from Command Palette to reformat all amounts in the document.
+**Automatic Formatting**: Enable `editor.formatOnSave` in VS Code settings to format amounts automatically when saving the file.
 
 ```hledger
 ; Commodity directives define the format
@@ -347,15 +341,17 @@ commodity $1,000.00     ; comma as group separator, period as decimal
 D RUB 1 000,00
 
 2025-01-15 Supermarket
-    ; Type "1000 RUB" and press Enter → "1 000,00 RUB" (aligned to column 40)
+    ; Before save: "1000 RUB" → After save: "1 000,00 RUB"
     Expenses:Food                          1 000,00 RUB
-    ; Type "1000" (no commodity) and press Enter → "1 000,00" (uses D directive format)
+    ; Before save: "1000" (no commodity) → After save: "1 000,00" (uses D directive)
     Assets:Cash                           -1 000,00
 ```
 
 **Behavior**:
 - With explicit commodity: formats number and keeps symbol (e.g., `1000 RUB` → `1 000,00 RUB`)
 - Without commodity: uses `D` directive format, formats only the number (e.g., `1000` → `1 000,00`)
+- All amounts in a posting are formatted: main amount, cost notation (`@ 95.50 USD`), balance assertion (`= 5000 RUB`)
+- Virtual postings (`()`, `[]`) are fully supported
 - No format defined: amount is not modified
 - Amounts are aligned to `hledger.formatting.amountAlignmentColumn` (default: 40)
 
@@ -714,7 +710,6 @@ All commands accessible via Command Palette (`Ctrl+Shift+P` or `Cmd+Shift+P`):
 | `hledger.cli.incomestatement` | HLedger: Insert Income Statement | Insert income statement as comment |
 | `hledger.import.fromSelection` | HLedger: Import Selected Tabular Data | Import selected CSV/TSV |
 | `hledger.import.fromFile` | HLedger: Import Tabular Data from File | Import active file as CSV/TSV |
-| `hledger.formatAmounts` | HLedger: Format Amounts by Commodity | Format all amounts using commodity directives |
 
 ---
 
