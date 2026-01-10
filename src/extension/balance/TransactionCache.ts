@@ -6,6 +6,7 @@ interface CachedDocument {
     contentLines: readonly string[];
     transactions: readonly CachedTransaction[];
     parsedTransactions: readonly ParsedTransaction[];
+    formatContextHash: string;
 }
 
 interface CachedTransaction {
@@ -25,11 +26,17 @@ export class TransactionCache {
         formatContext?: NumberFormatContext
     ): ParsedTransaction[] {
         const newLines = content.split('\n');
+        const newFormatHash = this.computeFormatContextHash(formatContext);
         const cached = this.cache.get(documentUri);
 
         // First time parsing this document
         if (!cached) {
-            return this.fullParse(documentUri, content, newLines, formatContext);
+            return this.fullParse(documentUri, content, newLines, formatContext, newFormatHash);
+        }
+
+        // Format context changed - full re-parse needed
+        if (cached.formatContextHash !== newFormatHash) {
+            return this.fullParse(documentUri, content, newLines, formatContext, newFormatHash);
         }
 
         // Content unchanged - return cached
@@ -38,7 +45,7 @@ export class TransactionCache {
         }
 
         // Content changed - do incremental parse
-        return this.incrementalParse(documentUri, cached, content, newLines, formatContext);
+        return this.incrementalParse(documentUri, cached, content, newLines, formatContext, newFormatHash);
     }
 
     invalidate(documentUri: string): void {
@@ -53,7 +60,8 @@ export class TransactionCache {
         documentUri: string,
         content: string,
         lines: readonly string[],
-        formatContext?: NumberFormatContext
+        formatContext: NumberFormatContext | undefined,
+        formatContextHash: string
     ): ParsedTransaction[] {
         const transactions = this.extractor.extractTransactions(content, formatContext);
         const cachedTransactions = this.buildCachedTransactions(transactions, lines);
@@ -62,6 +70,7 @@ export class TransactionCache {
             contentLines: lines,
             transactions: cachedTransactions,
             parsedTransactions: transactions,
+            formatContextHash,
         });
 
         return transactions;
@@ -72,7 +81,8 @@ export class TransactionCache {
         cached: CachedDocument,
         content: string,
         newLines: readonly string[],
-        formatContext?: NumberFormatContext
+        formatContext: NumberFormatContext | undefined,
+        formatContextHash: string
     ): ParsedTransaction[] {
         const changedRanges = this.detectChangedLineRanges(
             cached.contentLines as string[],
@@ -82,7 +92,7 @@ export class TransactionCache {
         // If massive changes or line count differs significantly, do full re-parse
         const lineDiff = Math.abs(newLines.length - cached.contentLines.length);
         if (changedRanges.length > cached.transactions.length / 2 || lineDiff > 50) {
-            return this.fullParse(documentUri, content, newLines, formatContext);
+            return this.fullParse(documentUri, content, newLines, formatContext, formatContextHash);
         }
 
         // Find which cached transactions are affected
@@ -94,7 +104,7 @@ export class TransactionCache {
 
         // If all or most transactions affected, do full re-parse
         if (affectedIndices.size >= cached.transactions.length * 0.7) {
-            return this.fullParse(documentUri, content, newLines, formatContext);
+            return this.fullParse(documentUri, content, newLines, formatContext, formatContextHash);
         }
 
         // Re-parse the entire document to get accurate transactions with correct line numbers
@@ -106,6 +116,7 @@ export class TransactionCache {
             contentLines: newLines,
             transactions: cachedTransactions,
             parsedTransactions: transactions,
+            formatContextHash,
         });
 
         return transactions;
@@ -254,5 +265,15 @@ export class TransactionCache {
             relevantLines.push(lines[i] ?? '');
         }
         return relevantLines.join('\n');
+    }
+
+    private computeFormatContextHash(formatContext?: NumberFormatContext): string {
+        if (!formatContext?.commodityFormats) return '';
+
+        const entries = [...formatContext.commodityFormats.entries()]
+            .sort(([a], [b]) => a.localeCompare(b))
+            .map(([k, v]) => `${k}:${v.format.decimalMark}${v.format.groupSeparator}`);
+
+        return entries.join('|');
     }
 }

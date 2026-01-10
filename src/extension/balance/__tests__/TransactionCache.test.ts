@@ -1,5 +1,8 @@
 import { TransactionCache } from '../TransactionCache';
 import { ParsedTransaction } from '../types';
+import { NumberFormatContext } from '../AmountParser';
+import { CommodityFormat } from '../../services/NumberFormatService';
+import { CommodityCode } from '../../types';
 
 describe('TransactionCache', () => {
     let cache: TransactionCache;
@@ -14,6 +17,30 @@ describe('TransactionCache', () => {
 
     const createSimpleContent = (transactions: string[]): string => {
         return transactions.join('\n\n');
+    };
+
+    const createFormatContext = (
+        formats: Record<string, { decimalMark: '.' | ','; groupSeparator: ' ' | ',' | '.' | '' }>
+    ): NumberFormatContext => {
+        const commodityFormats = new Map<CommodityCode, CommodityFormat>();
+        for (const [commodity, format] of Object.entries(formats)) {
+            commodityFormats.set(commodity as CommodityCode, {
+                format: {
+                    decimalMark: format.decimalMark,
+                    groupSeparator: format.groupSeparator,
+                    decimalPlaces: 2,
+                    useGrouping: format.groupSeparator !== '',
+                },
+                symbol: commodity,
+                symbolBefore: false,
+                symbolSpacing: true,
+                template: `1${format.groupSeparator}000${format.decimalMark}00 ${commodity}`,
+            });
+        }
+        return {
+            commodityFormats,
+            defaultCommodity: null,
+        };
     };
 
     describe('first parse', () => {
@@ -323,6 +350,79 @@ describe('TransactionCache', () => {
             const result = cache.getTransactions('test://doc1', content);
             expect(result).toHaveLength(1);
             expect(result[0]!.postings.length).toBe(100);
+        });
+    });
+
+    describe('formatContext changes', () => {
+        it('should re-parse when formatContext changes', () => {
+            const content = '2024-01-01 Test\n    Expenses:A  100 EUR\n    Assets:B';
+
+            // First parse with EU format context
+            const euFormat = createFormatContext({ EUR: { decimalMark: ',', groupSeparator: '.' } });
+            const result1 = cache.getTransactions('test://doc1', content, euFormat);
+
+            // Same content but different format context
+            const usFormat = createFormatContext({ EUR: { decimalMark: '.', groupSeparator: ',' } });
+            const result2 = cache.getTransactions('test://doc1', content, usFormat);
+
+            // Should return different parsed results (different reference = re-parsed)
+            expect(result1).not.toBe(result2);
+        });
+
+        it('should return cached when formatContext unchanged', () => {
+            const content = '2024-01-01 Test\n    Expenses:A  $100\n    Assets:B';
+            const formatContext = createFormatContext({ USD: { decimalMark: '.', groupSeparator: ',' } });
+
+            const result1 = cache.getTransactions('test://doc1', content, formatContext);
+            const result2 = cache.getTransactions('test://doc1', content, formatContext);
+
+            expect(result1).toBe(result2); // Same reference = cached
+        });
+
+        it('should handle undefined formatContext', () => {
+            const content = '2024-01-01 Test\n    Expenses:A  $100\n    Assets:B';
+
+            const result1 = cache.getTransactions('test://doc1', content, undefined);
+            const result2 = cache.getTransactions('test://doc1', content, undefined);
+
+            expect(result1).toBe(result2); // Same reference = cached
+        });
+
+        it('should re-parse when formatContext becomes defined', () => {
+            const content = '2024-01-01 Test\n    Expenses:A  $100\n    Assets:B';
+
+            const result1 = cache.getTransactions('test://doc1', content, undefined);
+
+            const formatContext = createFormatContext({ USD: { decimalMark: '.', groupSeparator: ',' } });
+            const result2 = cache.getTransactions('test://doc1', content, formatContext);
+
+            expect(result1).not.toBe(result2); // Different reference = re-parsed
+        });
+
+        it('should re-parse when formatContext becomes undefined', () => {
+            const content = '2024-01-01 Test\n    Expenses:A  $100\n    Assets:B';
+            const formatContext = createFormatContext({ USD: { decimalMark: '.', groupSeparator: ',' } });
+
+            const result1 = cache.getTransactions('test://doc1', content, formatContext);
+            const result2 = cache.getTransactions('test://doc1', content, undefined);
+
+            expect(result1).not.toBe(result2); // Different reference = re-parsed
+        });
+
+        it('should re-parse when new commodity added to formatContext', () => {
+            const content = '2024-01-01 Test\n    Expenses:A  100 EUR\n    Assets:B';
+
+            const format1 = createFormatContext({ USD: { decimalMark: '.', groupSeparator: ',' } });
+            const result1 = cache.getTransactions('test://doc1', content, format1);
+
+            // Add EUR to formatContext
+            const format2 = createFormatContext({
+                USD: { decimalMark: '.', groupSeparator: ',' },
+                EUR: { decimalMark: ',', groupSeparator: '.' },
+            });
+            const result2 = cache.getTransactions('test://doc1', content, format2);
+
+            expect(result1).not.toBe(result2); // Different reference = re-parsed
         });
     });
 });
