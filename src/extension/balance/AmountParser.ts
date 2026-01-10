@@ -56,7 +56,7 @@ export class AmountParser {
             value: mainParsed.value,
             commodity: mainParsed.commodity,
             precision: mainParsed.precision,
-            cost: costInfo,
+            ...(costInfo && { cost: costInfo }),
             isBalanceAssertionOnly: false,
         };
     }

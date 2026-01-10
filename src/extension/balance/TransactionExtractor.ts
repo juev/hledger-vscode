@@ -122,9 +122,8 @@ export class TransactionExtractor {
             descriptionStartIndex = 2;
         }
 
-        if (parts[descriptionStartIndex] &&
-            parts[descriptionStartIndex].startsWith('(') &&
-            parts[descriptionStartIndex].endsWith(')')) {
+        const codePart = parts[descriptionStartIndex];
+        if (codePart && codePart.startsWith('(') && codePart.endsWith(')')) {
             descriptionStartIndex++;
         }
 
