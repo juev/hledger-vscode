@@ -68,6 +68,13 @@ Transform your plain text accounting experience with powerful IDE capabilities:
 - **Incremental updates** - only reparse changed files
 - Efficient workspace parsing
 
+### 🔌 **Language Server Protocol (LSP)**
+
+- **Optional LSP backend** for enhanced performance
+- **Auto-download** of LSP binary from GitHub releases
+- **Manual update** commands for version management
+- Cross-platform support (macOS, Linux, Windows)
+
 ---
 
 ## 📦 Installation

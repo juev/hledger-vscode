@@ -180,6 +180,16 @@
           "type": "object",
           "default": {},
           "description": "Custom category to account mapping. Keys are category names (case-insensitive), values are account names. Example: {\"Groceries\": \"expenses:food:groceries\"}"
+        },
+        "hledger.lsp.path": {
+          "type": "string",
+          "default": "",
+          "description": "Path to hledger-lsp executable. If empty, will use auto-downloaded binary or search in system PATH"
+        },
+        "hledger.lsp.debug": {
+          "type": "boolean",
+          "default": false,
+          "description": "Enable debug logging for the LSP server"
         }
       }
     },
@@ -280,6 +290,26 @@
       {
         "command": "hledger.import.fromFile",
         "title": "HLedger: Import Tabular Data from File",
+        "category": "HLedger"
+      },
+      {
+        "command": "hledger.lsp.download",
+        "title": "HLedger: Download Language Server",
+        "category": "HLedger"
+      },
+      {
+        "command": "hledger.lsp.update",
+        "title": "HLedger: Check for Language Server Updates",
+        "category": "HLedger"
+      },
+      {
+        "command": "hledger.lsp.showVersion",
+        "title": "HLedger: Show Language Server Version",
+        "category": "HLedger"
+      },
+      {
+        "command": "hledger.lsp.restart",
+        "title": "HLedger: Restart Language Server",
         "category": "HLedger"
       }
     ],
@@ -405,6 +435,7 @@
   "homepage": "https://github.com/juev/hledger-vscode#readme",
   "icon": "images/icon.png",
   "dependencies": {
-    "string-width": "^8.1.0"
+    "string-width": "^8.1.0",
+    "vscode-languageclient": "^9.0.1"
   }
 }

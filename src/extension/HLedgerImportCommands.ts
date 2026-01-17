@@ -9,11 +9,8 @@ import {
   ColumnDetector,
   TransactionGenerator,
   ImportOptions,
-  PayeeAccountHistory,
   DEFAULT_IMPORT_OPTIONS,
-  isJournalError,
 } from "./import";
-import { HLedgerConfig } from "./HLedgerConfig";
 
 /**
  * Import commands for converting tabular data to hledger format
@@ -21,12 +18,10 @@ import { HLedgerConfig } from "./HLedgerConfig";
 export class HLedgerImportCommands implements vscode.Disposable {
   private readonly parser: TabularDataParser;
   private readonly columnDetector: ColumnDetector;
-  private readonly config: HLedgerConfig | null;
 
-  constructor(config?: HLedgerConfig) {
+  constructor() {
     this.parser = new TabularDataParser();
     this.columnDetector = new ColumnDetector();
-    this.config = config ?? null;
   }
 
   dispose(): void {
@@ -142,37 +137,8 @@ export class HLedgerImportCommands implements vscode.Disposable {
           // Get import options from configuration
           const options = this.getImportOptions();
 
-          // Get payee-account history from journal (if available and enabled)
-          let payeeHistory: PayeeAccountHistory | undefined;
-          if (options.useJournalHistory !== false && this.config) {
-            try {
-              const historyData = this.config.getPayeeAccountHistory();
-              if (historyData) {
-                payeeHistory = historyData;
-              }
-            } catch (error) {
-              // Use type-safe error checking with custom error types
-              const isExpectedFailure = isJournalError(error);
-
-              if (!isExpectedFailure) {
-                // Log unexpected errors for debugging
-                console.error(
-                  "Failed to load payee account history from journal.",
-                  error,
-                );
-
-                // Only show warning for unexpected failures
-                await vscode.window.showWarningMessage(
-                  "Could not load journal account history. Account resolution will use patterns and category mapping instead.",
-                  "OK",
-                );
-              }
-              // For expected failures (JournalNotFoundError, JournalAccessError), continue silently
-            }
-          }
-
           // Generate transactions
-          const generator = new TransactionGenerator(options, payeeHistory);
+          const generator = new TransactionGenerator(options);
           const result = generator.generate(dataWithMappings);
 
           // Check for fatal errors

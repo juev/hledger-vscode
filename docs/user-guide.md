@@ -13,6 +13,7 @@ Complete documentation for the hledger VS Code extension.
 - [Diagnostics & Validation](#diagnostics--validation)
 - [CLI Integration](#cli-integration)
 - [CSV/TSV Import](#csvtsv-import)
+- [Language Server (LSP)](#language-server-lsp)
 - [Configuration Reference](#configuration-reference)
 - [Commands Reference](#commands-reference)
 - [Keyboard Shortcuts](#keyboard-shortcuts)
@@ -682,6 +683,57 @@ Map CSV category values to hledger accounts:
 
 ---
 
+## Language Server (LSP)
+
+The extension supports an optional Language Server Protocol (LSP) backend for enhanced performance and features. The LSP server provides faster completions, real-time diagnostics, and additional capabilities.
+
+### Installation
+
+The extension can automatically download and manage the hledger-lsp binary:
+
+1. Open Command Palette (`Ctrl+Shift+P` or `Cmd+Shift+P`)
+2. Run **HLedger: Download Language Server**
+3. Wait for the download to complete
+
+The binary is stored in VS Code's global storage directory.
+
+### LSP Commands
+
+| Command | Description |
+|---------|-------------|
+| `hledger.lsp.download` | Download the language server binary |
+| `hledger.lsp.update` | Check for updates and optionally update |
+| `hledger.lsp.showVersion` | Show installed version and status |
+| `hledger.lsp.restart` | Restart the language server |
+
+### LSP Settings
+
+| Setting | Type | Default | Description |
+|---------|------|---------|-------------|
+| `hledger.lsp.path` | string | `""` | Custom path to hledger-lsp binary. If empty, uses auto-downloaded binary |
+| `hledger.lsp.debug` | boolean | `false` | Enable debug logging for the LSP server |
+
+### Using Custom Binary
+
+If you prefer to use your own hledger-lsp binary:
+
+1. Install hledger-lsp manually
+2. Configure the path in settings:
+   ```json
+   {
+     "hledger.lsp.path": "/path/to/hledger-lsp"
+   }
+   ```
+
+### Supported Platforms
+
+Auto-download supports:
+- macOS (Intel and Apple Silicon)
+- Linux (x64 and ARM64)
+- Windows (x64)
+
+---
+
 ## Configuration Reference
 
 ### Auto-Completion Settings
@@ -748,6 +800,13 @@ Map CSV category values to hledger accounts:
 | `hledger.import.merchantPatterns` | object | `{}` | Regex patterns for merchant detection |
 | `hledger.import.categoryMapping` | object | `{}` | Category to account mapping |
 
+### Language Server Settings
+
+| Setting | Type | Default | Description |
+|---------|------|---------|-------------|
+| `hledger.lsp.path` | string | `""` | Custom path to hledger-lsp binary |
+| `hledger.lsp.debug` | boolean | `false` | Enable debug logging for LSP |
+
 ---
 
 ## Commands Reference
@@ -763,6 +822,10 @@ All commands accessible via Command Palette (`Ctrl+Shift+P` or `Cmd+Shift+P`):
 | `hledger.cli.incomestatement` | HLedger: Insert Income Statement | Insert income statement as comment |
 | `hledger.import.fromSelection` | HLedger: Import Selected Tabular Data | Import selected CSV/TSV |
 | `hledger.import.fromFile` | HLedger: Import Tabular Data from File | Import active file as CSV/TSV |
+| `hledger.lsp.download` | HLedger: Download Language Server | Download LSP binary |
+| `hledger.lsp.update` | HLedger: Check for Language Server Updates | Check and update LSP |
+| `hledger.lsp.showVersion` | HLedger: Show Language Server Version | Show LSP version info |
+| `hledger.lsp.restart` | HLedger: Restart Language Server | Restart the LSP server |
 
 ---
 
