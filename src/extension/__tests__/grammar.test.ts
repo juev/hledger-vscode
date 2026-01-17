@@ -327,6 +327,16 @@ describe('TextMate Grammar Tests', () => {
         const commodityText = getBalanceAssertionCommodityText(line);
         expect(commodityText).toBe('RUB');
       });
+
+      it('should tokenize European-style amounts in balance assertion (dot thousand separator)', () => {
+        const line = '    Assets:Checking          846.661,89 RUB == 846.661,89 RUB';
+        const commodityText = getBalanceAssertionCommodityText(line);
+        expect(commodityText).toBe('RUB');
+      });
+
+      it('should highlight balance assertion operator with European amounts', () => {
+        assertLineContainsScope('    Assets:Checking          100 RUB == 846.661,89 RUB', 'keyword.operator.balance-assertion.hledger');
+      });
     });
 
     describe('Price Assignment Commodity Tokenization', () => {
@@ -364,6 +374,16 @@ describe('TextMate Grammar Tests', () => {
         const line = '    Assets:Checking          1000 RUB = 5000 RUB';
         const commodityText = getPriceAssignmentCommodityText(line);
         expect(commodityText).toBe('RUB');
+      });
+
+      it('should tokenize European-style amounts in price assignment (dot thousand separator)', () => {
+        const line = '    Assets:Checking          846.661,89 RUB = 846.661,89 RUB';
+        const commodityText = getPriceAssignmentCommodityText(line);
+        expect(commodityText).toBe('RUB');
+      });
+
+      it('should highlight price assignment operator with European amounts', () => {
+        assertLineContainsScope('    Assets:Checking          100 RUB = 846.661,89 RUB', 'keyword.operator.price-assignment.hledger');
       });
     });
   });
@@ -751,6 +771,85 @@ describe('TextMate Grammar Tests', () => {
       const line = "    Assets:Cash              $1'000.00";
       const amountText = getAmountTextAfterCurrency(line);
       expect(amountText).toBe("1'000.00");
+    });
+  });
+
+  describe('European-Style Amounts (Issue: Greedy Matching Bug)', () => {
+    /**
+     * Helper to get account token text from a posting line
+     */
+    function getAccountText(line: string): string | undefined {
+      const { tokens } = tokenizeLine(line);
+      for (let i = 0; i < tokens.length; i++) {
+        const token = tokens[i]!;
+        if (token.scopes.includes('entity.name.type.account.hledger')) {
+          const nextToken = tokens[i + 1];
+          const start = token.startIndex;
+          const end = nextToken ? nextToken.startIndex : line.length;
+          return line.substring(start, end);
+        }
+      }
+      return undefined;
+    }
+
+    /**
+     * Helper to get all amount token texts from a posting line
+     */
+    function getAmountTexts(line: string): string[] {
+      const { tokens } = tokenizeLine(line);
+      const amounts: string[] = [];
+      for (let i = 0; i < tokens.length; i++) {
+        const token = tokens[i]!;
+        if (token.scopes.includes('constant.numeric.amount.hledger')) {
+          const nextToken = tokens[i + 1];
+          const start = token.startIndex;
+          const end = nextToken ? nextToken.startIndex : line.length;
+          amounts.push(line.substring(start, end));
+        }
+      }
+      return amounts;
+    }
+
+    it('should tokenize account separately from European-style amount with dot thousand separator', () => {
+      const line = '    Активы:Банк  846.661,89 RUB';
+      const accountText = getAccountText(line);
+      expect(accountText).toBe('Активы:Банк');
+    });
+
+    it('should tokenize European-style amount correctly (dot thousand separator)', () => {
+      const line = '    Активы:Банк  846.661,89 RUB';
+      const amounts = getAmountTexts(line);
+      expect(amounts).toContain('846.661,89');
+    });
+
+    it('should tokenize account separately from large European-style amount', () => {
+      const line = '    Активы:Альфа:Альфа-Счет             846.661,89 RUB    = 846.661,89 RUB';
+      const accountText = getAccountText(line);
+      expect(accountText).toBe('Активы:Альфа:Альфа-Счет');
+    });
+
+    it('should tokenize large European-style amount with price assignment', () => {
+      const line = '    Активы:Банк  3.037.850,96 RUB    = 3.037.850,96 RUB';
+      const accountText = getAccountText(line);
+      expect(accountText).toBe('Активы:Банк');
+    });
+
+    it('should tokenize account with single space in name correctly', () => {
+      const line = '    Expenses:Food and Drinks  100 USD';
+      const accountText = getAccountText(line);
+      expect(accountText).toBe('Expenses:Food and Drinks');
+    });
+
+    it('should tokenize simple amount after account with 2+ spaces', () => {
+      const line = '    Assets:Cash  100 USD';
+      const accountText = getAccountText(line);
+      expect(accountText).toBe('Assets:Cash');
+    });
+
+    it('should not include amount digits in account name with Cyrillic accounts', () => {
+      const line = '    Активы:Альфа:Альфа-Счет             846.661,89 RUB    = 846.661,89 RUB';
+      const accountText = getAccountText(line);
+      expect(accountText).not.toContain('846');
     });
   });
 
