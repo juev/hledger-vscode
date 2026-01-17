@@ -15,8 +15,8 @@ describe("applySortingHack", () => {
 
     const result = applySortingHack(items, "Exp");
 
-    expect(result[0].filterText).toBe("Exp");
-    expect(result[1].filterText).toBe("Exp");
+    expect(result[0]?.filterText).toBe("Exp");
+    expect(result[1]?.filterText).toBe("Exp");
   });
 
   it("preserves sortText", () => {
@@ -27,8 +27,8 @@ describe("applySortingHack", () => {
 
     const result = applySortingHack(items, "Acc");
 
-    expect(result[0].sortText).toBe("00001");
-    expect(result[1].sortText).toBe("00002");
+    expect(result[0]?.sortText).toBe("00001");
+    expect(result[1]?.sortText).toBe("00002");
   });
 
   it("uses empty string when query is undefined", () => {
@@ -36,7 +36,7 @@ describe("applySortingHack", () => {
 
     const result = applySortingHack(items, undefined);
 
-    expect(result[0].filterText).toBe("");
+    expect(result[0]?.filterText).toBe("");
   });
 });
 
@@ -96,8 +96,8 @@ describe("processCompletionList", () => {
 
     const result = processCompletionList(list, "It");
 
-    expect(result.items[0].filterText).toBe("It");
-    expect(result.items[1].filterText).toBe("It");
+    expect(result.items[0]?.filterText).toBe("It");
+    expect(result.items[1]?.filterText).toBe("It");
   });
 
   it("handles empty items list", () => {
@@ -126,7 +126,7 @@ describe("processCompletionList", () => {
 
     const result = processCompletionList(list, "Test");
 
-    expect(result.items[0].insertTextFormat).toBe(2);
-    expect(result.items[0].insertText).toContain("${1:");
+    expect(result.items[0]?.insertTextFormat).toBe(2);
+    expect(result.items[0]?.insertText).toContain("${1:");
   });
 });
