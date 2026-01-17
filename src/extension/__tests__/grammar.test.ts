@@ -559,6 +559,55 @@ describe('TextMate Grammar Tests', () => {
     });
   });
 
+  describe('Prefix Multi-Character Letter Commodities (Issue #57)', () => {
+    /**
+     * Helper to find commodity token and extract its text
+     */
+    function getCommodityTextForPrefix(line: string): string | undefined {
+      const { tokens } = tokenizeLine(line);
+      for (let i = 0; i < tokens.length; i++) {
+        const token = tokens[i]!;
+        if (token.scopes.includes('entity.name.type.commodity.hledger')) {
+          const nextToken = tokens[i + 1];
+          const start = token.startIndex;
+          const end = nextToken ? nextToken.startIndex : line.length;
+          return line.substring(start, end);
+        }
+      }
+      return undefined;
+    }
+
+    it('should tokenize USD separately from amount digits (USD100)', () => {
+      const line = '    Assets:Cash              USD100';
+      const commodityText = getCommodityTextForPrefix(line);
+      expect(commodityText).toBe('USD');
+    });
+
+    it('should tokenize EUR separately from amount with decimals (EUR50.00)', () => {
+      const line = '    Assets:Cash              EUR50.00';
+      const commodityText = getCommodityTextForPrefix(line);
+      expect(commodityText).toBe('EUR');
+    });
+
+    it('should tokenize RUB separately from large amount (RUB1000)', () => {
+      const line = '    Assets:Cash              RUB1000';
+      const commodityText = getCommodityTextForPrefix(line);
+      expect(commodityText).toBe('RUB');
+    });
+
+    it('should tokenize USD with negative amount (USD-100)', () => {
+      const line = '    Expenses:Food            USD-100';
+      const commodityText = getCommodityTextForPrefix(line);
+      expect(commodityText).toBe('USD');
+    });
+
+    it('should tokenize multi-char commodity with space before amount (USD 100)', () => {
+      const line = '    Assets:Cash              USD 100';
+      const commodityText = getCommodityTextForPrefix(line);
+      expect(commodityText).toBe('USD');
+    });
+  });
+
   describe('Amount Tokenization Without Separators (PR #58 review)', () => {
     /**
      * Helper to find amount token in prefix-style commodity and extract its text
