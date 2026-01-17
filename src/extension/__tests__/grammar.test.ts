@@ -290,6 +290,82 @@ describe('TextMate Grammar Tests', () => {
     it('should highlight price assignment with =', () => {
       assertLineContainsScope('    Assets:Checking          100 USD = 1000 USD', 'keyword.operator.price-assignment.hledger');
     });
+
+    describe('Balance Assertion Commodity Tokenization', () => {
+      function getBalanceAssertionCommodityText(line: string): string | undefined {
+        const { tokens } = tokenizeLine(line);
+        let foundAssertion = false;
+        for (let i = 0; i < tokens.length; i++) {
+          const token = tokens[i]!;
+          if (token.scopes.includes('keyword.operator.balance-assertion.hledger')) {
+            foundAssertion = true;
+          }
+          if (foundAssertion && token.scopes.includes('entity.name.type.commodity.hledger')) {
+            const nextToken = tokens[i + 1];
+            const start = token.startIndex;
+            const end = nextToken ? nextToken.startIndex : line.length;
+            return line.substring(start, end);
+          }
+        }
+        return undefined;
+      }
+
+      it('should tokenize USD commodity in balance assertion correctly', () => {
+        const line = '    Assets:Checking          100 USD == 1000 USD';
+        const commodityText = getBalanceAssertionCommodityText(line);
+        expect(commodityText).toBe('USD');
+      });
+
+      it('should tokenize EUR commodity in balance assertion correctly', () => {
+        const line = '    Assets:Checking          100 EUR == 500 EUR';
+        const commodityText = getBalanceAssertionCommodityText(line);
+        expect(commodityText).toBe('EUR');
+      });
+
+      it('should tokenize RUB commodity in balance assertion correctly', () => {
+        const line = '    Assets:Checking          1000 RUB == 5000 RUB';
+        const commodityText = getBalanceAssertionCommodityText(line);
+        expect(commodityText).toBe('RUB');
+      });
+    });
+
+    describe('Price Assignment Commodity Tokenization', () => {
+      function getPriceAssignmentCommodityText(line: string): string | undefined {
+        const { tokens } = tokenizeLine(line);
+        let foundAssignment = false;
+        for (let i = 0; i < tokens.length; i++) {
+          const token = tokens[i]!;
+          if (token.scopes.includes('keyword.operator.price-assignment.hledger')) {
+            foundAssignment = true;
+          }
+          if (foundAssignment && token.scopes.includes('entity.name.type.commodity.hledger')) {
+            const nextToken = tokens[i + 1];
+            const start = token.startIndex;
+            const end = nextToken ? nextToken.startIndex : line.length;
+            return line.substring(start, end);
+          }
+        }
+        return undefined;
+      }
+
+      it('should tokenize USD commodity in price assignment correctly', () => {
+        const line = '    Assets:Checking          100 USD = 1000 USD';
+        const commodityText = getPriceAssignmentCommodityText(line);
+        expect(commodityText).toBe('USD');
+      });
+
+      it('should tokenize EUR commodity in price assignment correctly', () => {
+        const line = '    Assets:Checking          100 EUR = 500 EUR';
+        const commodityText = getPriceAssignmentCommodityText(line);
+        expect(commodityText).toBe('EUR');
+      });
+
+      it('should tokenize RUB commodity in price assignment correctly', () => {
+        const line = '    Assets:Checking          1000 RUB = 5000 RUB';
+        const commodityText = getPriceAssignmentCommodityText(line);
+        expect(commodityText).toBe('RUB');
+      });
+    });
   });
 
   describe('Directives', () => {

@@ -425,7 +425,7 @@
               "patterns": [
                 {
                   "name": "meta.balance-assertion.hledger",
-                  "match": "(==)\\s+([-+]?\\d+(?:[.,]\\d+)?)\\s+([\\p{Sc}]|[\\p{L}][\\p{L}\\p{N}]*\\b|\"[^\"]+\")",
+                  "match": "(==)\\s+([-+]?\\d+(?:[.,]\\d+)?)\\s+([\\p{Sc}]|[\\p{L}]+|\"[^\"]+\")",
                   "captures": {
                     "1": {
                       "name": "keyword.operator.balance-assertion.hledger"
@@ -440,7 +440,7 @@
                 },
                 {
                   "name": "meta.price-assignment.hledger",
-                  "match": "(=)\\s+([-+]?\\d+(?:[.,]\\d+)?)\\s+([\\p{Sc}]|[\\p{L}][\\p{L}\\p{N}]*\\b|\"[^\"]+\")",
+                  "match": "(=)\\s+([-+]?\\d+(?:[.,]\\d+)?)\\s+([\\p{Sc}]|[\\p{L}]+|\"[^\"]+\")",
                   "captures": {
                     "1": {
                       "name": "keyword.operator.price-assignment.hledger"
