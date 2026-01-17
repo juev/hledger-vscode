@@ -65,7 +65,7 @@
         },
         "hledger.semanticHighlighting.enabled": {
           "type": "boolean",
-          "default": false,
+          "default": true,
           "description": "Enable semantic highlighting for more precise syntax coloring. When disabled, falls back to TextMate grammar only."
         },
         "hledger.autoCompletion.maxResults": {
@@ -196,59 +196,78 @@
     "semanticTokenTypes": [
       {
         "id": "account",
+        "superType": "namespace",
         "description": "HLedger account names"
       },
       {
         "id": "amount",
+        "superType": "number",
         "description": "HLedger amounts"
       },
       {
-        "id": "comment",
-        "description": "HLedger comments"
-      },
-      {
         "id": "date",
+        "superType": "keyword",
         "description": "HLedger dates"
       },
       {
         "id": "time",
+        "superType": "keyword",
         "description": "HLedger times"
       },
       {
         "id": "accountVirtual",
+        "superType": "namespace",
         "description": "HLedger virtual accounts"
       },
       {
         "id": "commodity",
+        "superType": "type",
         "description": "HLedger commodities"
       },
       {
         "id": "payee",
+        "superType": "string",
         "description": "HLedger payees"
       },
       {
         "id": "note",
+        "superType": "string",
         "description": "HLedger notes"
       },
       {
         "id": "tag",
+        "superType": "decorator",
         "description": "HLedger tags"
       },
       {
         "id": "directive",
+        "superType": "keyword",
         "description": "HLedger directives"
       },
       {
-        "id": "operator",
-        "description": "HLedger operators"
-      },
-      {
         "id": "code",
+        "superType": "string",
         "description": "HLedger transaction codes"
       },
       {
         "id": "link",
+        "superType": "keyword",
         "description": "HLedger links"
+      }
+    ],
+    "semanticTokenScopes": [
+      {
+        "language": "hledger",
+        "scopes": {
+          "namespace": ["entity.name.type.account.hledger"],
+          "number": ["constant.numeric.amount.hledger"],
+          "keyword": ["constant.numeric.date.hledger", "keyword.directive.hledger"],
+          "type": ["entity.name.type.commodity.hledger"],
+          "string": ["entity.name.function.payee.hledger", "string.unquoted.note.hledger"],
+          "comment": ["comment.line.semicolon.hledger"],
+          "operator": ["keyword.operator.status.hledger", "keyword.operator.balance-assertion.hledger"],
+          "decorator": ["entity.name.tag.hledger"]
+        }
       }
     ],
     "commands": [
@@ -358,7 +377,13 @@
             "directive:hledger": "#0EA5E9",
             "operator:hledger": "#EAB308",
             "code:hledger": "#A855F7",
-            "link:hledger": "#2563EB"
+            "link:hledger": "#2563EB",
+            "number:hledger": "#F59E0B",
+            "namespace:hledger": "#0EA5E9",
+            "keyword:hledger": "#2563EB",
+            "type:hledger": "#A855F7",
+            "string:hledger": "#EF4444",
+            "modifier:hledger": "#9CA3AF"
           }
         },
         "[Default Light+]": {
@@ -376,7 +401,13 @@
             "directive:hledger": "#0369A1",
             "operator:hledger": "#CA8A04",
             "code:hledger": "#7C3AED",
-            "link:hledger": "#1D4ED8"
+            "link:hledger": "#1D4ED8",
+            "number:hledger": "#D97706",
+            "namespace:hledger": "#0369A1",
+            "keyword:hledger": "#1D4ED8",
+            "type:hledger": "#7C3AED",
+            "string:hledger": "#DC2626",
+            "modifier:hledger": "#6B7280"
           }
         }
       }

@@ -221,8 +221,8 @@ Import bank statements and transaction data from CSV/TSV files.
   "hledger.cli.path": "",  // Auto-detected if empty
   "hledger.cli.journalFile": "",  // Uses LEDGER_FILE if empty
 
-  // Optional: Enhanced syntax highlighting
-  "hledger.semanticHighlighting.enabled": false,  // Enable for more precision
+  // Optional: Disable semantic highlighting to use only TextMate grammar
+  "hledger.semanticHighlighting.enabled": true,  // Enabled by default
 
   // Validation diagnostics
   "hledger.diagnostics.enabled": true,  // Disable to turn off validation warnings

@@ -81,7 +81,7 @@ const DEFAULT_SETTINGS: LSPSettings = {
     amountAlignmentColumn: 40,
   },
   semanticHighlighting: {
-    enabled: false,
+    enabled: true,
   },
 };
 

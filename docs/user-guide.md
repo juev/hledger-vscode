@@ -785,7 +785,7 @@ Auto-download supports:
 
 | Setting | Type | Default | Description |
 |---------|------|---------|-------------|
-| `hledger.semanticHighlighting.enabled` | boolean | `false` | Enable semantic token highlighting |
+| `hledger.semanticHighlighting.enabled` | boolean | `true` | Enable semantic token highlighting |
 
 ### Import Settings
 

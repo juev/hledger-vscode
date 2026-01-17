@@ -24,7 +24,7 @@ describe("mapVSCodeSettingsToLSP", () => {
         amountAlignmentColumn: 40,
       },
       semanticHighlighting: {
-        enabled: false,
+        enabled: true,
       },
     });
   });
@@ -84,14 +84,14 @@ describe("mapVSCodeSettingsToLSP", () => {
   it("maps semantic highlighting settings", () => {
     const settings: VSCodeSettings = {
       semanticHighlighting: {
-        enabled: true,
+        enabled: false,
       },
     };
 
     const result = mapVSCodeSettingsToLSP(settings);
 
     expect(result.semanticHighlighting).toEqual({
-      enabled: true,
+      enabled: false,
     });
   });
 
