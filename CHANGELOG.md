@@ -1,5 +1,13 @@
 # Change Log
 
+## [0.4.13] - 2026-01-17
+
+### Fixed
+- fix: prevent posting pattern from greedy matching amount digits
+- fix: unify commodity patterns in balance assertion and price assignment
+- fix: prevent multi-char letter commodities from greedy matching digits
+
+
 ## [0.4.12] - 2026-01-10
 
 ### Added
