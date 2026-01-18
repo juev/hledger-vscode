@@ -190,6 +190,11 @@
           "type": "boolean",
           "default": false,
           "description": "Enable debug logging for the LSP server"
+        },
+        "hledger.lsp.checkForUpdates": {
+          "type": "boolean",
+          "default": true,
+          "description": "Check for Language Server updates on extension activation"
         }
       }
     },

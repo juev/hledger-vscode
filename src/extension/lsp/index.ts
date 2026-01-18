@@ -15,3 +15,13 @@ export { LocalCompletionDataProvider, LSPCompletionDataProvider, LazyLSPCompleti
 export type { CompletionDataProvider, CompletionData, TransactionTemplate, Posting } from "./CompletionDataProvider";
 
 export { LSPManager, LSPStatus } from "./LSPManager";
+export type { LSPManagerLike } from "./LSPManager";
+
+export { StartupChecker } from "./StartupChecker";
+export type { CheckResult, CheckAction } from "./StartupChecker";
+
+export {
+  hasCustomLSPPath,
+  isLSPUpdateCheckEnabled,
+  getCustomLSPPath,
+} from "./lspConfig";

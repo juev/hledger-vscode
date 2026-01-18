@@ -711,6 +711,7 @@ The binary is stored in VS Code's global storage directory.
 |---------|------|---------|-------------|
 | `hledger.lsp.path` | string | `""` | Custom path to hledger-lsp binary. If empty, uses auto-downloaded binary |
 | `hledger.lsp.debug` | boolean | `false` | Enable debug logging for the LSP server |
+| `hledger.lsp.checkForUpdates` | boolean | `true` | Check for Language Server updates on extension activation |
 
 ### Using Custom Binary
 
@@ -805,6 +806,7 @@ Auto-download supports:
 |---------|------|---------|-------------|
 | `hledger.lsp.path` | string | `""` | Custom path to hledger-lsp binary |
 | `hledger.lsp.debug` | boolean | `false` | Enable debug logging for LSP |
+| `hledger.lsp.checkForUpdates` | boolean | `true` | Check for LSP updates on activation |
 
 ---
 

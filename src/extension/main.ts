@@ -6,7 +6,7 @@ import { HLedgerTabCommand } from "./HLedgerTabCommand";
 import { HLedgerCliCommands } from "./HLedgerCliCommands";
 import { HLedgerCliService } from "./services/HLedgerCliService";
 import { HLedgerImportCommands } from "./HLedgerImportCommands";
-import { LSPManager, LazyLSPCompletionDataProvider } from "./lsp";
+import { LSPManager, LazyLSPCompletionDataProvider, StartupChecker } from "./lsp";
 import { InlineCompletionProvider } from "./inline/InlineCompletionProvider";
 
 export function activate(context: vscode.ExtensionContext): void {
@@ -15,17 +15,60 @@ export function activate(context: vscode.ExtensionContext): void {
     const lspManager = new LSPManager(context);
     context.subscriptions.push(lspManager);
 
-    // Auto-start LSP if binary is available
-    void lspManager.isServerAvailable().then(async (available) => {
-      if (available) {
+    const startupChecker = new StartupChecker(lspManager);
+
+    void (async (): Promise<void> => {
+      const result = await startupChecker.checkOnActivation();
+
+      if (result.action === "install" && result.latestVersion) {
+        const shouldInstall = await startupChecker.showInstallNotification(
+          result.latestVersion
+        );
+        if (shouldInstall) {
+          try {
+            await startupChecker.performInstall();
+            console.log("HLedger LSP server installed and started successfully");
+            return;
+          } catch (error) {
+            console.error("Failed to install HLedger LSP server:", error);
+          }
+        }
+      } else if (
+        result.action === "update" &&
+        result.currentVersion &&
+        result.latestVersion
+      ) {
+        const shouldUpdate = await startupChecker.showUpdateNotification(
+          result.currentVersion,
+          result.latestVersion
+        );
+        if (shouldUpdate) {
+          try {
+            await startupChecker.performUpdate();
+            console.log("HLedger LSP server updated and started successfully");
+            return;
+          } catch (error) {
+            console.error("Failed to update HLedger LSP server:", error);
+          }
+        } else {
+          startupChecker.markUpdateDeclinedThisSession();
+        }
+      } else if (result.action === "error") {
+        console.error("Failed to check for LSP updates:", result.error);
+      }
+
+      if (await lspManager.isServerAvailable()) {
         try {
           await lspManager.start();
           console.log("HLedger LSP server started successfully");
         } catch (error) {
           console.error("Failed to start HLedger LSP server:", error);
+          vscode.window.showWarningMessage(
+            `HLedger Language Server failed to start: ${error instanceof Error ? error.message : String(error)}`
+          );
         }
       }
-    });
+    })();
 
     // Register command to position cursor after template insertion
     context.subscriptions.push(

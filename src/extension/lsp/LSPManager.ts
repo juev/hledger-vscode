@@ -2,6 +2,21 @@ import * as vscode from "vscode";
 import * as fs from "fs";
 import { BinaryManager } from "./BinaryManager";
 import { HLedgerLanguageClient, LanguageClientState } from "./HLedgerLanguageClient";
+import { hasCustomLSPPath, getCustomLSPPath } from "./lspConfig";
+
+export interface LSPManagerLike {
+  isServerAvailable(): Promise<boolean>;
+  checkForUpdates(): Promise<{
+    hasUpdate: boolean;
+    currentVersion: string | null;
+    latestVersion: string;
+  }>;
+  download(
+    progress?: vscode.Progress<{ message?: string; increment?: number }>
+  ): Promise<void>;
+  start(): Promise<void>;
+  stop(): Promise<void>;
+}
 
 export enum LSPStatus {
   NotInstalled = "not_installed",
@@ -57,19 +72,14 @@ export class LSPManager implements vscode.Disposable {
   private static readonly SHELL_METACHAR_PATTERN = /[;&|`$()[\]{}^"<>]/;
 
   getBinaryPath(): string {
-    const customPath = vscode.workspace.getConfiguration("hledger.lsp").get<string>("path");
-    if (customPath && customPath.trim() !== "") {
+    const customPath = getCustomLSPPath();
+    if (customPath !== null) {
       if (LSPManager.SHELL_METACHAR_PATTERN.test(customPath)) {
         throw new Error(`Custom LSP path contains shell metacharacters: ${customPath}`);
       }
       return customPath;
     }
     return this.binaryManager.getBinaryPath();
-  }
-
-  private hasCustomPath(): boolean {
-    const customPath = vscode.workspace.getConfiguration("hledger.lsp").get<string>("path");
-    return customPath !== undefined && customPath.trim() !== "";
   }
 
   async download(
@@ -107,7 +117,7 @@ export class LSPManager implements vscode.Disposable {
 
     const binaryPath = this.getBinaryPath();
 
-    if (this.hasCustomPath()) {
+    if (hasCustomLSPPath()) {
       if (!fs.existsSync(binaryPath)) {
         throw new Error(`Custom LSP binary not found at: ${binaryPath}`);
       }
