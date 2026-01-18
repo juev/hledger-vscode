@@ -3,16 +3,36 @@
  *
  * Supports two completion modes:
  * 1. Payee completion - shows remainder of most-used matching payee
- * 2. Template completion - shows transaction postings for complete payee with snippet tabstops
+ * 2. Template completion - calls LSP textDocument/inlineCompletion for posting lines
  */
 import * as vscode from "vscode";
 import { InlinePositionAnalyzer } from "./InlinePositionAnalyzer";
-import {
-  CompletionDataProvider,
-  TransactionTemplate,
-  Posting,
-} from "../lsp/CompletionDataProvider";
-import { extractAmountParts } from "../utils/amountUtils";
+
+interface LSPClient {
+  sendRequest<R>(method: string, params?: unknown): Promise<R>;
+}
+
+interface LSPClientProvider {
+  getClient(): LSPClient | null;
+}
+
+interface LSPInlineCompletionItem {
+  insertText: string;
+  filterText?: string;
+  range?: {
+    start: { line: number; character: number };
+    end: { line: number; character: number };
+  };
+}
+
+interface LSPInlineCompletionList {
+  items: LSPInlineCompletionItem[];
+}
+
+interface LSPCompletionDataResponse {
+  payees: string[];
+  templates: unknown[];
+}
 
 /**
  * Provides inline (ghost text) completions for hledger files.
@@ -26,7 +46,7 @@ export class InlineCompletionProvider
   private lastCacheTime = 0;
   private readonly cacheRefreshInterval = 5000;
 
-  constructor(private readonly dataProvider: CompletionDataProvider) {
+  constructor(private readonly clientProvider: LSPClientProvider) {
     this.analyzer = new InlinePositionAnalyzer(this.getMinPayeeChars());
   }
 
@@ -41,25 +61,45 @@ export class InlineCompletionProvider
   }
 
   /**
-   * Gets the configured alignment column from VS Code settings.
-   */
-  private getAlignmentColumn(): number {
-    const config = vscode.workspace.getConfiguration("hledger");
-    const value = config.get<number>("formatting.amountAlignmentColumn", 40);
-    return value > 0 ? value : 40;
-  }
-
-  /**
    * Provides inline completion items for the current cursor position.
    * Returns at most one completion item (the best match).
    */
   async provideInlineCompletionItems(
     document: vscode.TextDocument,
     position: vscode.Position,
-    context: vscode.InlineCompletionContext,
+    _context: vscode.InlineCompletionContext,
     token: vscode.CancellationToken,
   ): Promise<vscode.InlineCompletionItem[] | undefined> {
-    await this.refreshCache();
+    console.log("[InlineCompletion] provideInlineCompletionItems called");
+
+    if (token.isCancellationRequested) {
+      console.log("[InlineCompletion] cancelled");
+      return undefined;
+    }
+
+    const client = this.clientProvider.getClient();
+    console.log("[InlineCompletion] client:", client ? "available" : "null");
+    if (!client) {
+      return undefined;
+    }
+
+    const line = document.lineAt(position.line).text;
+    const isPosting = this.isPostingLine(line);
+    console.log("[InlineCompletion] line:", JSON.stringify(line));
+    console.log("[InlineCompletion] isPostingLine:", isPosting);
+
+    if (isPosting) {
+      console.log("[InlineCompletion] calling LSP for template completion...");
+      const result = await this.provideTemplateCompletionViaLSP(
+        client,
+        document,
+        position,
+      );
+      console.log("[InlineCompletion] LSP result:", JSON.stringify(result));
+      return result;
+    }
+
+    await this.refreshCache(client);
 
     const payeeSet = new Set<string>(this.cachedPayees);
 
@@ -69,35 +109,99 @@ export class InlineCompletionProvider
       payeeSet,
     );
 
-    switch (inlineContext.type) {
-      case "payee":
-        return this.providePayeeCompletion(
-          inlineContext.prefix,
-          this.cachedPayees,
-          position,
-        );
-      case "template":
-        return await this.provideTemplateCompletion(
-          inlineContext.payee,
-          position,
-        );
-      default:
+    if (inlineContext.type === "payee") {
+      return this.providePayeeCompletion(
+        inlineContext.prefix,
+        this.cachedPayees,
+        position,
+      );
+    }
+
+    return undefined;
+  }
+
+  /**
+   * Checks if the line is a posting line (has 2+ spaces/tabs indent).
+   */
+  private isPostingLine(line: string): boolean {
+    return /^[\t ]{2,}/.test(line);
+  }
+
+  /**
+   * Provides template completion via LSP textDocument/inlineCompletion.
+   */
+  private async provideTemplateCompletionViaLSP(
+    client: LSPClient,
+    document: vscode.TextDocument,
+    position: vscode.Position,
+  ): Promise<vscode.InlineCompletionItem[] | undefined> {
+    const params = {
+      textDocument: { uri: document.uri.toString() },
+      position: { line: position.line, character: position.character },
+      context: { triggerKind: 2 },
+    };
+    console.log(
+      "[InlineCompletion] LSP request params:",
+      JSON.stringify(params),
+    );
+
+    try {
+      const response = await client.sendRequest<LSPInlineCompletionList>(
+        "textDocument/inlineCompletion",
+        params,
+      );
+
+      console.log(
+        "[InlineCompletion] LSP raw response:",
+        JSON.stringify(response),
+      );
+
+      if (!response?.items?.length) {
+        console.log("[InlineCompletion] no items in response");
         return undefined;
+      }
+
+      const items = response.items.map((item) => {
+        const range = item.range
+          ? new vscode.Range(
+              item.range.start.line,
+              item.range.start.character,
+              item.range.end.line,
+              item.range.end.character,
+            )
+          : new vscode.Range(position, position);
+
+        console.log(
+          "[InlineCompletion] creating item:",
+          JSON.stringify({ insertText: item.insertText, range }),
+        );
+        return new vscode.InlineCompletionItem(item.insertText, range);
+      });
+
+      return items;
+    } catch (error) {
+      console.error("[InlineCompletion] LSP request failed:", error);
+      return undefined;
     }
   }
 
   /**
    * Refreshes the payee cache if needed.
    */
-  private async refreshCache(): Promise<void> {
+  private async refreshCache(client: LSPClient): Promise<void> {
     const now = Date.now();
     if (now - this.lastCacheTime > this.cacheRefreshInterval) {
       try {
-        const data = await this.dataProvider.getCompletionData("");
-        this.cachedPayees = data.payees;
+        const response = await client.sendRequest<LSPCompletionDataResponse>(
+          "hledger/completionData",
+          { query: "" },
+        );
+        if (response?.payees) {
+          this.cachedPayees = response.payees;
+        }
         this.lastCacheTime = now;
-      } catch {
-        // Keep existing cache on error
+      } catch (error) {
+        console.error("Failed to refresh payee cache:", error);
       }
     }
   }
@@ -135,99 +239,6 @@ export class InlineCompletionProvider
     );
 
     return [item];
-  }
-
-  /**
-   * Provides template completion for a complete payee.
-   * Returns the most frequently used template as a SnippetString with tabstops for amounts.
-   *
-   * @param payee - The complete payee name
-   * @param position - Current cursor position
-   */
-  private async provideTemplateCompletion(
-    payee: string,
-    position: vscode.Position,
-  ): Promise<vscode.InlineCompletionItem[] | undefined> {
-    const data = await this.dataProvider.getCompletionData(payee);
-
-    const templates = data.templates.filter(
-      (t) => t.payee.toLowerCase() === payee.toLowerCase(),
-    );
-
-    if (templates.length === 0) {
-      return undefined;
-    }
-
-    const template = templates[0];
-    if (!template) {
-      return undefined;
-    }
-
-    const snippet = this.buildTemplateSnippet(template);
-
-    const startOfLine = new vscode.Position(position.line, 0);
-
-    const item = new vscode.InlineCompletionItem(
-      snippet,
-      new vscode.Range(startOfLine, position),
-    );
-
-    return [item];
-  }
-
-  /**
-   * Escapes special snippet characters in text.
-   * In snippet syntax, $, }, and \ are special characters that must be escaped.
-   */
-  private escapeSnippetText(text: string): string {
-    return text
-      .replace(/\\/g, "\\\\")
-      .replace(/\$/g, "\\$")
-      .replace(/}/g, "\\}");
-  }
-
-  /**
-   * Builds a SnippetString for a transaction template.
-   * Amount fields are wrapped in tabstops (${1:amount}, ${2:amount}, etc.)
-   * to enable Tab navigation after insertion.
-   * Aligns amounts to the configured alignment column.
-   */
-  private buildTemplateSnippet(
-    template: TransactionTemplate,
-  ): vscode.SnippetString {
-    const alignmentColumn = this.getAlignmentColumn();
-    const parts: string[] = [];
-    let tabstopIndex = 1;
-    const indent = "    ";
-
-    for (let i = 0; i < template.postings.length; i++) {
-      const posting: Posting | undefined = template.postings[i];
-      if (!posting) continue;
-
-      const escapedAccount = this.escapeSnippetText(posting.account);
-
-      let amountPart = "";
-      if (posting.amount !== undefined) {
-        const accountPartLength = indent.length + posting.account.length;
-        const spacesToAdd = Math.max(2, alignmentColumn - accountPartLength);
-        const spacing = " ".repeat(spacesToAdd);
-        const { amountOnly, commodityPart } = extractAmountParts(
-          posting.amount,
-          posting.commodity ?? undefined,
-        );
-        amountPart = `${spacing}\${${tabstopIndex++}:${this.escapeSnippetText(amountOnly)}}${commodityPart}`;
-      }
-
-      if (i === 0) {
-        parts.push(`${indent}${escapedAccount}${amountPart}`);
-      } else {
-        parts.push(`\n${indent}${escapedAccount}${amountPart}`);
-      }
-    }
-
-    parts.push("\n$0");
-
-    return new vscode.SnippetString(parts.join(""));
   }
 
   /**
