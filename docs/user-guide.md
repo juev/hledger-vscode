@@ -12,6 +12,7 @@ Complete documentation for the hledger VS Code extension.
 - [Syntax Highlighting](#syntax-highlighting)
 - [Diagnostics & Validation](#diagnostics--validation)
 - [CLI Integration](#cli-integration)
+- [Context Menu](#context-menu)
 - [CSV/TSV Import](#csvtsv-import)
 - [Language Server (LSP)](#language-server-lsp)
 - [Configuration Reference](#configuration-reference)
@@ -575,6 +576,31 @@ Paths from environment variables and settings are validated to prevent command i
 |---------|-------------|---------|
 | `hledger.cli.path` | Path to hledger executable | Auto-detected |
 | `hledger.cli.journalFile` | Main journal file path | Uses env or current file |
+
+---
+
+## Context Menu
+
+Right-click in the editor to access the HLedger submenu with quick access to CLI reports.
+
+### Available Commands
+
+| Command | Description |
+|---------|-------------|
+| **Insert Balance Report** | Insert `hledger bs` output as comment |
+| **Insert Income Statement** | Insert `hledger is` output as comment |
+| **Insert Statistics** | Insert `hledger stats` output as comment |
+
+### Usage
+
+1. Open a `.journal`, `.hledger`, or `.ledger` file
+2. Right-click in the editor
+3. Select **HLedger** from the context menu
+4. Choose the desired report
+
+The context menu only appears for hledger files and provides the same functionality as the Command Palette commands, but with faster access.
+
+Navigation commands (Go to Definition, Go to References, Rename Symbol) are available through VS Code's standard context menu when the Language Server is active.
 
 ---
 

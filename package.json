@@ -531,6 +531,35 @@
           }
         }
       }
+    },
+    "submenus": [
+      {
+        "id": "hledger.submenu",
+        "label": "HLedger"
+      }
+    ],
+    "menus": {
+      "editor/context": [
+        {
+          "submenu": "hledger.submenu",
+          "group": "navigation",
+          "when": "editorLangId == hledger"
+        }
+      ],
+      "hledger.submenu": [
+        {
+          "command": "hledger.cli.balance",
+          "group": "1_reports@1"
+        },
+        {
+          "command": "hledger.cli.incomestatement",
+          "group": "1_reports@2"
+        },
+        {
+          "command": "hledger.cli.stats",
+          "group": "1_reports@3"
+        }
+      ]
     }
   },
   "scripts": {
