@@ -312,13 +312,8 @@
         "category": "HLedger"
       },
       {
-        "command": "hledger.lsp.download",
-        "title": "HLedger: Download Language Server",
-        "category": "HLedger"
-      },
-      {
         "command": "hledger.lsp.update",
-        "title": "HLedger: Check for Language Server Updates",
+        "title": "HLedger: Install/Update Language Server",
         "category": "HLedger"
       },
       {

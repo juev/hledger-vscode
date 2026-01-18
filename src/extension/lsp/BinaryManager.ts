@@ -56,7 +56,7 @@ export function getPlatformInfo(
   }
 
   const isWindows = normalizedPlatform === "windows";
-  const assetSuffix = `${normalizedPlatform}-${normalizedArch}${isWindows ? ".exe" : ""}`;
+  const assetSuffix = `${normalizedPlatform}_${normalizedArch}${isWindows ? ".exe" : ""}`;
 
   return {
     platform: normalizedPlatform,
@@ -149,7 +149,7 @@ export class BinaryManager {
   async download(onProgress?: (percent: number) => void): Promise<void> {
     const release = await this.getLatestRelease();
 
-    const expectedAssetName = `hledger-lsp-${this.platformInfo.assetSuffix}`;
+    const expectedAssetName = `hledger-lsp_${this.platformInfo.assetSuffix}`;
     const asset = release.assets.find((a) => a.name === expectedAssetName);
 
     if (!asset) {

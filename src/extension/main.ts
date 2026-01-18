@@ -130,32 +130,6 @@ export function activate(context: vscode.ExtensionContext): void {
 
     // Register LSP commands
     context.subscriptions.push(
-      vscode.commands.registerCommand("hledger.lsp.download", async () => {
-        await vscode.window.withProgress(
-          {
-            location: vscode.ProgressLocation.Notification,
-            title: "Downloading hledger-lsp...",
-            cancellable: false,
-          },
-          async (progress) => {
-            try {
-              await lspManager.download(progress);
-              vscode.window.showInformationMessage(
-                "HLedger Language Server downloaded successfully."
-              );
-              // Auto-start after download
-              await lspManager.start();
-            } catch (error) {
-              vscode.window.showErrorMessage(
-                `Failed to download language server: ${error instanceof Error ? error.message : String(error)}`
-              );
-            }
-          }
-        );
-      })
-    );
-
-    context.subscriptions.push(
       vscode.commands.registerCommand("hledger.lsp.update", async () => {
         await vscode.window.withProgress(
           {

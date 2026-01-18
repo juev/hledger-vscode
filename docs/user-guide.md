@@ -692,7 +692,7 @@ The extension supports an optional Language Server Protocol (LSP) backend for en
 The extension can automatically download and manage the hledger-lsp binary:
 
 1. Open Command Palette (`Ctrl+Shift+P` or `Cmd+Shift+P`)
-2. Run **HLedger: Download Language Server**
+2. Run **HLedger: Install/Update Language Server**
 3. Wait for the download to complete
 
 The binary is stored in VS Code's global storage directory.
@@ -701,8 +701,7 @@ The binary is stored in VS Code's global storage directory.
 
 | Command | Description |
 |---------|-------------|
-| `hledger.lsp.download` | Download the language server binary |
-| `hledger.lsp.update` | Check for updates and optionally update |
+| `hledger.lsp.update` | Install or update the language server binary |
 | `hledger.lsp.showVersion` | Show installed version and status |
 | `hledger.lsp.restart` | Restart the language server |
 
@@ -822,8 +821,7 @@ All commands accessible via Command Palette (`Ctrl+Shift+P` or `Cmd+Shift+P`):
 | `hledger.cli.incomestatement` | HLedger: Insert Income Statement | Insert income statement as comment |
 | `hledger.import.fromSelection` | HLedger: Import Selected Tabular Data | Import selected CSV/TSV |
 | `hledger.import.fromFile` | HLedger: Import Tabular Data from File | Import active file as CSV/TSV |
-| `hledger.lsp.download` | HLedger: Download Language Server | Download LSP binary |
-| `hledger.lsp.update` | HLedger: Check for Language Server Updates | Check and update LSP |
+| `hledger.lsp.update` | HLedger: Install/Update Language Server | Install or update LSP binary |
 | `hledger.lsp.showVersion` | HLedger: Show Language Server Version | Show LSP version info |
 | `hledger.lsp.restart` | HLedger: Restart Language Server | Restart the LSP server |
 

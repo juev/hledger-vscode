@@ -112,7 +112,7 @@ export class LSPManager implements vscode.Disposable {
         throw new Error(`Custom LSP binary not found at: ${binaryPath}`);
       }
     } else if (!await this.isServerAvailable()) {
-      throw new Error("Language server is not installed. Run 'HLedger: Download Language Server' first.");
+      throw new Error("Language server is not installed. Run 'HLedger: Install/Update Language Server' first.");
     }
 
     this.status = LSPStatus.Starting;

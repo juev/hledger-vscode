@@ -15,7 +15,7 @@ describe("getPlatformInfo", () => {
 
     expect(info.platform).toBe("darwin");
     expect(info.arch).toBe("arm64");
-    expect(info.assetSuffix).toBe("darwin-arm64");
+    expect(info.assetSuffix).toBe("darwin_arm64");
   });
 
   it("returns darwin-amd64 on macOS Intel", () => {
@@ -23,7 +23,7 @@ describe("getPlatformInfo", () => {
 
     expect(info.platform).toBe("darwin");
     expect(info.arch).toBe("amd64");
-    expect(info.assetSuffix).toBe("darwin-amd64");
+    expect(info.assetSuffix).toBe("darwin_amd64");
   });
 
   it("returns linux-amd64 on Linux x64", () => {
@@ -31,7 +31,7 @@ describe("getPlatformInfo", () => {
 
     expect(info.platform).toBe("linux");
     expect(info.arch).toBe("amd64");
-    expect(info.assetSuffix).toBe("linux-amd64");
+    expect(info.assetSuffix).toBe("linux_amd64");
   });
 
   it("returns linux-arm64 on Linux ARM", () => {
@@ -39,7 +39,7 @@ describe("getPlatformInfo", () => {
 
     expect(info.platform).toBe("linux");
     expect(info.arch).toBe("arm64");
-    expect(info.assetSuffix).toBe("linux-arm64");
+    expect(info.assetSuffix).toBe("linux_arm64");
   });
 
   it("returns windows-amd64 on Windows x64", () => {
@@ -47,7 +47,7 @@ describe("getPlatformInfo", () => {
 
     expect(info.platform).toBe("windows");
     expect(info.arch).toBe("amd64");
-    expect(info.assetSuffix).toBe("windows-amd64.exe");
+    expect(info.assetSuffix).toBe("windows_amd64.exe");
   });
 
   it("throws on unsupported platform", () => {
@@ -140,9 +140,9 @@ describe("BinaryManager", () => {
             tag_name: "v0.2.0",
             assets: [
               {
-                name: "hledger-lsp-darwin-arm64",
+                name: "hledger-lsp_darwin_arm64",
                 browser_download_url:
-                  "https://github.com/juev/hledger-lsp/releases/download/v0.2.0/hledger-lsp-darwin-arm64",
+                  "https://github.com/juev/hledger-lsp/releases/download/v0.2.0/hledger-lsp_darwin_arm64",
               },
             ],
           }),
@@ -155,9 +155,9 @@ describe("BinaryManager", () => {
         version: "v0.2.0",
         assets: [
           {
-            name: "hledger-lsp-darwin-arm64",
+            name: "hledger-lsp_darwin_arm64",
             downloadUrl:
-              "https://github.com/juev/hledger-lsp/releases/download/v0.2.0/hledger-lsp-darwin-arm64",
+              "https://github.com/juev/hledger-lsp/releases/download/v0.2.0/hledger-lsp_darwin_arm64",
           },
         ],
       });
@@ -246,7 +246,7 @@ describe("BinaryManager", () => {
                 tag_name: "v0.1.0",
                 assets: [
                   {
-                    name: `hledger-lsp-${getPlatformInfo(os.platform(), os.arch()).assetSuffix}`,
+                    name: `hledger-lsp_${getPlatformInfo(os.platform(), os.arch()).assetSuffix}`,
                     browser_download_url: "https://example.com/binary",
                   },
                 ],
@@ -298,7 +298,7 @@ describe("BinaryManager", () => {
                 tag_name: "v0.1.0",
                 assets: [
                   {
-                    name: `hledger-lsp-${getPlatformInfo(os.platform(), os.arch()).assetSuffix}`,
+                    name: `hledger-lsp_${getPlatformInfo(os.platform(), os.arch()).assetSuffix}`,
                     browser_download_url: "https://example.com/binary",
                   },
                 ],
@@ -330,7 +330,7 @@ describe("BinaryManager", () => {
                 tag_name: "v0.1.0",
                 assets: [
                   {
-                    name: `hledger-lsp-${getPlatformInfo(os.platform(), os.arch()).assetSuffix}`,
+                    name: `hledger-lsp_${getPlatformInfo(os.platform(), os.arch()).assetSuffix}`,
                     browser_download_url: "https://example.com/binary",
                   },
                 ],
