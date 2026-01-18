@@ -195,6 +195,126 @@
           "type": "boolean",
           "default": true,
           "description": "Check for Language Server updates on extension activation"
+        },
+        "hledger.features.hover": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable hover information from the Language Server"
+        },
+        "hledger.features.completion": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable autocompletion from the Language Server"
+        },
+        "hledger.features.formatting": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable document formatting from the Language Server"
+        },
+        "hledger.features.diagnostics": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable diagnostics from the Language Server"
+        },
+        "hledger.features.semanticTokens": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable semantic tokens from the Language Server"
+        },
+        "hledger.features.codeActions": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable code actions from the Language Server"
+        },
+        "hledger.features.foldingRanges": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable folding ranges for transactions from the Language Server"
+        },
+        "hledger.features.documentLinks": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable document links for include directives from the Language Server"
+        },
+        "hledger.features.workspaceSymbol": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable workspace symbol search from the Language Server"
+        },
+        "hledger.completion.snippets": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable snippet completions for payees"
+        },
+        "hledger.completion.fuzzyMatching": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable fuzzy matching for completions"
+        },
+        "hledger.completion.showCounts": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show usage counts in completion items"
+        },
+        "hledger.diagnostics.undeclaredAccounts": {
+          "type": "boolean",
+          "default": true,
+          "description": "Report undeclared accounts as warnings"
+        },
+        "hledger.diagnostics.undeclaredCommodities": {
+          "type": "boolean",
+          "default": true,
+          "description": "Report undeclared commodities as warnings"
+        },
+        "hledger.diagnostics.unbalancedTransactions": {
+          "type": "boolean",
+          "default": true,
+          "description": "Report unbalanced transactions as errors"
+        },
+        "hledger.formatting.indentSize": {
+          "type": "number",
+          "default": 4,
+          "minimum": 2,
+          "maximum": 8,
+          "description": "Number of spaces for posting indentation"
+        },
+        "hledger.formatting.alignAmounts": {
+          "type": "boolean",
+          "default": true,
+          "description": "Align amounts in postings"
+        },
+        "hledger.formatting.minAlignmentColumn": {
+          "type": "number",
+          "default": 0,
+          "minimum": 0,
+          "maximum": 120,
+          "description": "Minimum column for amount alignment (0 = auto)"
+        },
+        "hledger.cli.enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable CLI integration for hledger commands"
+        },
+        "hledger.cli.timeout": {
+          "type": "number",
+          "default": 30000,
+          "minimum": 1000,
+          "maximum": 300000,
+          "description": "Timeout for CLI commands in milliseconds"
+        },
+        "hledger.limits.maxFileSizeBytes": {
+          "type": "number",
+          "default": 10485760,
+          "minimum": 1048576,
+          "maximum": 104857600,
+          "description": "Maximum file size to process in bytes (default: 10MB)"
+        },
+        "hledger.limits.maxIncludeDepth": {
+          "type": "number",
+          "default": 50,
+          "minimum": 1,
+          "maximum": 100,
+          "description": "Maximum depth for include directive resolution"
         }
       }
     },

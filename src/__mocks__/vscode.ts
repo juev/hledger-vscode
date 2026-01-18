@@ -707,11 +707,10 @@ export const workspace = {
   },
   getConfiguration: jest.fn(() => ({
     get: jest.fn((key: string, defaultValue?: unknown) => {
-      // Return default value for boolean settings
       if (defaultValue !== undefined) {
         return defaultValue;
       }
-      return "";
+      return undefined;
     }),
     update: jest.fn(),
     has: jest.fn(() => false),

@@ -4,8 +4,8 @@ import {
   LanguageClientOptions,
   ServerOptions,
   Executable,
-  State,
 } from "vscode-languageclient/node";
+import { mapVSCodeSettingsToLSP, VSCodeSettings } from "./settingsMapper";
 
 export enum LanguageClientState {
   Stopped = "stopped",
@@ -32,9 +32,89 @@ export function createServerOptions(
   };
 }
 
+function filterUndefined<T extends object>(obj: T): Partial<T> {
+  const result: Partial<T> = {};
+  for (const key of Object.keys(obj) as Array<keyof T>) {
+    const value = obj[key];
+    if (value !== undefined) {
+      if (typeof value === "object" && value !== null && !Array.isArray(value)) {
+        const filtered = filterUndefined(value as object);
+        if (Object.keys(filtered).length > 0) {
+          result[key] = filtered as T[keyof T];
+        }
+      } else {
+        result[key] = value;
+      }
+    }
+  }
+  return result;
+}
+
+function getVSCodeSettings(): VSCodeSettings {
+  const config = vscode.workspace.getConfiguration("hledger");
+
+  const rawSettings = {
+    features: {
+      hover: config.get<boolean>("features.hover"),
+      completion: config.get<boolean>("features.completion"),
+      formatting: config.get<boolean>("features.formatting"),
+      diagnostics: config.get<boolean>("features.diagnostics"),
+      semanticTokens: config.get<boolean>("features.semanticTokens"),
+      codeActions: config.get<boolean>("features.codeActions"),
+      foldingRanges: config.get<boolean>("features.foldingRanges"),
+      documentLinks: config.get<boolean>("features.documentLinks"),
+      workspaceSymbol: config.get<boolean>("features.workspaceSymbol"),
+    },
+    autoCompletion: {
+      enabled: config.get<boolean>("autoCompletion.enabled"),
+      maxResults: config.get<number>("autoCompletion.maxResults"),
+      maxAccountResults: config.get<number>("autoCompletion.maxAccountResults"),
+      transactionTemplates: {
+        enabled: config.get<boolean>("autoCompletion.transactionTemplates.enabled"),
+      },
+    },
+    completion: {
+      snippets: config.get<boolean>("completion.snippets"),
+      fuzzyMatching: config.get<boolean>("completion.fuzzyMatching"),
+      showCounts: config.get<boolean>("completion.showCounts"),
+    },
+    diagnostics: {
+      enabled: config.get<boolean>("diagnostics.enabled"),
+      checkBalance: config.get<boolean>("diagnostics.checkBalance"),
+      balanceTolerance: config.get<number>("diagnostics.balanceTolerance"),
+      undeclaredAccounts: config.get<boolean>("diagnostics.undeclaredAccounts"),
+      undeclaredCommodities: config.get<boolean>("diagnostics.undeclaredCommodities"),
+      unbalancedTransactions: config.get<boolean>("diagnostics.unbalancedTransactions"),
+    },
+    formatting: {
+      amountAlignmentColumn: config.get<number>("formatting.amountAlignmentColumn"),
+      indentSize: config.get<number>("formatting.indentSize"),
+      alignAmounts: config.get<boolean>("formatting.alignAmounts"),
+      minAlignmentColumn: config.get<number>("formatting.minAlignmentColumn"),
+    },
+    semanticHighlighting: {
+      enabled: config.get<boolean>("semanticHighlighting.enabled"),
+    },
+    cli: {
+      enabled: config.get<boolean>("cli.enabled"),
+      timeout: config.get<number>("cli.timeout"),
+    },
+    limits: {
+      maxFileSizeBytes: config.get<number>("limits.maxFileSizeBytes"),
+      maxIncludeDepth: config.get<number>("limits.maxIncludeDepth"),
+    },
+  };
+
+  return filterUndefined(rawSettings) as VSCodeSettings;
+}
+
 export function createClientOptions(): LanguageClientOptions {
+  const vsCodeSettings = getVSCodeSettings();
+  const lspSettings = mapVSCodeSettingsToLSP(vsCodeSettings);
+
   return {
     documentSelector: [{ language: "hledger" }],
+    initializationOptions: lspSettings,
     synchronize: {
       configurationSection: "hledger",
     },

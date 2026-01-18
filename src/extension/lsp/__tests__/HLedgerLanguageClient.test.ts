@@ -50,6 +50,33 @@ describe("createClientOptions", () => {
 
     expect(options.synchronize?.configurationSection).toBe("hledger");
   });
+
+  it("includes initializationOptions with LSP settings", () => {
+    const options = createClientOptions();
+
+    expect(options.initializationOptions).toBeDefined();
+    expect(options.initializationOptions.features).toBeDefined();
+    expect(options.initializationOptions.features.hover).toBe(true);
+    expect(options.initializationOptions.completion).toBeDefined();
+    expect(options.initializationOptions.diagnostics).toBeDefined();
+    expect(options.initializationOptions.formatting).toBeDefined();
+    expect(options.initializationOptions.cli).toBeDefined();
+    expect(options.initializationOptions.limits).toBeDefined();
+  });
+
+  it("includes default LSP settings structure", () => {
+    const options = createClientOptions();
+    const init = options.initializationOptions;
+
+    expect(init.features.completion).toBe(true);
+    expect(init.features.diagnostics).toBe(true);
+    expect(init.features.semanticTokens).toBe(true);
+    expect(init.completion.maxResults).toBe(25);
+    expect(init.diagnostics.balanceTolerance).toBe(1e-10);
+    expect(init.formatting.amountAlignmentColumn).toBe(40);
+    expect(init.cli.timeout).toBe(30000);
+    expect(init.limits.maxFileSizeBytes).toBe(10485760);
+  });
 });
 
 describe("HLedgerLanguageClient", () => {

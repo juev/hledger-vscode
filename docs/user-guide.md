@@ -713,6 +713,72 @@ The binary is stored in VS Code's global storage directory.
 | `hledger.lsp.debug` | boolean | `false` | Enable debug logging for the LSP server |
 | `hledger.lsp.checkForUpdates` | boolean | `true` | Check for Language Server updates on extension activation |
 
+### LSP Feature Settings
+
+Control which Language Server features are enabled:
+
+| Setting | Type | Default | Description |
+|---------|------|---------|-------------|
+| `hledger.features.hover` | boolean | `true` | Enable hover information |
+| `hledger.features.completion` | boolean | `true` | Enable autocompletion |
+| `hledger.features.formatting` | boolean | `true` | Enable document formatting |
+| `hledger.features.diagnostics` | boolean | `true` | Enable diagnostics |
+| `hledger.features.semanticTokens` | boolean | `true` | Enable semantic tokens |
+| `hledger.features.codeActions` | boolean | `true` | Enable code actions |
+| `hledger.features.foldingRanges` | boolean | `true` | Enable transaction folding |
+| `hledger.features.documentLinks` | boolean | `true` | Enable links for include directives |
+| `hledger.features.workspaceSymbol` | boolean | `true` | Enable workspace symbol search |
+
+### LSP Completion Settings
+
+| Setting | Type | Default | Description |
+|---------|------|---------|-------------|
+| `hledger.completion.snippets` | boolean | `true` | Enable snippet completions for payees |
+| `hledger.completion.fuzzyMatching` | boolean | `true` | Enable fuzzy matching |
+| `hledger.completion.showCounts` | boolean | `true` | Show usage counts in completions |
+
+### LSP Diagnostics Settings
+
+| Setting | Type | Default | Description |
+|---------|------|---------|-------------|
+| `hledger.diagnostics.undeclaredAccounts` | boolean | `true` | Report undeclared accounts |
+| `hledger.diagnostics.undeclaredCommodities` | boolean | `true` | Report undeclared commodities |
+| `hledger.diagnostics.unbalancedTransactions` | boolean | `true` | Report unbalanced transactions |
+
+### LSP Formatting Settings
+
+| Setting | Type | Default | Description |
+|---------|------|---------|-------------|
+| `hledger.formatting.indentSize` | number | `4` | Number of spaces for posting indentation (2-8) |
+| `hledger.formatting.alignAmounts` | boolean | `true` | Align amounts in postings |
+| `hledger.formatting.minAlignmentColumn` | number | `0` | Minimum column for amount alignment (0=auto) |
+
+### CLI Integration Settings (LSP)
+
+| Setting | Type | Default | Description |
+|---------|------|---------|-------------|
+| `hledger.cli.enabled` | boolean | `true` | Enable CLI integration |
+| `hledger.cli.timeout` | number | `30000` | Timeout for commands in milliseconds (1000-300000) |
+
+### Limits Settings
+
+| Setting | Type | Default | Description |
+|---------|------|---------|-------------|
+| `hledger.limits.maxFileSizeBytes` | number | `10485760` | Maximum file size (1MB-100MB, default: 10MB) |
+| `hledger.limits.maxIncludeDepth` | number | `50` | Maximum include directive depth (1-100) |
+
+### Backward Compatibility
+
+The new settings maintain backward compatibility with existing settings:
+
+| Old Setting | New Setting | Notes |
+|-------------|-------------|-------|
+| `autoCompletion.enabled` | `features.completion` | New takes precedence if both set |
+| `diagnostics.enabled` | `features.diagnostics` | New takes precedence if both set |
+| `semanticHighlighting.enabled` | `features.semanticTokens` | New takes precedence if both set |
+| `diagnostics.checkBalance` | `diagnostics.unbalancedTransactions` | New takes precedence if both set |
+| `formatting.amountAlignmentColumn` | `formatting.minAlignmentColumn` | New takes precedence if both set |
+
 ### Using Custom Binary
 
 If you prefer to use your own hledger-lsp binary:
@@ -807,6 +873,58 @@ Auto-download supports:
 | `hledger.lsp.path` | string | `""` | Custom path to hledger-lsp binary |
 | `hledger.lsp.debug` | boolean | `false` | Enable debug logging for LSP |
 | `hledger.lsp.checkForUpdates` | boolean | `true` | Check for LSP updates on activation |
+
+### LSP Feature Settings
+
+| Setting | Type | Default | Description |
+|---------|------|---------|-------------|
+| `hledger.features.hover` | boolean | `true` | Enable hover information |
+| `hledger.features.completion` | boolean | `true` | Enable autocompletion |
+| `hledger.features.formatting` | boolean | `true` | Enable document formatting |
+| `hledger.features.diagnostics` | boolean | `true` | Enable diagnostics |
+| `hledger.features.semanticTokens` | boolean | `true` | Enable semantic tokens |
+| `hledger.features.codeActions` | boolean | `true` | Enable code actions |
+| `hledger.features.foldingRanges` | boolean | `true` | Enable transaction folding |
+| `hledger.features.documentLinks` | boolean | `true` | Enable links for include directives |
+| `hledger.features.workspaceSymbol` | boolean | `true` | Enable workspace symbol search |
+
+### LSP Completion Settings
+
+| Setting | Type | Default | Description |
+|---------|------|---------|-------------|
+| `hledger.completion.snippets` | boolean | `true` | Enable snippet completions for payees |
+| `hledger.completion.fuzzyMatching` | boolean | `true` | Enable fuzzy matching |
+| `hledger.completion.showCounts` | boolean | `true` | Show usage counts in completions |
+
+### LSP Diagnostics Settings
+
+| Setting | Type | Default | Description |
+|---------|------|---------|-------------|
+| `hledger.diagnostics.undeclaredAccounts` | boolean | `true` | Report undeclared accounts |
+| `hledger.diagnostics.undeclaredCommodities` | boolean | `true` | Report undeclared commodities |
+| `hledger.diagnostics.unbalancedTransactions` | boolean | `true` | Report unbalanced transactions |
+
+### LSP Formatting Settings
+
+| Setting | Type | Default | Description |
+|---------|------|---------|-------------|
+| `hledger.formatting.indentSize` | number | `4` | Posting indentation (2-8 spaces) |
+| `hledger.formatting.alignAmounts` | boolean | `true` | Align amounts in postings |
+| `hledger.formatting.minAlignmentColumn` | number | `0` | Minimum alignment column (0=auto) |
+
+### CLI Settings (Extended)
+
+| Setting | Type | Default | Description |
+|---------|------|---------|-------------|
+| `hledger.cli.enabled` | boolean | `true` | Enable CLI integration |
+| `hledger.cli.timeout` | number | `30000` | Command timeout in milliseconds |
+
+### Limits Settings
+
+| Setting | Type | Default | Description |
+|---------|------|---------|-------------|
+| `hledger.limits.maxFileSizeBytes` | number | `10485760` | Maximum file size (default: 10MB) |
+| `hledger.limits.maxIncludeDepth` | number | `50` | Maximum include directive depth |
 
 ---
 
