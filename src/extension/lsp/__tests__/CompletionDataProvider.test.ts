@@ -2,6 +2,7 @@ import {
   CompletionDataProvider,
   CompletionData,
   LSPCompletionDataProvider,
+  LazyLSPCompletionDataProvider,
   LocalCompletionDataProvider,
   TransactionTemplate,
 } from "../CompletionDataProvider";
@@ -70,6 +71,64 @@ describe("LSPCompletionDataProvider", () => {
     };
 
     const provider = new LSPCompletionDataProvider(mockClient as any);
+    const data = await provider.getCompletionData("test");
+
+    expect(data.payees).toEqual([]);
+    expect(data.templates).toEqual([]);
+  });
+
+  it("returns empty data when LSP returns null", async () => {
+    const mockClient = {
+      sendRequest: jest.fn().mockResolvedValue(null),
+    };
+
+    const provider = new LSPCompletionDataProvider(mockClient as any);
+    const data = await provider.getCompletionData("test");
+
+    expect(data.payees).toEqual([]);
+    expect(data.templates).toEqual([]);
+  });
+});
+
+describe("LazyLSPCompletionDataProvider", () => {
+  it("returns empty data when client is not available", async () => {
+    const mockClientProvider = {
+      getClient: () => null,
+    };
+
+    const provider = new LazyLSPCompletionDataProvider(mockClientProvider);
+    const data = await provider.getCompletionData("test");
+
+    expect(data.payees).toEqual([]);
+    expect(data.templates).toEqual([]);
+  });
+
+  it("fetches data from LSP client when available", async () => {
+    const mockClient = {
+      sendRequest: jest.fn().mockResolvedValue({
+        payees: ["Store A"],
+        templates: [],
+      }),
+    };
+    const mockClientProvider = {
+      getClient: () => mockClient,
+    };
+
+    const provider = new LazyLSPCompletionDataProvider(mockClientProvider);
+    const data = await provider.getCompletionData("Store");
+
+    expect(data.payees).toEqual(["Store A"]);
+  });
+
+  it("returns empty data when LSP returns null", async () => {
+    const mockClient = {
+      sendRequest: jest.fn().mockResolvedValue(null),
+    };
+    const mockClientProvider = {
+      getClient: () => mockClient,
+    };
+
+    const provider = new LazyLSPCompletionDataProvider(mockClientProvider);
     const data = await provider.getCompletionData("test");
 
     expect(data.payees).toEqual([]);

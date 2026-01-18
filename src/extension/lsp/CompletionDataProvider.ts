@@ -71,6 +71,10 @@ export class LSPCompletionDataProvider implements CompletionDataProvider {
         { query }
       );
 
+      if (!response) {
+        return { payees: [], templates: [] };
+      }
+
       return {
         payees: response.payees,
         templates: response.templates,
@@ -107,6 +111,10 @@ export class LazyLSPCompletionDataProvider implements CompletionDataProvider {
         "hledger/completionData",
         { query }
       );
+
+      if (!response) {
+        return { payees: [], templates: [] };
+      }
 
       return {
         payees: response.payees,
