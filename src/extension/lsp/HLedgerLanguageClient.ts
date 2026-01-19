@@ -111,10 +111,6 @@ function getVSCodeSettings(): VSCodeSettings {
 export function createClientOptions(): LanguageClientOptions {
   const vsCodeSettings = getVSCodeSettings();
   const lspSettings = mapVSCodeSettingsToLSP(vsCodeSettings);
-  const outputChannel = vscode.window.createOutputChannel(
-    "HLedger LSP Server",
-    { log: true },
-  );
 
   return {
     documentSelector: [{ language: "hledger" }],
@@ -122,8 +118,6 @@ export function createClientOptions(): LanguageClientOptions {
     synchronize: {
       configurationSection: "hledger",
     },
-    outputChannel,
-    traceOutputChannel: outputChannel,
   };
 }
 

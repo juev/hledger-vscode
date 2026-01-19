@@ -11,6 +11,7 @@ export type { VSCodeSettings, LSPSettings } from "./settingsMapper";
 export { applySortingHack, convertTemplateToSnippet, processCompletionList } from "./completionMiddleware";
 export type { CompletionItem, CompletionList, SnippetOptions } from "./completionMiddleware";
 
+export { LocalCompletionDataProvider, LSPCompletionDataProvider, LazyLSPCompletionDataProvider } from "./CompletionDataProvider";
 export type { CompletionDataProvider, CompletionData, TransactionTemplate, Posting } from "./CompletionDataProvider";
 
 export { LSPManager, LSPStatus } from "./LSPManager";

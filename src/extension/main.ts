@@ -6,7 +6,7 @@ import { HLedgerTabCommand } from "./HLedgerTabCommand";
 import { HLedgerCliCommands } from "./HLedgerCliCommands";
 import { HLedgerCliService } from "./services/HLedgerCliService";
 import { HLedgerImportCommands } from "./HLedgerImportCommands";
-import { LSPManager, StartupChecker } from "./lsp";
+import { LSPManager, LazyLSPCompletionDataProvider, StartupChecker } from "./lsp";
 import { InlineCompletionProvider } from "./inline/InlineCompletionProvider";
 
 export function activate(context: vscode.ExtensionContext): void {
@@ -94,11 +94,11 @@ export function activate(context: vscode.ExtensionContext): void {
     context.subscriptions.push(tabCommand);
 
     // Register inline completion provider (ghost text)
-    const clientProvider = {
+    const completionDataProvider = new LazyLSPCompletionDataProvider({
       getClient: (): ReturnType<typeof lspManager.getLanguageClient> =>
         lspManager.getLanguageClient(),
-    };
-    const inlineProvider = new InlineCompletionProvider(clientProvider);
+    });
+    const inlineProvider = new InlineCompletionProvider(completionDataProvider);
     context.subscriptions.push(
       vscode.languages.registerInlineCompletionItemProvider(
         { language: "hledger" },
