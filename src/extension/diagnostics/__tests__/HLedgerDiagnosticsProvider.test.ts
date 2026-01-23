@@ -317,6 +317,88 @@ account Assets
             expect(tagDiags.length).toBe(0);
         });
 
+        test('accepts date: tag with space before value', () => {
+            const content = `
+2024-01-01 Test  ; date: 2024-01-15
+    Expenses:Food  $10.00
+    Assets:Cash  -$10.00
+`;
+            config.parseContent(content, '/test');
+
+            const document = new MockTextDocument(content.split('\n'), {
+                uri: vscode.Uri.file('/test/test.journal'),
+                languageId: 'hledger'
+            });
+
+            provider['validateDocument'](document);
+
+            const diagnostics = provider.diagnosticCollection.get(document.uri);
+            const tagDiags = diagnostics?.filter(d => d.code === 'invalid-tag-format') ?? [];
+            expect(tagDiags.length).toBe(0);
+        });
+
+        test('accepts date2: tag with space before value', () => {
+            const content = `
+2024-01-01 Test  ; date2: 2024-01-20
+    Expenses:Food  $10.00
+    Assets:Cash  -$10.00
+`;
+            config.parseContent(content, '/test');
+
+            const document = new MockTextDocument(content.split('\n'), {
+                uri: vscode.Uri.file('/test/test.journal'),
+                languageId: 'hledger'
+            });
+
+            provider['validateDocument'](document);
+
+            const diagnostics = provider.diagnosticCollection.get(document.uri);
+            const tagDiags = diagnostics?.filter(d => d.code === 'invalid-tag-format') ?? [];
+            expect(tagDiags.length).toBe(0);
+        });
+
+        test('warns about date: tag with only spaces after colon', () => {
+            const content = `
+2024-01-01 Test  ; date:
+    Expenses:Food  $10.00
+    Assets:Cash  -$10.00
+`;
+            config.parseContent(content, '/test');
+
+            const document = new MockTextDocument(content.split('\n'), {
+                uri: vscode.Uri.file('/test/test.journal'),
+                languageId: 'hledger'
+            });
+
+            provider['validateDocument'](document);
+
+            const diagnostics = provider.diagnosticCollection.get(document.uri);
+            const tagDiag = diagnostics?.find(d => d.message.includes("date:"));
+            expect(tagDiag).toBeDefined();
+            expect(tagDiag?.severity).toBe(vscode.DiagnosticSeverity.Warning);
+            expect(tagDiag?.message).toContain('requires a value');
+        });
+
+        test('accepts date tag with value followed by comma and another tag', () => {
+            const content = `
+2024-01-01 Test  ; date: 2024-01-15, project:work
+    Expenses:Food  $10.00
+    Assets:Cash  -$10.00
+`;
+            config.parseContent(content, '/test');
+
+            const document = new MockTextDocument(content.split('\n'), {
+                uri: vscode.Uri.file('/test/test.journal'),
+                languageId: 'hledger'
+            });
+
+            provider['validateDocument'](document);
+
+            const diagnostics = provider.diagnosticCollection.get(document.uri);
+            const tagDiags = diagnostics?.filter(d => d.code === 'invalid-tag-format') ?? [];
+            expect(tagDiags.length).toBe(0);
+        });
+
         test('no warning for regular tags without values', () => {
             // Regular tags (not date/date2) can be without value
             const content = `
