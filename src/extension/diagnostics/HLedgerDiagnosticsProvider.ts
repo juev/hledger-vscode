@@ -237,7 +237,8 @@ export class HLedgerDiagnosticsProvider implements vscode.Disposable {
         // In hledger, a tag is defined as: word followed by colon (tag: or tag:value)
         // Words without colons are just comments, not tags
         // Special tags like date: and date2: MUST have a value
-        const specialTagPattern = /\b(date2?):(\s*)(?=[,\s]|$)/g;
+        // Tag value ends at comma or end of line, space after colon is optional
+        const specialTagPattern = /\b(date2?):\s*([^,]*)/g;
         const matches = Array.from(commentContent.matchAll(specialTagPattern));
 
         if (matches.length > 0) {
@@ -246,10 +247,10 @@ export class HLedgerDiagnosticsProvider implements vscode.Disposable {
                 return undefined;
             }
             const tagName = firstMatch[1];
-            const tagValue = firstMatch[2];
+            const tagValue = firstMatch[2]?.trim() ?? '';
 
             // date: and date2: tags must have a value
-            if (tagName && (!tagValue || tagValue.trim() === '')) {
+            if (tagName && tagValue === '') {
                 const commentStartIndex = commentMatch.index ?? 0;
                 const commentPrefixLength = commentMatch[0].indexOf(commentContent);
                 const startPos = commentStartIndex + commentPrefixLength + (firstMatch.index ?? 0);
