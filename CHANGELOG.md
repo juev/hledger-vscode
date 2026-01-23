@@ -1,5 +1,11 @@
 # Change Log
 
+## [0.4.14] - 2026-01-23
+
+### Fixed
+- fix: correctly parse date/date2 tags with space after colon
+
+
 ## [0.4.13] - 2026-01-17
 
 ### Fixed
