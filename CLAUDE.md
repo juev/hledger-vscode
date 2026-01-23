@@ -86,7 +86,7 @@ Detects all assertion operators: `=`, `==`, `=*`, `==*`, `:=`. Requires whitespa
 Dual-layer system:
 
 - **TextMate Grammar** (`syntaxes/hledger.tmLanguage.json`): Always active
-- **Semantic Tokens** (optional): 14 token types, enabled via `hledger.semanticHighlighting.enabled`
+- **Semantic Tokens** (optional): 14 token types, enabled via `hledger.features.semanticTokens`
 
 ### Completion
 

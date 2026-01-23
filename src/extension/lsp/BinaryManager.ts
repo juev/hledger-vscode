@@ -146,6 +146,14 @@ export class BinaryManager {
     return installedVersion !== latestRelease.version;
   }
 
+  /**
+   * Downloads the latest binary for the current platform.
+   *
+   * Security note: Binary is downloaded over HTTPS from GitHub releases.
+   * For additional security, consider implementing SHA256 checksum verification
+   * by downloading checksums.txt from the release and verifying the binary hash.
+   * This requires the hledger-lsp release process to generate and publish checksums.
+   */
   async download(onProgress?: (percent: number) => void): Promise<void> {
     const release = await this.getLatestRelease();
 

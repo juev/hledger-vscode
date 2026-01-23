@@ -110,16 +110,6 @@ describe("mapVSCodeSettingsToLSP", () => {
       expect(result.features.diagnostics).toBe(false);
     });
 
-    it("falls back to legacy semanticHighlighting.enabled for features.semanticTokens", () => {
-      const settings: VSCodeSettings = {
-        semanticHighlighting: { enabled: false },
-      };
-
-      const result = mapVSCodeSettingsToLSP(settings);
-
-      expect(result.features.semanticTokens).toBe(false);
-    });
-
     it("prefers new features settings over legacy settings", () => {
       const settings: VSCodeSettings = {
         features: { completion: true },
@@ -232,7 +222,6 @@ describe("mapVSCodeSettingsToLSP", () => {
         formatting: {
           indentSize: 2,
           alignAmounts: false,
-          minAlignmentColumn: 50,
         },
       };
 
@@ -240,10 +229,23 @@ describe("mapVSCodeSettingsToLSP", () => {
 
       expect(result.formatting.indentSize).toBe(2);
       expect(result.formatting.alignAmounts).toBe(false);
-      expect(result.formatting.minAlignmentColumn).toBe(50);
     });
 
-    it("falls back to legacy amountAlignmentColumn for minAlignmentColumn", () => {
+    it("maps minAlignmentColumn independently from amountAlignmentColumn", () => {
+      const settings: VSCodeSettings = {
+        formatting: {
+          amountAlignmentColumn: 55,
+          minAlignmentColumn: 20,
+        },
+      };
+
+      const result = mapVSCodeSettingsToLSP(settings);
+
+      expect(result.formatting.amountAlignmentColumn).toBe(55);
+      expect(result.formatting.minAlignmentColumn).toBe(20);
+    });
+
+    it("uses default for minAlignmentColumn when not specified", () => {
       const settings: VSCodeSettings = {
         formatting: {
           amountAlignmentColumn: 55,
@@ -252,28 +254,16 @@ describe("mapVSCodeSettingsToLSP", () => {
 
       const result = mapVSCodeSettingsToLSP(settings);
 
-      expect(result.formatting.minAlignmentColumn).toBe(55);
-    });
-
-    it("prefers new minAlignmentColumn over legacy amountAlignmentColumn", () => {
-      const settings: VSCodeSettings = {
-        formatting: {
-          amountAlignmentColumn: 40,
-          minAlignmentColumn: 60,
-        },
-      };
-
-      const result = mapVSCodeSettingsToLSP(settings);
-
-      expect(result.formatting.minAlignmentColumn).toBe(60);
+      expect(result.formatting.amountAlignmentColumn).toBe(55);
+      expect(result.formatting.minAlignmentColumn).toBe(0);
     });
   });
 
   describe("semantic highlighting settings", () => {
-    it("maps semantic highlighting settings", () => {
+    it("maps semanticHighlighting.enabled from features.semanticTokens", () => {
       const settings: VSCodeSettings = {
-        semanticHighlighting: {
-          enabled: false,
+        features: {
+          semanticTokens: false,
         },
       };
 

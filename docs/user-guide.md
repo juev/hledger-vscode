@@ -238,6 +238,15 @@ Shows complete posting structure as ghost text:
 | `hledger.inlineCompletion.enabled` | Enable/disable inline completions | `true` |
 | `hledger.inlineCompletion.minPayeeChars` | Minimum characters before showing | `2` |
 
+### LSP Dependency
+
+Inline completions require the Language Server (LSP) to be installed and running. When the LSP is unavailable:
+- Ghost text suggestions will not appear
+- No error is shown - the feature silently waits for LSP availability
+- Once LSP starts, inline completions work automatically
+
+To install the LSP, run the command **HLedger: Install/Update Language Server**.
+
 ---
 
 ## Smart Editing
@@ -375,9 +384,11 @@ The extension uses two highlighting systems:
 
 ### Enable Semantic Highlighting
 
+Semantic highlighting is enabled by default via the Language Server:
+
 ```json
 {
-  "hledger.semanticHighlighting.enabled": true
+  "hledger.features.semanticTokens": true
 }
 ```
 
@@ -649,38 +660,8 @@ The import feature tries to match payees to accounts using multiple strategies:
 |----------|----------|------------|-------------|
 | 1 | Journal history (exact) | 95% | Exact payee match from existing transactions |
 | 2 | Journal history (fuzzy) | 85% | Similar payee names |
-| 3 | Category mapping | 80% | Configured category-to-account mapping |
-| 4 | Merchant patterns | 70% | Regex patterns for merchants |
-| 5 | Amount sign | 50% | Positive=income, negative=expense |
-| 6 | Default accounts | - | Configured defaults |
-
-### Merchant Patterns Configuration
-
-Define regex patterns to match merchants:
-
-```json
-{
-  "hledger.import.merchantPatterns": {
-    "AMAZON|AMZN": "expenses:shopping",
-    "UBER|LYFT": "expenses:transport",
-    "NETFLIX|SPOTIFY": "expenses:subscriptions"
-  }
-}
-```
-
-### Category Mapping Configuration
-
-Map CSV category values to hledger accounts:
-
-```json
-{
-  "hledger.import.categoryMapping": {
-    "Groceries": "expenses:food:groceries",
-    "Restaurants": "expenses:food:dining",
-    "Transportation": "expenses:transport"
-  }
-}
-```
+| 3 | Amount sign | 50% | Positive=income, negative=expense |
+| 4 | Default accounts | - | Configured defaults |
 
 ### Date Format Handling
 
@@ -704,14 +685,30 @@ Map CSV category values to hledger accounts:
 | `hledger.import.defaultBalancingAccount` | Balancing posting account | `TODO:account` |
 | `hledger.import.invertAmounts` | Invert amount signs | `false` |
 | `hledger.import.useJournalHistory` | Learn from existing transactions | `true` |
-| `hledger.import.merchantPatterns` | Regex patterns for merchants | `{}` |
-| `hledger.import.categoryMapping` | Category to account mapping | `{}` |
 
 ---
 
 ## Language Server (LSP)
 
-The extension supports an optional Language Server Protocol (LSP) backend for enhanced performance and features. The LSP server provides faster completions, real-time diagnostics, and additional capabilities.
+The extension uses a Language Server Protocol (LSP) backend for most features. The LSP server provides completions, real-time diagnostics, formatting, semantic highlighting, and other capabilities.
+
+### Without Language Server
+
+When the LSP is not installed or not running, the following features are unavailable:
+- Inline completions (ghost text)
+- Auto-completion (accounts, payees, dates, etc.)
+- Diagnostics and validation
+- Document formatting
+- Semantic highlighting
+- Code navigation (Go to Definition, Find References)
+
+Basic features that work without LSP:
+- Syntax highlighting (TextMate grammar)
+- Smart Enter/Tab key behavior
+- CLI integration (balance, stats, income statement)
+- CSV/TSV import
+
+We recommend installing the LSP for the full experience. The extension will prompt you to install it on first activation.
 
 ### Installation
 
@@ -777,7 +774,6 @@ Control which Language Server features are enabled:
 |---------|------|---------|-------------|
 | `hledger.formatting.indentSize` | number | `4` | Number of spaces for posting indentation (2-8) |
 | `hledger.formatting.alignAmounts` | boolean | `true` | Align amounts in postings |
-| `hledger.formatting.minAlignmentColumn` | number | `0` | Minimum column for amount alignment (0=auto) |
 
 ### CLI Integration Settings (LSP)
 
@@ -801,9 +797,7 @@ The new settings maintain backward compatibility with existing settings:
 |-------------|-------------|-------|
 | `autoCompletion.enabled` | `features.completion` | New takes precedence if both set |
 | `diagnostics.enabled` | `features.diagnostics` | New takes precedence if both set |
-| `semanticHighlighting.enabled` | `features.semanticTokens` | New takes precedence if both set |
 | `diagnostics.checkBalance` | `diagnostics.unbalancedTransactions` | New takes precedence if both set |
-| `formatting.amountAlignmentColumn` | `formatting.minAlignmentColumn` | New takes precedence if both set |
 
 ### Using Custom Binary
 
@@ -873,12 +867,6 @@ Auto-download supports:
 
 **Note:** The `amountAlignmentColumn` setting specifies the minimum column position. Amounts are aligned at least at this column, but may shift further right when account names are long enough to require additional space.
 
-### Syntax Highlighting Settings
-
-| Setting | Type | Default | Description |
-|---------|------|---------|-------------|
-| `hledger.semanticHighlighting.enabled` | boolean | `true` | Enable semantic token highlighting |
-
 ### Import Settings
 
 | Setting | Type | Default | Description |
@@ -889,8 +877,6 @@ Auto-download supports:
 | `hledger.import.defaultBalancingAccount` | string | `TODO:account` | Default balancing account |
 | `hledger.import.invertAmounts` | boolean | `false` | Invert amount signs |
 | `hledger.import.useJournalHistory` | boolean | `true` | Use journal history for account matching |
-| `hledger.import.merchantPatterns` | object | `{}` | Regex patterns for merchant detection |
-| `hledger.import.categoryMapping` | object | `{}` | Category to account mapping |
 
 ### Language Server Settings
 
@@ -936,7 +922,6 @@ Auto-download supports:
 |---------|------|---------|-------------|
 | `hledger.formatting.indentSize` | number | `4` | Posting indentation (2-8 spaces) |
 | `hledger.formatting.alignAmounts` | boolean | `true` | Align amounts in postings |
-| `hledger.formatting.minAlignmentColumn` | number | `0` | Minimum alignment column (0=auto) |
 
 ### CLI Settings (Extended)
 
@@ -1042,8 +1027,8 @@ If experiencing slowness:
 
 ```json
 {
-  "hledger.semanticHighlighting.enabled": false,
-  "hledger.diagnostics.enabled": false,
+  "hledger.features.semanticTokens": false,
+  "hledger.features.diagnostics": false,
   "hledger.diagnostics.checkBalance": false,
   "hledger.autoCompletion.transactionTemplates.enabled": false
 }

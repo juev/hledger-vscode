@@ -37,9 +37,6 @@ export interface VSCodeSettings {
     alignAmounts?: boolean;
     minAlignmentColumn?: number;
   };
-  semanticHighlighting?: {
-    enabled?: boolean;
-  };
   inlineCompletion?: {
     enabled?: boolean;
     minPayeeChars?: number;
@@ -64,8 +61,6 @@ export interface VSCodeSettings {
     dateFormat?: string;
     invertAmounts?: boolean;
     useJournalHistory?: boolean;
-    merchantPatterns?: Record<string, string>;
-    categoryMapping?: Record<string, string>;
   };
 }
 
@@ -179,7 +174,6 @@ export function mapVSCodeSettingsToLSP(settings: VSCodeSettings): LSPSettings {
     ?? DEFAULT_SETTINGS.features.diagnostics;
 
   const semanticTokensEnabled = settings.features?.semanticTokens
-    ?? settings.semanticHighlighting?.enabled
     ?? DEFAULT_SETTINGS.features.semanticTokens;
 
   const unbalancedTransactions = settings.diagnostics?.unbalancedTransactions
@@ -187,7 +181,6 @@ export function mapVSCodeSettingsToLSP(settings: VSCodeSettings): LSPSettings {
     ?? DEFAULT_SETTINGS.diagnostics.unbalancedTransactions;
 
   const minAlignmentColumn = settings.formatting?.minAlignmentColumn
-    ?? settings.formatting?.amountAlignmentColumn
     ?? DEFAULT_SETTINGS.formatting.minAlignmentColumn;
 
   return {
@@ -228,7 +221,7 @@ export function mapVSCodeSettingsToLSP(settings: VSCodeSettings): LSPSettings {
       minAlignmentColumn: minAlignmentColumn,
     },
     semanticHighlighting: {
-      enabled: settings.semanticHighlighting?.enabled ?? DEFAULT_SETTINGS.semanticHighlighting.enabled,
+      enabled: semanticTokensEnabled,
     },
     cli: {
       enabled: settings.cli?.enabled ?? DEFAULT_SETTINGS.cli.enabled,
