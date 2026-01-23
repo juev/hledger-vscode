@@ -33,6 +33,15 @@ export class HLedgerCliCommands implements vscode.Disposable {
   }
 
   private async insertCliReport(command: string): Promise<void> {
+    const config = vscode.workspace.getConfiguration("hledger");
+    const cliEnabled = config.get<boolean>("cli.enabled", true);
+    if (!cliEnabled) {
+      vscode.window.showWarningMessage(
+        "CLI integration is disabled. Enable hledger.cli.enabled to use this command.",
+      );
+      return;
+    }
+
     const editor = vscode.window.activeTextEditor;
     if (!editor) {
       vscode.window.showErrorMessage("No active editor found.");

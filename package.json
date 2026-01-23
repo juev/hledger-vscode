@@ -63,11 +63,6 @@
           "default": true,
           "description": "Enable smart indentation on Enter key for hledger files"
         },
-        "hledger.semanticHighlighting.enabled": {
-          "type": "boolean",
-          "default": true,
-          "description": "Enable semantic highlighting for more precise syntax coloring. When disabled, falls back to TextMate grammar only."
-        },
         "hledger.autoCompletion.maxResults": {
           "type": "number",
           "default": 25,
@@ -171,16 +166,6 @@
           "default": true,
           "description": "Use existing journal transactions to auto-detect accounts for similar payees"
         },
-        "hledger.import.merchantPatterns": {
-          "type": "object",
-          "default": {},
-          "description": "Custom merchant patterns for account detection. Keys are regex patterns, values are account names. Example: {\"AMAZON|AMZN\": \"expenses:shopping\"}"
-        },
-        "hledger.import.categoryMapping": {
-          "type": "object",
-          "default": {},
-          "description": "Custom category to account mapping. Keys are category names (case-insensitive), values are account names. Example: {\"Groceries\": \"expenses:food:groceries\"}"
-        },
         "hledger.lsp.path": {
           "type": "string",
           "default": "",
@@ -282,13 +267,6 @@
           "type": "boolean",
           "default": true,
           "description": "Align amounts in postings"
-        },
-        "hledger.formatting.minAlignmentColumn": {
-          "type": "number",
-          "default": 0,
-          "minimum": 0,
-          "maximum": 120,
-          "description": "Minimum column for amount alignment (0 = auto)"
         },
         "hledger.cli.enabled": {
           "type": "boolean",
