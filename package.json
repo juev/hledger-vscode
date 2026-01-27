@@ -356,19 +356,43 @@
         "id": "link",
         "superType": "keyword",
         "description": "HLedger links"
+      },
+      {
+        "id": "status",
+        "superType": "operator",
+        "description": "HLedger transaction status markers"
+      },
+      {
+        "id": "tagValue",
+        "superType": "string",
+        "description": "HLedger tag values"
       }
     ],
     "semanticTokenScopes": [
       {
         "language": "hledger",
         "scopes": {
+          "account": ["entity.name.type.account.hledger"],
+          "accountVirtual": ["variable.other.account.virtual.hledger"],
+          "amount": ["constant.numeric.amount.hledger"],
+          "date": ["constant.numeric.date.hledger"],
+          "time": ["constant.numeric.time.hledger"],
+          "commodity": ["entity.name.type.commodity.hledger"],
+          "payee": ["entity.name.function.payee.hledger"],
+          "note": ["string.unquoted.note.hledger"],
+          "tag": ["entity.name.tag.hledger"],
+          "tagValue": ["string.unquoted.tag-value.hledger"],
+          "directive": ["keyword.directive.hledger"],
+          "code": ["string.other.code.hledger"],
+          "status": ["keyword.operator.status.hledger"],
+          "link": ["markup.underline.link.hledger"],
+          "comment": ["comment.line.semicolon.hledger"],
+          "operator": ["keyword.operator.hledger"],
           "namespace": ["entity.name.type.account.hledger"],
           "number": ["constant.numeric.amount.hledger"],
           "keyword": ["constant.numeric.date.hledger", "keyword.directive.hledger"],
           "type": ["entity.name.type.commodity.hledger"],
           "string": ["entity.name.function.payee.hledger", "string.unquoted.note.hledger"],
-          "comment": ["comment.line.semicolon.hledger"],
-          "operator": ["keyword.operator.status.hledger", "keyword.operator.balance-assertion.hledger"],
           "decorator": ["entity.name.tag.hledger"]
         }
       }
@@ -458,56 +482,6 @@
         "*.hledger": "hledger",
         "*.ledger": "hledger",
         "journal": "hledger"
-      },
-      "editor.semanticTokenColorCustomizations": {
-        "[Default Dark+]": {
-          "rules": {
-            "account:hledger": "#0EA5E9",
-            "accountVirtual:hledger": "#6B7280",
-            "amount:hledger": "#F59E0B",
-            "comment:hledger": "#9CA3AF",
-            "date:hledger": "#2563EB",
-            "time:hledger": "#2563EB",
-            "commodity:hledger": "#A855F7",
-            "payee:hledger": "#EF4444",
-            "note:hledger": "#6B7280",
-            "tag:hledger": "#EC4899",
-            "directive:hledger": "#0EA5E9",
-            "operator:hledger": "#EAB308",
-            "code:hledger": "#A855F7",
-            "link:hledger": "#2563EB",
-            "number:hledger": "#F59E0B",
-            "namespace:hledger": "#0EA5E9",
-            "keyword:hledger": "#2563EB",
-            "type:hledger": "#A855F7",
-            "string:hledger": "#EF4444",
-            "modifier:hledger": "#9CA3AF"
-          }
-        },
-        "[Default Light+]": {
-          "rules": {
-            "account:hledger": "#0369A1",
-            "accountVirtual:hledger": "#374151",
-            "amount:hledger": "#D97706",
-            "comment:hledger": "#6B7280",
-            "date:hledger": "#1D4ED8",
-            "time:hledger": "#1D4ED8",
-            "commodity:hledger": "#7C3AED",
-            "payee:hledger": "#DC2626",
-            "note:hledger": "#374151",
-            "tag:hledger": "#DB2777",
-            "directive:hledger": "#0369A1",
-            "operator:hledger": "#CA8A04",
-            "code:hledger": "#7C3AED",
-            "link:hledger": "#1D4ED8",
-            "number:hledger": "#D97706",
-            "namespace:hledger": "#0369A1",
-            "keyword:hledger": "#1D4ED8",
-            "type:hledger": "#7C3AED",
-            "string:hledger": "#DC2626",
-            "modifier:hledger": "#6B7280"
-          }
-        }
       }
     },
     "submenus": [
