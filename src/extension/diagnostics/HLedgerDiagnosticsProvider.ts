@@ -174,7 +174,7 @@ export class HLedgerDiagnosticsProvider implements vscode.Disposable {
         const isDefined = this.isAccountDefinedOrHasDefinedParent(accountName, definedAccounts);
 
         if (!isDefined) {
-            // Вычисляем позицию аккаунта после начальных пробелов
+            // Calculate account position after leading spaces
             const leadingSpacesMatch = lineText.match(/^(\s+)/);
             const matchStart = leadingSpacesMatch?.[1] ? leadingSpacesMatch[1].length : 0;
             const matchLength = accountName.length;
