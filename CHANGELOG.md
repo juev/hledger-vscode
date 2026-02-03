@@ -1,5 +1,14 @@
 # Change Log
 
+## [0.4.15] - 2026-02-03
+
+### Fixed
+- fix: correct diagnostic position for undefined accounts
+
+### Other
+- chore: translate comment to English
+
+
 ## [0.4.14] - 2026-01-23
 
 ### Fixed
