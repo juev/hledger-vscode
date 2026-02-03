@@ -161,7 +161,7 @@ export class HLedgerDiagnosticsProvider implements vscode.Disposable {
             return undefined;
         }
 
-        const postingMatch = /^\s{2,}([\p{L}\p{N}:_\s-]+?)\s{2,}/u.exec(lineText);
+        const postingMatch = /^\s{2,}([\p{L}\p{N}:_\s-]+?)(?:\s{2,}|$)/u.exec(lineText);
         if (!postingMatch) {
             return undefined;
         }
@@ -171,9 +171,13 @@ export class HLedgerDiagnosticsProvider implements vscode.Disposable {
             return undefined;
         }
 
-        if (!this.isAccountDefinedOrHasDefinedParent(accountName, definedAccounts)) {
-            const matchStart = postingMatch.index ?? 0;
-            const matchLength = postingMatch[1]?.length ?? accountName.length;
+        const isDefined = this.isAccountDefinedOrHasDefinedParent(accountName, definedAccounts);
+
+        if (!isDefined) {
+            // Вычисляем позицию аккаунта после начальных пробелов
+            const leadingSpacesMatch = lineText.match(/^(\s+)/);
+            const matchStart = leadingSpacesMatch?.[1] ? leadingSpacesMatch[1].length : 0;
+            const matchLength = accountName.length;
             const range = new vscode.Range(
                 lineNumber,
                 matchStart,
