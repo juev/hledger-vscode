@@ -375,16 +375,15 @@ D RUB 1 000,00
 
 ## Syntax Highlighting
 
-### Dual-Layer System
+Syntax highlighting is provided exclusively by the Language Server using semantic tokens.
 
-The extension uses two highlighting systems:
+**Requirements:**
+- Language Server must be running
+- Semantic tokens must be enabled (default: true)
 
-1. **TextMate Grammar** - Always active, fast, handles most syntax
-2. **Semantic Tokens** - Optional, more precise, 14 token types
+### Enable/Disable Semantic Highlighting
 
-### Enable Semantic Highlighting
-
-Semantic highlighting is enabled by default via the Language Server:
+Semantic highlighting is enabled by default:
 
 ```json
 {
@@ -394,50 +393,89 @@ Semantic highlighting is enabled by default via the Language Server:
 
 ### Semantic Token Types
 
-| Token | Description |
-|-------|-------------|
-| `account` | Account names |
-| `accountVirtual` | Virtual accounts in `()` or `[]` |
-| `amount` | Numeric amounts |
-| `comment` | Comment text |
-| `date` | Transaction dates |
-| `time` | Time values |
-| `commodity` | Currency/commodity codes |
-| `payee` | Payee names |
-| `note` | Metadata notes |
-| `tag` | Tag names and values |
-| `directive` | Directives (include, account, etc.) |
-| `operator` | Operators (`=`, `:=`, `@`, `@@`) |
-| `code` | Transaction codes |
-| `link` | Inter-transaction links |
+| Token | VS Code Type | TextMate Scope | Dark+ Color | Description |
+|-------|--------------|----------------|-------------|-------------|
+| `account` | `namespace` | `entity.name.namespace` | Cyan (#4EC9B0) | Account names |
+| `accountVirtual` | `namespace` | `entity.name.namespace` | Cyan (#4EC9B0) | Virtual accounts in `()` or `[]` |
+| `amount` | `number` | `constant.numeric` | Green (#B5CEA8) | Numeric amounts |
+| `date` | `number` | `constant.numeric` | Green (#B5CEA8) | Transaction dates |
+| `time` | `number` | `constant.numeric` | Green (#B5CEA8) | Time values |
+| `commodity` | `type` | `entity.name.type` | Cyan (#4EC9B0) | Currency/commodity codes |
+| `payee` | `function` | `entity.name.function` | Yellow (#DCDCAA) | Payee names |
+| `note` | `comment` | `comment.block` | Green (#6A9955) | Metadata notes |
+| `tag` | `decorator` | `entity.name.tag` | Blue (#569CD6) | Tag names |
+| `tagValue` | `string` | `string` | Orange (#CE9178) | Tag values |
+| `directive` | `keyword` | `keyword.control` | Purple (#C586C0) | Directives (include, account, etc.) |
+| `code` | `string` | `string.quoted` | Orange (#CE9178) | Transaction codes |
+| `status` | `operator` | `keyword.operator` | Light (#D4D4D4) | Status markers (`*`, `!`) |
+| `link` | `label` | `markup.underline.link` | Blue (underlined) | Inter-transaction links |
+| `comment` | `comment` | `comment.line` | Green (#6A9955) | Comment text |
+| `operator` | `operator` | `keyword.operator` | Light (#D4D4D4) | Operators (`=`, `:=`, `@`, `@@`) |
+
+**How highlighting works:**
+1. **TextMate Scopes** (highest priority) - Standard scopes like `entity.name.namespace`, `constant.numeric` that themes understand
+2. **VS Code Type** (fallback) - Semantic token type used when theme doesn't customize the scope
+3. **Theme defaults** (lowest priority) - Built-in theme colors
+
+The extension uses standard TextMate scopes that are recognized by all VS Code themes, ensuring consistent highlighting without custom theme configuration.
 
 ### Color Customization
 
-Customize colors for any theme:
+You can customize colors in two ways:
+
+#### Option 1: Per Semantic Token Type (Recommended)
+
+Override colors specifically for hledger tokens. This works with any theme and doesn't affect other languages:
 
 ```json
 {
   "editor.semanticTokenColorCustomizations": {
     "rules": {
       "account:hledger": "#0EA5E9",
-      "amount:hledger": "#F59E0B",
       "payee:hledger": "#EF4444",
-      "tag:hledger": "#EC4899",
+      "date:hledger": "#22C55E",
+      "amount:hledger": "#F59E0B",
       "commodity:hledger": "#A855F7",
-      "date:hledger": "#2563EB",
-      "comment:hledger": "#9CA3AF"
+      "tag:hledger": "#EC4899"
     }
   }
 }
 ```
 
-### Theme-Specific Colors
+#### Option 2: Per TextMate Scope (Global)
 
-The extension provides default colors for:
-- **Default Dark+**: Optimized for dark themes
-- **Default Light+**: Optimized for light themes
+Customize the underlying TextMate scopes. This affects ALL languages that use these scopes:
 
-These are applied automatically based on your active theme.
+```json
+{
+  "editor.tokenColorCustomizations": {
+    "textMateRules": [
+      {
+        "scope": "entity.name.function",
+        "settings": { "foreground": "#DCDCAA" }
+      },
+      {
+        "scope": "constant.numeric",
+        "settings": { "foreground": "#B5CEA8" }
+      },
+      {
+        "scope": "entity.name.namespace",
+        "settings": { "foreground": "#4EC9B0" }
+      }
+    ]
+  }
+}
+```
+
+⚠️ **Warning:** TextMate scope customization applies to all languages, not just hledger.
+
+### Default Theme Colors
+
+The extension uses standard TextMate scopes that are automatically styled by VS Code themes:
+- **Dark+**: Accounts (cyan), payees (yellow), amounts/dates (green), directives (purple)
+- **Light+**: Similar semantic colors with adjusted brightness for light backgrounds
+
+No additional configuration is needed for standard themes to work correctly.
 
 ---
 
@@ -695,15 +733,14 @@ The extension uses a Language Server Protocol (LSP) backend for most features. T
 ### Without Language Server
 
 When the LSP is not installed or not running, the following features are unavailable:
+- Syntax highlighting
 - Inline completions (ghost text)
 - Auto-completion (accounts, payees, dates, etc.)
 - Diagnostics and validation
 - Document formatting
-- Semantic highlighting
 - Code navigation (Go to Definition, Find References)
 
 Basic features that work without LSP:
-- Syntax highlighting (TextMate grammar)
 - Smart Enter/Tab key behavior
 - CLI integration (balance, stats, income statement)
 - CSV/TSV import

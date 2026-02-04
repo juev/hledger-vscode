@@ -17,6 +17,22 @@ export function activate(context: vscode.ExtensionContext): void {
 
     const startupChecker = new StartupChecker(lspManager);
 
+    // Start LSP immediately if available (non-blocking)
+    void (async (): Promise<void> => {
+      if (await lspManager.isServerAvailable()) {
+        try {
+          await lspManager.start();
+          console.log("HLedger LSP server started successfully");
+        } catch (error) {
+          console.error("Failed to start HLedger LSP server:", error);
+          vscode.window.showWarningMessage(
+            `HLedger Language Server failed to start: ${error instanceof Error ? error.message : String(error)}`
+          );
+        }
+      }
+    })();
+
+    // Check for updates in background (non-blocking)
     void (async (): Promise<void> => {
       const result = await startupChecker.checkOnActivation();
 
@@ -28,7 +44,6 @@ export function activate(context: vscode.ExtensionContext): void {
           try {
             await startupChecker.performInstall();
             console.log("HLedger LSP server installed and started successfully");
-            return;
           } catch (error) {
             console.error("Failed to install HLedger LSP server:", error);
           }
@@ -46,7 +61,6 @@ export function activate(context: vscode.ExtensionContext): void {
           try {
             await startupChecker.performUpdate();
             console.log("HLedger LSP server updated and started successfully");
-            return;
           } catch (error) {
             console.error("Failed to update HLedger LSP server:", error);
           }
@@ -55,18 +69,6 @@ export function activate(context: vscode.ExtensionContext): void {
         }
       } else if (result.action === "error") {
         console.error("Failed to check for LSP updates:", result.error);
-      }
-
-      if (await lspManager.isServerAvailable()) {
-        try {
-          await lspManager.start();
-          console.log("HLedger LSP server started successfully");
-        } catch (error) {
-          console.error("Failed to start HLedger LSP server:", error);
-          vscode.window.showWarningMessage(
-            `HLedger Language Server failed to start: ${error instanceof Error ? error.message : String(error)}`
-          );
-        }
       }
     })();
 

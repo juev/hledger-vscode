@@ -83,10 +83,21 @@ Detects all assertion operators: `=`, `==`, `=*`, `==*`, `:=`. Requires whitespa
 
 ### Highlighting
 
-Dual-layer system:
+Syntax highlighting is provided exclusively by the Language Server using semantic tokens:
 
-- **TextMate Grammar** (`syntaxes/hledger.tmLanguage.json`): Always active
-- **Semantic Tokens** (optional): 14 token types, enabled via `hledger.features.semanticTokens`
+- **Semantic Tokens**: 16 token types (account, amount, date, payee, etc.)
+- **TextMate Scopes**: Standard scopes (e.g., `entity.name.namespace`, `constant.numeric`, `entity.name.function`) recognized by all VS Code themes
+- **Requires**: hledger-lsp server must be running
+- **Configuration**: Enabled via `hledger.features.semanticTokens` (default: true)
+
+**Color Priority:**
+1. `semanticTokenScopes` → TextMate scope → theme tokenColors (HIGHEST)
+2. `superType` → fallback to standard semantic type (if no scope match)
+3. Theme defaults (LOWEST)
+
+The extension uses standard TextMate scopes without `.hledger` suffixes, ensuring proper theme integration. Users can customize colors either per token type (`"account:hledger": "#color"`) or globally via TextMate scope rules.
+
+If the Language Server is not running or semantic tokens are disabled, there will be no syntax highlighting.
 
 ### Completion
 

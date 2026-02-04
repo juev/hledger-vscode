@@ -43,13 +43,6 @@
         "configuration": "./language-configuration.json"
       }
     ],
-    "grammars": [
-      {
-        "language": "hledger",
-        "scopeName": "source.hledger",
-        "path": "./syntaxes/hledger.tmLanguage.json"
-      }
-    ],
     "configuration": {
       "title": "HLedger",
       "properties": {
@@ -309,12 +302,12 @@
       },
       {
         "id": "date",
-        "superType": "keyword",
+        "superType": "number",
         "description": "HLedger dates"
       },
       {
         "id": "time",
-        "superType": "keyword",
+        "superType": "number",
         "description": "HLedger times"
       },
       {
@@ -329,12 +322,12 @@
       },
       {
         "id": "payee",
-        "superType": "string",
+        "superType": "function",
         "description": "HLedger payees"
       },
       {
         "id": "note",
-        "superType": "string",
+        "superType": "comment",
         "description": "HLedger notes"
       },
       {
@@ -354,7 +347,7 @@
       },
       {
         "id": "link",
-        "superType": "keyword",
+        "superType": "label",
         "description": "HLedger links"
       },
       {
@@ -372,28 +365,22 @@
       {
         "language": "hledger",
         "scopes": {
-          "account": ["entity.name.type.account.hledger"],
-          "accountVirtual": ["variable.other.account.virtual.hledger"],
-          "amount": ["constant.numeric.amount.hledger"],
-          "date": ["constant.numeric.date.hledger"],
-          "time": ["constant.numeric.time.hledger"],
-          "commodity": ["entity.name.type.commodity.hledger"],
-          "payee": ["entity.name.function.payee.hledger"],
-          "note": ["string.unquoted.note.hledger"],
-          "tag": ["entity.name.tag.hledger"],
-          "tagValue": ["string.unquoted.tag-value.hledger"],
-          "directive": ["keyword.directive.hledger"],
-          "code": ["string.other.code.hledger"],
-          "status": ["keyword.operator.status.hledger"],
-          "link": ["markup.underline.link.hledger"],
-          "comment": ["comment.line.semicolon.hledger"],
-          "operator": ["keyword.operator.hledger"],
-          "namespace": ["entity.name.type.account.hledger"],
-          "number": ["constant.numeric.amount.hledger"],
-          "keyword": ["constant.numeric.date.hledger", "keyword.directive.hledger"],
-          "type": ["entity.name.type.commodity.hledger"],
-          "string": ["entity.name.function.payee.hledger", "string.unquoted.note.hledger"],
-          "decorator": ["entity.name.tag.hledger"]
+          "account": ["entity.name.namespace"],
+          "accountVirtual": ["entity.name.namespace"],
+          "amount": ["constant.numeric"],
+          "date": ["constant.numeric"],
+          "time": ["constant.numeric"],
+          "commodity": ["entity.name.type"],
+          "payee": ["entity.name.function"],
+          "note": ["comment.block"],
+          "tag": ["entity.name.tag"],
+          "tagValue": ["string"],
+          "directive": ["keyword.control"],
+          "code": ["string.quoted"],
+          "status": ["keyword.operator"],
+          "link": ["markup.underline.link"],
+          "comment": ["comment.line"],
+          "operator": ["keyword.operator"]
         }
       }
     ],
@@ -552,9 +539,7 @@
     "rimraf": "^6.0.1",
     "sharp": "^0.34.5",
     "ts-jest": "^29.4.5",
-    "typescript": "^4.9.4",
-    "vscode-oniguruma": "^2.0.1",
-    "vscode-textmate": "^9.2.1"
+    "typescript": "^4.9.4"
   },
   "license": "MIT",
   "repository": {

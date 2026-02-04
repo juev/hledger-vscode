@@ -116,7 +116,7 @@ Quick Navigation:
 3. Disable semantic highlighting for large files:
 
    ```json
-   "hledger.semanticTokens.enabled": false
+   "hledger.features.semanticTokens": false
    ```
 
 ### High Memory Usage
@@ -209,12 +209,16 @@ When you run CLI commands (balance, stats, incomestatement), you'll see:
 
 **Solutions:**
 
-1. Verify language mode: Click bottom-right → Select "hledger"
-2. Check theme compatibility: Try different color theme
-3. Enable semantic tokens:
+1. **Verify Language Server is running:**
+   - Check Output panel: View → Output → "HLedger Language Server"
+   - If not running, extension will prompt to install hledger-lsp
+2. Verify language mode: Click bottom-right → Select "hledger"
+3. Check theme compatibility: Try different color theme
+4. Enable semantic tokens:
 
    ```json
-   "editor.semanticHighlighting.enabled": true
+   "editor.semanticHighlighting.enabled": true,
+   "hledger.features.semanticTokens": true
    ```
 
 ### Wrong Colors
@@ -223,19 +227,37 @@ When you run CLI commands (balance, stats, incomestatement), you'll see:
 
 **Solutions:**
 
-1. Colors adapt to VS Code theme
-2. Customize in settings:
+1. **Check if hledger-lsp is running:** Semantic highlighting requires the Language Server. Verify with `Ctrl+Shift+P` → "HLedger: Show Language Server Status"
+
+2. **Colors adapt to your VS Code theme:** The extension uses standard TextMate scopes (e.g., `entity.name.function`, `constant.numeric`) that are styled differently by each theme.
+
+3. **Customize colors per token type (recommended):**
+
+   ```json
+   "editor.semanticTokenColorCustomizations": {
+       "rules": {
+           "account:hledger": "#0EA5E9",
+           "payee:hledger": "#EF4444",
+           "date:hledger": "#22C55E",
+           "amount:hledger": "#F59E0B",
+           "commodity:hledger": "#A855F7",
+           "tag:hledger": "#EC4899"
+       }
+   }
+   ```
+
+4. **Alternative: Customize TextMate scopes globally:**
 
    ```json
    "editor.tokenColorCustomizations": {
        "textMateRules": [
-           {
-               "scope": "keyword.operator.hledger",
-               "settings": { "foreground": "#ff0000" }
-           }
+           { "scope": "entity.name.function", "settings": { "foreground": "#DCDCAA" } },
+           { "scope": "constant.numeric", "settings": { "foreground": "#B5CEA8" } }
        ]
    }
    ```
+
+   ⚠️ This affects ALL languages, not just hledger.
 
 ### Highlighting Breaks
 
