@@ -253,5 +253,28 @@ describe("HLedgerLanguageClient", () => {
 
       client.dispose();
     });
+
+    it("returns null when request times out", async () => {
+      const client = new HLedgerLanguageClient(binaryPath);
+      await client.start();
+
+      // Mock request that never resolves
+      const internalClient = client.getClient();
+      jest.spyOn(internalClient!, "sendRequest").mockImplementation(
+        () => new Promise(() => {}) // Never resolves
+      );
+
+      jest.useFakeTimers();
+      const resultPromise = client.getPayeeAccountHistory("file:///test.journal");
+
+      // Advance time past 5000ms timeout
+      jest.advanceTimersByTime(5001);
+
+      const result = await resultPromise;
+      expect(result).toBeNull();
+
+      jest.useRealTimers();
+      client.dispose();
+    });
   });
 });

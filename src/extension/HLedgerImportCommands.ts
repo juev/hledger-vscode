@@ -20,6 +20,9 @@ import { AccountName, PayeeName, UsageCount } from "./types";
  * Import commands for converting tabular data to hledger format
  */
 export class HLedgerImportCommands implements vscode.Disposable {
+  private static readonly MAX_DIRECTORY_FILES = 1000;
+  private static readonly JOURNAL_EXTENSIONS = ['.journal', '.hledger', '.ledger'] as const;
+
   private readonly parser: TabularDataParser;
   private readonly columnDetector: ColumnDetector;
   private readonly getLspClient: () => {
@@ -45,9 +48,6 @@ export class HLedgerImportCommands implements vscode.Disposable {
    * Priority: LEDGER_FILE env → hledger.cli.journalFile → workspace .journal files
    */
   private getJournalUri(): string | null {
-    const MAX_DIRECTORY_FILES = 1000;
-    const JOURNAL_EXTENSIONS = ['.journal', '.hledger', '.ledger'];
-
     // 1. Try LEDGER_FILE environment variable
     const ledgerFile = process.env.LEDGER_FILE?.trim();
     if (ledgerFile && fs.existsSync(ledgerFile)) {
@@ -67,11 +67,15 @@ export class HLedgerImportCommands implements vscode.Disposable {
       for (const folder of workspaceFolders) {
         const folderPath = folder.uri.fsPath;
         try {
+          // Note: fs.readdirSync reads entire directory before slice limits it.
+          // For typical workspace folders (10-100 files), this is acceptable.
+          // For very large directories (>1000 files), consider using streaming
+          // approach with fs.opendirSync for better performance.
           const files = fs.readdirSync(folderPath);
           // DoS protection: limit files to scan
-          const limitedFiles = files.slice(0, MAX_DIRECTORY_FILES);
+          const limitedFiles = files.slice(0, HLedgerImportCommands.MAX_DIRECTORY_FILES);
           for (const file of limitedFiles) {
-            if (JOURNAL_EXTENSIONS.some(ext => file.endsWith(ext))) {
+            if (HLedgerImportCommands.JOURNAL_EXTENSIONS.some(ext => file.endsWith(ext))) {
               const journalPath = path.join(folderPath, file);
               return vscode.Uri.file(journalPath).toString();
             }
@@ -109,9 +113,9 @@ export class HLedgerImportCommands implements vscode.Disposable {
     }
 
     for (const [key, count] of Object.entries(result.pairUsage)) {
-      // Validate key is non-empty string and count is non-negative number
+      // Validate key is non-empty string and count is finite non-negative number
       if (!key || typeof key !== 'string') continue;
-      if (typeof count !== 'number' || count < 0) continue;
+      if (typeof count !== 'number' || !Number.isFinite(count) || count < 0) continue;
 
       pairUsage.set(key, count as UsageCount);
     }

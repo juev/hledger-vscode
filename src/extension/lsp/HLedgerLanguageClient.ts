@@ -207,8 +207,9 @@ export class HLedgerLanguageClient implements vscode.Disposable {
     }
 
     const timeout = 5000;
+    let timeoutId: NodeJS.Timeout | undefined;
     const timeoutPromise = new Promise<null>((resolve) => {
-      setTimeout(() => resolve(null), timeout);
+      timeoutId = setTimeout(() => resolve(null), timeout);
     });
 
     try {
@@ -221,6 +222,10 @@ export class HLedgerLanguageClient implements vscode.Disposable {
     } catch (error) {
       console.error('LSP payee account history request failed:', error);
       return null;
+    } finally {
+      if (timeoutId !== undefined) {
+        clearTimeout(timeoutId);
+      }
     }
   }
 
