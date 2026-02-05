@@ -1,3 +1,4 @@
+import * as crypto from "crypto";
 import * as fs from "fs";
 import * as os from "os";
 import * as path from "path";
@@ -206,7 +207,6 @@ export class BinaryManager {
   }
 
   private verifyChecksum(buffer: ArrayBuffer, expectedHash: string): boolean {
-    const crypto = require("crypto");
     const hash = crypto.createHash("sha256");
     hash.update(Buffer.from(buffer));
     return hash.digest("hex") === expectedHash.toLowerCase();
@@ -265,8 +265,15 @@ export class BinaryManager {
 
     try {
       await fs.promises.mkdir(path.dirname(binaryPath), { recursive: true });
-      await fs.promises.writeFile(tempPath, Buffer.from(buffer));
-      await fs.promises.chmod(tempPath, 0o755);
+
+      // Atomic write with permissions: open with mode 0o755, write, close, then rename
+      const fd = await fs.promises.open(tempPath, 'w', 0o755);
+      try {
+        await fd.writeFile(Buffer.from(buffer));
+      } finally {
+        await fd.close();
+      }
+
       await fs.promises.rename(tempPath, binaryPath);
       await fs.promises.writeFile(this.getVersionPath(), release.version);
     } catch (error) {

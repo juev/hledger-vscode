@@ -73,14 +73,14 @@ export class HLedgerImportCommands implements vscode.Disposable {
           let entry: fs.Dirent | null;
 
           while ((entry = dir.readSync()) !== null) {
+            if (!entry.isFile()) {
+              continue;
+            }
+
             if (filesScanned >= HLedgerImportCommands.MAX_DIRECTORY_FILES) {
               break;
             }
             filesScanned++;
-
-            if (!entry.isFile()) {
-              continue;
-            }
 
             const lowerName = entry.name.toLowerCase();
             if (HLedgerImportCommands.JOURNAL_EXTENSIONS.some(ext => lowerName.endsWith(ext))) {

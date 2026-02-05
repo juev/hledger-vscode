@@ -216,14 +216,14 @@ export function mapVSCodeSettingsToLSP(settings: VSCodeSettings): LSPSettings {
       maxResults: validateNumber(
         settings.autoCompletion?.maxResults,
         DEFAULT_SETTINGS.completion.maxResults,
-        1,
-        1000
+        5,
+        50
       ),
       maxAccountResults: validateNumber(
         settings.autoCompletion?.maxAccountResults,
         DEFAULT_SETTINGS.completion.maxAccountResults,
-        1,
-        1000
+        5,
+        50
       ),
       transactionTemplates: {
         enabled: settings.autoCompletion?.transactionTemplates?.enabled ?? DEFAULT_SETTINGS.completion.transactionTemplates.enabled,
