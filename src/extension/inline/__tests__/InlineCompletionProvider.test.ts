@@ -24,7 +24,7 @@ function createMockContext(
 function createMockToken(isCancelled = false): vscode.CancellationToken {
   return {
     isCancellationRequested: isCancelled,
-    onCancellationRequested: jest.fn(),
+    onCancellationRequested: jest.fn(() => ({ dispose: jest.fn() })),
   };
 }
 
@@ -71,7 +71,7 @@ describe("InlineCompletionProvider", () => {
         get isCancellationRequested() {
           return tokenCancelled;
         },
-        onCancellationRequested: jest.fn(),
+        onCancellationRequested: jest.fn(() => ({ dispose: jest.fn() })),
       };
 
       mockClient.sendRequest.mockImplementation(async () => {

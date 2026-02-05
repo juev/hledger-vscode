@@ -80,7 +80,13 @@ export function activate(context: vscode.ExtensionContext): void {
             'Dismiss'
           );
           if (action === 'Install/Update LSP') {
-            await vscode.commands.executeCommand('hledger.lsp.update');
+            try {
+              await vscode.commands.executeCommand('hledger.lsp.update');
+            } catch (updateError) {
+              vscode.window.showErrorMessage(
+                `Failed to install/update: ${updateError instanceof Error ? updateError.message : String(updateError)}. Try manual installation.`
+              );
+            }
           }
         }
       }

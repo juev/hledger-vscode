@@ -152,7 +152,7 @@ export class BinaryManager {
 
         if (rateLimitRemaining === '0' && rateLimitReset) {
           const timestamp = parseInt(rateLimitReset, 10);
-          if (Number.isNaN(timestamp)) {
+          if (Number.isNaN(timestamp) || timestamp < 0 || timestamp > 253402300799) {
             throw new Error('GitHub API rate limit exceeded. Invalid rate limit reset header.');
           }
           const resetDate = new Date(timestamp * 1000);
@@ -214,8 +214,9 @@ export class BinaryManager {
 
     // Parse checksums.txt format: SHA-256 hash (64 hex chars) followed by two spaces and filename
     // Example: "a1b2c3d4...  hledger-lsp_darwin_arm64"
+    // Restrict filename pattern to expected format for security
     for (const line of text.split("\n")) {
-      const match = /^([a-f0-9]{64})\s{2}(.+)$/.exec(line.trim());
+      const match = /^([a-f0-9]{64})\s{2}(hledger-lsp_[a-z0-9_]+(?:\.exe)?)$/.exec(line.trim());
       if (match && match[1] && match[2]) {
         checksums.set(match[2], match[1]);
       }
@@ -278,8 +279,8 @@ export class BinaryManager {
         );
       }
     }
-    // Note: If Content-Length is missing, we rely on the post-download size check (line 282-292)
-    // This is acceptable because checksum verification will catch corrupted/malicious downloads
+    // Note: If Content-Length is missing, we rely on the post-download size check below.
+    // This is acceptable because checksum verification will catch corrupted/malicious downloads.
 
     const buffer = await response.arrayBuffer();
 

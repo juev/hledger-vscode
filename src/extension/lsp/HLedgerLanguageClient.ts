@@ -132,9 +132,8 @@ function getVSCodeSettings(): VSCodeSettings {
 
   const filtered = filterUndefined(rawSettings);
 
-  // Runtime validation: mapVSCodeSettingsToLSP provides defaults for all required fields,
-  // so this assertion is safe. Verify critical sections exist.
-  if (typeof filtered === 'object' && filtered !== null) {
+  // Runtime validation: Ensure result is a plain object (not Array)
+  if (typeof filtered === 'object' && filtered !== null && !Array.isArray(filtered)) {
     return filtered as VSCodeSettings;
   }
 

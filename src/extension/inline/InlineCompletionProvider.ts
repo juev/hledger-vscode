@@ -14,21 +14,38 @@ async function withTimeout<T>(
   token: vscode.CancellationToken
 ): Promise<T | undefined> {
   return new Promise((resolve) => {
-    const timeoutId = setTimeout(() => resolve(undefined), timeoutMs);
+    let resolved = false;
+    const timeoutId = setTimeout(() => {
+      if (!resolved) {
+        resolved = true;
+        resolve(undefined);
+      }
+    }, timeoutMs);
 
-    token.onCancellationRequested(() => {
-      clearTimeout(timeoutId);
-      resolve(undefined);
+    const disposable = token.onCancellationRequested(() => {
+      if (!resolved) {
+        resolved = true;
+        clearTimeout(timeoutId);
+        resolve(undefined);
+      }
     });
 
     promise
       .then((result) => {
-        clearTimeout(timeoutId);
-        resolve(result);
+        if (!resolved) {
+          resolved = true;
+          disposable.dispose();
+          clearTimeout(timeoutId);
+          resolve(result);
+        }
       })
       .catch(() => {
-        clearTimeout(timeoutId);
-        resolve(undefined);
+        if (!resolved) {
+          resolved = true;
+          disposable.dispose();
+          clearTimeout(timeoutId);
+          resolve(undefined);
+        }
       });
   });
 }

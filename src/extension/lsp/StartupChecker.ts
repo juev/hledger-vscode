@@ -95,6 +95,9 @@ export class StartupChecker {
       )
     ).catch((error: Error) => {
       console.error('Failed to save update decline preference:', error);
+      vscode.window.showWarningMessage(
+        `Failed to save preference: ${error.message}`
+      );
     });
   }
 

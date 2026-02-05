@@ -482,10 +482,6 @@ export class DocumentFormatter {
       return failure(new Error("Content must be a string"));
     }
 
-    if (content === null || content === undefined) {
-      return failure(new Error("Content cannot be null or undefined"));
-    }
-
     try {
       const lines = content.split("\n");
       const transactions: TransactionBlock[] = [];
@@ -512,8 +508,8 @@ export class DocumentFormatter {
           };
         }
         // Check if this is a posting line within a transaction
-        else if (currentTransaction && this.isPostingLine(line!)) {
-          const posting = this.parsePostingLine(line!, lineNumber);
+        else if (currentTransaction && this.isPostingLine(line)) {
+          const posting = this.parsePostingLine(line, lineNumber);
           if (posting) {
             currentTransaction.postings.push(posting);
           }
