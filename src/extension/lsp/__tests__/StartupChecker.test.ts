@@ -360,7 +360,7 @@ describe("StartupChecker", () => {
       expect(firstResult.action).toBe("update");
 
       await checker.showUpdateNotification("v0.1.0", "v0.2.0");
-      checker.markUpdateDeclinedThisSession();
+      checker.markUpdateDeclined();
 
       const secondResult = await checker.checkOnActivation();
       expect(secondResult.action).toBe("none");
@@ -383,7 +383,7 @@ describe("StartupChecker", () => {
       };
 
       const checker1 = new StartupChecker(mockLSPManager, mockContext);
-      checker1.markUpdateDeclinedThisSession();
+      checker1.markUpdateDeclined();
 
       const checker2 = new StartupChecker(mockLSPManager, mockContext2);
       const result = await checker2.checkOnActivation();

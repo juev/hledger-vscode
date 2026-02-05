@@ -86,7 +86,7 @@ export class StartupChecker {
     return Date.now() < declinedUntil;
   }
 
-  markUpdateDeclinedThisSession(): void {
+  markUpdateDeclined(): void {
     const declineUntil = Date.now() + StartupChecker.DECLINE_DURATION_MS;
     void this.context.globalState.update(
       StartupChecker.UPDATE_DECLINE_KEY,

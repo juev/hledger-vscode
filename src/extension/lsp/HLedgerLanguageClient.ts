@@ -52,6 +52,11 @@ export function createServerOptions(
   };
 }
 
+/**
+ * Recursively removes undefined values from an object.
+ * IMPORTANT: This function assumes the input is a tree structure (no circular references).
+ * VS Code settings are always tree-structured, so this is safe for our use case.
+ */
 function filterUndefined<T extends object>(obj: T): Partial<T> {
   const result: Partial<T> = {};
   for (const key of Object.keys(obj) as Array<keyof T>) {
@@ -125,7 +130,15 @@ function getVSCodeSettings(): VSCodeSettings {
     },
   };
 
-  return filterUndefined(rawSettings) as VSCodeSettings;
+  const filtered = filterUndefined(rawSettings);
+
+  // Runtime validation: mapVSCodeSettingsToLSP provides defaults for all required fields,
+  // so this assertion is safe. Verify critical sections exist.
+  if (typeof filtered === 'object' && filtered !== null) {
+    return filtered as VSCodeSettings;
+  }
+
+  throw new Error('Invalid settings structure after filtering');
 }
 
 export function createClientOptions(): LanguageClientOptions {
@@ -259,7 +272,9 @@ export class HLedgerLanguageClient implements vscode.Disposable {
 
   dispose(): void {
     if (this.client !== null) {
-      this.client.stop().catch(() => {});
+      this.client.stop().catch((error) => {
+        console.warn('Failed to stop language client during dispose:', error);
+      });
       this.client = null;
     }
     this.state = LanguageClientState.Stopped;

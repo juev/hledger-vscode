@@ -70,7 +70,7 @@ export function activate(context: vscode.ExtensionContext): void {
             console.error("Failed to update HLedger LSP server:", error);
           }
         } else {
-          startupChecker.markUpdateDeclinedThisSession();
+          startupChecker.markUpdateDeclined();
         }
       } else if (result.action === "error") {
         console.error("Failed to check for LSP updates:", result.error);
@@ -254,6 +254,9 @@ export function activate(context: vscode.ExtensionContext): void {
 
   } catch (error) {
     console.error("HLedger extension activation failed:", error);
+    void vscode.window.showErrorMessage(
+      `HLedger extension failed to activate: ${error instanceof Error ? error.message : String(error)}`
+    );
   }
 }
 

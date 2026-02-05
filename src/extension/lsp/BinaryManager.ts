@@ -260,8 +260,25 @@ export class BinaryManager {
       );
     }
 
+    // Validate Content-Length before loading into memory to prevent memory exhaustion
+    const contentLength = response.headers.get('content-length');
+    if (contentLength) {
+      const size = parseInt(contentLength, 10);
+      if (size > MAX_BINARY_SIZE) {
+        throw new Error(
+          `Binary size ${size} exceeds maximum allowed size ${MAX_BINARY_SIZE}`
+        );
+      }
+      if (size < MIN_BINARY_SIZE) {
+        throw new Error(
+          `Binary size ${size} is below minimum required size ${MIN_BINARY_SIZE}`
+        );
+      }
+    }
+
     const buffer = await response.arrayBuffer();
 
+    // Double-check actual size after download
     if (buffer.byteLength > MAX_BINARY_SIZE) {
       throw new Error(
         `Binary size ${buffer.byteLength} exceeds maximum allowed size ${MAX_BINARY_SIZE}`
@@ -282,8 +299,8 @@ export class BinaryManager {
 
     const binaryPath = this.getBinaryPath();
     const versionPath = this.getVersionPath();
-    const tempBinaryPath = `${binaryPath}.tmp.${Date.now()}`;
-    const tempVersionPath = `${versionPath}.tmp.${Date.now()}`;
+    const tempBinaryPath = `${binaryPath}.tmp.${crypto.randomUUID()}`;
+    const tempVersionPath = `${versionPath}.tmp.${crypto.randomUUID()}`;
 
     try {
       await fs.promises.mkdir(path.dirname(binaryPath), { recursive: true });
@@ -301,9 +318,9 @@ export class BinaryManager {
         await fd.close();
       }
 
-      // Atomic rename of both binary and version file (transaction commit)
-      await fs.promises.rename(tempBinaryPath, binaryPath);
+      // Atomic rename: version file first, then binary (safer to have missing version than missing binary)
       await fs.promises.rename(tempVersionPath, versionPath);
+      await fs.promises.rename(tempBinaryPath, binaryPath);
     } catch (error) {
       // Cleanup temp files on error
       try {

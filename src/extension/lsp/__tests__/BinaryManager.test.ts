@@ -9,6 +9,18 @@ import {
   getBinaryName,
 } from "../BinaryManager";
 
+// Helper to create mock headers for fetch responses
+function createMockHeaders(contentLength?: number) {
+  return {
+    get: (name: string) => {
+      if (name === 'content-length' && contentLength !== undefined) {
+        return String(contentLength);
+      }
+      return null;
+    },
+  };
+}
+
 describe("getPlatformInfo", () => {
   it("returns darwin-arm64 on macOS ARM", () => {
     const info = getPlatformInfo("darwin", "arm64");
@@ -340,6 +352,7 @@ describe("BinaryManager", () => {
         }
         return Promise.resolve({
           ok: true,
+          headers: createMockHeaders(binaryContent.byteLength),
           arrayBuffer: () =>
             Promise.resolve(
               binaryContent.buffer.slice(
@@ -461,6 +474,7 @@ describe("BinaryManager", () => {
         }
         return Promise.resolve({
           ok: true,
+          headers: createMockHeaders(largeBinary.byteLength),
           arrayBuffer: () =>
             Promise.resolve(
               largeBinary.buffer.slice(
@@ -512,6 +526,7 @@ describe("BinaryManager", () => {
         }
         return Promise.resolve({
           ok: true,
+          headers: createMockHeaders(tinyBinary.byteLength),
           arrayBuffer: () =>
             Promise.resolve(
               tinyBinary.buffer.slice(
@@ -549,6 +564,7 @@ describe("BinaryManager", () => {
         }
         return Promise.resolve({
           ok: true,
+          headers: createMockHeaders(binaryContent.byteLength),
           arrayBuffer: () => Promise.resolve(binaryContent.buffer),
         });
       });
@@ -594,6 +610,7 @@ describe("BinaryManager", () => {
         }
         return Promise.resolve({
           ok: true,
+          headers: createMockHeaders(binaryContent.byteLength),
           arrayBuffer: () =>
             Promise.resolve(
               binaryContent.buffer.slice(
@@ -647,6 +664,7 @@ describe("BinaryManager", () => {
         }
         return Promise.resolve({
           ok: true,
+          headers: createMockHeaders(binaryContent.byteLength),
           arrayBuffer: () =>
             Promise.resolve(
               binaryContent.buffer.slice(

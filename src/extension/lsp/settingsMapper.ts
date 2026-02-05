@@ -196,9 +196,6 @@ export function mapVSCodeSettingsToLSP(settings: VSCodeSettings): LSPSettings {
     ?? settings.diagnostics?.checkBalance
     ?? DEFAULT_SETTINGS.diagnostics.unbalancedTransactions;
 
-  const minAlignmentColumn = settings.formatting?.minAlignmentColumn
-    ?? DEFAULT_SETTINGS.formatting.minAlignmentColumn;
-
   return {
     features: {
       hover: settings.features?.hover ?? DEFAULT_SETTINGS.features.hover,
