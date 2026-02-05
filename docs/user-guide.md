@@ -375,11 +375,15 @@ D RUB 1 000,00
 
 ## Syntax Highlighting
 
-Syntax highlighting is provided exclusively by the Language Server using semantic tokens.
+The extension provides two levels of syntax highlighting:
 
-**Requirements:**
-- Language Server must be running
-- Semantic tokens must be enabled (default: true)
+1. **TextMate Grammar** (always available): Basic syntax highlighting using VS Code's built-in TextMate engine. Works without the Language Server.
+2. **Semantic Tokens** (requires LSP): Rich, context-aware highlighting provided by the Language Server. Offers more accurate and detailed highlighting.
+
+**Automatic Fallback:** When the Language Server is not running or semantic tokens are disabled, VS Code automatically uses TextMate grammar highlighting. Basic syntax highlighting is always available.
+
+**Recommended Setup:**
+- Language Server running + Semantic tokens enabled (default) = Best experience
 
 ### Enable/Disable Semantic Highlighting
 
@@ -732,18 +736,23 @@ The extension uses a Language Server Protocol (LSP) backend for most features. T
 
 ### Without Language Server
 
-When the LSP is not installed or not running, the following features are unavailable:
-- Syntax highlighting
+When the LSP is not installed or not running:
+
+**Limited features:**
+- **Syntax highlighting**: Basic TextMate grammar highlighting (automatic fallback). For richer, context-aware highlighting, enable LSP semantic tokens.
+- **Smart Enter/Tab**: Smart indentation and alignment (works locally)
+- **CLI integration**: balance, stats, income statement commands (works locally)
+- **CSV/TSV import**: Import functionality (works locally)
+
+**Unavailable features (require LSP):**
 - Inline completions (ghost text)
 - Auto-completion (accounts, payees, dates, etc.)
 - Diagnostics and validation
 - Document formatting
 - Code navigation (Go to Definition, Find References)
-
-Basic features that work without LSP:
-- Smart Enter/Tab key behavior
-- CLI integration (balance, stats, income statement)
-- CSV/TSV import
+- Hover information
+- Folding ranges
+- Workspace symbols
 
 We recommend installing the LSP for the full experience. The extension will prompt you to install it on first activation.
 

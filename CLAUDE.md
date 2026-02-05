@@ -37,10 +37,10 @@ npx tsc --noEmit       # TypeScript strict type check (run before committing)
 
 ```bash
 # Run a single test file
-npx jest src/extension/__tests__/HLedgerParser.workspace.test.ts
+npx jest src/extension/__tests__/LSPManager.test.ts
 
 # Run tests matching a pattern
-npx jest --testNamePattern="should parse accounts"
+npx jest --testNamePattern="should start LSP server"
 
 # Run tests in a specific directory
 npx jest src/extension/import/__tests__/
@@ -56,30 +56,28 @@ npx jest src/extension/import/__tests__/
 
 ### Core Components
 
-- **main.ts**: Entry point with service factory pattern, explicit `vscode.Disposable` management
-- **StrictCompletionProvider**: Context-aware completion with position analysis
-- **HLedgerParser**: Three-stage parsing pipeline (Lexer → AST Builder → File Processor)
-- **SimpleProjectCache**: File caching with `mtimeMs` validation for incremental updates
-- **HLedgerConfig**: Configuration management; `resetData()` preserves cache, `clearCache()` invalidates all
+- **main.ts**: Entry point with LSP client initialization and service factory pattern
+- **LSPManager**: Manages hledger-lsp Language Server lifecycle (start, stop, restart)
+- **BinaryManager**: Downloads and manages hledger-lsp binary across platforms (darwin-arm64/x64, linux-x64, windows-x64)
+- **StartupChecker**: Verifies LSP availability on activation, prompts for installation if missing
+- **InlineCompletionProvider**: Ghost text completions for transaction templates using LSP data
+- **CLI Commands**: Direct hledger CLI integration (balance, stats, income statement)
+- **Import Commands**: CSV/TSV import with account resolution
 
-### Parser Pipeline
+### LSP Features
 
-1. **HLedgerLexer** (`lexer/`) - Tokenizes content into typed tokens
-2. **HLedgerASTBuilder** (`ast/`) - Extracts accounts, payees, tags with frequency counts
-3. **HLedgerFileProcessor** (`processor/`) - Handles includes with cycle detection
+The hledger-lsp Language Server provides:
 
-Legacy parsing (`enhanceWithLegacyParsing()`) handles commodity format templates and complex tag extraction not yet migrated to AST.
-
-### Balance Assertion Detection
-
-Shared utility in `src/extension/balance/utils.ts`:
-
-```typescript
-export const BALANCE_ASSERTION_PATTERN = /\s+(:?={1,2}\*?)\s+/;
-export function hasBalanceAssertion(line: string): boolean;
-```
-
-Detects all assertion operators: `=`, `==`, `=*`, `==*`, `:=`. Requires whitespace around operator to avoid matching equals signs in account names (e.g., `Expenses:Meeting=Food`).
+- **Parsing & Validation**: Full hledger syntax parsing with diagnostics
+- **Completion**: Context-aware completion for accounts, payees, commodities, dates, tags
+- **Semantic Tokens**: Rich syntax highlighting with 16 token types
+- **Formatting**: Automatic transaction alignment and formatting
+- **Code Actions**: Quick fixes for common issues (e.g., balance assertions)
+- **Hover**: Documentation and information on hover
+- **Navigation**: Go to Definition, Find References
+- **Folding**: Transaction and directive folding ranges
+- **Document Links**: Clickable include directives
+- **Workspace Symbols**: Symbol search across all files
 
 ### Highlighting
 
@@ -97,87 +95,17 @@ Syntax highlighting is provided exclusively by the Language Server using semanti
 
 The extension uses standard TextMate scopes without `.hledger` suffixes, ensuring proper theme integration. Users can customize colors either per token type (`"account:hledger": "#color"`) or globally via TextMate scope rules.
 
-If the Language Server is not running or semantic tokens are disabled, there will be no syntax highlighting.
+**Fallback behavior:** When the Language Server is not running or semantic tokens are disabled, VS Code automatically uses the TextMate grammar (`syntaxes/hledger.tmLanguage.json`) for syntax highlighting. Basic syntax highlighting is always available, but semantic tokens from LSP provide richer, context-aware highlighting.
 
 ### Completion
 
-- Position-based context detection in `strict/StrictPositionAnalyzer.ts`
-- `CompletionSuppressor` prevents completions in forbidden zones
-- Frequency-based prioritization for accounts/payees
-- FZF-style gap-based fuzzy matching (fewer gaps = higher score)
-- Transaction templates with SnippetString tabstops for cursor navigation
+**Note:** After LSP migration, completion functionality is provided by the hledger-lsp server via `textDocument/completion` protocol. The LSP server handles:
+- Context-aware completion (accounts, payees, dates, commodities, tags)
+- Frequency-based prioritization
+- Fuzzy matching
+- Transaction templates
 
-### VS Code Completion Sorting (gopls hack)
-
-**Problem:** VS Code ignores custom `sortText` ordering and re-sorts completions by its own fuzzy matching score. This breaks frequency-based sorting (e.g., "Доходы:Продажа" appears before "Расходы:Продукты" even when the latter has 1000x more uses).
-
-**Solution (from gopls):** Force VS Code to respect our ordering by making all items have equal fuzzy scores:
-
-1. **Return `CompletionList` with `isIncomplete: true`** - Prevents VS Code from caching and re-sorting
-2. **Set identical `filterText` for all items** - Use the query string (`context.query`) as filterText for every completion item
-3. **Use index-based `sortText`** - Format: `"00001_score_name"` with zero-padded index as primary key
-
-```typescript
-// StrictCompletionProvider.ts
-return new vscode.CompletionList(result, true);  // isIncomplete=true
-
-// AccountCompleter.ts
-item.filterText = context.query || '';  // Same for all items
-item.sortText = `${index.toString().padStart(5, '0')}_${scoreStr}_${match.item}`;
-```
-
-**Score inversion for lexicographic ordering:**
-
-```typescript
-// High score = low sortText number = appears first
-const cappedScore = Math.min(Math.round(match.score), 9999);
-const scoreStr = (10000 - cappedScore).toString().padStart(5, '0');
-```
-
-**Cap scores to prevent overflow:** `usageCount * 20` can exceed max values, causing negative sortText. Always cap: `Math.min(score, 9999)` for accounts, `Math.min(score, 999)` for others.
-
-### Completion Filtering (Cache Pollution Prevention)
-
-**Problem:** Incomplete typed text (e.g., "прод" while typing "Расходы:Продукты") could appear in completion results through two mechanisms:
-
-1. **Cache pollution**: `mergeCurrentData()` mutated shared Set/Map references, polluting workspace cache
-2. **Low-usage exact matches**: Incomplete text saved previously could appear as valid completions
-
-**Solution (two-part fix):**
-
-1. **Cache isolation** (`HLedgerConfig.ts`): Clone workspace data before merging current document data
-
-   ```typescript
-   // When currentLine is provided, clone first to avoid cache mutation
-   if (currentLine !== undefined && this.data) {
-     this.data = this.cloneData(this.data);
-   }
-   this.mergeCurrentData(currentData);
-   ```
-
-2. **Filter low-usage exact matches** (`AccountCompleter.ts`):
-
-   ```typescript
-   const filteredMatches = matches.filter(match => {
-     const isExactQueryMatch = match.item.toLowerCase() === context.query.toLowerCase();
-     const usageCount = this.config.accountUsage.get(match.item) ?? 0;
-     const isLowUsage = usageCount <= 2;
-     return !(isExactQueryMatch && isLowUsage);
-   });
-   ```
-
-**Why usage count ≤ 2?** Low count (1-2) likely indicates incomplete typing that was saved; established accounts have higher counts.
-
-### Transaction Templates
-
-**Template key format**: Keys use `||` delimiter with sorted accounts: `generateTemplateKey(accounts).join("||")`. Prevents collision when same payee has different account combinations.
-
-**Buffer limits**:
-
-- `MAX_RECENT_TRANSACTIONS_PER_PAYEE = 50` - circular buffer for frequency-based sorting
-- `MAX_TEMPLATES_PER_PAYEE = 5` - only 5 unique templates kept per payee
-
-**Alignment preservation**: `maxAccountNameLength` must be preserved when cloning data in `createMutableData()`. Use displayed account length (not escaped) for alignment calculation.
+The extension's `InlineCompletionProvider` handles ghost text completions for transaction templates using data from LSP.
 
 ### Inline Ghost Text Completion
 
@@ -188,18 +116,12 @@ const scoreStr = (10000 - cappedScore).toString().padStart(5, '0');
 
 ### Key Directories
 
-- `src/extension/completion/` - Individual completers (Account, Commodity, Date, Payee, Tag, TransactionTemplate)
+- `src/extension/lsp/` - LSP client and manager (LSPManager, BinaryManager, StartupChecker)
 - `src/extension/inline/` - Ghost text completion (InlineCompletionProvider)
-- `src/extension/strict/` - Position analysis and validation
 - `src/extension/import/` - CSV/TSV import with account resolution
-- `src/extension/actions/` - Code actions (balance assertions, quick fixes)
-- `src/extension/diagnostics/` - Validation on save/open
-- `src/extension/balance/` - Transaction balance validation (AmountParser, TransactionExtractor, TransactionBalancer, utils)
-- `src/extension/services/` - NumberFormatService, HLedgerCliService
-
-### Type System
-
-Branded types for domain safety: `AccountName`, `PayeeName`, `TagName`, `CommodityCode`
+- `src/extension/cli/` - Direct hledger CLI integration (balance, stats, income statement)
+- `src/extension/commands/` - VS Code commands (smart enter, smart tab, etc.)
+- `syntaxes/` - TextMate grammar (fallback syntax highlighting)
 
 ### Testing
 
@@ -209,13 +131,9 @@ Branded types for domain safety: `AccountName`, `PayeeName`, `TagName`, `Commodi
 
 ## Important Implementation Details
 
-### Completion Triggers
+### Completion
 
-- Digits (0-9) for dates
-- Space for context-aware completion
-- `:` for account hierarchy navigation
-- `@` for commodities
-- `;` for comments/tags
+**Note:** Completion is provided by hledger-lsp server via the Language Server Protocol. The LSP handles all completion triggers and context-aware suggestions.
 
 ### CLI Integration
 

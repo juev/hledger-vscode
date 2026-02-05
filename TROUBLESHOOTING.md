@@ -211,17 +211,19 @@ When you run CLI commands (balance, stats, incomestatement), you'll see:
 
 **Solutions:**
 
-1. **Verify Language Server is running:**
-   - Check Output panel: View → Output → "HLedger Language Server"
-   - If not running, extension will prompt to install hledger-lsp
-2. Verify language mode: Click bottom-right → Select "hledger"
-3. Check theme compatibility: Try different color theme
-4. Enable semantic tokens:
+1. **Verify language mode:** Click bottom-right → Select "hledger"
+   - Basic TextMate syntax highlighting works WITHOUT the Language Server
+   - If you see no colors at all, this is likely a language mode issue
 
-   ```json
-   "editor.semanticHighlighting.enabled": true,
-   "hledger.features.semanticTokens": true
-   ```
+2. **For rich semantic highlighting (optional):**
+   - Verify Language Server is running: View → Output → "HLedger Language Server"
+   - Enable semantic tokens:
+     ```json
+     "editor.semanticHighlighting.enabled": true,
+     "hledger.features.semanticTokens": true
+     ```
+
+3. Check theme compatibility: Try different color theme
 
 ### Wrong Colors
 
@@ -229,7 +231,9 @@ When you run CLI commands (balance, stats, incomestatement), you'll see:
 
 **Solutions:**
 
-1. **Check if hledger-lsp is running:** Semantic highlighting requires the Language Server. Verify with `Ctrl+Shift+P` → "HLedger: Show Language Server Status"
+1. **Two highlighting modes:**
+   - **TextMate grammar** (basic, always available): Uses standard scopes styled by your theme
+   - **Semantic tokens** (rich, requires LSP): Context-aware highlighting from Language Server
 
 2. **Colors adapt to your VS Code theme:** The extension uses standard TextMate scopes (e.g., `entity.name.function`, `constant.numeric`) that are styled differently by each theme.
 
@@ -277,7 +281,7 @@ When you run CLI commands (balance, stats, incomestatement), you'll see:
 
 ### LSP Not Starting
 
-**Symptoms:** No completions, no diagnostics, no syntax highlighting
+**Symptoms:** No completions, no diagnostics, no semantic highlighting (basic TextMate highlighting still works)
 
 **Solutions:**
 
