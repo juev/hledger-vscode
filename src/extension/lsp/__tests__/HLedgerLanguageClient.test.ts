@@ -213,4 +213,45 @@ describe("HLedgerLanguageClient", () => {
       client.dispose();
     });
   });
+
+  describe("getPayeeAccountHistory", () => {
+    it("returns null when client is not ready", async () => {
+      const client = new HLedgerLanguageClient(binaryPath);
+      // Not started - not ready
+      const result = await client.getPayeeAccountHistory("file:///test.journal");
+      expect(result).toBeNull();
+    });
+
+    it("returns null when sendRequest throws", async () => {
+      const client = new HLedgerLanguageClient(binaryPath);
+      await client.start();
+
+      // Mock sendRequest to throw
+      const internalClient = client.getClient();
+      jest.spyOn(internalClient!, "sendRequest").mockRejectedValue(new Error("Network error"));
+
+      const result = await client.getPayeeAccountHistory("file:///test.journal");
+      expect(result).toBeNull();
+
+      client.dispose();
+    });
+
+    it("returns result on success", async () => {
+      const client = new HLedgerLanguageClient(binaryPath);
+      await client.start();
+
+      const mockResult = {
+        payeeAccounts: { "Store": ["Expenses:Food"] },
+        pairUsage: { "Store::Expenses:Food": 5 }
+      };
+
+      const internalClient = client.getClient();
+      jest.spyOn(internalClient!, "sendRequest").mockResolvedValue(mockResult);
+
+      const result = await client.getPayeeAccountHistory("file:///test.journal");
+      expect(result).toEqual(mockResult);
+
+      client.dispose();
+    });
+  });
 });

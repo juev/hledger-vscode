@@ -45,6 +45,9 @@ export class HLedgerImportCommands implements vscode.Disposable {
    * Priority: LEDGER_FILE env → hledger.cli.journalFile → workspace .journal files
    */
   private getJournalUri(): string | null {
+    const MAX_DIRECTORY_FILES = 1000;
+    const JOURNAL_EXTENSIONS = ['.journal', '.hledger', '.ledger'];
+
     // 1. Try LEDGER_FILE environment variable
     const ledgerFile = process.env.LEDGER_FILE?.trim();
     if (ledgerFile && fs.existsSync(ledgerFile)) {
@@ -65,10 +68,13 @@ export class HLedgerImportCommands implements vscode.Disposable {
         const folderPath = folder.uri.fsPath;
         try {
           const files = fs.readdirSync(folderPath);
-          const journalFiles = files.filter(f => f.endsWith('.journal'));
-          if (journalFiles.length > 0 && journalFiles[0]) {
-            const journalPath = path.join(folderPath, journalFiles[0]);
-            return vscode.Uri.file(journalPath).toString();
+          // DoS protection: limit files to scan
+          const limitedFiles = files.slice(0, MAX_DIRECTORY_FILES);
+          for (const file of limitedFiles) {
+            if (JOURNAL_EXTENSIONS.some(ext => file.endsWith(ext))) {
+              const journalPath = path.join(folderPath, file);
+              return vscode.Uri.file(journalPath).toString();
+            }
           }
         } catch {
           // Skip folders we can't read
@@ -90,10 +96,23 @@ export class HLedgerImportCommands implements vscode.Disposable {
     const pairUsage = new Map<string, UsageCount>();
 
     for (const [payee, accounts] of Object.entries(result.payeeAccounts)) {
-      payeeAccounts.set(payee as PayeeName, new Set(accounts as AccountName[]));
+      // Validate payee is non-empty string
+      if (!payee || typeof payee !== 'string') continue;
+
+      // Filter and validate accounts array
+      const validAccounts = (accounts ?? []).filter(
+        (acc): acc is string => typeof acc === 'string' && acc.length > 0
+      );
+      if (validAccounts.length === 0) continue;
+
+      payeeAccounts.set(payee as PayeeName, new Set(validAccounts as AccountName[]));
     }
 
     for (const [key, count] of Object.entries(result.pairUsage)) {
+      // Validate key is non-empty string and count is non-negative number
+      if (!key || typeof key !== 'string') continue;
+      if (typeof count !== 'number' || count < 0) continue;
+
       pairUsage.set(key, count as UsageCount);
     }
 

@@ -206,12 +206,20 @@ export class HLedgerLanguageClient implements vscode.Disposable {
       return null;
     }
 
+    const timeout = 5000;
+    const timeoutPromise = new Promise<null>((resolve) => {
+      setTimeout(() => resolve(null), timeout);
+    });
+
     try {
-      return await this.client.sendRequest<PayeeAccountHistoryResult>(
+      const requestPromise = this.client.sendRequest<PayeeAccountHistoryResult>(
         'hledger/payeeAccountHistory',
         { textDocument: { uri } }
       );
-    } catch {
+
+      return await Promise.race([requestPromise, timeoutPromise]);
+    } catch (error) {
+      console.error('LSP payee account history request failed:', error);
       return null;
     }
   }
