@@ -252,8 +252,8 @@ export function mapVSCodeSettingsToLSP(settings: VSCodeSettings): LSPSettings {
       indentSize: validateNumber(
         settings.formatting?.indentSize,
         DEFAULT_SETTINGS.formatting.indentSize,
-        0,
-        16
+        2,
+        8
       ),
       alignAmounts: settings.formatting?.alignAmounts ?? DEFAULT_SETTINGS.formatting.alignAmounts,
       minAlignmentColumn: validateNumber(

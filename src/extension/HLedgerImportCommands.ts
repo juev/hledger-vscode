@@ -88,8 +88,8 @@ export class HLedgerImportCommands implements vscode.Disposable {
             }
           }
           // Note: for-await automatically closes the directory when iteration completes or breaks
-        } catch {
-          // Skip folders we can't read
+        } catch (error) {
+          console.debug(`[HLedgerImport] Unable to read directory ${folderPath}:`, error);
         }
       }
     }

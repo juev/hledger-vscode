@@ -3,9 +3,9 @@ import * as vscode from "vscode";
 export function getCustomLSPPath(): string | null {
   const customPath = vscode.workspace
     .getConfiguration("hledger.lsp")
-    .get<string>("path");
-  if (customPath !== undefined && customPath.trim() !== "") {
-    return customPath.trim();
+    .get<string>("path")?.trim();
+  if (customPath && customPath !== "") {
+    return customPath;
   }
   return null;
 }

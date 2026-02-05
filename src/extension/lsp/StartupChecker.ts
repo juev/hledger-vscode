@@ -88,12 +88,10 @@ export class StartupChecker {
 
   markUpdateDeclined(): void {
     const declineUntil = Date.now() + StartupChecker.DECLINE_DURATION_MS;
-    Promise.resolve(
-      this.context.globalState.update(
-        StartupChecker.UPDATE_DECLINE_KEY,
-        declineUntil
-      )
-    ).catch((error: Error) => {
+    void this.context.globalState.update(
+      StartupChecker.UPDATE_DECLINE_KEY,
+      declineUntil
+    ).then(undefined, (error: Error) => {
       console.error('Failed to save update decline preference:', error);
       vscode.window.showWarningMessage(
         `Failed to save preference: ${error.message}`

@@ -123,7 +123,7 @@ export class LSPManager implements vscode.Disposable {
 
     if (hasCustomLSPPath()) {
       try {
-        await fs.promises.access(binaryPath, fs.constants.R_OK);
+        await fs.promises.access(binaryPath, fs.constants.X_OK);
       } catch {
         throw new Error(`Custom LSP binary not found at: ${binaryPath}`);
       }
