@@ -4,13 +4,17 @@
 
 import * as vscode from "vscode";
 import * as path from "path";
+import * as fs from "fs";
 import {
   TabularDataParser,
   ColumnDetector,
   TransactionGenerator,
   ImportOptions,
   DEFAULT_IMPORT_OPTIONS,
+  PayeeAccountHistory,
 } from "./import";
+import { PayeeAccountHistoryResult } from "./lsp";
+import { AccountName, PayeeName, UsageCount } from "./types";
 
 /**
  * Import commands for converting tabular data to hledger format
@@ -18,14 +22,82 @@ import {
 export class HLedgerImportCommands implements vscode.Disposable {
   private readonly parser: TabularDataParser;
   private readonly columnDetector: ColumnDetector;
+  private readonly getLspClient: () => {
+    getPayeeAccountHistory(uri: string): Promise<PayeeAccountHistoryResult | null>
+  } | null;
 
-  constructor() {
+  constructor(
+    getLspClient: () => {
+      getPayeeAccountHistory(uri: string): Promise<PayeeAccountHistoryResult | null>
+    } | null
+  ) {
     this.parser = new TabularDataParser();
     this.columnDetector = new ColumnDetector();
+    this.getLspClient = getLspClient;
   }
 
   dispose(): void {
     // No resources to dispose
+  }
+
+  /**
+   * Find journal file URI for LSP query
+   * Priority: LEDGER_FILE env → hledger.cli.journalFile → workspace .journal files
+   */
+  private getJournalUri(): string | null {
+    // 1. Try LEDGER_FILE environment variable
+    const ledgerFile = process.env.LEDGER_FILE?.trim();
+    if (ledgerFile && fs.existsSync(ledgerFile)) {
+      return vscode.Uri.file(ledgerFile).toString();
+    }
+
+    // 2. Try hledger.cli.journalFile configuration
+    const config = vscode.workspace.getConfiguration("hledger");
+    const journalFile = config.get<string>("cli.journalFile", "").trim();
+    if (journalFile && fs.existsSync(journalFile)) {
+      return vscode.Uri.file(journalFile).toString();
+    }
+
+    // 3. Find first .journal file in workspace
+    const workspaceFolders = vscode.workspace.workspaceFolders;
+    if (workspaceFolders && workspaceFolders.length > 0) {
+      for (const folder of workspaceFolders) {
+        const folderPath = folder.uri.fsPath;
+        try {
+          const files = fs.readdirSync(folderPath);
+          const journalFiles = files.filter(f => f.endsWith('.journal'));
+          if (journalFiles.length > 0 && journalFiles[0]) {
+            const journalPath = path.join(folderPath, journalFiles[0]);
+            return vscode.Uri.file(journalPath).toString();
+          }
+        } catch {
+          // Skip folders we can't read
+          continue;
+        }
+      }
+    }
+
+    return null;
+  }
+
+  /**
+   * Convert LSP response to PayeeAccountHistory format
+   */
+  private convertToPayeeAccountHistory(
+    result: PayeeAccountHistoryResult
+  ): PayeeAccountHistory {
+    const payeeAccounts = new Map<PayeeName, Set<AccountName>>();
+    const pairUsage = new Map<string, UsageCount>();
+
+    for (const [payee, accounts] of Object.entries(result.payeeAccounts)) {
+      payeeAccounts.set(payee as PayeeName, new Set(accounts as AccountName[]));
+    }
+
+    for (const [key, count] of Object.entries(result.pairUsage)) {
+      pairUsage.set(key, count as UsageCount);
+    }
+
+    return { payeeAccounts, pairUsage };
   }
 
   /**
@@ -137,8 +209,23 @@ export class HLedgerImportCommands implements vscode.Disposable {
           // Get import options from configuration
           const options = this.getImportOptions();
 
-          // Generate transactions
-          const generator = new TransactionGenerator(options);
+          // Try to fetch payee history from LSP if enabled
+          let payeeHistory: PayeeAccountHistory | undefined;
+          if (options.useJournalHistory !== false) {
+            const journalUri = this.getJournalUri();
+            if (journalUri) {
+              const lspClient = this.getLspClient();
+              if (lspClient) {
+                const lspResult = await lspClient.getPayeeAccountHistory(journalUri);
+                if (lspResult) {
+                  payeeHistory = this.convertToPayeeAccountHistory(lspResult);
+                }
+              }
+            }
+          }
+
+          // Generate transactions with history
+          const generator = new TransactionGenerator(options, payeeHistory);
           const result = generator.generate(dataWithMappings);
 
           // Check for fatal errors

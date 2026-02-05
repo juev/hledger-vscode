@@ -1,7 +1,7 @@
 import * as vscode from "vscode";
 import * as fs from "fs";
 import { BinaryManager } from "./BinaryManager";
-import { HLedgerLanguageClient, LanguageClientState } from "./HLedgerLanguageClient";
+import { HLedgerLanguageClient, LanguageClientState, PayeeAccountHistoryResult } from "./HLedgerLanguageClient";
 import { hasCustomLSPPath, getCustomLSPPath } from "./lspConfig";
 
 export interface LSPManagerLike {
@@ -160,6 +160,10 @@ export class LSPManager implements vscode.Disposable {
 
   getLanguageClient(): { sendRequest<R>(method: string, params?: unknown): Promise<R> } | null {
     return this.client?.getClient() ?? null;
+  }
+
+  async getPayeeAccountHistory(uri: string): Promise<PayeeAccountHistoryResult | null> {
+    return this.client?.getPayeeAccountHistory(uri) ?? null;
   }
 
   dispose(): void {

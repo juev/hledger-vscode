@@ -13,6 +13,11 @@ export enum LanguageClientState {
   Running = "running",
 }
 
+export interface PayeeAccountHistoryResult {
+  payeeAccounts: Record<string, string[]>;
+  pairUsage: Record<string, number>;
+}
+
 export interface ServerOptionsConfig {
   debug?: boolean;
 }
@@ -194,6 +199,21 @@ export class HLedgerLanguageClient implements vscode.Disposable {
 
   getClient(): LanguageClient | null {
     return this.client;
+  }
+
+  async getPayeeAccountHistory(uri: string): Promise<PayeeAccountHistoryResult | null> {
+    if (!this.isReady() || this.client === null) {
+      return null;
+    }
+
+    try {
+      return await this.client.sendRequest<PayeeAccountHistoryResult>(
+        'hledger/payeeAccountHistory',
+        { textDocument: { uri } }
+      );
+    } catch {
+      return null;
+    }
   }
 
   dispose(): void {

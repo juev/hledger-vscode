@@ -151,8 +151,8 @@ export function activate(context: vscode.ExtensionContext): void {
       ),
     );
 
-    // Create import commands (without HLedgerConfig dependency)
-    const importCommands = new HLedgerImportCommands();
+    // Create import commands with LSP manager for history
+    const importCommands = new HLedgerImportCommands(() => lspManager);
     context.subscriptions.push(importCommands);
 
     // Register import commands
