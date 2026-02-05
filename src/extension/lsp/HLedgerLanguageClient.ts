@@ -270,13 +270,24 @@ export class HLedgerLanguageClient implements vscode.Disposable {
     }
   }
 
+  /**
+   * Disposes the language client.
+   * Note: VS Code's Disposable interface requires synchronous dispose().
+   * The underlying LanguageClient.stop() is async, so cleanup may not complete
+   * before this method returns. In practice, this is acceptable because:
+   * 1. The OS will clean up the process when VS Code exits
+   * 2. The client reference is nulled to prevent further use
+   */
   dispose(): void {
     if (this.client !== null) {
-      this.client.stop().catch((error) => {
+      const clientToStop = this.client;
+      this.client = null;
+      this.state = LanguageClientState.Stopped;
+      clientToStop.stop().catch((error) => {
         console.warn('Failed to stop language client during dispose:', error);
       });
-      this.client = null;
+    } else {
+      this.state = LanguageClientState.Stopped;
     }
-    this.state = LanguageClientState.Stopped;
   }
 }

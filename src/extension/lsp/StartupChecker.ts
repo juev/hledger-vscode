@@ -88,10 +88,14 @@ export class StartupChecker {
 
   markUpdateDeclined(): void {
     const declineUntil = Date.now() + StartupChecker.DECLINE_DURATION_MS;
-    void this.context.globalState.update(
-      StartupChecker.UPDATE_DECLINE_KEY,
-      declineUntil
-    );
+    Promise.resolve(
+      this.context.globalState.update(
+        StartupChecker.UPDATE_DECLINE_KEY,
+        declineUntil
+      )
+    ).catch((error: Error) => {
+      console.error('Failed to save update decline preference:', error);
+    });
   }
 
   async performInstall(): Promise<void> {

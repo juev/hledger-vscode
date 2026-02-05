@@ -8,6 +8,7 @@ Quick Navigation:
 - [Performance Issues](#performance-issues)
 - [CLI Integration](#cli-integration)
 - [Syntax Highlighting](#syntax-highlighting)
+- [Language Server Issues](#language-server-issues)
 - [Known Issues](#known-issues)
 - [Getting Help](#getting-help)
 
@@ -94,6 +95,7 @@ Quick Navigation:
 3. Ensure payee exists in journal history (inline completions learn from existing transactions)
 4. Check cursor position: Must be on new line after date, not inside existing transaction
 5. Ensure not in snippet mode: Ghost text disabled during snippet editing (Tab navigation)
+6. **Ensure Language Server is running:** Inline completions require hledger-lsp. Check with `Ctrl+Shift+P` → "HLedger: Show Language Server Version"
 
 ---
 
@@ -268,6 +270,56 @@ When you run CLI commands (balance, stats, incomestatement), you'll see:
 1. Syntax error in journal file
 2. Reload window: `Ctrl+Shift+P` → "Reload Window"
 3. Check for unclosed strings or directives
+
+---
+
+## Language Server Issues
+
+### LSP Not Starting
+
+**Symptoms:** No completions, no diagnostics, no syntax highlighting
+
+**Solutions:**
+
+1. **Check Language Server status:**
+   - Run: `Ctrl+Shift+P` → "HLedger: Show Language Server Version"
+   - If "not installed", run: `Ctrl+Shift+P` → "HLedger: Install/Update Language Server"
+
+2. **Check Output panel for errors:**
+   - View → Output → "HLedger Language Server"
+   - Successful start shows: `HLedger LSP server started successfully`
+   - Errors show specific failure reason
+
+3. **Manual installation (if auto-download fails):**
+   - Download binary from: https://github.com/juev/hledger-lsp/releases
+   - Extract to a permanent location
+   - Set in settings: `"hledger.lsp.path": "/path/to/hledger-lsp"`
+
+### GitHub Rate Limit Errors
+
+**Symptoms:** "GitHub API rate limit exceeded" when installing/updating
+
+**Cause:** GitHub limits unauthenticated API requests to 60/hour per IP address.
+
+**Solutions:**
+
+1. **Wait and retry:** Error message shows when limit resets
+2. **Disable auto-update checks:**
+   ```json
+   "hledger.lsp.checkForUpdates": false
+   ```
+3. **Manual installation:** Download from GitHub releases directly (see above)
+4. **Corporate networks:** If behind NAT/proxy sharing IP with many users, consider manual installation
+
+### LSP Crashes
+
+**Symptoms:** Features stop working mid-session
+
+**Solutions:**
+
+1. Run: `Ctrl+Shift+P` → "HLedger: Restart Language Server"
+2. Check Output panel for crash details
+3. Report persistent crashes with reproduction steps
 
 ---
 

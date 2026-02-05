@@ -17,8 +17,57 @@ export function activate(context: vscode.ExtensionContext): void {
 
     const startupChecker = new StartupChecker(lspManager, context);
 
-    // Start LSP immediately if available (non-blocking)
+    // Consolidated LSP initialization (non-blocking)
     void (async (): Promise<void> => {
+      // First, check installation/update status
+      const checkResult = await startupChecker.checkOnActivation();
+
+      if (checkResult.action === "install" && checkResult.latestVersion) {
+        const shouldInstall = await startupChecker.showInstallNotification(checkResult.latestVersion);
+        if (shouldInstall) {
+          try {
+            await startupChecker.performInstall();
+            console.log("HLedger LSP server installed and started successfully");
+          } catch (error) {
+            console.error("Failed to install HLedger LSP server:", error);
+          }
+        }
+        return; // Either installed or user declined - done
+      }
+
+      if (checkResult.action === "update" && checkResult.currentVersion && checkResult.latestVersion) {
+        // Server is installed but update available - start first, then offer update
+        try {
+          await lspManager.start();
+          console.log("HLedger LSP server started successfully");
+        } catch (error) {
+          console.error("Failed to start HLedger LSP server:", error);
+          // Don't show install/update prompt on start failure if we already know update is available
+        }
+
+        const shouldUpdate = await startupChecker.showUpdateNotification(
+          checkResult.currentVersion,
+          checkResult.latestVersion
+        );
+        if (shouldUpdate) {
+          try {
+            await startupChecker.performUpdate();
+            console.log("HLedger LSP server updated successfully");
+          } catch (error) {
+            console.error("Failed to update HLedger LSP server:", error);
+          }
+        } else {
+          startupChecker.markUpdateDeclined();
+        }
+        return;
+      }
+
+      if (checkResult.action === "error") {
+        console.error("Failed to check for LSP updates:", checkResult.error);
+        // Fall through to try starting server anyway
+      }
+
+      // No install/update needed or check failed - try to start if available
       if (await lspManager.isServerAvailable()) {
         try {
           await lspManager.start();
@@ -34,46 +83,6 @@ export function activate(context: vscode.ExtensionContext): void {
             await vscode.commands.executeCommand('hledger.lsp.update');
           }
         }
-      }
-    })();
-
-    // Check for updates in background (non-blocking)
-    void (async (): Promise<void> => {
-      const result = await startupChecker.checkOnActivation();
-
-      if (result.action === "install" && result.latestVersion) {
-        const shouldInstall = await startupChecker.showInstallNotification(
-          result.latestVersion
-        );
-        if (shouldInstall) {
-          try {
-            await startupChecker.performInstall();
-            console.log("HLedger LSP server installed and started successfully");
-          } catch (error) {
-            console.error("Failed to install HLedger LSP server:", error);
-          }
-        }
-      } else if (
-        result.action === "update" &&
-        result.currentVersion &&
-        result.latestVersion
-      ) {
-        const shouldUpdate = await startupChecker.showUpdateNotification(
-          result.currentVersion,
-          result.latestVersion
-        );
-        if (shouldUpdate) {
-          try {
-            await startupChecker.performUpdate();
-            console.log("HLedger LSP server updated and started successfully");
-          } catch (error) {
-            console.error("Failed to update HLedger LSP server:", error);
-          }
-        } else {
-          startupChecker.markUpdateDeclined();
-        }
-      } else if (result.action === "error") {
-        console.error("Failed to check for LSP updates:", result.error);
       }
     })();
 

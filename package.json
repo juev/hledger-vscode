@@ -43,6 +43,13 @@
         "configuration": "./language-configuration.json"
       }
     ],
+    "grammars": [
+      {
+        "language": "hledger",
+        "scopeName": "source.hledger",
+        "path": "./syntaxes/hledger.tmLanguage.json"
+      }
+    ],
     "configuration": {
       "title": "HLedger",
       "properties": {

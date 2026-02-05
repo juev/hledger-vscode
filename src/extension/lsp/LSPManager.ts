@@ -45,7 +45,9 @@ export class LSPManager implements vscode.Disposable {
     this.binaryManager = new BinaryManager(this.storagePath);
     // Async initialization: status starts as NotInstalled and updates asynchronously.
     // This avoids blocking constructor. Status is queried lazily via isInstalled().
-    this.initializeStatus();
+    this.initializeStatus().catch(error => {
+      console.error('Failed to initialize LSP status:', error);
+    });
   }
 
   private async initializeStatus(): Promise<void> {

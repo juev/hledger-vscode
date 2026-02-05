@@ -264,6 +264,9 @@ export class BinaryManager {
     const contentLength = response.headers.get('content-length');
     if (contentLength) {
       const size = parseInt(contentLength, 10);
+      if (Number.isNaN(size)) {
+        throw new Error('Invalid Content-Length header: not a valid number');
+      }
       if (size > MAX_BINARY_SIZE) {
         throw new Error(
           `Binary size ${size} exceeds maximum allowed size ${MAX_BINARY_SIZE}`
@@ -275,6 +278,8 @@ export class BinaryManager {
         );
       }
     }
+    // Note: If Content-Length is missing, we rely on the post-download size check (line 282-292)
+    // This is acceptable because checksum verification will catch corrupted/malicious downloads
 
     const buffer = await response.arrayBuffer();
 
