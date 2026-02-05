@@ -151,7 +151,11 @@ export class BinaryManager {
         const rateLimitReset = response.headers.get('X-RateLimit-Reset');
 
         if (rateLimitRemaining === '0' && rateLimitReset) {
-          const resetDate = new Date(parseInt(rateLimitReset) * 1000);
+          const timestamp = parseInt(rateLimitReset, 10);
+          if (Number.isNaN(timestamp)) {
+            throw new Error('GitHub API rate limit exceeded. Invalid rate limit reset header.');
+          }
+          const resetDate = new Date(timestamp * 1000);
           throw new Error(
             `GitHub API rate limit exceeded. Try again after ${resetDate.toLocaleTimeString()}`
           );
@@ -208,6 +212,8 @@ export class BinaryManager {
     const text = await response.text();
     const checksums = new Map<string, string>();
 
+    // Parse checksums.txt format: SHA-256 hash (64 hex chars) followed by two spaces and filename
+    // Example: "a1b2c3d4...  hledger-lsp_darwin_arm64"
     for (const line of text.split("\n")) {
       const match = /^([a-f0-9]{64})\s{2}(.+)$/.exec(line.trim());
       if (match && match[1] && match[2]) {
@@ -225,10 +231,11 @@ export class BinaryManager {
   }
 
   async download(onProgress?: (percent: number) => void): Promise<void> {
-    onProgress?.(10);
+    // Progress allocation: 5% release info, 5% checksums, 85% download, 5% verify/write
+    onProgress?.(5);
     const release = await this.getLatestRelease();
 
-    onProgress?.(30);
+    onProgress?.(10);
     const checksums = await this.downloadChecksums(release);
 
     const expectedAssetName = `hledger-lsp_${this.platformInfo.assetSuffix}`;
@@ -245,7 +252,7 @@ export class BinaryManager {
       throw new Error(`No checksum found for ${expectedAssetName}`);
     }
 
-    onProgress?.(60);
+    // Binary download is the main operation (10% to 95% of total progress)
     const response = await this.fetchFn(asset.downloadUrl);
     if (!response.ok) {
       throw new Error(
@@ -267,32 +274,45 @@ export class BinaryManager {
       );
     }
 
-    onProgress?.(80);
+    // Download complete (95%), now verify checksum and write file (remaining 5%)
+    onProgress?.(95);
     if (!this.verifyChecksum(buffer, expectedChecksum)) {
       throw new Error("Checksum verification failed - binary may be corrupted");
     }
 
     const binaryPath = this.getBinaryPath();
-    const tempPath = `${binaryPath}.tmp.${Date.now()}`;
+    const versionPath = this.getVersionPath();
+    const tempBinaryPath = `${binaryPath}.tmp.${Date.now()}`;
+    const tempVersionPath = `${versionPath}.tmp.${Date.now()}`;
 
     try {
       await fs.promises.mkdir(path.dirname(binaryPath), { recursive: true });
 
+      // Write version file to temp location first (atomic transaction preparation)
+      await fs.promises.writeFile(tempVersionPath, release.version);
+
       // Atomic write with permissions: open with mode 0o755, write, close, then rename
       // Note: On Windows, the mode parameter is ignored. Windows executables (.exe)
       // are executable by default based on file extension, not permission bits.
-      const fd = await fs.promises.open(tempPath, 'w', 0o755);
+      const fd = await fs.promises.open(tempBinaryPath, 'w', 0o755);
       try {
         await fd.writeFile(Buffer.from(buffer));
       } finally {
         await fd.close();
       }
 
-      await fs.promises.rename(tempPath, binaryPath);
-      await fs.promises.writeFile(this.getVersionPath(), release.version);
+      // Atomic rename of both binary and version file (transaction commit)
+      await fs.promises.rename(tempBinaryPath, binaryPath);
+      await fs.promises.rename(tempVersionPath, versionPath);
     } catch (error) {
+      // Cleanup temp files on error
       try {
-        await fs.promises.unlink(tempPath);
+        await fs.promises.unlink(tempBinaryPath);
+      } catch {
+        // Ignore cleanup errors
+      }
+      try {
+        await fs.promises.unlink(tempVersionPath);
       } catch {
         // Ignore cleanup errors
       }

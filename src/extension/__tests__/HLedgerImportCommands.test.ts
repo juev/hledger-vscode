@@ -34,7 +34,7 @@ describe("HLedgerImportCommands", () => {
   });
 
   describe("getJournalUri", () => {
-    it("returns URI from LEDGER_FILE environment variable when set", () => {
+    it("returns URI from LEDGER_FILE environment variable when set", async () => {
       const journalPath = path.join(tempDir, "ledger.journal");
       fs.writeFileSync(journalPath, "; test journal");
       process.env.LEDGER_FILE = journalPath;
@@ -44,24 +44,24 @@ describe("HLedgerImportCommands", () => {
 
       // Access private method via any cast for testing
       const getJournalUri = (commands as any).getJournalUri.bind(commands);
-      const result = getJournalUri();
+      const result = await getJournalUri();
 
       expect(result).toBe(vscode.Uri.file(journalPath).toString());
     });
 
-    it("returns null when LEDGER_FILE points to non-existent file", () => {
+    it("returns null when LEDGER_FILE points to non-existent file", async () => {
       process.env.LEDGER_FILE = "/non/existent/file.journal";
 
       const mockLspClient = jest.fn(() => null);
       const commands = new HLedgerImportCommands(mockLspClient);
 
       const getJournalUri = (commands as any).getJournalUri.bind(commands);
-      const result = getJournalUri();
+      const result = await getJournalUri();
 
       expect(result).toBeNull();
     });
 
-    it("finds .journal file in workspace folder", () => {
+    it("finds .journal file in workspace folder", async () => {
       const journalPath = path.join(tempDir, "main.journal");
       fs.writeFileSync(journalPath, "; test journal");
 
@@ -77,7 +77,7 @@ describe("HLedgerImportCommands", () => {
       const commands = new HLedgerImportCommands(mockLspClient);
 
       const getJournalUri = (commands as any).getJournalUri.bind(commands);
-      const result = getJournalUri();
+      const result = await getJournalUri();
 
       expect(result).toBe(vscode.Uri.file(journalPath).toString());
 
@@ -85,7 +85,7 @@ describe("HLedgerImportCommands", () => {
       (vscode.workspace as any).workspaceFolders = undefined;
     });
 
-    it("finds .hledger file in workspace folder", () => {
+    it("finds .hledger file in workspace folder", async () => {
       const journalPath = path.join(tempDir, "main.hledger");
       fs.writeFileSync(journalPath, "; test journal");
 
@@ -100,14 +100,14 @@ describe("HLedgerImportCommands", () => {
       const commands = new HLedgerImportCommands(mockLspClient);
 
       const getJournalUri = (commands as any).getJournalUri.bind(commands);
-      const result = getJournalUri();
+      const result = await getJournalUri();
 
       expect(result).toBe(vscode.Uri.file(journalPath).toString());
 
       (vscode.workspace as any).workspaceFolders = undefined;
     });
 
-    it("finds .ledger file in workspace folder", () => {
+    it("finds .ledger file in workspace folder", async () => {
       const journalPath = path.join(tempDir, "main.ledger");
       fs.writeFileSync(journalPath, "; test journal");
 
@@ -122,14 +122,14 @@ describe("HLedgerImportCommands", () => {
       const commands = new HLedgerImportCommands(mockLspClient);
 
       const getJournalUri = (commands as any).getJournalUri.bind(commands);
-      const result = getJournalUri();
+      const result = await getJournalUri();
 
       expect(result).toBe(vscode.Uri.file(journalPath).toString());
 
       (vscode.workspace as any).workspaceFolders = undefined;
     });
 
-    it("finds journal file with case-insensitive extension match", () => {
+    it("finds journal file with case-insensitive extension match", async () => {
       const journalPath = path.join(tempDir, "main.JOURNAL");
       fs.writeFileSync(journalPath, "; test journal");
 
@@ -144,14 +144,14 @@ describe("HLedgerImportCommands", () => {
       const commands = new HLedgerImportCommands(mockLspClient);
 
       const getJournalUri = (commands as any).getJournalUri.bind(commands);
-      const result = getJournalUri();
+      const result = await getJournalUri();
 
       expect(result).toBe(vscode.Uri.file(journalPath).toString());
 
       (vscode.workspace as any).workspaceFolders = undefined;
     });
 
-    it("respects MAX_DIRECTORY_FILES limit when scanning workspace", () => {
+    it("respects MAX_DIRECTORY_FILES limit when scanning workspace", async () => {
       // Create 1000 non-journal files first
       for (let i = 0; i < 1000; i++) {
         const filename = `file${i.toString().padStart(5, '0')}.txt`;
@@ -176,7 +176,7 @@ describe("HLedgerImportCommands", () => {
       const commands = new HLedgerImportCommands(mockLspClient);
 
       const getJournalUri = (commands as any).getJournalUri.bind(commands);
-      const result = getJournalUri();
+      const result = await getJournalUri();
 
       // Result depends on whether journal file is in first 1000 entries
       // Since fs.readdirSync order is filesystem-dependent, we just verify
@@ -186,7 +186,7 @@ describe("HLedgerImportCommands", () => {
       (vscode.workspace as any).workspaceFolders = undefined;
     });
 
-    it("returns first matching journal file when multiple exist", () => {
+    it("returns first matching journal file when multiple exist", async () => {
       const journal1 = path.join(tempDir, "a.journal");
       const journal2 = path.join(tempDir, "b.journal");
       fs.writeFileSync(journal1, "; first");
@@ -203,7 +203,7 @@ describe("HLedgerImportCommands", () => {
       const commands = new HLedgerImportCommands(mockLspClient);
 
       const getJournalUri = (commands as any).getJournalUri.bind(commands);
-      const result = getJournalUri();
+      const result = await getJournalUri();
 
       // Should return one of them (early exit on first match)
       expect(result).toMatch(/\.(journal|hledger|ledger)$/);
@@ -211,7 +211,7 @@ describe("HLedgerImportCommands", () => {
       (vscode.workspace as any).workspaceFolders = undefined;
     });
 
-    it("returns null when workspace folder cannot be read", () => {
+    it("returns null when workspace folder cannot be read", async () => {
       const mockFolder = {
         uri: vscode.Uri.file("/non/existent/folder"),
         name: "test",
@@ -223,7 +223,7 @@ describe("HLedgerImportCommands", () => {
       const commands = new HLedgerImportCommands(mockLspClient);
 
       const getJournalUri = (commands as any).getJournalUri.bind(commands);
-      const result = getJournalUri();
+      const result = await getJournalUri();
 
       expect(result).toBeNull();
 

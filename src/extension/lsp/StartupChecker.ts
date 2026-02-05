@@ -13,6 +13,8 @@ export interface CheckResult {
 
 export class StartupChecker {
   private static readonly UPDATE_DECLINE_KEY = 'hledger.lsp.updateDeclinedUntil';
+  // When user clicks "Later" on update notification, wait 7 days before reminding again
+  // This balances keeping users up-to-date with not being overly intrusive
   private static readonly DECLINE_DURATION_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
 
   constructor(

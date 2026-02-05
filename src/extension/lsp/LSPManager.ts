@@ -117,7 +117,9 @@ export class LSPManager implements vscode.Disposable {
     const binaryPath = this.getBinaryPath();
 
     if (hasCustomLSPPath()) {
-      if (!fs.existsSync(binaryPath)) {
+      try {
+        await fs.promises.access(binaryPath, fs.constants.R_OK);
+      } catch {
         throw new Error(`Custom LSP binary not found at: ${binaryPath}`);
       }
     } else if (!await this.isServerAvailable()) {
@@ -128,7 +130,7 @@ export class LSPManager implements vscode.Disposable {
 
     try {
       const debug = vscode.workspace.getConfiguration("hledger.lsp").get<boolean>("debug") ?? false;
-      this.client = new HLedgerLanguageClient(this.getBinaryPath(), { debug });
+      this.client = new HLedgerLanguageClient(binaryPath, { debug });
       await this.client.start();
       this.status = LSPStatus.Running;
     } catch (error) {

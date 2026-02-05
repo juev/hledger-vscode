@@ -47,7 +47,7 @@ export class HLedgerImportCommands implements vscode.Disposable {
    * Find journal file URI for LSP query
    * Priority: LEDGER_FILE env → hledger.cli.journalFile → workspace .journal files
    */
-  private getJournalUri(): string | null {
+  private async getJournalUri(): Promise<string | null> {
     // 1. Try LEDGER_FILE environment variable
     const ledgerFile = process.env.LEDGER_FILE?.trim();
     if (ledgerFile && fs.existsSync(ledgerFile)) {
@@ -66,13 +66,12 @@ export class HLedgerImportCommands implements vscode.Disposable {
     if (workspaceFolders && workspaceFolders.length > 0) {
       for (const folder of workspaceFolders) {
         const folderPath = folder.uri.fsPath;
-        let dir: fs.Dir | null = null;
+        let dir: fs.Dir | undefined;
         try {
-          dir = fs.opendirSync(folderPath);
+          dir = await fs.promises.opendir(folderPath);
           let filesScanned = 0;
-          let entry: fs.Dirent | null;
 
-          while ((entry = dir.readSync()) !== null) {
+          for await (const entry of dir) {
             if (!entry.isFile()) {
               continue;
             }
@@ -84,13 +83,13 @@ export class HLedgerImportCommands implements vscode.Disposable {
 
             const lowerName = entry.name.toLowerCase();
             if (HLedgerImportCommands.JOURNAL_EXTENSIONS.some(ext => lowerName.endsWith(ext))) {
+              // Note: for-await automatically closes the directory on early return
               return vscode.Uri.file(path.join(folderPath, entry.name)).toString();
             }
           }
+          // Note: for-await automatically closes the directory when iteration completes or breaks
         } catch {
           // Skip folders we can't read
-        } finally {
-          dir?.closeSync();
         }
       }
     }
@@ -243,7 +242,7 @@ export class HLedgerImportCommands implements vscode.Disposable {
           // Try to fetch payee history from LSP if enabled
           let payeeHistory: PayeeAccountHistory | undefined;
           if (options.useJournalHistory !== false) {
-            const journalUri = this.getJournalUri();
+            const journalUri = await this.getJournalUri();
             if (journalUri) {
               const lspClient = this.getLspClient();
               if (lspClient) {
