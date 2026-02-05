@@ -16,6 +16,7 @@ interface MockLSPManager {
 
 describe("StartupChecker", () => {
   let mockLSPManager: MockLSPManager;
+  let mockContext: any;
   let originalGetConfiguration: any;
   let mockShowInformationMessage: jest.Mock;
   let mockWithProgress: jest.Mock;
@@ -27,6 +28,20 @@ describe("StartupChecker", () => {
       download: jest.fn(),
       start: jest.fn(),
       stop: jest.fn(),
+    };
+
+    // Mock ExtensionContext with globalState
+    const globalStateStorage = new Map<string, any>();
+    mockContext = {
+      globalState: {
+        get: jest.fn((key: string, defaultValue?: any) => {
+          return globalStateStorage.has(key) ? globalStateStorage.get(key) : defaultValue;
+        }),
+        update: jest.fn((key: string, value: any) => {
+          globalStateStorage.set(key, value);
+          return Promise.resolve();
+        }),
+      },
     };
 
     const vscode = require("vscode");
@@ -59,7 +74,7 @@ describe("StartupChecker", () => {
     describe("when check is disabled via settings", () => {
       it("skips check and returns none action", async () => {
         mockConfiguration({ checkForUpdates: false });
-        const checker = new StartupChecker(mockLSPManager);
+        const checker = new StartupChecker(mockLSPManager, mockContext);
 
         const result = await checker.checkOnActivation();
 
@@ -74,7 +89,7 @@ describe("StartupChecker", () => {
           checkForUpdates: true,
           path: "/custom/path/to/hledger-lsp",
         });
-        const checker = new StartupChecker(mockLSPManager);
+        const checker = new StartupChecker(mockLSPManager, mockContext);
 
         const result = await checker.checkOnActivation();
 
@@ -93,7 +108,7 @@ describe("StartupChecker", () => {
           latestVersion: "v0.1.0",
         });
 
-        const checker = new StartupChecker(mockLSPManager);
+        const checker = new StartupChecker(mockLSPManager, mockContext);
 
         const result = await checker.checkOnActivation();
 
@@ -113,7 +128,7 @@ describe("StartupChecker", () => {
           latestVersion: "v0.1.0",
         });
 
-        const checker = new StartupChecker(mockLSPManager);
+        const checker = new StartupChecker(mockLSPManager, mockContext);
 
         const result = await checker.checkOnActivation();
 
@@ -131,7 +146,7 @@ describe("StartupChecker", () => {
           latestVersion: "v0.2.0",
         });
 
-        const checker = new StartupChecker(mockLSPManager);
+        const checker = new StartupChecker(mockLSPManager, mockContext);
 
         const result = await checker.checkOnActivation();
 
@@ -149,7 +164,7 @@ describe("StartupChecker", () => {
           new Error("Network error")
         );
 
-        const checker = new StartupChecker(mockLSPManager);
+        const checker = new StartupChecker(mockLSPManager, mockContext);
 
         const result = await checker.checkOnActivation();
 
@@ -162,7 +177,7 @@ describe("StartupChecker", () => {
   describe("showInstallNotification", () => {
     it("shows notification with Install and Later buttons", async () => {
       mockShowInformationMessage.mockResolvedValue("Later");
-      const checker = new StartupChecker(mockLSPManager);
+      const checker = new StartupChecker(mockLSPManager, mockContext);
 
       await checker.showInstallNotification("v0.1.0");
 
@@ -175,7 +190,7 @@ describe("StartupChecker", () => {
 
     it("returns true when user clicks Install", async () => {
       mockShowInformationMessage.mockResolvedValue("Install");
-      const checker = new StartupChecker(mockLSPManager);
+      const checker = new StartupChecker(mockLSPManager, mockContext);
 
       const result = await checker.showInstallNotification("v0.1.0");
 
@@ -184,7 +199,7 @@ describe("StartupChecker", () => {
 
     it("returns false when user clicks Later", async () => {
       mockShowInformationMessage.mockResolvedValue("Later");
-      const checker = new StartupChecker(mockLSPManager);
+      const checker = new StartupChecker(mockLSPManager, mockContext);
 
       const result = await checker.showInstallNotification("v0.1.0");
 
@@ -193,7 +208,7 @@ describe("StartupChecker", () => {
 
     it("returns false when user dismisses notification", async () => {
       mockShowInformationMessage.mockResolvedValue(undefined);
-      const checker = new StartupChecker(mockLSPManager);
+      const checker = new StartupChecker(mockLSPManager, mockContext);
 
       const result = await checker.showInstallNotification("v0.1.0");
 
@@ -204,7 +219,7 @@ describe("StartupChecker", () => {
   describe("showUpdateNotification", () => {
     it("shows notification with current and latest versions", async () => {
       mockShowInformationMessage.mockResolvedValue("Later");
-      const checker = new StartupChecker(mockLSPManager);
+      const checker = new StartupChecker(mockLSPManager, mockContext);
 
       await checker.showUpdateNotification("v0.1.0", "v0.2.0");
 
@@ -217,7 +232,7 @@ describe("StartupChecker", () => {
 
     it("returns true when user clicks Update", async () => {
       mockShowInformationMessage.mockResolvedValue("Update");
-      const checker = new StartupChecker(mockLSPManager);
+      const checker = new StartupChecker(mockLSPManager, mockContext);
 
       const result = await checker.showUpdateNotification("v0.1.0", "v0.2.0");
 
@@ -226,7 +241,7 @@ describe("StartupChecker", () => {
 
     it("returns false when user clicks Later", async () => {
       mockShowInformationMessage.mockResolvedValue("Later");
-      const checker = new StartupChecker(mockLSPManager);
+      const checker = new StartupChecker(mockLSPManager, mockContext);
 
       const result = await checker.showUpdateNotification("v0.1.0", "v0.2.0");
 
@@ -242,7 +257,7 @@ describe("StartupChecker", () => {
       mockLSPManager.download.mockResolvedValue(undefined);
       mockLSPManager.start.mockResolvedValue(undefined);
 
-      const checker = new StartupChecker(mockLSPManager);
+      const checker = new StartupChecker(mockLSPManager, mockContext);
 
       await checker.performInstall();
 
@@ -257,7 +272,7 @@ describe("StartupChecker", () => {
       mockLSPManager.download.mockResolvedValue(undefined);
       mockLSPManager.start.mockResolvedValue(undefined);
 
-      const checker = new StartupChecker(mockLSPManager);
+      const checker = new StartupChecker(mockLSPManager, mockContext);
 
       await checker.performInstall();
 
@@ -276,7 +291,7 @@ describe("StartupChecker", () => {
       mockLSPManager.download.mockResolvedValue(undefined);
       mockLSPManager.start.mockResolvedValue(undefined);
 
-      const checker = new StartupChecker(mockLSPManager);
+      const checker = new StartupChecker(mockLSPManager, mockContext);
 
       await checker.performUpdate();
 
@@ -303,7 +318,7 @@ describe("StartupChecker", () => {
         return Promise.resolve();
       });
 
-      const checker = new StartupChecker(mockLSPManager);
+      const checker = new StartupChecker(mockLSPManager, mockContext);
 
       await checker.performUpdate();
 
@@ -318,7 +333,7 @@ describe("StartupChecker", () => {
       mockLSPManager.download.mockResolvedValue(undefined);
       mockLSPManager.start.mockResolvedValue(undefined);
 
-      const checker = new StartupChecker(mockLSPManager);
+      const checker = new StartupChecker(mockLSPManager, mockContext);
 
       await checker.performUpdate();
 
@@ -339,7 +354,7 @@ describe("StartupChecker", () => {
       });
       mockShowInformationMessage.mockResolvedValue("Later");
 
-      const checker = new StartupChecker(mockLSPManager);
+      const checker = new StartupChecker(mockLSPManager, mockContext);
 
       const firstResult = await checker.checkOnActivation();
       expect(firstResult.action).toBe("update");
@@ -360,10 +375,17 @@ describe("StartupChecker", () => {
         latestVersion: "v0.2.0",
       });
 
-      const checker1 = new StartupChecker(mockLSPManager);
+      const mockContext2: any = {
+        globalState: {
+          get: jest.fn((key: string, defaultValue?: any) => defaultValue),
+          update: jest.fn(() => Promise.resolve()),
+        },
+      };
+
+      const checker1 = new StartupChecker(mockLSPManager, mockContext);
       checker1.markUpdateDeclinedThisSession();
 
-      const checker2 = new StartupChecker(mockLSPManager);
+      const checker2 = new StartupChecker(mockLSPManager, mockContext2);
       const result = await checker2.checkOnActivation();
 
       expect(result.action).toBe("update");

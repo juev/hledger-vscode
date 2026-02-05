@@ -15,7 +15,7 @@ export function activate(context: vscode.ExtensionContext): void {
     const lspManager = new LSPManager(context);
     context.subscriptions.push(lspManager);
 
-    const startupChecker = new StartupChecker(lspManager);
+    const startupChecker = new StartupChecker(lspManager, context);
 
     // Start LSP immediately if available (non-blocking)
     void (async (): Promise<void> => {
@@ -25,9 +25,14 @@ export function activate(context: vscode.ExtensionContext): void {
           console.log("HLedger LSP server started successfully");
         } catch (error) {
           console.error("Failed to start HLedger LSP server:", error);
-          vscode.window.showWarningMessage(
-            `HLedger Language Server failed to start: ${error instanceof Error ? error.message : String(error)}`
+          const action = await vscode.window.showErrorMessage(
+            `HLedger Language Server failed to start. Features like syntax highlighting, completion, and diagnostics will not work. ${error instanceof Error ? error.message : String(error)}`,
+            'Install/Update LSP',
+            'Dismiss'
           );
+          if (action === 'Install/Update LSP') {
+            await vscode.commands.executeCommand('hledger.lsp.update');
+          }
         }
       }
     })();

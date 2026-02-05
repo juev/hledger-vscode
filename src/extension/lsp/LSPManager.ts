@@ -3,6 +3,7 @@ import * as fs from "fs";
 import { BinaryManager } from "./BinaryManager";
 import { HLedgerLanguageClient, LanguageClientState, PayeeAccountHistoryResult } from "./HLedgerLanguageClient";
 import { hasCustomLSPPath, getCustomLSPPath } from "./lspConfig";
+import { validatePathSafety } from "../security/shellValidation";
 
 export interface LSPManagerLike {
   isServerAvailable(): Promise<boolean>;
@@ -71,14 +72,10 @@ export class LSPManager implements vscode.Disposable {
     return this.binaryManager.getInstalledVersion();
   }
 
-  private static readonly SHELL_METACHAR_PATTERN = /[;&|`$()[\]{}^"<>#!*?~\\'\n\r]/;
-
   getBinaryPath(): string {
     const customPath = getCustomLSPPath();
     if (customPath !== null) {
-      if (LSPManager.SHELL_METACHAR_PATTERN.test(customPath)) {
-        throw new Error(`Custom LSP path contains shell metacharacters: ${customPath}`);
-      }
+      validatePathSafety(customPath);
       return customPath;
     }
     return this.binaryManager.getBinaryPath();

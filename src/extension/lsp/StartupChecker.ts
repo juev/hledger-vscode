@@ -12,9 +12,13 @@ export interface CheckResult {
 }
 
 export class StartupChecker {
-  private updateDeclinedThisSession = false;
+  private static readonly UPDATE_DECLINE_KEY = 'hledger.lsp.updateDeclinedUntil';
+  private static readonly DECLINE_DURATION_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
 
-  constructor(private readonly lspManager: LSPManagerLike) {}
+  constructor(
+    private readonly lspManager: LSPManagerLike,
+    private readonly context: vscode.ExtensionContext
+  ) {}
 
   async checkOnActivation(): Promise<CheckResult> {
     if (hasCustomLSPPath()) {
@@ -25,7 +29,7 @@ export class StartupChecker {
       return { action: "none" };
     }
 
-    if (this.updateDeclinedThisSession) {
+    if (this.isUpdateDeclined()) {
       return { action: "none" };
     }
 
@@ -72,8 +76,20 @@ export class StartupChecker {
     return answer === "Update";
   }
 
+  private isUpdateDeclined(): boolean {
+    const declinedUntil = this.context.globalState.get<number>(
+      StartupChecker.UPDATE_DECLINE_KEY,
+      0
+    );
+    return Date.now() < declinedUntil;
+  }
+
   markUpdateDeclinedThisSession(): void {
-    this.updateDeclinedThisSession = true;
+    const declineUntil = Date.now() + StartupChecker.DECLINE_DURATION_MS;
+    void this.context.globalState.update(
+      StartupChecker.UPDATE_DECLINE_KEY,
+      declineUntil
+    );
   }
 
   async performInstall(): Promise<void> {

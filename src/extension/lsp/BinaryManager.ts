@@ -146,6 +146,18 @@ export class BinaryManager {
     });
 
     if (!response.ok) {
+      if (response.status === 403) {
+        const rateLimitRemaining = response.headers.get('X-RateLimit-Remaining');
+        const rateLimitReset = response.headers.get('X-RateLimit-Reset');
+
+        if (rateLimitRemaining === '0' && rateLimitReset) {
+          const resetDate = new Date(parseInt(rateLimitReset) * 1000);
+          throw new Error(
+            `GitHub API rate limit exceeded. Try again after ${resetDate.toLocaleTimeString()}`
+          );
+        }
+        throw new Error('GitHub API access forbidden. Check your network connection or try again later.');
+      }
       throw new Error(
         `Failed to fetch latest release: ${response.status} ${response.statusText}`
       );
@@ -267,6 +279,8 @@ export class BinaryManager {
       await fs.promises.mkdir(path.dirname(binaryPath), { recursive: true });
 
       // Atomic write with permissions: open with mode 0o755, write, close, then rename
+      // Note: On Windows, the mode parameter is ignored. Windows executables (.exe)
+      // are executable by default based on file extension, not permission bits.
       const fd = await fs.promises.open(tempPath, 'w', 0o755);
       try {
         await fd.writeFile(Buffer.from(buffer));

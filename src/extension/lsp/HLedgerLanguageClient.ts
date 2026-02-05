@@ -18,6 +18,21 @@ export interface PayeeAccountHistoryResult {
   pairUsage: Record<string, number>;
 }
 
+function isValidPayeeAccountHistory(data: unknown): data is PayeeAccountHistoryResult {
+  if (typeof data !== "object" || data === null) {
+    return false;
+  }
+  const obj = data as Record<string, unknown>;
+  return (
+    typeof obj.payeeAccounts === "object" &&
+    obj.payeeAccounts !== null &&
+    !Array.isArray(obj.payeeAccounts) &&
+    typeof obj.pairUsage === "object" &&
+    obj.pairUsage !== null &&
+    !Array.isArray(obj.pairUsage)
+  );
+}
+
 export interface ServerOptionsConfig {
   debug?: boolean;
 }
@@ -223,6 +238,12 @@ export class HLedgerLanguageClient implements vscode.Disposable {
       // Clear timeout immediately after race completes
       if (timeoutId !== undefined) {
         clearTimeout(timeoutId);
+      }
+
+      // Validate response schema
+      if (result !== null && !isValidPayeeAccountHistory(result)) {
+        console.error('Invalid LSP response format:', result);
+        return null;
       }
 
       return result;
