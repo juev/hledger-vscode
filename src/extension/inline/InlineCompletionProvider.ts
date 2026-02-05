@@ -6,6 +6,33 @@
  */
 import * as vscode from "vscode";
 
+const LSP_REQUEST_TIMEOUT_MS = 5000;
+
+async function withTimeout<T>(
+  promise: Promise<T>,
+  timeoutMs: number,
+  token: vscode.CancellationToken
+): Promise<T | undefined> {
+  return new Promise((resolve) => {
+    const timeoutId = setTimeout(() => resolve(undefined), timeoutMs);
+
+    token.onCancellationRequested(() => {
+      clearTimeout(timeoutId);
+      resolve(undefined);
+    });
+
+    promise
+      .then((result) => {
+        clearTimeout(timeoutId);
+        resolve(result);
+      })
+      .catch(() => {
+        clearTimeout(timeoutId);
+        resolve(undefined);
+      });
+  });
+}
+
 /**
  * Minimal LSP client interface for sending requests.
  */
@@ -60,18 +87,22 @@ export class InlineCompletionProvider
     }
 
     try {
-      const response = await client.sendRequest<LSPInlineCompletionList>(
-        "textDocument/inlineCompletion",
-        {
-          textDocument: { uri: document.uri.toString() },
-          position: { line: position.line, character: position.character },
-          context: {
-            triggerKind:
-              context.triggerKind === vscode.InlineCompletionTriggerKind.Invoke
-                ? 1
-                : 2,
+      const response = await withTimeout(
+        client.sendRequest<LSPInlineCompletionList>(
+          "textDocument/inlineCompletion",
+          {
+            textDocument: { uri: document.uri.toString() },
+            position: { line: position.line, character: position.character },
+            context: {
+              triggerKind:
+                context.triggerKind === vscode.InlineCompletionTriggerKind.Invoke
+                  ? 1
+                  : 2,
+            },
           },
-        },
+        ),
+        LSP_REQUEST_TIMEOUT_MS,
+        token
       );
 
       if (token.isCancellationRequested) {
@@ -94,8 +125,8 @@ export class InlineCompletionProvider
 
         return new vscode.InlineCompletionItem(item.insertText, range);
       });
-    } catch {
-      // Silently fail - LSP may be unavailable or request may have timed out
+    } catch (error: unknown) {
+      console.debug("[InlineCompletionProvider] Request failed:", error);
       return undefined;
     }
   }

@@ -66,25 +66,31 @@ export class HLedgerImportCommands implements vscode.Disposable {
     if (workspaceFolders && workspaceFolders.length > 0) {
       for (const folder of workspaceFolders) {
         const folderPath = folder.uri.fsPath;
+        let dir: fs.Dir | null = null;
         try {
-          // Note: fs.readdirSync reads entire directory before slice limits it.
-          // For typical workspace folders (10-100 files), this is acceptable.
-          // For very large directories (>1000 files), consider using streaming
-          // approach with fs.opendirSync for better performance.
-          const files = fs.readdirSync(folderPath);
-          // DoS protection: limit files to scan
-          const limitedFiles = files.slice(0, HLedgerImportCommands.MAX_DIRECTORY_FILES);
-          for (const file of limitedFiles) {
-            // Case-insensitive extension matching for cross-platform compatibility
-            const lowerFile = file.toLowerCase();
-            if (HLedgerImportCommands.JOURNAL_EXTENSIONS.some(ext => lowerFile.endsWith(ext))) {
-              const journalPath = path.join(folderPath, file);
-              return vscode.Uri.file(journalPath).toString();
+          dir = fs.opendirSync(folderPath);
+          let filesScanned = 0;
+          let entry: fs.Dirent | null;
+
+          while ((entry = dir.readSync()) !== null) {
+            if (filesScanned >= HLedgerImportCommands.MAX_DIRECTORY_FILES) {
+              break;
+            }
+            filesScanned++;
+
+            if (!entry.isFile()) {
+              continue;
+            }
+
+            const lowerName = entry.name.toLowerCase();
+            if (HLedgerImportCommands.JOURNAL_EXTENSIONS.some(ext => lowerName.endsWith(ext))) {
+              return vscode.Uri.file(path.join(folderPath, entry.name)).toString();
             }
           }
         } catch {
           // Skip folders we can't read
-          continue;
+        } finally {
+          dir?.closeSync();
         }
       }
     }

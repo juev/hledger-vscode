@@ -164,6 +164,22 @@ const DEFAULT_SETTINGS: LSPSettings = {
   },
 };
 
+function clamp(value: number, min: number, max: number): number {
+  return Math.max(min, Math.min(max, value));
+}
+
+function validateNumber(
+  value: unknown,
+  defaultValue: number,
+  min: number,
+  max: number
+): number {
+  if (typeof value !== "number" || !Number.isFinite(value)) {
+    return defaultValue;
+  }
+  return clamp(value, min, max);
+}
+
 export function mapVSCodeSettingsToLSP(settings: VSCodeSettings): LSPSettings {
   const completionEnabled = settings.features?.completion
     ?? settings.autoCompletion?.enabled
@@ -197,8 +213,18 @@ export function mapVSCodeSettingsToLSP(settings: VSCodeSettings): LSPSettings {
     },
     completion: {
       enabled: settings.autoCompletion?.enabled ?? DEFAULT_SETTINGS.completion.enabled,
-      maxResults: settings.autoCompletion?.maxResults ?? DEFAULT_SETTINGS.completion.maxResults,
-      maxAccountResults: settings.autoCompletion?.maxAccountResults ?? DEFAULT_SETTINGS.completion.maxAccountResults,
+      maxResults: validateNumber(
+        settings.autoCompletion?.maxResults,
+        DEFAULT_SETTINGS.completion.maxResults,
+        1,
+        1000
+      ),
+      maxAccountResults: validateNumber(
+        settings.autoCompletion?.maxAccountResults,
+        DEFAULT_SETTINGS.completion.maxAccountResults,
+        1,
+        1000
+      ),
       transactionTemplates: {
         enabled: settings.autoCompletion?.transactionTemplates?.enabled ?? DEFAULT_SETTINGS.completion.transactionTemplates.enabled,
       },
@@ -209,27 +235,62 @@ export function mapVSCodeSettingsToLSP(settings: VSCodeSettings): LSPSettings {
     diagnostics: {
       enabled: settings.diagnostics?.enabled ?? DEFAULT_SETTINGS.diagnostics.enabled,
       checkBalance: settings.diagnostics?.checkBalance ?? DEFAULT_SETTINGS.diagnostics.checkBalance,
-      balanceTolerance: settings.diagnostics?.balanceTolerance ?? DEFAULT_SETTINGS.diagnostics.balanceTolerance,
+      balanceTolerance: validateNumber(
+        settings.diagnostics?.balanceTolerance,
+        DEFAULT_SETTINGS.diagnostics.balanceTolerance,
+        0,
+        1000
+      ),
       undeclaredAccounts: settings.diagnostics?.undeclaredAccounts ?? DEFAULT_SETTINGS.diagnostics.undeclaredAccounts,
       undeclaredCommodities: settings.diagnostics?.undeclaredCommodities ?? DEFAULT_SETTINGS.diagnostics.undeclaredCommodities,
       unbalancedTransactions: unbalancedTransactions,
     },
     formatting: {
-      amountAlignmentColumn: settings.formatting?.amountAlignmentColumn ?? DEFAULT_SETTINGS.formatting.amountAlignmentColumn,
-      indentSize: settings.formatting?.indentSize ?? DEFAULT_SETTINGS.formatting.indentSize,
+      amountAlignmentColumn: validateNumber(
+        settings.formatting?.amountAlignmentColumn,
+        DEFAULT_SETTINGS.formatting.amountAlignmentColumn,
+        0,
+        200
+      ),
+      indentSize: validateNumber(
+        settings.formatting?.indentSize,
+        DEFAULT_SETTINGS.formatting.indentSize,
+        0,
+        16
+      ),
       alignAmounts: settings.formatting?.alignAmounts ?? DEFAULT_SETTINGS.formatting.alignAmounts,
-      minAlignmentColumn: minAlignmentColumn,
+      minAlignmentColumn: validateNumber(
+        settings.formatting?.minAlignmentColumn,
+        DEFAULT_SETTINGS.formatting.minAlignmentColumn,
+        0,
+        200
+      ),
     },
     semanticHighlighting: {
       enabled: semanticTokensEnabled,
     },
     cli: {
       enabled: settings.cli?.enabled ?? DEFAULT_SETTINGS.cli.enabled,
-      timeout: settings.cli?.timeout ?? DEFAULT_SETTINGS.cli.timeout,
+      timeout: validateNumber(
+        settings.cli?.timeout,
+        DEFAULT_SETTINGS.cli.timeout,
+        1000,
+        300000
+      ),
     },
     limits: {
-      maxFileSizeBytes: settings.limits?.maxFileSizeBytes ?? DEFAULT_SETTINGS.limits.maxFileSizeBytes,
-      maxIncludeDepth: settings.limits?.maxIncludeDepth ?? DEFAULT_SETTINGS.limits.maxIncludeDepth,
+      maxFileSizeBytes: validateNumber(
+        settings.limits?.maxFileSizeBytes,
+        DEFAULT_SETTINGS.limits.maxFileSizeBytes,
+        1024,
+        104857600
+      ),
+      maxIncludeDepth: validateNumber(
+        settings.limits?.maxIncludeDepth,
+        DEFAULT_SETTINGS.limits.maxIncludeDepth,
+        1,
+        100
+      ),
     },
   };
 }

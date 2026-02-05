@@ -42,6 +42,8 @@ export class LSPManager implements vscode.Disposable {
   constructor(context: LSPManagerContext) {
     this.storagePath = context.globalStorageUri.fsPath;
     this.binaryManager = new BinaryManager(this.storagePath);
+    // Async initialization: status starts as NotInstalled and updates asynchronously.
+    // This avoids blocking constructor. Status is queried lazily via isInstalled().
     this.initializeStatus();
   }
 
@@ -69,7 +71,7 @@ export class LSPManager implements vscode.Disposable {
     return this.binaryManager.getInstalledVersion();
   }
 
-  private static readonly SHELL_METACHAR_PATTERN = /[;&|`$()[\]{}^"<>]/;
+  private static readonly SHELL_METACHAR_PATTERN = /[;&|`$()[\]{}^"<>#!*?~\\'\n\r]/;
 
   getBinaryPath(): string {
     const customPath = getCustomLSPPath();

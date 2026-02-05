@@ -4,6 +4,8 @@ import * as path from "path";
 
 const GITHUB_REPO = "juev/hledger-lsp";
 const GITHUB_API_URL = `https://api.github.com/repos/${GITHUB_REPO}/releases/latest`;
+const MAX_BINARY_SIZE = 50 * 1024 * 1024;
+const MIN_BINARY_SIZE = 1024;
 
 export interface PlatformInfo {
   platform: "darwin" | "linux" | "windows";
@@ -22,6 +24,32 @@ export interface ReleaseInfo {
 }
 
 type FetchFn = (url: string, init?: RequestInit) => Promise<Response>;
+
+interface GitHubReleaseResponse {
+  tag_name: string;
+  assets: Array<{ name: string; browser_download_url: string }>;
+}
+
+function isValidGitHubRelease(data: unknown): data is GitHubReleaseResponse {
+  if (typeof data !== "object" || data === null) {
+    return false;
+  }
+  const obj = data as Record<string, unknown>;
+  if (typeof obj.tag_name !== "string" || !obj.tag_name) {
+    return false;
+  }
+  if (!Array.isArray(obj.assets)) {
+    return false;
+  }
+  return obj.assets.every(
+    (asset) =>
+      typeof asset === "object" &&
+      asset !== null &&
+      typeof (asset as Record<string, unknown>).name === "string" &&
+      typeof (asset as Record<string, unknown>).browser_download_url ===
+        "string"
+  );
+}
 
 export function getPlatformInfo(
   platform: string,
@@ -74,10 +102,10 @@ export class BinaryManager {
   private readonly fetchFn: FetchFn;
   private readonly platformInfo: PlatformInfo;
 
-  constructor(storageDir: string, fetchFn?: FetchFn) {
+  constructor(storageDir: string, fetchFn?: FetchFn, platformInfo?: PlatformInfo) {
     this.storageDir = storageDir;
     this.fetchFn = fetchFn ?? fetch;
-    this.platformInfo = getPlatformInfo(os.platform(), os.arch());
+    this.platformInfo = platformInfo ?? getPlatformInfo(os.platform(), os.arch());
   }
 
   getBinaryPath(): string {
@@ -122,10 +150,11 @@ export class BinaryManager {
       );
     }
 
-    const data = (await response.json()) as {
-      tag_name: string;
-      assets: Array<{ name: string; browser_download_url: string }>;
-    };
+    const data = await response.json();
+
+    if (!isValidGitHubRelease(data)) {
+      throw new Error("Invalid GitHub release response format");
+    }
 
     return {
       version: data.tag_name,
@@ -146,16 +175,49 @@ export class BinaryManager {
     return installedVersion !== latestRelease.version;
   }
 
-  /**
-   * Downloads the latest binary for the current platform.
-   *
-   * Security note: Binary is downloaded over HTTPS from GitHub releases.
-   * For additional security, consider implementing SHA256 checksum verification
-   * by downloading checksums.txt from the release and verifying the binary hash.
-   * This requires the hledger-lsp release process to generate and publish checksums.
-   */
+  private async downloadChecksums(
+    release: ReleaseInfo
+  ): Promise<Map<string, string>> {
+    const checksumAsset = release.assets.find((a) => a.name === "checksums.txt");
+    if (!checksumAsset) {
+      throw new Error(
+        "No checksums.txt found in release - cannot verify binary integrity"
+      );
+    }
+
+    const response = await this.fetchFn(checksumAsset.downloadUrl);
+    if (!response.ok) {
+      throw new Error(
+        `Failed to download checksums: ${response.status} ${response.statusText}`
+      );
+    }
+
+    const text = await response.text();
+    const checksums = new Map<string, string>();
+
+    for (const line of text.split("\n")) {
+      const match = /^([a-f0-9]{64})\s{2}(.+)$/.exec(line.trim());
+      if (match && match[1] && match[2]) {
+        checksums.set(match[2], match[1]);
+      }
+    }
+
+    return checksums;
+  }
+
+  private verifyChecksum(buffer: ArrayBuffer, expectedHash: string): boolean {
+    const crypto = require("crypto");
+    const hash = crypto.createHash("sha256");
+    hash.update(Buffer.from(buffer));
+    return hash.digest("hex") === expectedHash.toLowerCase();
+  }
+
   async download(onProgress?: (percent: number) => void): Promise<void> {
+    onProgress?.(10);
     const release = await this.getLatestRelease();
+
+    onProgress?.(30);
+    const checksums = await this.downloadChecksums(release);
 
     const expectedAssetName = `hledger-lsp_${this.platformInfo.assetSuffix}`;
     const asset = release.assets.find((a) => a.name === expectedAssetName);
@@ -166,6 +228,12 @@ export class BinaryManager {
       );
     }
 
+    const expectedChecksum = checksums.get(expectedAssetName);
+    if (!expectedChecksum) {
+      throw new Error(`No checksum found for ${expectedAssetName}`);
+    }
+
+    onProgress?.(60);
     const response = await this.fetchFn(asset.downloadUrl);
     if (!response.ok) {
       throw new Error(
@@ -174,12 +242,41 @@ export class BinaryManager {
     }
 
     const buffer = await response.arrayBuffer();
-    const binaryPath = this.getBinaryPath();
 
-    await fs.promises.mkdir(path.dirname(binaryPath), { recursive: true });
-    await fs.promises.writeFile(binaryPath, Buffer.from(buffer));
-    await fs.promises.chmod(binaryPath, 0o755);
-    await fs.promises.writeFile(this.getVersionPath(), release.version);
+    if (buffer.byteLength > MAX_BINARY_SIZE) {
+      throw new Error(
+        `Binary size ${buffer.byteLength} exceeds maximum allowed size ${MAX_BINARY_SIZE}`
+      );
+    }
+
+    if (buffer.byteLength < MIN_BINARY_SIZE) {
+      throw new Error(
+        `Binary size ${buffer.byteLength} is below minimum required size ${MIN_BINARY_SIZE}`
+      );
+    }
+
+    onProgress?.(80);
+    if (!this.verifyChecksum(buffer, expectedChecksum)) {
+      throw new Error("Checksum verification failed - binary may be corrupted");
+    }
+
+    const binaryPath = this.getBinaryPath();
+    const tempPath = `${binaryPath}.tmp.${Date.now()}`;
+
+    try {
+      await fs.promises.mkdir(path.dirname(binaryPath), { recursive: true });
+      await fs.promises.writeFile(tempPath, Buffer.from(buffer));
+      await fs.promises.chmod(tempPath, 0o755);
+      await fs.promises.rename(tempPath, binaryPath);
+      await fs.promises.writeFile(this.getVersionPath(), release.version);
+    } catch (error) {
+      try {
+        await fs.promises.unlink(tempPath);
+      } catch {
+        // Ignore cleanup errors
+      }
+      throw error;
+    }
 
     onProgress?.(100);
   }

@@ -30,7 +30,7 @@ Transform your plain text accounting experience with powerful IDE capabilities:
 
 ### 🎨 **Beautiful Syntax Highlighting**
 
-- **Dual-layer highlighting**: Fast TextMate grammar + optional semantic tokens
+- **LSP-powered highlighting**: Semantic tokens from the Language Server for precise syntax coloring
 - **Theme integration**: Adapts to your VS Code theme automatically
 - **Customizable colors** for all hledger elements
 
