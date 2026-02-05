@@ -218,14 +218,21 @@ export class HLedgerLanguageClient implements vscode.Disposable {
         { textDocument: { uri } }
       );
 
-      return await Promise.race([requestPromise, timeoutPromise]);
-    } catch (error) {
-      console.error('LSP payee account history request failed:', error);
-      return null;
-    } finally {
+      const result = await Promise.race([requestPromise, timeoutPromise]);
+
+      // Clear timeout immediately after race completes
       if (timeoutId !== undefined) {
         clearTimeout(timeoutId);
       }
+
+      return result;
+    } catch (error) {
+      // Clear timeout on error
+      if (timeoutId !== undefined) {
+        clearTimeout(timeoutId);
+      }
+      console.error('LSP payee account history request failed:', error);
+      return null;
     }
   }
 

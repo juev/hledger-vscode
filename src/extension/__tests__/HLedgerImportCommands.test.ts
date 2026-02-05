@@ -129,6 +129,28 @@ describe("HLedgerImportCommands", () => {
       (vscode.workspace as any).workspaceFolders = undefined;
     });
 
+    it("finds journal file with case-insensitive extension match", () => {
+      const journalPath = path.join(tempDir, "main.JOURNAL");
+      fs.writeFileSync(journalPath, "; test journal");
+
+      const mockFolder = {
+        uri: vscode.Uri.file(tempDir),
+        name: "test",
+        index: 0,
+      };
+      (vscode.workspace as any).workspaceFolders = [mockFolder];
+
+      const mockLspClient = jest.fn(() => null);
+      const commands = new HLedgerImportCommands(mockLspClient);
+
+      const getJournalUri = (commands as any).getJournalUri.bind(commands);
+      const result = getJournalUri();
+
+      expect(result).toBe(vscode.Uri.file(journalPath).toString());
+
+      (vscode.workspace as any).workspaceFolders = undefined;
+    });
+
     it("respects MAX_DIRECTORY_FILES limit when scanning workspace", () => {
       // Create 1000 non-journal files first
       for (let i = 0; i < 1000; i++) {
@@ -258,7 +280,7 @@ describe("HLedgerImportCommands", () => {
       expect(result.payeeAccounts.has("Store" as any)).toBe(true);
     });
 
-    it("filters out non-string payee names", () => {
+    it("accepts numeric and keyword string payee names", () => {
       const mockLspClient = jest.fn(() => null);
       const commands = new HLedgerImportCommands(mockLspClient);
 

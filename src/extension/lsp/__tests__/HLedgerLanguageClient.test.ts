@@ -254,7 +254,7 @@ describe("HLedgerLanguageClient", () => {
       client.dispose();
     });
 
-    it("returns null when request times out", async () => {
+    it("returns null when request times out and clears timer", async () => {
       const client = new HLedgerLanguageClient(binaryPath);
       await client.start();
 
@@ -265,6 +265,8 @@ describe("HLedgerLanguageClient", () => {
       );
 
       jest.useFakeTimers();
+      const clearTimeoutSpy = jest.spyOn(global, 'clearTimeout');
+
       const resultPromise = client.getPayeeAccountHistory("file:///test.journal");
 
       // Advance time past 5000ms timeout
@@ -273,6 +275,10 @@ describe("HLedgerLanguageClient", () => {
       const result = await resultPromise;
       expect(result).toBeNull();
 
+      // Verify timer was cleaned up
+      expect(clearTimeoutSpy).toHaveBeenCalled();
+
+      clearTimeoutSpy.mockRestore();
       jest.useRealTimers();
       client.dispose();
     });

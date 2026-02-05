@@ -21,7 +21,7 @@ import { AccountName, PayeeName, UsageCount } from "./types";
  */
 export class HLedgerImportCommands implements vscode.Disposable {
   private static readonly MAX_DIRECTORY_FILES = 1000;
-  private static readonly JOURNAL_EXTENSIONS = ['.journal', '.hledger', '.ledger'] as const;
+  private static JOURNAL_EXTENSIONS = ['.journal', '.hledger', '.ledger'] as const;
 
   private readonly parser: TabularDataParser;
   private readonly columnDetector: ColumnDetector;
@@ -75,7 +75,9 @@ export class HLedgerImportCommands implements vscode.Disposable {
           // DoS protection: limit files to scan
           const limitedFiles = files.slice(0, HLedgerImportCommands.MAX_DIRECTORY_FILES);
           for (const file of limitedFiles) {
-            if (HLedgerImportCommands.JOURNAL_EXTENSIONS.some(ext => file.endsWith(ext))) {
+            // Case-insensitive extension matching for cross-platform compatibility
+            const lowerFile = file.toLowerCase();
+            if (HLedgerImportCommands.JOURNAL_EXTENSIONS.some(ext => lowerFile.endsWith(ext))) {
               const journalPath = path.join(folderPath, file);
               return vscode.Uri.file(journalPath).toString();
             }
