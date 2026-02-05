@@ -88,8 +88,11 @@ export class LSPManager implements vscode.Disposable {
 
     try {
       progress?.report({ message: "Fetching latest release..." });
+      let previousPercent = 0;
       await this.binaryManager.download((percent) => {
-        progress?.report({ message: `Downloading... ${percent}%`, increment: percent });
+        const delta = percent - previousPercent;
+        progress?.report({ message: `Downloading... ${percent}%`, increment: delta });
+        previousPercent = percent;
       });
       this.status = LSPStatus.Stopped;
     } catch (error) {

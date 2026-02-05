@@ -236,7 +236,7 @@ export function mapVSCodeSettingsToLSP(settings: VSCodeSettings): LSPSettings {
         settings.diagnostics?.balanceTolerance,
         DEFAULT_SETTINGS.diagnostics.balanceTolerance,
         0,
-        1000
+        1
       ),
       undeclaredAccounts: settings.diagnostics?.undeclaredAccounts ?? DEFAULT_SETTINGS.diagnostics.undeclaredAccounts,
       undeclaredCommodities: settings.diagnostics?.undeclaredCommodities ?? DEFAULT_SETTINGS.diagnostics.undeclaredCommodities,
