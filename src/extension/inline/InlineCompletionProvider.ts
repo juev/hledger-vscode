@@ -15,14 +15,17 @@ async function withTimeout<T>(
 ): Promise<T | undefined> {
   return new Promise((resolve) => {
     let resolved = false;
+    let disposable: vscode.Disposable | undefined;
+
     const timeoutId = setTimeout(() => {
       if (!resolved) {
         resolved = true;
+        disposable?.dispose();
         resolve(undefined);
       }
     }, timeoutMs);
 
-    const disposable = token.onCancellationRequested(() => {
+    disposable = token.onCancellationRequested(() => {
       if (!resolved) {
         resolved = true;
         clearTimeout(timeoutId);
@@ -34,7 +37,7 @@ async function withTimeout<T>(
       .then((result) => {
         if (!resolved) {
           resolved = true;
-          disposable.dispose();
+          disposable?.dispose();
           clearTimeout(timeoutId);
           resolve(result);
         }
@@ -42,7 +45,7 @@ async function withTimeout<T>(
       .catch(() => {
         if (!resolved) {
           resolved = true;
-          disposable.dispose();
+          disposable?.dispose();
           clearTimeout(timeoutId);
           resolve(undefined);
         }

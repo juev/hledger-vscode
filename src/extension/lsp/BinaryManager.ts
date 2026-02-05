@@ -152,6 +152,7 @@ export class BinaryManager {
 
         if (rateLimitRemaining === '0' && rateLimitReset) {
           const timestamp = parseInt(rateLimitReset, 10);
+          // Max Unix timestamp: 9999-12-31 23:59:59 UTC (prevents Date overflow)
           if (Number.isNaN(timestamp) || timestamp < 0 || timestamp > 253402300799) {
             throw new Error('GitHub API rate limit exceeded. Invalid rate limit reset header.');
           }
