@@ -1,5 +1,43 @@
 # Change Log
 
+## [0.5.0] - 2026-02-06
+
+### Added
+- feat(import): integrate hledger-lsp payeeAccountHistory for CSV import
+- feat: add context menu with CLI reports submenu
+- feat: add LSP configuration settings with backward compatibility
+- feat: add LSP startup checker with install/update notifications
+- feat: migrate to LSP-based architecture
+
+### Changed
+- docs(lsp): correct TextMate fallback behavior and update architecture
+- refactor(highlighting): remove TextMate grammar, use standard semantic scopes
+- refactor: remove unused configuration options and add CLI enabled check
+- refactor: simplify inline completion to use LSP textDocument/inlineCompletion
+- Revert "refactor: simplify inline completion to use LSP directly"
+- refactor: simplify inline completion to use LSP directly
+
+### Fixed
+- fix(lsp): address remaining code review findings
+- fix(lsp): address final S4 nits from code review
+- fix(lsp): resolve code review findings from debate system
+- fix(lsp): address code review findings and restore TextMate fallback
+- fix(lsp): correct balanceTolerance range and progress reporting
+- fix(lsp): resolve code review findings (S2-S4)
+- fix(lsp,import): resolve code review findings (S1-S4)
+- fix(lsp,security): address all code review findings (S1-S4)
+- fix(lsp,import): address code review findings (S3/S4)
+- fix(lsp,import): implement all code review security and validation fixes
+- fix(import,lsp,test): address final code review feedback (S2-S4)
+- fix(import,lsp,test): resolve all code review findings (S1-S4)
+- fix(import,lsp): address S1 blocker and S2 critical security issues
+- fix: eliminate semantic token flickering by using theme colors
+- fix: handle null responses from LSP completion requests
+- fix: consolidate LSP commands and fix binary download naming
+- fix: enable semantic highlighting by default and add superType inheritance
+- fix: add optional chaining for strict TypeScript compliance
+
+
 ## [0.4.15] - 2026-02-03
 
 ### Fixed
