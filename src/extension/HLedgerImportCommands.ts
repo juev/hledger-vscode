@@ -4,33 +4,130 @@
 
 import * as vscode from "vscode";
 import * as path from "path";
+import * as fs from "fs";
 import {
   TabularDataParser,
   ColumnDetector,
   TransactionGenerator,
   ImportOptions,
-  PayeeAccountHistory,
   DEFAULT_IMPORT_OPTIONS,
-  isJournalError,
+  PayeeAccountHistory,
 } from "./import";
-import { HLedgerConfig } from "./HLedgerConfig";
+import { PayeeAccountHistoryResult } from "./lsp";
+import { AccountName, PayeeName, UsageCount } from "./types";
 
 /**
  * Import commands for converting tabular data to hledger format
  */
 export class HLedgerImportCommands implements vscode.Disposable {
+  private static readonly MAX_DIRECTORY_FILES = 1000;
+  private static JOURNAL_EXTENSIONS = ['.journal', '.hledger', '.ledger'] as const;
+
   private readonly parser: TabularDataParser;
   private readonly columnDetector: ColumnDetector;
-  private readonly config: HLedgerConfig | null;
+  private readonly getLspClient: () => {
+    getPayeeAccountHistory(uri: string): Promise<PayeeAccountHistoryResult | null>
+  } | null;
 
-  constructor(config?: HLedgerConfig) {
+  constructor(
+    getLspClient: () => {
+      getPayeeAccountHistory(uri: string): Promise<PayeeAccountHistoryResult | null>
+    } | null
+  ) {
     this.parser = new TabularDataParser();
     this.columnDetector = new ColumnDetector();
-    this.config = config ?? null;
+    this.getLspClient = getLspClient;
   }
 
   dispose(): void {
     // No resources to dispose
+  }
+
+  /**
+   * Find journal file URI for LSP query
+   * Priority: LEDGER_FILE env → hledger.cli.journalFile → workspace .journal files
+   */
+  private async getJournalUri(): Promise<string | null> {
+    // 1. Try LEDGER_FILE environment variable
+    const ledgerFile = process.env.LEDGER_FILE?.trim();
+    if (ledgerFile && fs.existsSync(ledgerFile)) {
+      return vscode.Uri.file(ledgerFile).toString();
+    }
+
+    // 2. Try hledger.cli.journalFile configuration
+    const config = vscode.workspace.getConfiguration("hledger");
+    const journalFile = config.get<string>("cli.journalFile", "").trim();
+    if (journalFile && fs.existsSync(journalFile)) {
+      return vscode.Uri.file(journalFile).toString();
+    }
+
+    // 3. Find first .journal file in workspace
+    const workspaceFolders = vscode.workspace.workspaceFolders;
+    if (workspaceFolders && workspaceFolders.length > 0) {
+      for (const folder of workspaceFolders) {
+        const folderPath = folder.uri.fsPath;
+        let dir: fs.Dir | undefined;
+        try {
+          dir = await fs.promises.opendir(folderPath);
+          let filesScanned = 0;
+
+          for await (const entry of dir) {
+            if (!entry.isFile()) {
+              continue;
+            }
+
+            if (filesScanned >= HLedgerImportCommands.MAX_DIRECTORY_FILES) {
+              break;
+            }
+            filesScanned++;
+
+            const lowerName = entry.name.toLowerCase();
+            if (HLedgerImportCommands.JOURNAL_EXTENSIONS.some(ext => lowerName.endsWith(ext))) {
+              // Note: for-await automatically closes the directory on early return
+              return vscode.Uri.file(path.join(folderPath, entry.name)).toString();
+            }
+          }
+          // Note: for-await automatically closes the directory when iteration completes or breaks
+        } catch (error) {
+          console.debug(`[HLedgerImport] Unable to read directory ${folderPath}:`, error);
+        }
+      }
+    }
+
+    return null;
+  }
+
+  /**
+   * Convert LSP response to PayeeAccountHistory format
+   */
+  private convertToPayeeAccountHistory(
+    result: PayeeAccountHistoryResult
+  ): PayeeAccountHistory {
+    const payeeAccounts = new Map<PayeeName, Set<AccountName>>();
+    const pairUsage = new Map<string, UsageCount>();
+
+    for (const [payee, accounts] of Object.entries(result.payeeAccounts)) {
+      // Validate payee is non-empty string
+      if (!payee || typeof payee !== 'string') continue;
+
+      // Filter and validate accounts array
+      const validAccounts = (accounts ?? []).filter(
+        (acc): acc is string => typeof acc === 'string' && acc.length > 0
+      );
+      if (validAccounts.length === 0) continue;
+
+      payeeAccounts.set(payee as PayeeName, new Set(validAccounts as AccountName[]));
+    }
+
+    for (const [key, count] of Object.entries(result.pairUsage)) {
+      // Validate key is non-empty string and count is finite non-negative number
+      if (!key || typeof key !== 'string') continue;
+      if (typeof count !== 'number' || !Number.isFinite(count) || count < 0) continue;
+
+      pairUsage.set(key, count as UsageCount);
+    }
+
+    return { payeeAccounts, pairUsage };
   }
 
   /**
@@ -142,36 +239,22 @@ export class HLedgerImportCommands implements vscode.Disposable {
           // Get import options from configuration
           const options = this.getImportOptions();
 
-          // Get payee-account history from journal (if available and enabled)
+          // Try to fetch payee history from LSP if enabled
           let payeeHistory: PayeeAccountHistory | undefined;
-          if (options.useJournalHistory !== false && this.config) {
-            try {
-              const historyData = this.config.getPayeeAccountHistory();
-              if (historyData) {
-                payeeHistory = historyData;
+          if (options.useJournalHistory !== false) {
+            const journalUri = await this.getJournalUri();
+            if (journalUri) {
+              const lspClient = this.getLspClient();
+              if (lspClient) {
+                const lspResult = await lspClient.getPayeeAccountHistory(journalUri);
+                if (lspResult) {
+                  payeeHistory = this.convertToPayeeAccountHistory(lspResult);
+                }
               }
-            } catch (error) {
-              // Use type-safe error checking with custom error types
-              const isExpectedFailure = isJournalError(error);
-
-              if (!isExpectedFailure) {
-                // Log unexpected errors for debugging
-                console.error(
-                  "Failed to load payee account history from journal.",
-                  error,
-                );
-
-                // Only show warning for unexpected failures
-                await vscode.window.showWarningMessage(
-                  "Could not load journal account history. Account resolution will use patterns and category mapping instead.",
-                  "OK",
-                );
-              }
-              // For expected failures (JournalNotFoundError, JournalAccessError), continue silently
             }
           }
 
-          // Generate transactions
+          // Generate transactions with history
           const generator = new TransactionGenerator(options, payeeHistory);
           const result = generator.generate(dataWithMappings);
 

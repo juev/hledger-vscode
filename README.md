@@ -30,7 +30,7 @@ Transform your plain text accounting experience with powerful IDE capabilities:
 
 ### 🎨 **Beautiful Syntax Highlighting**
 
-- **Dual-layer highlighting**: Fast TextMate grammar + optional semantic tokens
+- **LSP-powered highlighting**: Semantic tokens from the Language Server for precise syntax coloring
 - **Theme integration**: Adapts to your VS Code theme automatically
 - **Customizable colors** for all hledger elements
 
@@ -67,6 +67,13 @@ Transform your plain text accounting experience with powerful IDE capabilities:
 - **Project-based caching** for large journal files
 - **Incremental updates** - only reparse changed files
 - Efficient workspace parsing
+
+### 🔌 **Language Server Protocol (LSP)**
+
+- **Optional LSP backend** for enhanced performance
+- **Auto-download** of LSP binary from GitHub releases
+- **Manual update** commands for version management
+- Cross-platform support (macOS, Linux, Windows)
 
 ---
 
@@ -214,8 +221,8 @@ Import bank statements and transaction data from CSV/TSV files.
   "hledger.cli.path": "",  // Auto-detected if empty
   "hledger.cli.journalFile": "",  // Uses LEDGER_FILE if empty
 
-  // Optional: Enhanced syntax highlighting
-  "hledger.semanticHighlighting.enabled": false,  // Enable for more precision
+  // Optional: Disable semantic highlighting to use only TextMate grammar
+  "hledger.semanticHighlighting.enabled": true,  // Enabled by default
 
   // Validation diagnostics
   "hledger.diagnostics.enabled": true,  // Disable to turn off validation warnings

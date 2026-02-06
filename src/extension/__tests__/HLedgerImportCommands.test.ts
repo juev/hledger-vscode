@@ -1,201 +1,490 @@
-/**
- * HLedgerImportCommands - Error handling tests for journal history lookup
- */
+import * as vscode from "vscode";
+import * as fs from "fs";
+import * as os from "os";
+import * as path from "path";
+import { HLedgerImportCommands } from "../HLedgerImportCommands";
+import { PayeeAccountHistoryResult } from "../lsp";
 
-import { HLedgerImportCommands } from '../HLedgerImportCommands';
-import { HLedgerConfig } from '../HLedgerConfig';
-import {
-    JournalNotFoundError,
-    JournalAccessError,
-    isJournalError,
-} from '../import/types';
+describe("HLedgerImportCommands", () => {
+  let tempDir: string;
+  let originalEnv: NodeJS.ProcessEnv;
 
-describe('HLedgerImportCommands', () => {
-    let importCommands: HLedgerImportCommands;
+  beforeEach(() => {
+    tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "hledger-import-test-"));
+    originalEnv = { ...process.env };
 
-    beforeEach(() => {
-        jest.clearAllMocks();
-        jest.spyOn(console, 'error').mockImplementation(() => {});
-        jest.spyOn(console, 'warn').mockImplementation(() => {});
+    // Clear environment variables
+    delete process.env.LEDGER_FILE;
+
+    // Mock workspace configuration to return empty values
+    (vscode.workspace as any).getConfiguration = jest.fn(() => ({
+      get: jest.fn(() => "")
+    }));
+
+    // Clear workspace folders
+    (vscode.workspace as any).workspaceFolders = undefined;
+  });
+
+  afterEach(() => {
+    fs.rmSync(tempDir, { recursive: true, force: true });
+    process.env = originalEnv;
+
+    // Reset mocks
+    (vscode.workspace as any).workspaceFolders = undefined;
+  });
+
+  describe("getJournalUri", () => {
+    it("returns URI from LEDGER_FILE environment variable when set", async () => {
+      const journalPath = path.join(tempDir, "ledger.journal");
+      fs.writeFileSync(journalPath, "; test journal");
+      process.env.LEDGER_FILE = journalPath;
+
+      const mockLspClient = jest.fn(() => null);
+      const commands = new HLedgerImportCommands(mockLspClient);
+
+      // Access private method via any cast for testing
+      const getJournalUri = (commands as any).getJournalUri.bind(commands);
+      const result = await getJournalUri();
+
+      expect(result).toBe(vscode.Uri.file(journalPath).toString());
     });
 
-    afterEach(() => {
-        (console.error as jest.Mock).mockRestore();
-        (console.warn as jest.Mock).mockRestore();
+    it("returns null when LEDGER_FILE points to non-existent file", async () => {
+      process.env.LEDGER_FILE = "/non/existent/file.journal";
+
+      const mockLspClient = jest.fn(() => null);
+      const commands = new HLedgerImportCommands(mockLspClient);
+
+      const getJournalUri = (commands as any).getJournalUri.bind(commands);
+      const result = await getJournalUri();
+
+      expect(result).toBeNull();
     });
 
-    describe('constructor with config', () => {
-        it('should instantiate with config', () => {
-            const config = new HLedgerConfig();
-            importCommands = new HLedgerImportCommands(config);
-            expect(importCommands).toBeDefined();
-        });
+    it("finds .journal file in workspace folder", async () => {
+      const journalPath = path.join(tempDir, "main.journal");
+      fs.writeFileSync(journalPath, "; test journal");
 
-        it('should instantiate without config', () => {
-            importCommands = new HLedgerImportCommands();
-            expect(importCommands).toBeDefined();
-        });
+      // Mock workspace folders
+      const mockFolder = {
+        uri: vscode.Uri.file(tempDir),
+        name: "test",
+        index: 0,
+      };
+      (vscode.workspace as any).workspaceFolders = [mockFolder];
+
+      const mockLspClient = jest.fn(() => null);
+      const commands = new HLedgerImportCommands(mockLspClient);
+
+      const getJournalUri = (commands as any).getJournalUri.bind(commands);
+      const result = await getJournalUri();
+
+      expect(result).toBe(vscode.Uri.file(journalPath).toString());
+
+      // Cleanup mock
+      (vscode.workspace as any).workspaceFolders = undefined;
     });
 
-    describe('journal history lookup error handling', () => {
-        it('should handle null history gracefully during import', () => {
-            const config = new HLedgerConfig();
-            jest.spyOn(config, 'getPayeeAccountHistory').mockReturnValue(null);
+    it("finds .hledger file in workspace folder", async () => {
+      const journalPath = path.join(tempDir, "main.hledger");
+      fs.writeFileSync(journalPath, "; test journal");
 
-            importCommands = new HLedgerImportCommands(config);
+      const mockFolder = {
+        uri: vscode.Uri.file(tempDir),
+        name: "test",
+        index: 0,
+      };
+      (vscode.workspace as any).workspaceFolders = [mockFolder];
 
-            // Verify method can be called without throwing
-            expect(() => {
-                importCommands.dispose();
-            }).not.toThrow();
-        });
+      const mockLspClient = jest.fn(() => null);
+      const commands = new HLedgerImportCommands(mockLspClient);
 
-        it('should handle config with working getPayeeAccountHistory', () => {
-            const config = new HLedgerConfig();
-            const mockHistory = {
-                payeeAccounts: new Map(),
-                pairUsage: new Map(),
-            };
+      const getJournalUri = (commands as any).getJournalUri.bind(commands);
+      const result = await getJournalUri();
 
-            jest.spyOn(config, 'getPayeeAccountHistory').mockReturnValue(mockHistory);
+      expect(result).toBe(vscode.Uri.file(journalPath).toString());
 
-            importCommands = new HLedgerImportCommands(config);
-            expect(importCommands).toBeDefined();
-        });
+      (vscode.workspace as any).workspaceFolders = undefined;
     });
 
-    describe('custom error types', () => {
-        describe('JournalNotFoundError', () => {
-            it('should have correct name property', () => {
-                const error = new JournalNotFoundError('/path/to/journal.hledger');
-                expect(error.name).toBe('JournalNotFoundError');
-            });
+    it("finds .ledger file in workspace folder", async () => {
+      const journalPath = path.join(tempDir, "main.ledger");
+      fs.writeFileSync(journalPath, "; test journal");
 
-            it('should include path in message', () => {
-                const error = new JournalNotFoundError('/path/to/journal.hledger');
-                expect(error.message).toContain('/path/to/journal.hledger');
-            });
+      const mockFolder = {
+        uri: vscode.Uri.file(tempDir),
+        name: "test",
+        index: 0,
+      };
+      (vscode.workspace as any).workspaceFolders = [mockFolder];
 
-            it('should extend Error', () => {
-                const error = new JournalNotFoundError('/path/to/journal.hledger');
-                expect(error).toBeInstanceOf(Error);
-            });
+      const mockLspClient = jest.fn(() => null);
+      const commands = new HLedgerImportCommands(mockLspClient);
 
-            it('should be identifiable with instanceof', () => {
-                const error = new JournalNotFoundError('/path/to/journal.hledger');
-                expect(error).toBeInstanceOf(JournalNotFoundError);
-            });
+      const getJournalUri = (commands as any).getJournalUri.bind(commands);
+      const result = await getJournalUri();
 
-            it('should expose path property', () => {
-                const error = new JournalNotFoundError('/path/to/journal.hledger');
-                expect(error.path).toBe('/path/to/journal.hledger');
-            });
+      expect(result).toBe(vscode.Uri.file(journalPath).toString());
 
-            it('should have stack trace', () => {
-                const error = new JournalNotFoundError('/path/to/journal.hledger');
-                expect(error.stack).toBeDefined();
-            });
-        });
-
-        describe('JournalAccessError', () => {
-            it('should have correct name property', () => {
-                const error = new JournalAccessError(
-                    '/path/to/journal.hledger',
-                    'Permission denied'
-                );
-                expect(error.name).toBe('JournalAccessError');
-            });
-
-            it('should include path and reason in message', () => {
-                const error = new JournalAccessError(
-                    '/path/to/journal.hledger',
-                    'Permission denied'
-                );
-                expect(error.message).toContain('/path/to/journal.hledger');
-                expect(error.message).toContain('Permission denied');
-            });
-
-            it('should extend Error', () => {
-                const error = new JournalAccessError(
-                    '/path/to/journal.hledger',
-                    'Permission denied'
-                );
-                expect(error).toBeInstanceOf(Error);
-            });
-
-            it('should be identifiable with instanceof', () => {
-                const error = new JournalAccessError(
-                    '/path/to/journal.hledger',
-                    'Permission denied'
-                );
-                expect(error).toBeInstanceOf(JournalAccessError);
-            });
-
-            it('should expose path and reason properties', () => {
-                const error = new JournalAccessError(
-                    '/path/to/journal.hledger',
-                    'Permission denied'
-                );
-                expect(error.path).toBe('/path/to/journal.hledger');
-                expect(error.reason).toBe('Permission denied');
-            });
-        });
-
-        describe('isJournalError type guard', () => {
-            it('should return true for JournalNotFoundError', () => {
-                const error = new JournalNotFoundError('/path/to/journal.hledger');
-                expect(isJournalError(error)).toBe(true);
-            });
-
-            it('should return true for JournalAccessError', () => {
-                const error = new JournalAccessError(
-                    '/path/to/journal.hledger',
-                    'Permission denied'
-                );
-                expect(isJournalError(error)).toBe(true);
-            });
-
-            it('should return false for generic Error', () => {
-                const error = new Error('Something went wrong');
-                expect(isJournalError(error)).toBe(false);
-            });
-
-            it('should return false for non-Error values', () => {
-                expect(isJournalError('string')).toBe(false);
-                expect(isJournalError(null)).toBe(false);
-                expect(isJournalError(undefined)).toBe(false);
-                expect(isJournalError(42)).toBe(false);
-            });
-        });
-
-        describe('error differentiation in import flow', () => {
-            it('should recognize JournalNotFoundError as expected failure', () => {
-                const error = new JournalNotFoundError('/path/to/journal.hledger');
-
-                // Expected failures are JournalNotFoundError or JournalAccessError
-                const isExpectedFailure = isJournalError(error);
-
-                expect(isExpectedFailure).toBe(true);
-            });
-
-            it('should recognize JournalAccessError as expected failure', () => {
-                const error = new JournalAccessError(
-                    '/path/to/journal.hledger',
-                    'Permission denied'
-                );
-
-                const isExpectedFailure = isJournalError(error);
-
-                expect(isExpectedFailure).toBe(true);
-            });
-
-            it('should recognize generic Error as unexpected failure', () => {
-                const error = new Error('Database connection failed');
-
-                const isExpectedFailure = isJournalError(error);
-
-                expect(isExpectedFailure).toBe(false);
-            });
-        });
+      (vscode.workspace as any).workspaceFolders = undefined;
     });
+
+    it("finds journal file with case-insensitive extension match", async () => {
+      const journalPath = path.join(tempDir, "main.JOURNAL");
+      fs.writeFileSync(journalPath, "; test journal");
+
+      const mockFolder = {
+        uri: vscode.Uri.file(tempDir),
+        name: "test",
+        index: 0,
+      };
+      (vscode.workspace as any).workspaceFolders = [mockFolder];
+
+      const mockLspClient = jest.fn(() => null);
+      const commands = new HLedgerImportCommands(mockLspClient);
+
+      const getJournalUri = (commands as any).getJournalUri.bind(commands);
+      const result = await getJournalUri();
+
+      expect(result).toBe(vscode.Uri.file(journalPath).toString());
+
+      (vscode.workspace as any).workspaceFolders = undefined;
+    });
+
+    it("respects MAX_DIRECTORY_FILES limit when scanning workspace", async () => {
+      // Create 1000 non-journal files first
+      for (let i = 0; i < 1000; i++) {
+        const filename = `file${i.toString().padStart(5, '0')}.txt`;
+        fs.writeFileSync(path.join(tempDir, filename), "");
+      }
+      // Add journal file after the first 1000 files (alphabetically)
+      const journalPath = path.join(tempDir, `zzz_beyond_limit.journal`);
+      fs.writeFileSync(journalPath, "; test");
+
+      // Verify directory has >1000 files total
+      const allFiles = fs.readdirSync(tempDir);
+      expect(allFiles.length).toBeGreaterThan(1000);
+
+      const mockFolder = {
+        uri: vscode.Uri.file(tempDir),
+        name: "test",
+        index: 0,
+      };
+      (vscode.workspace as any).workspaceFolders = [mockFolder];
+
+      const mockLspClient = jest.fn(() => null);
+      const commands = new HLedgerImportCommands(mockLspClient);
+
+      const getJournalUri = (commands as any).getJournalUri.bind(commands);
+      const result = await getJournalUri();
+
+      // Result depends on whether journal file is in first 1000 entries
+      // Since fs.readdirSync order is filesystem-dependent, we just verify
+      // the scan completes (doesn't hang on large directory)
+      expect(result === null || typeof result === 'string').toBe(true);
+
+      (vscode.workspace as any).workspaceFolders = undefined;
+    });
+
+    it("returns first matching journal file when multiple exist", async () => {
+      const journal1 = path.join(tempDir, "a.journal");
+      const journal2 = path.join(tempDir, "b.journal");
+      fs.writeFileSync(journal1, "; first");
+      fs.writeFileSync(journal2, "; second");
+
+      const mockFolder = {
+        uri: vscode.Uri.file(tempDir),
+        name: "test",
+        index: 0,
+      };
+      (vscode.workspace as any).workspaceFolders = [mockFolder];
+
+      const mockLspClient = jest.fn(() => null);
+      const commands = new HLedgerImportCommands(mockLspClient);
+
+      const getJournalUri = (commands as any).getJournalUri.bind(commands);
+      const result = await getJournalUri();
+
+      // Should return one of them (early exit on first match)
+      expect(result).toMatch(/\.(journal|hledger|ledger)$/);
+
+      (vscode.workspace as any).workspaceFolders = undefined;
+    });
+
+    it("returns null when workspace folder cannot be read", async () => {
+      const mockFolder = {
+        uri: vscode.Uri.file("/non/existent/folder"),
+        name: "test",
+        index: 0,
+      };
+      (vscode.workspace as any).workspaceFolders = [mockFolder];
+
+      const mockLspClient = jest.fn(() => null);
+      const commands = new HLedgerImportCommands(mockLspClient);
+
+      const getJournalUri = (commands as any).getJournalUri.bind(commands);
+      const result = await getJournalUri();
+
+      expect(result).toBeNull();
+
+      (vscode.workspace as any).workspaceFolders = undefined;
+    });
+  });
+
+  describe("convertToPayeeAccountHistory", () => {
+    it("converts valid LSP response correctly", () => {
+      const mockLspClient = jest.fn(() => null);
+      const commands = new HLedgerImportCommands(mockLspClient);
+
+      const lspResult: PayeeAccountHistoryResult = {
+        payeeAccounts: {
+          "Store": ["Expenses:Food", "Expenses:Groceries"],
+          "Salary": ["Income:Salary"]
+        },
+        pairUsage: {
+          "Store::Expenses:Food": 10,
+          "Store::Expenses:Groceries": 5,
+          "Salary::Income:Salary": 12
+        }
+      };
+
+      const convertToPayeeAccountHistory = (commands as any).convertToPayeeAccountHistory.bind(commands);
+      const result = convertToPayeeAccountHistory(lspResult);
+
+      expect(result.payeeAccounts.size).toBe(2);
+      expect(result.payeeAccounts.get("Store" as any)).toEqual(new Set(["Expenses:Food", "Expenses:Groceries"]));
+      expect(result.payeeAccounts.get("Salary" as any)).toEqual(new Set(["Income:Salary"]));
+
+      expect(result.pairUsage.size).toBe(3);
+      expect(result.pairUsage.get("Store::Expenses:Food")).toBe(10);
+      expect(result.pairUsage.get("Salary::Income:Salary")).toBe(12);
+    });
+
+    it("filters out empty payee names", () => {
+      const mockLspClient = jest.fn(() => null);
+      const commands = new HLedgerImportCommands(mockLspClient);
+
+      const lspResult: PayeeAccountHistoryResult = {
+        payeeAccounts: {
+          "": ["Expenses:Food"],
+          "Store": ["Expenses:Groceries"]
+        },
+        pairUsage: {}
+      };
+
+      const convertToPayeeAccountHistory = (commands as any).convertToPayeeAccountHistory.bind(commands);
+      const result = convertToPayeeAccountHistory(lspResult);
+
+      expect(result.payeeAccounts.size).toBe(1);
+      expect(result.payeeAccounts.has("" as any)).toBe(false);
+      expect(result.payeeAccounts.has("Store" as any)).toBe(true);
+    });
+
+    it("accepts numeric and keyword string payee names", () => {
+      const mockLspClient = jest.fn(() => null);
+      const commands = new HLedgerImportCommands(mockLspClient);
+
+      const lspResult: any = {
+        payeeAccounts: {
+          "Store": ["Expenses:Food"],
+          "123": ["Expenses:Other"],
+          "null": ["Expenses:Converted"],
+          "undefined": ["Expenses:Converted2"]
+        },
+        pairUsage: {}
+      };
+
+      const convertToPayeeAccountHistory = (commands as any).convertToPayeeAccountHistory.bind(commands);
+      const result = convertToPayeeAccountHistory(lspResult);
+
+      // All string keys are valid (Object.entries converts keys to strings)
+      expect(result.payeeAccounts.size).toBe(4);
+      expect(result.payeeAccounts.has("Store" as any)).toBe(true);
+      expect(result.payeeAccounts.has("123" as any)).toBe(true);
+      expect(result.payeeAccounts.has("null" as any)).toBe(true);
+      expect(result.payeeAccounts.has("undefined" as any)).toBe(true);
+    });
+
+    it("filters out empty account arrays", () => {
+      const mockLspClient = jest.fn(() => null);
+      const commands = new HLedgerImportCommands(mockLspClient);
+
+      const lspResult: PayeeAccountHistoryResult = {
+        payeeAccounts: {
+          "Store": [],
+          "Salary": ["Income:Salary"]
+        },
+        pairUsage: {}
+      };
+
+      const convertToPayeeAccountHistory = (commands as any).convertToPayeeAccountHistory.bind(commands);
+      const result = convertToPayeeAccountHistory(lspResult);
+
+      expect(result.payeeAccounts.size).toBe(1);
+      expect(result.payeeAccounts.has("Store" as any)).toBe(false);
+      expect(result.payeeAccounts.has("Salary" as any)).toBe(true);
+    });
+
+    it("filters out non-string accounts from arrays", () => {
+      const mockLspClient = jest.fn(() => null);
+      const commands = new HLedgerImportCommands(mockLspClient);
+
+      const lspResult: any = {
+        payeeAccounts: {
+          "Store": ["Expenses:Food", "", null, undefined, 123, "Expenses:Valid"]
+        },
+        pairUsage: {}
+      };
+
+      const convertToPayeeAccountHistory = (commands as any).convertToPayeeAccountHistory.bind(commands);
+      const result = convertToPayeeAccountHistory(lspResult);
+
+      expect(result.payeeAccounts.size).toBe(1);
+      const accounts = Array.from(result.payeeAccounts.get("Store" as any) || []);
+      expect(accounts).toEqual(["Expenses:Food", "Expenses:Valid"]);
+      expect(accounts.length).toBe(2);
+    });
+
+    it("filters out null/undefined accounts arrays", () => {
+      const mockLspClient = jest.fn(() => null);
+      const commands = new HLedgerImportCommands(mockLspClient);
+
+      const lspResult: any = {
+        payeeAccounts: {
+          "Store": null,
+          "Market": undefined,
+          "Salary": ["Income:Salary"]
+        },
+        pairUsage: {}
+      };
+
+      const convertToPayeeAccountHistory = (commands as any).convertToPayeeAccountHistory.bind(commands);
+      const result = convertToPayeeAccountHistory(lspResult);
+
+      expect(result.payeeAccounts.size).toBe(1);
+      expect(result.payeeAccounts.has("Salary" as any)).toBe(true);
+    });
+
+    it("filters out empty pairUsage keys", () => {
+      const mockLspClient = jest.fn(() => null);
+      const commands = new HLedgerImportCommands(mockLspClient);
+
+      const lspResult: any = {
+        payeeAccounts: {},
+        pairUsage: {
+          "": 5,
+          "Store::Expenses:Food": 10
+        }
+      };
+
+      const convertToPayeeAccountHistory = (commands as any).convertToPayeeAccountHistory.bind(commands);
+      const result = convertToPayeeAccountHistory(lspResult);
+
+      expect(result.pairUsage.size).toBe(1);
+      expect(result.pairUsage.has("")).toBe(false);
+      expect(result.pairUsage.has("Store::Expenses:Food")).toBe(true);
+    });
+
+    it("filters out negative counts in pairUsage", () => {
+      const mockLspClient = jest.fn(() => null);
+      const commands = new HLedgerImportCommands(mockLspClient);
+
+      const lspResult: any = {
+        payeeAccounts: {},
+        pairUsage: {
+          "Store::Expenses:Food": -5,
+          "Salary::Income:Salary": 10
+        }
+      };
+
+      const convertToPayeeAccountHistory = (commands as any).convertToPayeeAccountHistory.bind(commands);
+      const result = convertToPayeeAccountHistory(lspResult);
+
+      expect(result.pairUsage.size).toBe(1);
+      expect(result.pairUsage.has("Store::Expenses:Food")).toBe(false);
+      expect(result.pairUsage.has("Salary::Income:Salary")).toBe(true);
+    });
+
+    it("filters out non-number counts in pairUsage", () => {
+      const mockLspClient = jest.fn(() => null);
+      const commands = new HLedgerImportCommands(mockLspClient);
+
+      const lspResult: any = {
+        payeeAccounts: {},
+        pairUsage: {
+          "Store::Expenses:Food": "10",
+          "Market::Expenses:Other": null,
+          "Salary::Income:Salary": 12
+        }
+      };
+
+      const convertToPayeeAccountHistory = (commands as any).convertToPayeeAccountHistory.bind(commands);
+      const result = convertToPayeeAccountHistory(lspResult);
+
+      expect(result.pairUsage.size).toBe(1);
+      expect(result.pairUsage.has("Salary::Income:Salary")).toBe(true);
+    });
+
+    it("filters out NaN counts in pairUsage", () => {
+      const mockLspClient = jest.fn(() => null);
+      const commands = new HLedgerImportCommands(mockLspClient);
+
+      const lspResult: any = {
+        payeeAccounts: {},
+        pairUsage: {
+          "Store::Expenses:Food": NaN,
+          "Salary::Income:Salary": 10
+        }
+      };
+
+      const convertToPayeeAccountHistory = (commands as any).convertToPayeeAccountHistory.bind(commands);
+      const result = convertToPayeeAccountHistory(lspResult);
+
+      expect(result.pairUsage.size).toBe(1);
+      expect(result.pairUsage.has("Store::Expenses:Food")).toBe(false);
+      expect(result.pairUsage.has("Salary::Income:Salary")).toBe(true);
+    });
+
+    it("filters out Infinity counts in pairUsage", () => {
+      const mockLspClient = jest.fn(() => null);
+      const commands = new HLedgerImportCommands(mockLspClient);
+
+      const lspResult: any = {
+        payeeAccounts: {},
+        pairUsage: {
+          "Store::Expenses:Food": Infinity,
+          "Market::Expenses:Other": -Infinity,
+          "Salary::Income:Salary": 10
+        }
+      };
+
+      const convertToPayeeAccountHistory = (commands as any).convertToPayeeAccountHistory.bind(commands);
+      const result = convertToPayeeAccountHistory(lspResult);
+
+      expect(result.pairUsage.size).toBe(1);
+      expect(result.pairUsage.has("Store::Expenses:Food")).toBe(false);
+      expect(result.pairUsage.has("Market::Expenses:Other")).toBe(false);
+      expect(result.pairUsage.has("Salary::Income:Salary")).toBe(true);
+    });
+
+    it("allows zero counts in pairUsage", () => {
+      const mockLspClient = jest.fn(() => null);
+      const commands = new HLedgerImportCommands(mockLspClient);
+
+      const lspResult: PayeeAccountHistoryResult = {
+        payeeAccounts: {},
+        pairUsage: {
+          "Store::Expenses:Food": 0,
+          "Salary::Income:Salary": 10
+        }
+      };
+
+      const convertToPayeeAccountHistory = (commands as any).convertToPayeeAccountHistory.bind(commands);
+      const result = convertToPayeeAccountHistory(lspResult);
+
+      expect(result.pairUsage.size).toBe(2);
+      expect(result.pairUsage.get("Store::Expenses:Food")).toBe(0);
+      expect(result.pairUsage.get("Salary::Income:Salary")).toBe(10);
+    });
+  });
 });

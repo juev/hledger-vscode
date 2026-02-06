@@ -12,7 +12,9 @@ Complete documentation for the hledger VS Code extension.
 - [Syntax Highlighting](#syntax-highlighting)
 - [Diagnostics & Validation](#diagnostics--validation)
 - [CLI Integration](#cli-integration)
+- [Context Menu](#context-menu)
 - [CSV/TSV Import](#csvtsv-import)
+- [Language Server (LSP)](#language-server-lsp)
 - [Configuration Reference](#configuration-reference)
 - [Commands Reference](#commands-reference)
 - [Keyboard Shortcuts](#keyboard-shortcuts)
@@ -236,6 +238,15 @@ Shows complete posting structure as ghost text:
 | `hledger.inlineCompletion.enabled` | Enable/disable inline completions | `true` |
 | `hledger.inlineCompletion.minPayeeChars` | Minimum characters before showing | `2` |
 
+### LSP Dependency
+
+Inline completions require the Language Server (LSP) to be installed and running. When the LSP is unavailable:
+- Ghost text suggestions will not appear
+- No error is shown - the feature silently waits for LSP availability
+- Once LSP starts, inline completions work automatically
+
+To install the LSP, run the command **HLedger: Install/Update Language Server**.
+
 ---
 
 ## Smart Editing
@@ -364,67 +375,111 @@ D RUB 1 000,00
 
 ## Syntax Highlighting
 
-### Dual-Layer System
+The extension provides two levels of syntax highlighting:
 
-The extension uses two highlighting systems:
+1. **TextMate Grammar** (always available): Basic syntax highlighting using VS Code's built-in TextMate engine. Works without the Language Server.
+2. **Semantic Tokens** (requires LSP): Rich, context-aware highlighting provided by the Language Server. Offers more accurate and detailed highlighting.
 
-1. **TextMate Grammar** - Always active, fast, handles most syntax
-2. **Semantic Tokens** - Optional, more precise, 14 token types
+**Automatic Fallback:** When the Language Server is not running or semantic tokens are disabled, VS Code automatically uses TextMate grammar highlighting. Basic syntax highlighting is always available.
 
-### Enable Semantic Highlighting
+**Recommended Setup:**
+- Language Server running + Semantic tokens enabled (default) = Best experience
+
+### Enable/Disable Semantic Highlighting
+
+Semantic highlighting is enabled by default:
 
 ```json
 {
-  "hledger.semanticHighlighting.enabled": true
+  "hledger.features.semanticTokens": true
 }
 ```
 
 ### Semantic Token Types
 
-| Token | Description |
-|-------|-------------|
-| `account` | Account names |
-| `accountVirtual` | Virtual accounts in `()` or `[]` |
-| `amount` | Numeric amounts |
-| `comment` | Comment text |
-| `date` | Transaction dates |
-| `time` | Time values |
-| `commodity` | Currency/commodity codes |
-| `payee` | Payee names |
-| `note` | Metadata notes |
-| `tag` | Tag names and values |
-| `directive` | Directives (include, account, etc.) |
-| `operator` | Operators (`=`, `:=`, `@`, `@@`) |
-| `code` | Transaction codes |
-| `link` | Inter-transaction links |
+| Token | VS Code Type | TextMate Scope | Dark+ Color | Description |
+|-------|--------------|----------------|-------------|-------------|
+| `account` | `namespace` | `entity.name.namespace` | Cyan (#4EC9B0) | Account names |
+| `accountVirtual` | `namespace` | `entity.name.namespace` | Cyan (#4EC9B0) | Virtual accounts in `()` or `[]` |
+| `amount` | `number` | `constant.numeric` | Green (#B5CEA8) | Numeric amounts |
+| `date` | `number` | `constant.numeric` | Green (#B5CEA8) | Transaction dates |
+| `time` | `number` | `constant.numeric` | Green (#B5CEA8) | Time values |
+| `commodity` | `type` | `entity.name.type` | Cyan (#4EC9B0) | Currency/commodity codes |
+| `payee` | `function` | `entity.name.function` | Yellow (#DCDCAA) | Payee names |
+| `note` | `comment` | `comment.block` | Green (#6A9955) | Metadata notes |
+| `tag` | `decorator` | `entity.name.tag` | Blue (#569CD6) | Tag names |
+| `tagValue` | `string` | `string` | Orange (#CE9178) | Tag values |
+| `directive` | `keyword` | `keyword.control` | Purple (#C586C0) | Directives (include, account, etc.) |
+| `code` | `string` | `string.quoted` | Orange (#CE9178) | Transaction codes |
+| `status` | `operator` | `keyword.operator` | Light (#D4D4D4) | Status markers (`*`, `!`) |
+| `link` | `label` | `markup.underline.link` | Blue (underlined) | Inter-transaction links |
+| `comment` | `comment` | `comment.line` | Green (#6A9955) | Comment text |
+| `operator` | `operator` | `keyword.operator` | Light (#D4D4D4) | Operators (`=`, `:=`, `@`, `@@`) |
+
+**How highlighting works:**
+1. **TextMate Scopes** (highest priority) - Standard scopes like `entity.name.namespace`, `constant.numeric` that themes understand
+2. **VS Code Type** (fallback) - Semantic token type used when theme doesn't customize the scope
+3. **Theme defaults** (lowest priority) - Built-in theme colors
+
+The extension uses standard TextMate scopes that are recognized by all VS Code themes, ensuring consistent highlighting without custom theme configuration.
 
 ### Color Customization
 
-Customize colors for any theme:
+You can customize colors in two ways:
+
+#### Option 1: Per Semantic Token Type (Recommended)
+
+Override colors specifically for hledger tokens. This works with any theme and doesn't affect other languages:
 
 ```json
 {
   "editor.semanticTokenColorCustomizations": {
     "rules": {
       "account:hledger": "#0EA5E9",
-      "amount:hledger": "#F59E0B",
       "payee:hledger": "#EF4444",
-      "tag:hledger": "#EC4899",
+      "date:hledger": "#22C55E",
+      "amount:hledger": "#F59E0B",
       "commodity:hledger": "#A855F7",
-      "date:hledger": "#2563EB",
-      "comment:hledger": "#9CA3AF"
+      "tag:hledger": "#EC4899"
     }
   }
 }
 ```
 
-### Theme-Specific Colors
+#### Option 2: Per TextMate Scope (Global)
 
-The extension provides default colors for:
-- **Default Dark+**: Optimized for dark themes
-- **Default Light+**: Optimized for light themes
+Customize the underlying TextMate scopes. This affects ALL languages that use these scopes:
 
-These are applied automatically based on your active theme.
+```json
+{
+  "editor.tokenColorCustomizations": {
+    "textMateRules": [
+      {
+        "scope": "entity.name.function",
+        "settings": { "foreground": "#DCDCAA" }
+      },
+      {
+        "scope": "constant.numeric",
+        "settings": { "foreground": "#B5CEA8" }
+      },
+      {
+        "scope": "entity.name.namespace",
+        "settings": { "foreground": "#4EC9B0" }
+      }
+    ]
+  }
+}
+```
+
+⚠️ **Warning:** TextMate scope customization applies to all languages, not just hledger.
+
+### Default Theme Colors
+
+The extension uses standard TextMate scopes that are automatically styled by VS Code themes:
+- **Dark+**: Accounts (cyan), payees (yellow), amounts/dates (green), directives (purple)
+- **Light+**: Similar semantic colors with adjusted brightness for light backgrounds
+
+No additional configuration is needed for standard themes to work correctly.
 
 ---
 
@@ -577,6 +632,31 @@ Paths from environment variables and settings are validated to prevent command i
 
 ---
 
+## Context Menu
+
+Right-click in the editor to access the HLedger submenu with quick access to CLI reports.
+
+### Available Commands
+
+| Command | Description |
+|---------|-------------|
+| **Insert Balance Report** | Insert `hledger bs` output as comment |
+| **Insert Income Statement** | Insert `hledger is` output as comment |
+| **Insert Statistics** | Insert `hledger stats` output as comment |
+
+### Usage
+
+1. Open a `.journal`, `.hledger`, or `.ledger` file
+2. Right-click in the editor
+3. Select **HLedger** from the context menu
+4. Choose the desired report
+
+The context menu only appears for hledger files and provides the same functionality as the Command Palette commands, but with faster access.
+
+Navigation commands (Go to Definition, Go to References, Rename Symbol) are available through VS Code's standard context menu when the Language Server is active.
+
+---
+
 ## CSV/TSV Import
 
 Import bank statements and transaction data from tabular files.
@@ -622,38 +702,8 @@ The import feature tries to match payees to accounts using multiple strategies:
 |----------|----------|------------|-------------|
 | 1 | Journal history (exact) | 95% | Exact payee match from existing transactions |
 | 2 | Journal history (fuzzy) | 85% | Similar payee names |
-| 3 | Category mapping | 80% | Configured category-to-account mapping |
-| 4 | Merchant patterns | 70% | Regex patterns for merchants |
-| 5 | Amount sign | 50% | Positive=income, negative=expense |
-| 6 | Default accounts | - | Configured defaults |
-
-### Merchant Patterns Configuration
-
-Define regex patterns to match merchants:
-
-```json
-{
-  "hledger.import.merchantPatterns": {
-    "AMAZON|AMZN": "expenses:shopping",
-    "UBER|LYFT": "expenses:transport",
-    "NETFLIX|SPOTIFY": "expenses:subscriptions"
-  }
-}
-```
-
-### Category Mapping Configuration
-
-Map CSV category values to hledger accounts:
-
-```json
-{
-  "hledger.import.categoryMapping": {
-    "Groceries": "expenses:food:groceries",
-    "Restaurants": "expenses:food:dining",
-    "Transportation": "expenses:transport"
-  }
-}
-```
+| 3 | Amount sign | 50% | Positive=income, negative=expense |
+| 4 | Default accounts | - | Configured defaults |
 
 ### Date Format Handling
 
@@ -677,8 +727,142 @@ Map CSV category values to hledger accounts:
 | `hledger.import.defaultBalancingAccount` | Balancing posting account | `TODO:account` |
 | `hledger.import.invertAmounts` | Invert amount signs | `false` |
 | `hledger.import.useJournalHistory` | Learn from existing transactions | `true` |
-| `hledger.import.merchantPatterns` | Regex patterns for merchants | `{}` |
-| `hledger.import.categoryMapping` | Category to account mapping | `{}` |
+
+---
+
+## Language Server (LSP)
+
+The extension uses a Language Server Protocol (LSP) backend for most features. The LSP server provides completions, real-time diagnostics, formatting, semantic highlighting, and other capabilities.
+
+### Without Language Server
+
+When the LSP is not installed or not running:
+
+**Limited features:**
+- **Syntax highlighting**: Basic TextMate grammar highlighting (automatic fallback). For richer, context-aware highlighting, enable LSP semantic tokens.
+- **Smart Enter/Tab**: Smart indentation and alignment (works locally)
+- **CLI integration**: balance, stats, income statement commands (works locally)
+- **CSV/TSV import**: Import functionality (works locally)
+
+**Unavailable features (require LSP):**
+- Inline completions (ghost text)
+- Auto-completion (accounts, payees, dates, etc.)
+- Diagnostics and validation
+- Document formatting
+- Code navigation (Go to Definition, Find References)
+- Hover information
+- Folding ranges
+- Workspace symbols
+
+We recommend installing the LSP for the full experience. The extension will prompt you to install it on first activation.
+
+### Installation
+
+The extension can automatically download and manage the hledger-lsp binary:
+
+1. Open Command Palette (`Ctrl+Shift+P` or `Cmd+Shift+P`)
+2. Run **HLedger: Install/Update Language Server**
+3. Wait for the download to complete
+
+The binary is stored in VS Code's global storage directory.
+
+### LSP Commands
+
+| Command | Description |
+|---------|-------------|
+| `hledger.lsp.update` | Install or update the language server binary |
+| `hledger.lsp.showVersion` | Show installed version and status |
+| `hledger.lsp.restart` | Restart the language server |
+
+### LSP Settings
+
+| Setting | Type | Default | Description |
+|---------|------|---------|-------------|
+| `hledger.lsp.path` | string | `""` | Custom path to hledger-lsp binary. If empty, uses auto-downloaded binary |
+| `hledger.lsp.debug` | boolean | `false` | Enable debug logging for the LSP server |
+| `hledger.lsp.checkForUpdates` | boolean | `true` | Check for Language Server updates on extension activation |
+
+### LSP Feature Settings
+
+Control which Language Server features are enabled:
+
+| Setting | Type | Default | Description |
+|---------|------|---------|-------------|
+| `hledger.features.hover` | boolean | `true` | Enable hover information |
+| `hledger.features.completion` | boolean | `true` | Enable autocompletion |
+| `hledger.features.formatting` | boolean | `true` | Enable document formatting |
+| `hledger.features.diagnostics` | boolean | `true` | Enable diagnostics |
+| `hledger.features.semanticTokens` | boolean | `true` | Enable semantic tokens |
+| `hledger.features.codeActions` | boolean | `true` | Enable code actions |
+| `hledger.features.foldingRanges` | boolean | `true` | Enable transaction folding |
+| `hledger.features.documentLinks` | boolean | `true` | Enable links for include directives |
+| `hledger.features.workspaceSymbol` | boolean | `true` | Enable workspace symbol search |
+
+### LSP Completion Settings
+
+| Setting | Type | Default | Description |
+|---------|------|---------|-------------|
+| `hledger.completion.snippets` | boolean | `true` | Enable snippet completions for payees |
+| `hledger.completion.fuzzyMatching` | boolean | `true` | Enable fuzzy matching |
+| `hledger.completion.showCounts` | boolean | `true` | Show usage counts in completions |
+
+### LSP Diagnostics Settings
+
+| Setting | Type | Default | Description |
+|---------|------|---------|-------------|
+| `hledger.diagnostics.undeclaredAccounts` | boolean | `true` | Report undeclared accounts |
+| `hledger.diagnostics.undeclaredCommodities` | boolean | `true` | Report undeclared commodities |
+| `hledger.diagnostics.unbalancedTransactions` | boolean | `true` | Report unbalanced transactions |
+
+### LSP Formatting Settings
+
+| Setting | Type | Default | Description |
+|---------|------|---------|-------------|
+| `hledger.formatting.indentSize` | number | `4` | Number of spaces for posting indentation (2-8) |
+| `hledger.formatting.alignAmounts` | boolean | `true` | Align amounts in postings |
+
+### CLI Integration Settings (LSP)
+
+| Setting | Type | Default | Description |
+|---------|------|---------|-------------|
+| `hledger.cli.enabled` | boolean | `true` | Enable CLI integration |
+| `hledger.cli.timeout` | number | `30000` | Timeout for commands in milliseconds (1000-300000) |
+
+### Limits Settings
+
+| Setting | Type | Default | Description |
+|---------|------|---------|-------------|
+| `hledger.limits.maxFileSizeBytes` | number | `10485760` | Maximum file size (1MB-100MB, default: 10MB) |
+| `hledger.limits.maxIncludeDepth` | number | `50` | Maximum include directive depth (1-100) |
+
+### Backward Compatibility
+
+The new settings maintain backward compatibility with existing settings:
+
+| Old Setting | New Setting | Notes |
+|-------------|-------------|-------|
+| `autoCompletion.enabled` | `features.completion` | New takes precedence if both set |
+| `diagnostics.enabled` | `features.diagnostics` | New takes precedence if both set |
+| `diagnostics.checkBalance` | `diagnostics.unbalancedTransactions` | New takes precedence if both set |
+
+### Using Custom Binary
+
+If you prefer to use your own hledger-lsp binary:
+
+1. Install hledger-lsp manually
+2. Configure the path in settings:
+   ```json
+   {
+     "hledger.lsp.path": "/path/to/hledger-lsp"
+   }
+   ```
+
+### Supported Platforms
+
+Auto-download supports:
+- macOS (Intel and Apple Silicon)
+- Linux (x64 and ARM64)
+- Windows (x64)
 
 ---
 
@@ -729,12 +913,6 @@ Map CSV category values to hledger accounts:
 
 **Note:** The `amountAlignmentColumn` setting specifies the minimum column position. Amounts are aligned at least at this column, but may shift further right when account names are long enough to require additional space.
 
-### Syntax Highlighting Settings
-
-| Setting | Type | Default | Description |
-|---------|------|---------|-------------|
-| `hledger.semanticHighlighting.enabled` | boolean | `false` | Enable semantic token highlighting |
-
 ### Import Settings
 
 | Setting | Type | Default | Description |
@@ -745,8 +923,65 @@ Map CSV category values to hledger accounts:
 | `hledger.import.defaultBalancingAccount` | string | `TODO:account` | Default balancing account |
 | `hledger.import.invertAmounts` | boolean | `false` | Invert amount signs |
 | `hledger.import.useJournalHistory` | boolean | `true` | Use journal history for account matching |
-| `hledger.import.merchantPatterns` | object | `{}` | Regex patterns for merchant detection |
-| `hledger.import.categoryMapping` | object | `{}` | Category to account mapping |
+
+### Language Server Settings
+
+| Setting | Type | Default | Description |
+|---------|------|---------|-------------|
+| `hledger.lsp.path` | string | `""` | Custom path to hledger-lsp binary |
+| `hledger.lsp.debug` | boolean | `false` | Enable debug logging for LSP |
+| `hledger.lsp.checkForUpdates` | boolean | `true` | Check for LSP updates on activation |
+
+### LSP Feature Settings
+
+| Setting | Type | Default | Description |
+|---------|------|---------|-------------|
+| `hledger.features.hover` | boolean | `true` | Enable hover information |
+| `hledger.features.completion` | boolean | `true` | Enable autocompletion |
+| `hledger.features.formatting` | boolean | `true` | Enable document formatting |
+| `hledger.features.diagnostics` | boolean | `true` | Enable diagnostics |
+| `hledger.features.semanticTokens` | boolean | `true` | Enable semantic tokens |
+| `hledger.features.codeActions` | boolean | `true` | Enable code actions |
+| `hledger.features.foldingRanges` | boolean | `true` | Enable transaction folding |
+| `hledger.features.documentLinks` | boolean | `true` | Enable links for include directives |
+| `hledger.features.workspaceSymbol` | boolean | `true` | Enable workspace symbol search |
+
+### LSP Completion Settings
+
+| Setting | Type | Default | Description |
+|---------|------|---------|-------------|
+| `hledger.completion.snippets` | boolean | `true` | Enable snippet completions for payees |
+| `hledger.completion.fuzzyMatching` | boolean | `true` | Enable fuzzy matching |
+| `hledger.completion.showCounts` | boolean | `true` | Show usage counts in completions |
+
+### LSP Diagnostics Settings
+
+| Setting | Type | Default | Description |
+|---------|------|---------|-------------|
+| `hledger.diagnostics.undeclaredAccounts` | boolean | `true` | Report undeclared accounts |
+| `hledger.diagnostics.undeclaredCommodities` | boolean | `true` | Report undeclared commodities |
+| `hledger.diagnostics.unbalancedTransactions` | boolean | `true` | Report unbalanced transactions |
+
+### LSP Formatting Settings
+
+| Setting | Type | Default | Description |
+|---------|------|---------|-------------|
+| `hledger.formatting.indentSize` | number | `4` | Posting indentation (2-8 spaces) |
+| `hledger.formatting.alignAmounts` | boolean | `true` | Align amounts in postings |
+
+### CLI Settings (Extended)
+
+| Setting | Type | Default | Description |
+|---------|------|---------|-------------|
+| `hledger.cli.enabled` | boolean | `true` | Enable CLI integration |
+| `hledger.cli.timeout` | number | `30000` | Command timeout in milliseconds |
+
+### Limits Settings
+
+| Setting | Type | Default | Description |
+|---------|------|---------|-------------|
+| `hledger.limits.maxFileSizeBytes` | number | `10485760` | Maximum file size (default: 10MB) |
+| `hledger.limits.maxIncludeDepth` | number | `50` | Maximum include directive depth |
 
 ---
 
@@ -763,6 +998,9 @@ All commands accessible via Command Palette (`Ctrl+Shift+P` or `Cmd+Shift+P`):
 | `hledger.cli.incomestatement` | HLedger: Insert Income Statement | Insert income statement as comment |
 | `hledger.import.fromSelection` | HLedger: Import Selected Tabular Data | Import selected CSV/TSV |
 | `hledger.import.fromFile` | HLedger: Import Tabular Data from File | Import active file as CSV/TSV |
+| `hledger.lsp.update` | HLedger: Install/Update Language Server | Install or update LSP binary |
+| `hledger.lsp.showVersion` | HLedger: Show Language Server Version | Show LSP version info |
+| `hledger.lsp.restart` | HLedger: Restart Language Server | Restart the LSP server |
 
 ---
 
@@ -835,8 +1073,8 @@ If experiencing slowness:
 
 ```json
 {
-  "hledger.semanticHighlighting.enabled": false,
-  "hledger.diagnostics.enabled": false,
+  "hledger.features.semanticTokens": false,
+  "hledger.features.diagnostics": false,
   "hledger.diagnostics.checkBalance": false,
   "hledger.autoCompletion.transactionTemplates.enabled": false
 }

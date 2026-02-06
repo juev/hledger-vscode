@@ -12,8 +12,6 @@ import {
   NumberFormatService,
   ParsedAmount,
 } from "./services/NumberFormatService";
-import { AmountFormatterService } from "./services/AmountFormatterService";
-import { HLedgerConfig } from "./HLedgerConfig";
 import { hasBalanceAssertion } from "./balance/utils";
 
 /**
@@ -145,7 +143,6 @@ export class DocumentFormatter {
   private readonly options: DocumentFormattingOptions;
   private readonly numberFormatService: NumberFormatService;
   private readonly amountOptions: AmountFormattingOptions;
-  private readonly amountFormatterService: AmountFormatterService | null;
 
   // Regex constants for performance optimization
   private static readonly LEADING_COMMODITY_REGEX = /^[\p{Sc}$€£¥₽₩]/u;
@@ -168,19 +165,14 @@ export class DocumentFormatter {
    *
    * @param options Optional formatting options
    * @param numberFormatService Optional number format service
-   * @param config Optional HLedgerConfig for commodity-aware formatting
    */
   constructor(
     options: Partial<DocumentFormattingOptions> = {},
     numberFormatService?: NumberFormatService,
-    config?: HLedgerConfig,
   ) {
     this.options = { ...DEFAULT_FORMATTING_OPTIONS, ...options };
     this.numberFormatService = numberFormatService ?? new NumberFormatService();
     this.amountOptions = DEFAULT_AMOUNT_FORMATTING_OPTIONS;
-    this.amountFormatterService = config
-      ? new AmountFormatterService(config, this.numberFormatService)
-      : null;
   }
 
   /**
@@ -195,21 +187,7 @@ export class DocumentFormatter {
     }
 
     try {
-      // Parse and format transactions (no tab conversion)
-      const formatResult = this.formatTransactions(content);
-      if (!formatResult.success) {
-        return formatResult;
-      }
-
-      let formattedContent = formatResult.data;
-
-      // Apply commodity-aware amount formatting if config is available
-      if (this.amountFormatterService) {
-        formattedContent =
-          this.amountFormatterService.formatDocumentContent(formattedContent);
-      }
-
-      return success(formattedContent);
+      return this.formatTransactions(content);
     } catch (error) {
       return failure(
         new Error(
@@ -504,10 +482,6 @@ export class DocumentFormatter {
       return failure(new Error("Content must be a string"));
     }
 
-    if (content === null || content === undefined) {
-      return failure(new Error("Content cannot be null or undefined"));
-    }
-
     try {
       const lines = content.split("\n");
       const transactions: TransactionBlock[] = [];
@@ -534,8 +508,8 @@ export class DocumentFormatter {
           };
         }
         // Check if this is a posting line within a transaction
-        else if (currentTransaction && this.isPostingLine(line!)) {
-          const posting = this.parsePostingLine(line!, lineNumber);
+        else if (currentTransaction && this.isPostingLine(line)) {
+          const posting = this.parsePostingLine(line, lineNumber);
           if (posting) {
             currentTransaction.postings.push(posting);
           }

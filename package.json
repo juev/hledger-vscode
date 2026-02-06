@@ -63,11 +63,6 @@
           "default": true,
           "description": "Enable smart indentation on Enter key for hledger files"
         },
-        "hledger.semanticHighlighting.enabled": {
-          "type": "boolean",
-          "default": false,
-          "description": "Enable semantic highlighting for more precise syntax coloring. When disabled, falls back to TextMate grammar only."
-        },
         "hledger.autoCompletion.maxResults": {
           "type": "number",
           "default": 25,
@@ -171,74 +166,229 @@
           "default": true,
           "description": "Use existing journal transactions to auto-detect accounts for similar payees"
         },
-        "hledger.import.merchantPatterns": {
-          "type": "object",
-          "default": {},
-          "description": "Custom merchant patterns for account detection. Keys are regex patterns, values are account names. Example: {\"AMAZON|AMZN\": \"expenses:shopping\"}"
+        "hledger.lsp.path": {
+          "type": "string",
+          "default": "",
+          "description": "Path to hledger-lsp executable. If empty, will use auto-downloaded binary or search in system PATH"
         },
-        "hledger.import.categoryMapping": {
-          "type": "object",
-          "default": {},
-          "description": "Custom category to account mapping. Keys are category names (case-insensitive), values are account names. Example: {\"Groceries\": \"expenses:food:groceries\"}"
+        "hledger.lsp.debug": {
+          "type": "boolean",
+          "default": false,
+          "description": "Enable debug logging for the LSP server"
+        },
+        "hledger.lsp.checkForUpdates": {
+          "type": "boolean",
+          "default": true,
+          "description": "Check for Language Server updates on extension activation"
+        },
+        "hledger.features.hover": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable hover information from the Language Server"
+        },
+        "hledger.features.completion": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable autocompletion from the Language Server"
+        },
+        "hledger.features.formatting": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable document formatting from the Language Server"
+        },
+        "hledger.features.diagnostics": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable diagnostics from the Language Server"
+        },
+        "hledger.features.semanticTokens": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable semantic tokens from the Language Server"
+        },
+        "hledger.features.codeActions": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable code actions from the Language Server"
+        },
+        "hledger.features.foldingRanges": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable folding ranges for transactions from the Language Server"
+        },
+        "hledger.features.documentLinks": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable document links for include directives from the Language Server"
+        },
+        "hledger.features.workspaceSymbol": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable workspace symbol search from the Language Server"
+        },
+        "hledger.completion.snippets": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable snippet completions for payees"
+        },
+        "hledger.completion.fuzzyMatching": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable fuzzy matching for completions"
+        },
+        "hledger.completion.showCounts": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show usage counts in completion items"
+        },
+        "hledger.diagnostics.undeclaredAccounts": {
+          "type": "boolean",
+          "default": true,
+          "description": "Report undeclared accounts as warnings"
+        },
+        "hledger.diagnostics.undeclaredCommodities": {
+          "type": "boolean",
+          "default": true,
+          "description": "Report undeclared commodities as warnings"
+        },
+        "hledger.diagnostics.unbalancedTransactions": {
+          "type": "boolean",
+          "default": true,
+          "description": "Report unbalanced transactions as errors"
+        },
+        "hledger.formatting.indentSize": {
+          "type": "number",
+          "default": 4,
+          "minimum": 2,
+          "maximum": 8,
+          "description": "Number of spaces for posting indentation"
+        },
+        "hledger.formatting.alignAmounts": {
+          "type": "boolean",
+          "default": true,
+          "description": "Align amounts in postings"
+        },
+        "hledger.cli.enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable CLI integration for hledger commands"
+        },
+        "hledger.cli.timeout": {
+          "type": "number",
+          "default": 30000,
+          "minimum": 1000,
+          "maximum": 300000,
+          "description": "Timeout for CLI commands in milliseconds"
+        },
+        "hledger.limits.maxFileSizeBytes": {
+          "type": "number",
+          "default": 10485760,
+          "minimum": 1048576,
+          "maximum": 104857600,
+          "description": "Maximum file size to process in bytes (default: 10MB)"
+        },
+        "hledger.limits.maxIncludeDepth": {
+          "type": "number",
+          "default": 50,
+          "minimum": 1,
+          "maximum": 100,
+          "description": "Maximum depth for include directive resolution"
         }
       }
     },
     "semanticTokenTypes": [
       {
         "id": "account",
+        "superType": "namespace",
         "description": "HLedger account names"
       },
       {
         "id": "amount",
+        "superType": "number",
         "description": "HLedger amounts"
       },
       {
-        "id": "comment",
-        "description": "HLedger comments"
-      },
-      {
         "id": "date",
+        "superType": "number",
         "description": "HLedger dates"
       },
       {
         "id": "time",
+        "superType": "number",
         "description": "HLedger times"
       },
       {
         "id": "accountVirtual",
+        "superType": "namespace",
         "description": "HLedger virtual accounts"
       },
       {
         "id": "commodity",
+        "superType": "type",
         "description": "HLedger commodities"
       },
       {
         "id": "payee",
+        "superType": "function",
         "description": "HLedger payees"
       },
       {
         "id": "note",
+        "superType": "comment",
         "description": "HLedger notes"
       },
       {
         "id": "tag",
+        "superType": "decorator",
         "description": "HLedger tags"
       },
       {
         "id": "directive",
+        "superType": "keyword",
         "description": "HLedger directives"
       },
       {
-        "id": "operator",
-        "description": "HLedger operators"
-      },
-      {
         "id": "code",
+        "superType": "string",
         "description": "HLedger transaction codes"
       },
       {
         "id": "link",
+        "superType": "label",
         "description": "HLedger links"
+      },
+      {
+        "id": "status",
+        "superType": "operator",
+        "description": "HLedger transaction status markers"
+      },
+      {
+        "id": "tagValue",
+        "superType": "string",
+        "description": "HLedger tag values"
+      }
+    ],
+    "semanticTokenScopes": [
+      {
+        "language": "hledger",
+        "scopes": {
+          "account": ["entity.name.namespace"],
+          "accountVirtual": ["entity.name.namespace"],
+          "amount": ["constant.numeric"],
+          "date": ["constant.numeric"],
+          "time": ["constant.numeric"],
+          "commodity": ["entity.name.type"],
+          "payee": ["entity.name.function"],
+          "note": ["comment.block"],
+          "tag": ["entity.name.tag"],
+          "tagValue": ["string"],
+          "directive": ["keyword.control"],
+          "code": ["string.quoted"],
+          "status": ["keyword.operator"],
+          "link": ["markup.underline.link"],
+          "comment": ["comment.line"],
+          "operator": ["keyword.operator"]
+        }
       }
     ],
     "commands": [
@@ -281,6 +431,21 @@
         "command": "hledger.import.fromFile",
         "title": "HLedger: Import Tabular Data from File",
         "category": "HLedger"
+      },
+      {
+        "command": "hledger.lsp.update",
+        "title": "HLedger: Install/Update Language Server",
+        "category": "HLedger"
+      },
+      {
+        "command": "hledger.lsp.showVersion",
+        "title": "HLedger: Show Language Server Version",
+        "category": "HLedger"
+      },
+      {
+        "command": "hledger.lsp.restart",
+        "title": "HLedger: Restart Language Server",
+        "category": "HLedger"
       }
     ],
     "keybindings": [
@@ -311,45 +476,36 @@
         "*.hledger": "hledger",
         "*.ledger": "hledger",
         "journal": "hledger"
-      },
-      "editor.semanticTokenColorCustomizations": {
-        "[Default Dark+]": {
-          "rules": {
-            "account:hledger": "#0EA5E9",
-            "accountVirtual:hledger": "#6B7280",
-            "amount:hledger": "#F59E0B",
-            "comment:hledger": "#9CA3AF",
-            "date:hledger": "#2563EB",
-            "time:hledger": "#2563EB",
-            "commodity:hledger": "#A855F7",
-            "payee:hledger": "#EF4444",
-            "note:hledger": "#6B7280",
-            "tag:hledger": "#EC4899",
-            "directive:hledger": "#0EA5E9",
-            "operator:hledger": "#EAB308",
-            "code:hledger": "#A855F7",
-            "link:hledger": "#2563EB"
-          }
-        },
-        "[Default Light+]": {
-          "rules": {
-            "account:hledger": "#0369A1",
-            "accountVirtual:hledger": "#374151",
-            "amount:hledger": "#D97706",
-            "comment:hledger": "#6B7280",
-            "date:hledger": "#1D4ED8",
-            "time:hledger": "#1D4ED8",
-            "commodity:hledger": "#7C3AED",
-            "payee:hledger": "#DC2626",
-            "note:hledger": "#374151",
-            "tag:hledger": "#DB2777",
-            "directive:hledger": "#0369A1",
-            "operator:hledger": "#CA8A04",
-            "code:hledger": "#7C3AED",
-            "link:hledger": "#1D4ED8"
-          }
-        }
       }
+    },
+    "submenus": [
+      {
+        "id": "hledger.submenu",
+        "label": "HLedger"
+      }
+    ],
+    "menus": {
+      "editor/context": [
+        {
+          "submenu": "hledger.submenu",
+          "group": "navigation",
+          "when": "editorLangId == hledger"
+        }
+      ],
+      "hledger.submenu": [
+        {
+          "command": "hledger.cli.balance",
+          "group": "1_reports@1"
+        },
+        {
+          "command": "hledger.cli.incomestatement",
+          "group": "1_reports@2"
+        },
+        {
+          "command": "hledger.cli.stats",
+          "group": "1_reports@3"
+        }
+      ]
     }
   },
   "scripts": {
@@ -390,9 +546,7 @@
     "rimraf": "^6.0.1",
     "sharp": "^0.34.5",
     "ts-jest": "^29.4.5",
-    "typescript": "^4.9.4",
-    "vscode-oniguruma": "^2.0.1",
-    "vscode-textmate": "^9.2.1"
+    "typescript": "^4.9.4"
   },
   "license": "MIT",
   "repository": {
@@ -405,6 +559,7 @@
   "homepage": "https://github.com/juev/hledger-vscode#readme",
   "icon": "images/icon.png",
   "dependencies": {
-    "string-width": "^8.1.0"
+    "string-width": "^8.1.0",
+    "vscode-languageclient": "^9.0.1"
   }
 }

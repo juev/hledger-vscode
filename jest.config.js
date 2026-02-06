@@ -15,7 +15,8 @@ module.exports = {
     '!src/**/__tests__/**',
   ],
   moduleNameMapper: {
-    '^vscode$': '<rootDir>/src/__mocks__/vscode'
+    '^vscode$': '<rootDir>/src/__mocks__/vscode',
+    '^vscode-languageclient/node$': '<rootDir>/src/__mocks__/vscode-languageclient/node'
   },
   testTimeout: 10000,
   // Ensure Jest can find type definitions

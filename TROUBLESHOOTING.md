@@ -8,6 +8,7 @@ Quick Navigation:
 - [Performance Issues](#performance-issues)
 - [CLI Integration](#cli-integration)
 - [Syntax Highlighting](#syntax-highlighting)
+- [Language Server Issues](#language-server-issues)
 - [Known Issues](#known-issues)
 - [Getting Help](#getting-help)
 
@@ -94,6 +95,7 @@ Quick Navigation:
 3. Ensure payee exists in journal history (inline completions learn from existing transactions)
 4. Check cursor position: Must be on new line after date, not inside existing transaction
 5. Ensure not in snippet mode: Ghost text disabled during snippet editing (Tab navigation)
+6. **Ensure Language Server is running:** Inline completions require hledger-lsp. Check with `Ctrl+Shift+P` → "HLedger: Show Language Server Version"
 
 ---
 
@@ -116,7 +118,7 @@ Quick Navigation:
 3. Disable semantic highlighting for large files:
 
    ```json
-   "hledger.semanticTokens.enabled": false
+   "hledger.features.semanticTokens": false
    ```
 
 ### High Memory Usage
@@ -209,13 +211,19 @@ When you run CLI commands (balance, stats, incomestatement), you'll see:
 
 **Solutions:**
 
-1. Verify language mode: Click bottom-right → Select "hledger"
-2. Check theme compatibility: Try different color theme
-3. Enable semantic tokens:
+1. **Verify language mode:** Click bottom-right → Select "hledger"
+   - Basic TextMate syntax highlighting works WITHOUT the Language Server
+   - If you see no colors at all, this is likely a language mode issue
 
-   ```json
-   "editor.semanticHighlighting.enabled": true
-   ```
+2. **For rich semantic highlighting (optional):**
+   - Verify Language Server is running: View → Output → "HLedger Language Server"
+   - Enable semantic tokens:
+     ```json
+     "editor.semanticHighlighting.enabled": true,
+     "hledger.features.semanticTokens": true
+     ```
+
+3. Check theme compatibility: Try different color theme
 
 ### Wrong Colors
 
@@ -223,19 +231,39 @@ When you run CLI commands (balance, stats, incomestatement), you'll see:
 
 **Solutions:**
 
-1. Colors adapt to VS Code theme
-2. Customize in settings:
+1. **Two highlighting modes:**
+   - **TextMate grammar** (basic, always available): Uses standard scopes styled by your theme
+   - **Semantic tokens** (rich, requires LSP): Context-aware highlighting from Language Server
+
+2. **Colors adapt to your VS Code theme:** The extension uses standard TextMate scopes (e.g., `entity.name.function`, `constant.numeric`) that are styled differently by each theme.
+
+3. **Customize colors per token type (recommended):**
+
+   ```json
+   "editor.semanticTokenColorCustomizations": {
+       "rules": {
+           "account:hledger": "#0EA5E9",
+           "payee:hledger": "#EF4444",
+           "date:hledger": "#22C55E",
+           "amount:hledger": "#F59E0B",
+           "commodity:hledger": "#A855F7",
+           "tag:hledger": "#EC4899"
+       }
+   }
+   ```
+
+4. **Alternative: Customize TextMate scopes globally:**
 
    ```json
    "editor.tokenColorCustomizations": {
        "textMateRules": [
-           {
-               "scope": "keyword.operator.hledger",
-               "settings": { "foreground": "#ff0000" }
-           }
+           { "scope": "entity.name.function", "settings": { "foreground": "#DCDCAA" } },
+           { "scope": "constant.numeric", "settings": { "foreground": "#B5CEA8" } }
        ]
    }
    ```
+
+   ⚠️ This affects ALL languages, not just hledger.
 
 ### Highlighting Breaks
 
@@ -246,6 +274,56 @@ When you run CLI commands (balance, stats, incomestatement), you'll see:
 1. Syntax error in journal file
 2. Reload window: `Ctrl+Shift+P` → "Reload Window"
 3. Check for unclosed strings or directives
+
+---
+
+## Language Server Issues
+
+### LSP Not Starting
+
+**Symptoms:** No completions, no diagnostics, no semantic highlighting (basic TextMate highlighting still works)
+
+**Solutions:**
+
+1. **Check Language Server status:**
+   - Run: `Ctrl+Shift+P` → "HLedger: Show Language Server Version"
+   - If "not installed", run: `Ctrl+Shift+P` → "HLedger: Install/Update Language Server"
+
+2. **Check Output panel for errors:**
+   - View → Output → "HLedger Language Server"
+   - Successful start shows: `HLedger LSP server started successfully`
+   - Errors show specific failure reason
+
+3. **Manual installation (if auto-download fails):**
+   - Download binary from: https://github.com/juev/hledger-lsp/releases
+   - Extract to a permanent location
+   - Set in settings: `"hledger.lsp.path": "/path/to/hledger-lsp"`
+
+### GitHub Rate Limit Errors
+
+**Symptoms:** "GitHub API rate limit exceeded" when installing/updating
+
+**Cause:** GitHub limits unauthenticated API requests to 60/hour per IP address.
+
+**Solutions:**
+
+1. **Wait and retry:** Error message shows when limit resets
+2. **Disable auto-update checks:**
+   ```json
+   "hledger.lsp.checkForUpdates": false
+   ```
+3. **Manual installation:** Download from GitHub releases directly (see above)
+4. **Corporate networks:** If behind NAT/proxy sharing IP with many users, consider manual installation
+
+### LSP Crashes
+
+**Symptoms:** Features stop working mid-session
+
+**Solutions:**
+
+1. Run: `Ctrl+Shift+P` → "HLedger: Restart Language Server"
+2. Check Output panel for crash details
+3. Report persistent crashes with reproduction steps
 
 ---
 
