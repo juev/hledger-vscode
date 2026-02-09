@@ -106,6 +106,10 @@ export class InlineCompletionProvider
       return undefined;
     }
 
+    if (context.selectedCompletionInfo) {
+      return undefined;
+    }
+
     try {
       const response = await withTimeout(
         client.sendRequest<LSPInlineCompletionList>(

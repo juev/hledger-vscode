@@ -17,8 +17,9 @@ function createMockPosition(line = 0, character = 0): vscode.Position {
 
 function createMockContext(
   triggerKind: vscode.InlineCompletionTriggerKind = vscode.InlineCompletionTriggerKind.Automatic,
+  selectedCompletionInfo?: { range: vscode.Range; text: string },
 ): vscode.InlineCompletionContext {
-  return { triggerKind } as vscode.InlineCompletionContext;
+  return { triggerKind, selectedCompletionInfo } as vscode.InlineCompletionContext;
 }
 
 function createMockToken(isCancelled = false): vscode.CancellationToken {
@@ -49,6 +50,23 @@ describe("InlineCompletionProvider", () => {
       );
 
       expect(result).toBeUndefined();
+    });
+
+    it("returns undefined when suggest widget is active", async () => {
+      const provider = new InlineCompletionProvider(() => mockClient);
+
+      const result = await provider.provideInlineCompletionItems(
+        createMockDocument(),
+        createMockPosition(1, 5),
+        createMockContext(vscode.InlineCompletionTriggerKind.Automatic, {
+          range: new vscode.Range(1, 0, 1, 5),
+          text: "Expenses",
+        }),
+        createMockToken(),
+      );
+
+      expect(result).toBeUndefined();
+      expect(mockClient.sendRequest).not.toHaveBeenCalled();
     });
 
     it("returns undefined when cancellation is requested before sending", async () => {
