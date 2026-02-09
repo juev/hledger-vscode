@@ -1,5 +1,11 @@
 # Change Log
 
+## [0.5.1] - 2026-02-09
+
+### Fixed
+- fix(inline): suppress ghost text when suggest widget is active
+
+
 ## [0.5.0] - 2026-02-06
 
 ### Added
