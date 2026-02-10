@@ -1,8 +1,6 @@
 // main.ts - Entry point for hledger extension (LSP-based)
 
 import * as vscode from "vscode";
-import { HLedgerEnterCommand } from "./HLedgerEnterCommand";
-import { HLedgerTabCommand } from "./HLedgerTabCommand";
 import { HLedgerCliCommands } from "./HLedgerCliCommands";
 import { HLedgerCliService } from "./services/HLedgerCliService";
 import { HLedgerImportCommands } from "./HLedgerImportCommands";
@@ -106,14 +104,6 @@ export function activate(context: vscode.ExtensionContext): void {
         },
       ),
     );
-
-    // Register Enter key handler for smart indentation
-    const enterCommand = new HLedgerEnterCommand();
-    context.subscriptions.push(enterCommand);
-
-    // Register Tab key handler for amount alignment positioning
-    const tabCommand = new HLedgerTabCommand();
-    context.subscriptions.push(tabCommand);
 
     // Register inline completion provider (ghost text)
     const inlineProvider = new InlineCompletionProvider(() =>

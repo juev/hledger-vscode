@@ -71,7 +71,7 @@ The hledger-lsp Language Server provides:
 - **Parsing & Validation**: Full hledger syntax parsing with diagnostics
 - **Completion**: Context-aware completion for accounts, payees, commodities, dates, tags
 - **Semantic Tokens**: Rich syntax highlighting with 16 token types
-- **Formatting**: Automatic transaction alignment and formatting
+- **Formatting**: Automatic transaction alignment and formatting (document + on-type via `\n`/`\t` triggers)
 - **Code Actions**: Quick fixes for common issues (e.g., balance assertions)
 - **Hover**: Documentation and information on hover
 - **Navigation**: Go to Definition, Find References
@@ -120,7 +120,7 @@ The extension's `InlineCompletionProvider` handles ghost text completions for tr
 - `src/extension/inline/` - Ghost text completion (InlineCompletionProvider)
 - `src/extension/import/` - CSV/TSV import with account resolution
 - `src/extension/cli/` - Direct hledger CLI integration (balance, stats, income statement)
-- `src/extension/commands/` - VS Code commands (smart enter, smart tab, etc.)
+- `src/extension/commands/` - VS Code commands
 - `syntaxes/` - TextMate grammar (fallback syntax highlighting)
 
 ### Testing

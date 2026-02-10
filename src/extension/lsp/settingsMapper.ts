@@ -41,9 +41,6 @@ export interface VSCodeSettings {
     enabled?: boolean;
     minPayeeChars?: number;
   };
-  smartIndent?: {
-    enabled?: boolean;
-  };
   cli?: {
     path?: string;
     journalFile?: string;

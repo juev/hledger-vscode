@@ -78,8 +78,8 @@ Or add to your `settings.json`:
 
 1. **Create or open** a `.journal` file
 2. **Start typing** - auto-completion activates automatically
-3. **Press Enter** after transaction dates - smart indentation adds posting indent
-4. **Press Tab** after account names - cursor jumps to amount column
+3. **Press Enter** after transaction dates - LSP adds posting indent (requires `editor.formatOnType: true`)
+4. **Press Tab** after account names - LSP positions cursor at amount column
 5. **Save file** - automatic formatting aligns amounts
 
 ### Example Transaction
@@ -251,33 +251,26 @@ To install the LSP, run the command **HLedger: Install/Update Language Server**.
 
 ## Smart Editing
 
-### Smart Enter
+### On-Type Formatting (LSP)
 
-When `hledger.smartIndent.enabled` is `true` (default):
+When the Language Server is running and `editor.formatOnType` is enabled in VS Code settings, the LSP handles formatting as you type:
 
-| Context | Behavior |
+| Trigger | Behavior |
 |---------|----------|
-| After transaction date line | Adds 4-space indent for posting |
-| After posting line | Preserves indent for next posting |
-| Empty line with only spaces | Removes indent (outdents) |
-| Empty line | Normal new line |
+| `Enter` after transaction date line | Adds posting indent |
+| `Enter` after posting line | Preserves indent for next posting |
+| `Enter` on empty indented line | Removes indent (outdents) |
+| `Tab` after account name | Positions cursor at amount alignment column |
 
-### Smart Tab
+To enable, add to your `settings.json`:
 
-Press **Tab** after an account name to position cursor at the optimal amount column:
-
-```hledger
-    Expenses:Food|             ; press Tab here
-    Expenses:Food              |$XX.XX  ; cursor moves to amount position
+```json
+{
+  "editor.formatOnType": true
+}
 ```
 
-The amount column is calculated based on:
-- Configured minimum column (`hledger.formatting.amountAlignmentColumn`, default 40)
-- Maximum account name length in the transaction block
-- Multi-currency alignment requirements
-- Balance assertion space requirements
-
-The configured value is the **minimum** position. If accounts are longer than the configured column allows, alignment shifts further right to maintain the required 2-space gap.
+**Fallback:** When the LSP is not running, `onEnterRules` from the language configuration provide basic indentation behavior.
 
 ### Completion Triggers
 
@@ -740,11 +733,12 @@ When the LSP is not installed or not running:
 
 **Limited features:**
 - **Syntax highlighting**: Basic TextMate grammar highlighting (automatic fallback). For richer, context-aware highlighting, enable LSP semantic tokens.
-- **Smart Enter/Tab**: Smart indentation and alignment (works locally)
+- **Basic indentation**: `onEnterRules` from language configuration provide basic Enter key indentation
 - **CLI integration**: balance, stats, income statement commands (works locally)
 - **CSV/TSV import**: Import functionality (works locally)
 
 **Unavailable features (require LSP):**
+- On-type formatting (smart Enter/Tab with `editor.formatOnType`)
 - Inline completions (ghost text)
 - Auto-completion (accounts, payees, dates, etc.)
 - Diagnostics and validation
@@ -884,12 +878,6 @@ Auto-download supports:
 | `hledger.inlineCompletion.enabled` | boolean | `true` | Enable ghost text completions |
 | `hledger.inlineCompletion.minPayeeChars` | number | `2` | Minimum chars before showing (1-10) |
 
-### Smart Editing Settings
-
-| Setting | Type | Default | Description |
-|---------|------|---------|-------------|
-| `hledger.smartIndent.enabled` | boolean | `true` | Enable smart Enter key indentation |
-
 ### CLI Integration Settings
 
 | Setting | Type | Default | Description |
@@ -991,8 +979,6 @@ All commands accessible via Command Palette (`Ctrl+Shift+P` or `Cmd+Shift+P`):
 
 | Command | Title | Description |
 |---------|-------|-------------|
-| `hledger.onEnter` | HLedger: Smart Enter | Smart indentation on Enter key |
-| `hledger.onTab` | HLedger: Smart Tab for Amount Alignment | Position cursor at amount column |
 | `hledger.cli.balance` | HLedger: Insert Balance Report | Insert balance sheet as comment |
 | `hledger.cli.stats` | HLedger: Insert Statistics Report | Insert file statistics as comment |
 | `hledger.cli.incomestatement` | HLedger: Insert Income Statement | Insert income statement as comment |
@@ -1012,9 +998,9 @@ All commands accessible via Command Palette (`Ctrl+Shift+P` or `Cmd+Shift+P`):
 |-----|--------|-----------|
 | `Enter` | Accept completion | When completion widget is visible |
 | `Enter` | Accept inline suggestion | When ghost text is visible |
-| `Enter` | Smart indentation | When smart indent enabled, no widget visible |
-| `Tab` | Amount alignment | When no completion widget visible |
 | `Ctrl+Space` | Manual completion trigger | Always |
+
+**On-type formatting** (Enter/Tab) is handled by the Language Server when `editor.formatOnType` is enabled.
 
 ### Completion Trigger Characters
 

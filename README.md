@@ -52,8 +52,7 @@ Transform your plain text accounting experience with powerful IDE capabilities:
 
 ### 🔧 **Smart Editing**
 
-- **Auto-indent** for transactions and postings
-- **Smart Tab** key positions cursor at amount column
+- **On-type formatting** via LSP - auto-indent and amount alignment as you type
 - **Multi-language** Unicode support (Cyrillic, Asian languages, etc.)
 
 ### 📊 **CLI Integration**
@@ -98,10 +97,10 @@ Transform your plain text accounting experience with powerful IDE capabilities:
 ## 🚀 Quick Start
 
 1. **Create or open** a `.journal`, `.hledger`, or `.ledger` file
-2. **Start typing** - auto-completion activates automatically
-3. **Press Enter** after transaction dates - smart indentation kicks in
-4. **Press Tab** after account names - cursor jumps to amount column
-5. **Save file** - automatic formatting aligns everything beautifully
+2. **Enable** `editor.formatOnType: true` for on-type formatting
+3. **Start typing** - auto-completion activates automatically
+4. **Press Enter** after transaction dates - LSP handles indentation
+5. **Save file** - automatic formatting aligns everything
 
 ### Example Workflow
 
@@ -213,9 +212,9 @@ Import bank statements and transaction data from CSV/TSV files.
   "hledger.inlineCompletion.enabled": true,
   "hledger.inlineCompletion.minPayeeChars": 2,  // Min chars before showing suggestions
 
-  // Smart features
-  "hledger.smartIndent.enabled": true,
-  "editor.formatOnSave": true,  // Enable auto-formatting
+  // Formatting
+  "editor.formatOnType": true,   // Enable on-type formatting (Enter/Tab via LSP)
+  "editor.formatOnSave": true,   // Enable auto-formatting on save
 
   // CLI integration
   "hledger.cli.path": "",  // Auto-detected if empty

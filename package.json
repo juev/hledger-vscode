@@ -58,11 +58,6 @@
           "default": true,
           "description": "Enable automatic completion without keyboard shortcuts (Ctrl+Space)"
         },
-        "hledger.smartIndent.enabled": {
-          "type": "boolean",
-          "default": true,
-          "description": "Enable smart indentation on Enter key for hledger files"
-        },
         "hledger.autoCompletion.maxResults": {
           "type": "number",
           "default": 25,
@@ -425,18 +420,6 @@
     ],
     "commands": [
       {
-        "command": "hledger.onEnter",
-        "title": "HLedger: Smart Enter",
-        "category": "HLedger",
-        "when": "editorTextFocus && editorLangId == hledger"
-      },
-      {
-        "command": "hledger.onTab",
-        "title": "HLedger: Smart Tab for Amount Alignment",
-        "category": "HLedger",
-        "when": "editorTextFocus && editorLangId == hledger"
-      },
-      {
         "command": "hledger.cli.balance",
         "title": "HLedger: Insert Balance Report",
         "category": "HLedger",
@@ -485,16 +468,6 @@
         "command": "acceptSelectedSuggestion",
         "key": "enter",
         "when": "editorTextFocus && editorLangId == hledger && suggestWidgetVisible"
-      },
-      {
-        "command": "hledger.onEnter",
-        "key": "enter",
-        "when": "editorTextFocus && editorLangId == hledger && !suggestWidgetVisible && !inSnippetMode && !parameterHintsVisible && config.hledger.smartIndent.enabled"
-      },
-      {
-        "command": "hledger.onTab",
-        "key": "tab",
-        "when": "editorTextFocus && editorLangId == hledger && !suggestWidgetVisible && !inSnippetMode && !parameterHintsVisible && !inlineSuggestionVisible"
       },
       {
         "command": "editor.action.inlineSuggest.commit",
