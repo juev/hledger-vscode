@@ -372,22 +372,54 @@
       {
         "language": "hledger",
         "scopes": {
-          "account": ["entity.name.namespace"],
-          "accountVirtual": ["entity.name.namespace"],
-          "amount": ["constant.numeric"],
-          "date": ["constant.numeric"],
-          "time": ["constant.numeric"],
-          "commodity": ["entity.name.type"],
-          "payee": ["entity.name.function"],
-          "note": ["comment.block"],
-          "tag": ["entity.name.tag"],
-          "tagValue": ["string"],
-          "directive": ["keyword.control"],
-          "code": ["string.quoted"],
-          "status": ["keyword.operator"],
-          "link": ["markup.underline.link"],
-          "comment": ["comment.line"],
-          "operator": ["keyword.operator"]
+          "account": [
+            "entity.name.namespace"
+          ],
+          "accountVirtual": [
+            "entity.name.namespace"
+          ],
+          "amount": [
+            "constant.numeric"
+          ],
+          "date": [
+            "constant.numeric"
+          ],
+          "time": [
+            "constant.numeric"
+          ],
+          "commodity": [
+            "entity.name.type"
+          ],
+          "payee": [
+            "entity.name.function"
+          ],
+          "note": [
+            "comment.block"
+          ],
+          "tag": [
+            "entity.name.tag"
+          ],
+          "tagValue": [
+            "string"
+          ],
+          "directive": [
+            "keyword.control"
+          ],
+          "code": [
+            "string.quoted"
+          ],
+          "status": [
+            "keyword.operator"
+          ],
+          "link": [
+            "markup.underline.link"
+          ],
+          "comment": [
+            "comment.line"
+          ],
+          "operator": [
+            "keyword.operator"
+          ]
         }
       }
     ],
@@ -542,9 +574,7 @@
     "eslint": "^9.36.0",
     "jest": "^29.7.0",
     "ovsx": "^0.8.4",
-    "pngquant-bin": "^9.0.0",
     "rimraf": "^6.0.1",
-    "sharp": "^0.34.5",
     "ts-jest": "^29.4.5",
     "typescript": "^4.9.4"
   },
