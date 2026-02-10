@@ -120,7 +120,6 @@ The extension's `InlineCompletionProvider` handles ghost text completions for tr
 - `src/extension/inline/` - Ghost text completion (InlineCompletionProvider)
 - `src/extension/import/` - CSV/TSV import with account resolution
 - `src/extension/cli/` - Direct hledger CLI integration (balance, stats, income statement)
-- `src/extension/commands/` - VS Code commands
 - `syntaxes/` - TextMate grammar (fallback syntax highlighting)
 
 ### Testing

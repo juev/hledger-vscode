@@ -114,19 +114,6 @@ export interface MutableRecentTemplateBuffer {
 }
 
 /**
- * Formatting profile for transaction template alignment.
- * Tracks the maximum account name length to determine where amounts should align.
- */
-export interface FormattingProfile {
-  /** Column position where amounts should start in transaction templates */
-  readonly amountAlignmentColumn: CharacterPosition;
-  /** Length of the longest account name in the workspace */
-  readonly maxAccountNameLength: number;
-  /** True if using default alignment (no accounts parsed yet) */
-  readonly isDefaultAlignment: boolean;
-}
-
-/**
  * Generates a consistent template key from account names.
  * Accounts are sorted alphabetically and joined with double-pipe delimiter.
  * @param accounts - Array of account names from transaction postings
@@ -378,8 +365,6 @@ export const createCacheKey = (value: string): CacheKey => value;
 export const createCompletionScore = (value: number): CompletionScore => value;
 export const createUsageCount = (value: number): UsageCount => value;
 export const createLineNumber = (value: number): LineNumber => value;
-export const createCharacterPosition = (value: number): CharacterPosition =>
-  value;
 export const createDocumentVersion = (value: number): DocumentVersion => value;
 
 // Modern Result type for better error handling

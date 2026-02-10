@@ -834,6 +834,8 @@ export const window = {
 
 export const commands = {
   registerCommand: jest.fn(() => ({ dispose: jest.fn() })),
+  registerTextEditorCommand: jest.fn(() => ({ dispose: jest.fn() })),
+  executeCommand: jest.fn(),
 };
 
 export class SemanticTokensLegend {

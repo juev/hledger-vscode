@@ -476,6 +476,9 @@
       }
     ],
     "configurationDefaults": {
+      "[hledger]": {
+        "editor.formatOnType": true
+      },
       "files.associations": {
         "*.journal": "hledger",
         "*.hledger": "hledger",
