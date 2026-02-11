@@ -1,5 +1,19 @@
 # Change Log
 
+## [0.5.2] - 2026-02-11
+
+### Added
+- feat(lsp): add inlineCompletion, codeLens, maxResults, includeNotes settings
+- feat(editor): add Tab alignment command via LSP onTypeFormatting
+
+### Changed
+- refactor(formatting): add formatOnType default, remove dead code, add activation test
+- refactor(formatting): remove extension-level Smart Enter/Tab in favor of LSP onTypeFormatting
+
+### Fixed
+- fix(deps): remove pngquant-bin and sharp to resolve CVE-2022-33987
+
+
 ## [0.5.1] - 2026-02-09
 
 ### Fixed
