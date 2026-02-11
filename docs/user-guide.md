@@ -240,12 +240,10 @@ Shows complete posting structure as ghost text:
 
 ### LSP Dependency
 
-Inline completions require the Language Server (LSP) to be installed and running. When the LSP is unavailable:
+Inline completions require the Language Server (LSP) to be running. The Language Server is automatically installed on first activation. When the LSP is unavailable:
 - Ghost text suggestions will not appear
 - No error is shown - the feature silently waits for LSP availability
 - Once LSP starts, inline completions work automatically
-
-To install the LSP, run the command **HLedger: Install/Update Language Server**.
 
 ---
 
@@ -729,15 +727,14 @@ The extension uses a Language Server Protocol (LSP) backend for most features. T
 
 ### Without Language Server
 
-When the LSP is not installed or not running:
+The Language Server is required and auto-installed on first activation. If the LSP is unavailable (e.g., auto-install was declined or binary was removed), the following fallback features remain:
 
-**Limited features:**
-- **Syntax highlighting**: Basic TextMate grammar highlighting (automatic fallback). For richer, context-aware highlighting, enable LSP semantic tokens.
+- **Syntax highlighting**: Basic TextMate grammar highlighting (automatic fallback)
 - **Basic indentation**: `onEnterRules` from language configuration provide basic Enter key indentation
 - **CLI integration**: balance, stats, income statement commands (works locally)
 - **CSV/TSV import**: Import functionality (works locally)
 
-**Unavailable features (require LSP):**
+**Features unavailable without LSP:**
 - On-type formatting (smart Enter/Tab with `editor.formatOnType`)
 - Inline completions (ghost text)
 - Auto-completion (accounts, payees, dates, etc.)
@@ -747,18 +744,17 @@ When the LSP is not installed or not running:
 - Hover information
 - Folding ranges
 - Workspace symbols
-
-We recommend installing the LSP for the full experience. The extension will prompt you to install it on first activation.
+- CodeLens balance indicators
 
 ### Installation
 
-The extension can automatically download and manage the hledger-lsp binary:
+The Language Server is automatically installed on first activation. If prompted, accept the installation to enable all features. The binary is stored in VS Code's global storage directory.
+
+To manually reinstall or update:
 
 1. Open Command Palette (`Ctrl+Shift+P` or `Cmd+Shift+P`)
 2. Run **HLedger: Install/Update Language Server**
 3. Wait for the download to complete
-
-The binary is stored in VS Code's global storage directory.
 
 ### LSP Commands
 
@@ -791,6 +787,8 @@ Control which Language Server features are enabled:
 | `hledger.features.foldingRanges` | boolean | `true` | Enable transaction folding |
 | `hledger.features.documentLinks` | boolean | `true` | Enable links for include directives |
 | `hledger.features.workspaceSymbol` | boolean | `true` | Enable workspace symbol search |
+| `hledger.features.inlineCompletion` | boolean | `true` | Enable inline ghost text completions |
+| `hledger.features.codeLens` | boolean | `false` | Enable balance check indicators on transactions |
 
 ### LSP Completion Settings
 
@@ -799,6 +797,8 @@ Control which Language Server features are enabled:
 | `hledger.completion.snippets` | boolean | `true` | Enable snippet completions for payees |
 | `hledger.completion.fuzzyMatching` | boolean | `true` | Enable fuzzy matching |
 | `hledger.completion.showCounts` | boolean | `true` | Show usage counts in completions |
+| `hledger.completion.maxResults` | number | `50` | Maximum number of completion items (5-200) |
+| `hledger.completion.includeNotes` | boolean | `true` | Include notes in payee completions |
 
 ### LSP Diagnostics Settings
 
@@ -933,6 +933,8 @@ Auto-download supports:
 | `hledger.features.foldingRanges` | boolean | `true` | Enable transaction folding |
 | `hledger.features.documentLinks` | boolean | `true` | Enable links for include directives |
 | `hledger.features.workspaceSymbol` | boolean | `true` | Enable workspace symbol search |
+| `hledger.features.inlineCompletion` | boolean | `true` | Enable inline ghost text completions |
+| `hledger.features.codeLens` | boolean | `false` | Enable balance check indicators on transactions |
 
 ### LSP Completion Settings
 
@@ -941,6 +943,8 @@ Auto-download supports:
 | `hledger.completion.snippets` | boolean | `true` | Enable snippet completions for payees |
 | `hledger.completion.fuzzyMatching` | boolean | `true` | Enable fuzzy matching |
 | `hledger.completion.showCounts` | boolean | `true` | Show usage counts in completions |
+| `hledger.completion.maxResults` | number | `50` | Maximum number of completion items (5-200) |
+| `hledger.completion.includeNotes` | boolean | `true` | Include notes in payee completions |
 
 ### LSP Diagnostics Settings
 

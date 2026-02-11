@@ -71,7 +71,10 @@ describe("createClientOptions", () => {
     expect(init.features.completion).toBe(true);
     expect(init.features.diagnostics).toBe(true);
     expect(init.features.semanticTokens).toBe(true);
+    expect(init.features.inlineCompletion).toBe(true);
+    expect(init.features.codeLens).toBe(false);
     expect(init.completion.maxResults).toBe(25);
+    expect(init.completion.includeNotes).toBe(true);
     expect(init.diagnostics.balanceTolerance).toBe(1e-10);
     expect(init.formatting.amountAlignmentColumn).toBe(40);
     expect(init.cli.timeout).toBe(30000);

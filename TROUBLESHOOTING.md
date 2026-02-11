@@ -283,6 +283,8 @@ When you run CLI commands (balance, stats, incomestatement), you'll see:
 
 **Symptoms:** No completions, no diagnostics, no semantic highlighting (basic TextMate highlighting still works)
 
+The Language Server is auto-installed on first activation. If it is not installed, the auto-install prompt was likely declined or the download failed.
+
 **Solutions:**
 
 1. **Check Language Server status:**
@@ -294,7 +296,7 @@ When you run CLI commands (balance, stats, incomestatement), you'll see:
    - Successful start shows: `HLedger LSP server started successfully`
    - Errors show specific failure reason
 
-3. **Manual installation (if auto-download fails):**
+3. **Manual installation (fallback if auto-install fails):**
    - Download binary from: https://github.com/juev/hledger-lsp/releases
    - Extract to a permanent location
    - Set in settings: `"hledger.lsp.path": "/path/to/hledger-lsp"`

@@ -89,6 +89,8 @@ function getVSCodeSettings(): VSCodeSettings {
       foldingRanges: config.get<boolean>("features.foldingRanges"),
       documentLinks: config.get<boolean>("features.documentLinks"),
       workspaceSymbol: config.get<boolean>("features.workspaceSymbol"),
+      inlineCompletion: config.get<boolean>("features.inlineCompletion"),
+      codeLens: config.get<boolean>("features.codeLens"),
     },
     autoCompletion: {
       enabled: config.get<boolean>("autoCompletion.enabled"),
@@ -102,6 +104,8 @@ function getVSCodeSettings(): VSCodeSettings {
       snippets: config.get<boolean>("completion.snippets"),
       fuzzyMatching: config.get<boolean>("completion.fuzzyMatching"),
       showCounts: config.get<boolean>("completion.showCounts"),
+      maxResults: config.get<number>("completion.maxResults"),
+      includeNotes: config.get<boolean>("completion.includeNotes"),
     },
     diagnostics: {
       enabled: config.get<boolean>("diagnostics.enabled"),

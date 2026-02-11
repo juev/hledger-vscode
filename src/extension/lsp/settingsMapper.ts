@@ -9,6 +9,8 @@ export interface VSCodeSettings {
     foldingRanges?: boolean;
     documentLinks?: boolean;
     workspaceSymbol?: boolean;
+    inlineCompletion?: boolean;
+    codeLens?: boolean;
   };
   autoCompletion?: {
     enabled?: boolean;
@@ -22,6 +24,8 @@ export interface VSCodeSettings {
     snippets?: boolean;
     fuzzyMatching?: boolean;
     showCounts?: boolean;
+    maxResults?: number;
+    includeNotes?: boolean;
   };
   diagnostics?: {
     enabled?: boolean;
@@ -72,6 +76,8 @@ export interface LSPSettings {
     foldingRanges: boolean;
     documentLinks: boolean;
     workspaceSymbol: boolean;
+    inlineCompletion: boolean;
+    codeLens: boolean;
   };
   completion: {
     enabled: boolean;
@@ -83,6 +89,7 @@ export interface LSPSettings {
     snippets: boolean;
     fuzzyMatching: boolean;
     showCounts: boolean;
+    includeNotes: boolean;
   };
   diagnostics: {
     enabled: boolean;
@@ -122,6 +129,8 @@ const DEFAULT_SETTINGS: LSPSettings = {
     foldingRanges: true,
     documentLinks: true,
     workspaceSymbol: true,
+    inlineCompletion: true,
+    codeLens: false,
   },
   completion: {
     enabled: true,
@@ -133,6 +142,7 @@ const DEFAULT_SETTINGS: LSPSettings = {
     snippets: true,
     fuzzyMatching: true,
     showCounts: true,
+    includeNotes: true,
   },
   diagnostics: {
     enabled: true,
@@ -204,14 +214,16 @@ export function mapVSCodeSettingsToLSP(settings: VSCodeSettings): LSPSettings {
       foldingRanges: settings.features?.foldingRanges ?? DEFAULT_SETTINGS.features.foldingRanges,
       documentLinks: settings.features?.documentLinks ?? DEFAULT_SETTINGS.features.documentLinks,
       workspaceSymbol: settings.features?.workspaceSymbol ?? DEFAULT_SETTINGS.features.workspaceSymbol,
+      inlineCompletion: settings.features?.inlineCompletion ?? DEFAULT_SETTINGS.features.inlineCompletion,
+      codeLens: settings.features?.codeLens ?? DEFAULT_SETTINGS.features.codeLens,
     },
     completion: {
       enabled: settings.autoCompletion?.enabled ?? DEFAULT_SETTINGS.completion.enabled,
       maxResults: validateNumber(
-        settings.autoCompletion?.maxResults,
+        settings.completion?.maxResults ?? settings.autoCompletion?.maxResults,
         DEFAULT_SETTINGS.completion.maxResults,
         5,
-        50
+        200
       ),
       maxAccountResults: validateNumber(
         settings.autoCompletion?.maxAccountResults,
@@ -225,6 +237,7 @@ export function mapVSCodeSettingsToLSP(settings: VSCodeSettings): LSPSettings {
       snippets: settings.completion?.snippets ?? DEFAULT_SETTINGS.completion.snippets,
       fuzzyMatching: settings.completion?.fuzzyMatching ?? DEFAULT_SETTINGS.completion.fuzzyMatching,
       showCounts: settings.completion?.showCounts ?? DEFAULT_SETTINGS.completion.showCounts,
+      includeNotes: settings.completion?.includeNotes ?? DEFAULT_SETTINGS.completion.includeNotes,
     },
     diagnostics: {
       enabled: settings.diagnostics?.enabled ?? DEFAULT_SETTINGS.diagnostics.enabled,

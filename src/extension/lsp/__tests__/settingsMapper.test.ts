@@ -20,6 +20,8 @@ describe("mapVSCodeSettingsToLSP", () => {
           foldingRanges: true,
           documentLinks: true,
           workspaceSymbol: true,
+          inlineCompletion: true,
+          codeLens: false,
         },
         completion: {
           enabled: true,
@@ -29,6 +31,7 @@ describe("mapVSCodeSettingsToLSP", () => {
           snippets: true,
           fuzzyMatching: true,
           showCounts: true,
+          includeNotes: true,
         },
         diagnostics: {
           enabled: true,
@@ -72,6 +75,8 @@ describe("mapVSCodeSettingsToLSP", () => {
           foldingRanges: false,
           documentLinks: false,
           workspaceSymbol: false,
+          inlineCompletion: false,
+          codeLens: false,
         },
       };
 
@@ -87,6 +92,8 @@ describe("mapVSCodeSettingsToLSP", () => {
         foldingRanges: false,
         documentLinks: false,
         workspaceSymbol: false,
+        inlineCompletion: false,
+        codeLens: false,
       });
     });
 
@@ -119,6 +126,26 @@ describe("mapVSCodeSettingsToLSP", () => {
       const result = mapVSCodeSettingsToLSP(settings);
 
       expect(result.features.completion).toBe(true);
+    });
+
+    it("maps features.inlineCompletion when set to false", () => {
+      const settings: VSCodeSettings = {
+        features: { inlineCompletion: false },
+      };
+
+      const result = mapVSCodeSettingsToLSP(settings);
+
+      expect(result.features.inlineCompletion).toBe(false);
+    });
+
+    it("maps features.codeLens when set to true", () => {
+      const settings: VSCodeSettings = {
+        features: { codeLens: true },
+      };
+
+      const result = mapVSCodeSettingsToLSP(settings);
+
+      expect(result.features.codeLens).toBe(true);
     });
   });
 
@@ -155,6 +182,27 @@ describe("mapVSCodeSettingsToLSP", () => {
       expect(result.completion.snippets).toBe(false);
       expect(result.completion.fuzzyMatching).toBe(false);
       expect(result.completion.showCounts).toBe(false);
+    });
+
+    it("maps completion.includeNotes when set to false", () => {
+      const settings: VSCodeSettings = {
+        completion: { includeNotes: false },
+      };
+
+      const result = mapVSCodeSettingsToLSP(settings);
+
+      expect(result.completion.includeNotes).toBe(false);
+    });
+
+    it("completion.maxResults takes precedence over autoCompletion.maxResults", () => {
+      const settings: VSCodeSettings = {
+        completion: { maxResults: 100 },
+        autoCompletion: { maxResults: 20 },
+      };
+
+      const result = mapVSCodeSettingsToLSP(settings);
+
+      expect(result.completion.maxResults).toBe(100);
     });
   });
 

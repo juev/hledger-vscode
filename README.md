@@ -69,9 +69,9 @@ Transform your plain text accounting experience with powerful IDE capabilities:
 
 ### 🔌 **Language Server Protocol (LSP)**
 
-- **Optional LSP backend** for enhanced performance
+- **Required LSP backend**, auto-installed on first activation
 - **Auto-download** of LSP binary from GitHub releases
-- **Manual update** commands for version management
+- **CodeLens** balance check indicators on transactions (opt-in)
 - Cross-platform support (macOS, Linux, Windows)
 
 ---
@@ -97,7 +97,7 @@ Transform your plain text accounting experience with powerful IDE capabilities:
 ## 🚀 Quick Start
 
 1. **Create or open** a `.journal`, `.hledger`, or `.ledger` file
-2. **Enable** `editor.formatOnType: true` for on-type formatting
+2. **Accept LSP installation** when prompted on first activation
 3. **Start typing** - auto-completion activates automatically
 4. **Press Enter** after transaction dates - LSP handles indentation
 5. **Save file** - automatic formatting aligns everything

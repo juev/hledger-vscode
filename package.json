@@ -221,6 +221,16 @@
           "default": true,
           "description": "Enable workspace symbol search from the Language Server"
         },
+        "hledger.features.inlineCompletion": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable inline ghost text completions from the Language Server"
+        },
+        "hledger.features.codeLens": {
+          "type": "boolean",
+          "default": false,
+          "description": "Enable balance check indicators on transactions (CodeLens)"
+        },
         "hledger.completion.snippets": {
           "type": "boolean",
           "default": true,
@@ -235,6 +245,18 @@
           "type": "boolean",
           "default": true,
           "description": "Show usage counts in completion items"
+        },
+        "hledger.completion.maxResults": {
+          "type": "number",
+          "default": 50,
+          "minimum": 5,
+          "maximum": 200,
+          "description": "Maximum number of completion items from the Language Server"
+        },
+        "hledger.completion.includeNotes": {
+          "type": "boolean",
+          "default": true,
+          "description": "Include notes in payee completions from the Language Server"
         },
         "hledger.diagnostics.undeclaredAccounts": {
           "type": "boolean",
