@@ -5,6 +5,7 @@ import { HLedgerCliCommands } from "./HLedgerCliCommands";
 import { HLedgerCliService } from "./services/HLedgerCliService";
 import { HLedgerImportCommands } from "./HLedgerImportCommands";
 import { LSPManager, StartupChecker } from "./lsp";
+import { alignAmount } from "./commands/alignAmount";
 import { InlineCompletionProvider } from "./inline/InlineCompletionProvider";
 
 export function activate(context: vscode.ExtensionContext): void {
@@ -179,6 +180,16 @@ export function activate(context: vscode.ExtensionContext): void {
       vscode.commands.registerCommand("hledger.import.fromFile", async () => {
         await importCommands.importFromFile();
       }),
+    );
+
+    // Register editor commands
+    context.subscriptions.push(
+      vscode.commands.registerCommand(
+        "hledger.editor.alignAmount",
+        async () => {
+          await alignAmount(() => lspManager.getLanguageClient());
+        },
+      ),
     );
 
     // Register LSP commands

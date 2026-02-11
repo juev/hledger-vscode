@@ -461,6 +461,11 @@
         "command": "hledger.lsp.restart",
         "title": "HLedger: Restart Language Server",
         "category": "HLedger"
+      },
+      {
+        "command": "hledger.editor.alignAmount",
+        "title": "HLedger: Align Amount to Column",
+        "category": "HLedger"
       }
     ],
     "keybindings": [
@@ -473,6 +478,11 @@
         "command": "editor.action.inlineSuggest.commit",
         "key": "enter",
         "when": "editorTextFocus && editorLangId == hledger && inlineSuggestionVisible"
+      },
+      {
+        "command": "hledger.editor.alignAmount",
+        "key": "tab",
+        "when": "editorTextFocus && editorLangId == hledger && !suggestWidgetVisible && !inlineSuggestionVisible && !inSnippetMode && !hasSnippetCompletions"
       }
     ],
     "configurationDefaults": {
