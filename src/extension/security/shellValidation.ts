@@ -1,6 +1,6 @@
 // Shell metacharacter pattern for path validation
 // Prevents command injection by rejecting paths with shell special characters
-export const SHELL_METACHAR_PATTERN = /[;&|`$()[\]{}^"<>#!*?~\\'\n\r]/;
+const SHELL_METACHAR_PATTERN = /[;&|`$()[\]{}^"<>#!*?~\\'\n\r]/;
 
 /**
  * Validates that a path doesn't contain shell metacharacters
