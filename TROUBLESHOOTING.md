@@ -345,9 +345,9 @@ The Language Server is auto-installed on first activation. If it is not installe
 
 ### Large Include Depth
 
-**Issue:** More than 10 levels of include nesting not supported
+**Issue:** Include nesting beyond configured limit (default: 50 levels, configurable up to 100 via `hledger.limits.maxIncludeDepth`)
 
-**Workaround:** Flatten include hierarchy
+**Workaround:** Flatten include hierarchy or increase the limit in settings
 
 **Security:** Include directives are validated to prevent path traversal attacks. Includes cannot escape workspace boundaries or access system directories.
 

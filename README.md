@@ -107,7 +107,7 @@ Transform your plain text accounting experience with powerful IDE capabilities:
 ```hledger
 2025-01-15 * Coffee shop
     Expenses:Food:Coffee        $4.50
-    Assets:Cash                -4.50
+    Assets:Cash                -$4.50
 ```
 
 **Type and get instant suggestions:**
@@ -169,7 +169,8 @@ Import bank statements and transaction data from CSV/TSV files.
 
 **Available Commands** (via Command Palette `Ctrl+Shift+P`):
 
-- `HLedger: Import from CSV/TSV` - Import tabular data to hledger format
+- `HLedger: Import Selected Tabular Data` - Import selected text as CSV/TSV
+- `HLedger: Import Tabular Data from File` - Import active file as CSV/TSV
 
 **Features:**
 
@@ -221,7 +222,7 @@ Import bank statements and transaction data from CSV/TSV files.
   "hledger.cli.journalFile": "",  // Uses LEDGER_FILE if empty
 
   // Optional: Disable semantic highlighting to use only TextMate grammar
-  "hledger.semanticHighlighting.enabled": true,  // Enabled by default
+  "hledger.features.semanticTokens": true,  // Enabled by default
 
   // Validation diagnostics
   "hledger.diagnostics.enabled": true,  // Disable to turn off validation warnings
@@ -249,7 +250,7 @@ Customize syntax colors for any theme:
 }
 ```
 
-**Available tokens:** `account`, `amount`, `comment`, `date`, `commodity`, `payee`, `tag`, `directive`, `operator`, `code`, `link`
+**Available tokens:** `account`, `accountVirtual`, `amount`, `date`, `time`, `commodity`, `payee`, `note`, `tag`, `tagValue`, `directive`, `code`, `status`, `link`
 
 ---
 

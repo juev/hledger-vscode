@@ -404,8 +404,8 @@ Semantic highlighting is enabled by default:
 | `code` | `string` | `string.quoted` | Orange (#CE9178) | Transaction codes |
 | `status` | `operator` | `keyword.operator` | Light (#D4D4D4) | Status markers (`*`, `!`) |
 | `link` | `label` | `markup.underline.link` | Blue (underlined) | Inter-transaction links |
-| `comment` | `comment` | `comment.line` | Green (#6A9955) | Comment text |
-| `operator` | `operator` | `keyword.operator` | Light (#D4D4D4) | Operators (`=`, `:=`, `@`, `@@`) |
+
+Additionally, `comment` and `operator` have scope mappings in `semanticTokenScopes` (for `comment.line` and `keyword.operator` respectively) but are not registered as formal semantic token types.
 
 **How highlighting works:**
 1. **TextMate Scopes** (highest priority) - Standard scopes like `entity.name.namespace`, `constant.numeric` that themes understand
@@ -693,8 +693,11 @@ The import feature tries to match payees to accounts using multiple strategies:
 |----------|----------|------------|-------------|
 | 1 | Journal history (exact) | 95% | Exact payee match from existing transactions |
 | 2 | Journal history (fuzzy) | 85% | Similar payee names |
-| 3 | Amount sign | 50% | Positive=income, negative=expense |
-| 4 | Default accounts | - | Configured defaults |
+| 3 | Category (exact) | 80% | Direct category column match |
+| 4 | Category (partial) | 75% | Partial category match (contains/contained by) |
+| 5 | Merchant pattern | 70% | Regex patterns for common merchants |
+| 6 | Amount sign | 50% | Positive=income, negative=expense |
+| 7 | Default accounts | 0% | Configured defaults |
 
 ### Date Format Handling
 
@@ -991,6 +994,7 @@ All commands accessible via Command Palette (`Ctrl+Shift+P` or `Cmd+Shift+P`):
 | `hledger.lsp.update` | HLedger: Install/Update Language Server | Install or update LSP binary |
 | `hledger.lsp.showVersion` | HLedger: Show Language Server Version | Show LSP version info |
 | `hledger.lsp.restart` | HLedger: Restart Language Server | Restart the LSP server |
+| `hledger.editor.alignAmount` | HLedger: Align Amount to Column | Align amount at cursor via LSP |
 
 ---
 
@@ -1002,6 +1006,7 @@ All commands accessible via Command Palette (`Ctrl+Shift+P` or `Cmd+Shift+P`):
 |-----|--------|-----------|
 | `Enter` | Accept completion | When completion widget is visible |
 | `Enter` | Accept inline suggestion | When ghost text is visible |
+| `Tab` | Align amount to column | When no suggestions/snippets active |
 | `Ctrl+Space` | Manual completion trigger | Always |
 
 **On-type formatting** (Enter/Tab) is handled by the Language Server when `editor.formatOnType` is enabled.
@@ -1043,7 +1048,7 @@ Best practices:
 - Organize by year or month
 - Keep active/current transactions in main file
 - Archive old transactions in included files
-- Maximum nesting depth: 10 levels
+- Maximum nesting depth: 50 levels (configurable up to 100 via `hledger.limits.maxIncludeDepth`)
 
 ### Cache Behavior
 
