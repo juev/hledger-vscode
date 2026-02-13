@@ -1,5 +1,17 @@
 # Change Log
 
+## [0.5.3] - 2026-02-13
+
+### Changed
+- refactor(types): remove dead code after LSP migration
+
+### Fixed
+- docs(review): fix inaccuracies across README, user guide, and troubleshooting
+
+### Other
+- chore(deps): bump qs from 6.14.1 to 6.14.2
+
+
 ## [0.5.2] - 2026-02-11
 
 ### Added
