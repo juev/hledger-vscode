@@ -1,5 +1,14 @@
 # Change Log
 
+## [0.5.5] - 2026-02-16
+
+### Added
+- feat(core): add Logger, StatusBarItem, CommandPalette conditions, error context, walkthrough, and remove dead code
+
+### Fixed
+- fix(lsp): address code review findings for LSPManager
+
+
 ## [0.5.4] - 2026-02-16
 
 ### Added
