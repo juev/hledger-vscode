@@ -1,5 +1,14 @@
 # Change Log
 
+## [0.5.4] - 2026-02-16
+
+### Added
+- feat(lsp): add streaming download with retry, timeout, and stall detection
+
+### Fixed
+- fix(lsp): address code review findings for download resilience
+
+
 ## [0.5.3] - 2026-02-13
 
 ### Changed
