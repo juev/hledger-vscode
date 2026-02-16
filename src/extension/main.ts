@@ -7,12 +7,23 @@ import { HLedgerImportCommands } from "./HLedgerImportCommands";
 import { LSPManager, StartupChecker } from "./lsp";
 import { alignAmount } from "./commands/alignAmount";
 import { InlineCompletionProvider } from "./inline/InlineCompletionProvider";
+import { Logger } from "./Logger";
+import { LSPStatusBar } from "./lsp/LSPStatusBar";
+import { formatErrorWithContext } from "./ErrorContext";
 
 export function activate(context: vscode.ExtensionContext): void {
   try {
+    const outputChannel = vscode.window.createOutputChannel("HLedger");
+    const logger = new Logger(outputChannel);
+    context.subscriptions.push(logger);
+
     // Initialize LSP Manager
     const lspManager = new LSPManager(context);
     context.subscriptions.push(lspManager);
+
+    const statusBar = new LSPStatusBar();
+    context.subscriptions.push(statusBar);
+    lspManager.onStatusChange((status) => statusBar.update(status));
 
     const startupChecker = new StartupChecker(lspManager, context);
 
@@ -26,9 +37,9 @@ export function activate(context: vscode.ExtensionContext): void {
         if (shouldInstall) {
           try {
             await startupChecker.performInstall();
-            console.log("HLedger LSP server installed and started successfully");
+            logger.info("HLedger LSP server installed and started successfully");
           } catch (error) {
-            console.error("Failed to install HLedger LSP server:", error);
+            logger.error("Failed to install HLedger LSP server", error instanceof Error ? error : undefined);
           }
         }
         return; // Either installed or user declined - done
@@ -38,9 +49,9 @@ export function activate(context: vscode.ExtensionContext): void {
         // Server is installed but update available - start first, then offer update
         try {
           await lspManager.start();
-          console.log("HLedger LSP server started successfully");
+          logger.info("HLedger LSP server started successfully");
         } catch (error) {
-          console.error("Failed to start HLedger LSP server:", error);
+          logger.error("Failed to start HLedger LSP server", error instanceof Error ? error : undefined);
           // Don't show install/update prompt on start failure if we already know update is available
         }
 
@@ -51,9 +62,9 @@ export function activate(context: vscode.ExtensionContext): void {
         if (shouldUpdate) {
           try {
             await startupChecker.performUpdate();
-            console.log("HLedger LSP server updated successfully");
+            logger.info("HLedger LSP server updated successfully");
           } catch (error) {
-            console.error("Failed to update HLedger LSP server:", error);
+            logger.error("Failed to update HLedger LSP server", error instanceof Error ? error : undefined);
           }
         } else {
           startupChecker.markUpdateDeclined();
@@ -62,7 +73,7 @@ export function activate(context: vscode.ExtensionContext): void {
       }
 
       if (checkResult.action === "error") {
-        console.error("Failed to check for LSP updates:", checkResult.error);
+        logger.error("Failed to check for LSP updates", checkResult.error instanceof Error ? checkResult.error : undefined);
         // Fall through to try starting server anyway
       }
 
@@ -70,22 +81,37 @@ export function activate(context: vscode.ExtensionContext): void {
       if (await lspManager.isServerAvailable()) {
         try {
           await lspManager.start();
-          console.log("HLedger LSP server started successfully");
+          logger.info("HLedger LSP server started successfully");
         } catch (error) {
-          console.error("Failed to start HLedger LSP server:", error);
+          logger.error("Failed to start HLedger LSP server", error instanceof Error ? error : undefined);
           const action = await vscode.window.showErrorMessage(
-            `HLedger Language Server failed to start. Features like syntax highlighting, completion, and diagnostics will not work. ${error instanceof Error ? error.message : String(error)}`,
+            formatErrorWithContext(
+              'HLedger Language Server failed to start',
+              error instanceof Error ? error : undefined
+            ),
             'Install/Update LSP',
-            'Dismiss'
+            'Open Troubleshooting',
+            'Report Issue'
           );
           if (action === 'Install/Update LSP') {
             try {
               await vscode.commands.executeCommand('hledger.lsp.update');
             } catch (updateError) {
               vscode.window.showErrorMessage(
-                `Failed to install/update: ${updateError instanceof Error ? updateError.message : String(updateError)}. Try manual installation.`
+                formatErrorWithContext(
+                  'Failed to install/update LSP',
+                  updateError instanceof Error ? updateError : undefined
+                )
               );
             }
+          } else if (action === 'Open Troubleshooting') {
+            void vscode.env.openExternal(vscode.Uri.parse(
+              'https://github.com/juev/hledger-vscode/blob/main/TROUBLESHOOTING.md'
+            ));
+          } else if (action === 'Report Issue') {
+            void vscode.env.openExternal(vscode.Uri.parse(
+              'https://github.com/juev/hledger-vscode/issues/new'
+            ));
           }
         }
       }
@@ -228,7 +254,7 @@ export function activate(context: vscode.ExtensionContext): void {
               }
             } catch (error) {
               vscode.window.showErrorMessage(
-                `Failed to check for updates: ${error instanceof Error ? error.message : String(error)}`
+                formatErrorWithContext('Failed to check for updates', error instanceof Error ? error : undefined)
               );
             }
           }
@@ -262,16 +288,16 @@ export function activate(context: vscode.ExtensionContext): void {
           );
         } catch (error) {
           vscode.window.showErrorMessage(
-            `Failed to restart language server: ${error instanceof Error ? error.message : String(error)}`
+            formatErrorWithContext('Failed to restart language server', error instanceof Error ? error : undefined)
           );
         }
       })
     );
 
   } catch (error) {
-    console.error("HLedger extension activation failed:", error);
+    console.error("HLedger extension activation failed:", error); // Logger unavailable during activation failure
     void vscode.window.showErrorMessage(
-      `HLedger extension failed to activate: ${error instanceof Error ? error.message : String(error)}`
+      formatErrorWithContext('HLedger extension failed to activate', error instanceof Error ? error : undefined)
     );
   }
 }

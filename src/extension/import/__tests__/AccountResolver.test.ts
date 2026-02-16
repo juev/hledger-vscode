@@ -677,16 +677,5 @@ describe('AccountResolver', () => {
             })).toBe(false);
         });
 
-        it('should format with annotation', () => {
-            const resolution = {
-                account: 'expenses:food:groceries',
-                confidence: 0.95,
-                source: 'category' as const,
-            };
-
-            const formatted = AccountResolver.formatWithAnnotation(resolution);
-            expect(formatted).toContain('expenses:food:groceries');
-            expect(formatted).toContain('category column');
-        });
     });
 });

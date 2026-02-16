@@ -33,12 +33,14 @@ interface LSPManagerContext {
   subscriptions: vscode.Disposable[];
 }
 
+export type StatusChangeListener = (status: LSPStatus) => void;
+
 export class LSPManager implements vscode.Disposable {
   private readonly storagePath: string;
   private readonly binaryManager: BinaryManager;
   private client: HLedgerLanguageClient | null = null;
   private status: LSPStatus = LSPStatus.NotInstalled;
-  private statusBarItem: vscode.StatusBarItem | null = null;
+  private statusListener: StatusChangeListener | null = null;
 
   constructor(context: LSPManagerContext) {
     this.storagePath = context.globalStorageUri.fsPath;
@@ -52,14 +54,23 @@ export class LSPManager implements vscode.Disposable {
 
   private async initializeStatus(): Promise<void> {
     if (await this.binaryManager.isInstalled()) {
-      this.status = LSPStatus.Stopped;
+      this.setStatus(LSPStatus.Stopped);
     } else {
-      this.status = LSPStatus.NotInstalled;
+      this.setStatus(LSPStatus.NotInstalled);
     }
   }
 
   getStatus(): LSPStatus {
     return this.status;
+  }
+
+  onStatusChange(listener: StatusChangeListener): void {
+    this.statusListener = listener;
+  }
+
+  private setStatus(status: LSPStatus): void {
+    this.status = status;
+    this.statusListener?.(status);
   }
 
   getStoragePath(): string {
@@ -86,7 +97,7 @@ export class LSPManager implements vscode.Disposable {
   async download(
     progress?: vscode.Progress<{ message?: string; increment?: number }>
   ): Promise<void> {
-    this.status = LSPStatus.Downloading;
+    this.setStatus(LSPStatus.Downloading);
 
     try {
       progress?.report({ message: "Fetching latest release..." });
@@ -96,9 +107,9 @@ export class LSPManager implements vscode.Disposable {
         progress?.report({ message: `Downloading... ${percent}%`, increment: delta });
         previousPercent = percent;
       });
-      this.status = LSPStatus.Stopped;
+      this.setStatus(LSPStatus.Stopped);
     } catch (error) {
-      this.status = LSPStatus.Error;
+      this.setStatus(LSPStatus.Error);
       throw error;
     }
   }
@@ -131,15 +142,15 @@ export class LSPManager implements vscode.Disposable {
       throw new Error("Language server is not installed. Run 'HLedger: Install/Update Language Server' first.");
     }
 
-    this.status = LSPStatus.Starting;
+    this.setStatus(LSPStatus.Starting);
 
     try {
       const debug = vscode.workspace.getConfiguration("hledger.lsp").get<boolean>("debug") ?? false;
       this.client = new HLedgerLanguageClient(binaryPath, { debug });
       await this.client.start();
-      this.status = LSPStatus.Running;
+      this.setStatus(LSPStatus.Running);
     } catch (error) {
-      this.status = LSPStatus.Error;
+      this.setStatus(LSPStatus.Error);
       this.client = null;
       throw error;
     }
@@ -152,7 +163,7 @@ export class LSPManager implements vscode.Disposable {
 
     await this.client.stop();
     this.client = null;
-    this.status = LSPStatus.Stopped;
+    this.setStatus(LSPStatus.Stopped);
   }
 
   async restart(): Promise<void> {
@@ -177,10 +188,6 @@ export class LSPManager implements vscode.Disposable {
       this.client.dispose();
       this.client = null;
     }
-    if (this.statusBarItem !== null) {
-      this.statusBarItem.dispose();
-      this.statusBarItem = null;
-    }
-    this.status = LSPStatus.Stopped;
+    this.setStatus(LSPStatus.Stopped);
   }
 }

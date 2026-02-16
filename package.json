@@ -545,8 +545,69 @@
           "command": "hledger.cli.stats",
           "group": "1_reports@3"
         }
+      ],
+      "commandPalette": [
+        {
+          "command": "hledger.cli.balance",
+          "when": "editorLangId == hledger"
+        },
+        {
+          "command": "hledger.cli.stats",
+          "when": "editorLangId == hledger"
+        },
+        {
+          "command": "hledger.cli.incomestatement",
+          "when": "editorLangId == hledger"
+        },
+        {
+          "command": "hledger.editor.alignAmount",
+          "when": "editorLangId == hledger"
+        }
       ]
-    }
+    },
+    "walkthroughs": [
+      {
+        "id": "hledger.getStarted",
+        "title": "Get Started with HLedger",
+        "description": "Set up the HLedger extension for plain text accounting in VS Code.",
+        "steps": [
+          {
+            "id": "hledger.installLSP",
+            "title": "Install Language Server",
+            "description": "The HLedger Language Server provides syntax highlighting, completion, diagnostics, and formatting.\n\n[Install Language Server](command:hledger.lsp.update)",
+            "media": {
+              "markdown": "docs/user-guide.md"
+            },
+            "completionEvents": [
+              "onCommand:hledger.lsp.update"
+            ]
+          },
+          {
+            "id": "hledger.openJournal",
+            "title": "Open a Journal File",
+            "description": "Open a `.journal`, `.hledger`, or `.ledger` file to see syntax highlighting, completion, and diagnostics in action.",
+            "media": {
+              "markdown": "docs/user-guide.md"
+            },
+            "completionEvents": [
+              "onLanguage:hledger"
+            ]
+          },
+          {
+            "id": "hledger.importCSV",
+            "title": "Import from CSV",
+            "description": "Import transactions from CSV/TSV files into hledger format.\n\n[Learn more about CSV import](command:workbench.action.openWalkthrough?%7B%22category%22%3A%22juev.hledger%23hledger.getStarted%22%7D)",
+            "media": {
+              "markdown": "docs/user-guide.md"
+            },
+            "completionEvents": [
+              "onCommand:hledger.import.fromFile",
+              "onCommand:hledger.import.fromSelection"
+            ]
+          }
+        ]
+      }
+    ]
   },
   "scripts": {
     "vscode:prepublish": "npm run esbuild:prod",

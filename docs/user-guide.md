@@ -753,11 +753,31 @@ The Language Server is required and auto-installed on first activation. If the L
 
 The Language Server is automatically installed on first activation. If prompted, accept the installation to enable all features. The binary is stored in VS Code's global storage directory.
 
+A **Get Started** walkthrough is available on first install (Command Palette → "Get Started: HLedger") that guides you through Language Server installation, opening a journal file, and importing from CSV.
+
 To manually reinstall or update:
 
 1. Open Command Palette (`Ctrl+Shift+P` or `Cmd+Shift+P`)
 2. Run **HLedger: Install/Update Language Server**
 3. Wait for the download to complete
+
+### Status Bar
+
+The extension shows an LSP status indicator in the VS Code status bar (bottom-right). The indicator reflects the current state of the Language Server:
+
+| Icon | State | Description |
+|------|-------|-------------|
+| `$(server)` | Running | LSP is active and providing features |
+| `$(sync~spin)` | Starting / Downloading | LSP is starting up or being downloaded |
+| `$(warning)` | Error | LSP encountered an error (click to restart) |
+| `$(cloud-download)` | Not Installed | LSP binary not found |
+| `$(debug-stop)` | Stopped | LSP is stopped |
+
+Click the status bar item to restart the Language Server.
+
+### Output Channel
+
+Extension logs are available in the Output panel under **HLedger** channel (`View → Output → HLedger`). When `hledger.lsp.debug` is enabled, additional debug-level messages are logged. This is useful for diagnosing issues without opening Developer Tools.
 
 ### LSP Commands
 
@@ -767,12 +787,14 @@ To manually reinstall or update:
 | `hledger.lsp.showVersion` | Show installed version and status |
 | `hledger.lsp.restart` | Restart the language server |
 
+> **Note:** CLI commands (`hledger.cli.balance`, `hledger.cli.stats`, `hledger.cli.incomestatement`) and `hledger.editor.alignAmount` only appear in the Command Palette when a `.journal`/`.hledger`/`.ledger` file is active. Import and LSP commands are always available.
+
 ### LSP Settings
 
 | Setting | Type | Default | Description |
 |---------|------|---------|-------------|
 | `hledger.lsp.path` | string | `""` | Custom path to hledger-lsp binary. If empty, uses auto-downloaded binary |
-| `hledger.lsp.debug` | boolean | `false` | Enable debug logging for the LSP server |
+| `hledger.lsp.debug` | boolean | `false` | Enable debug logging for the LSP server (output visible in HLedger output channel) |
 | `hledger.lsp.checkForUpdates` | boolean | `true` | Check for Language Server updates on extension activation |
 
 ### LSP Feature Settings

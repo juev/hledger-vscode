@@ -63,6 +63,11 @@ export enum ProgressLocation {
   Notification = 15,
 }
 
+export enum StatusBarAlignment {
+  Left = 1,
+  Right = 2,
+}
+
 export enum DiagnosticSeverity {
   Error = 0,
   Warning = 1,
@@ -830,6 +835,22 @@ export const window = {
       dispose: jest.fn(),
     }),
   ),
+  createStatusBarItem: jest.fn(
+    (_alignment?: StatusBarAlignment, _priority?: number) => ({
+      text: '',
+      tooltip: '',
+      command: undefined as string | undefined,
+      color: undefined as string | undefined,
+      backgroundColor: undefined as any,
+      show: jest.fn(),
+      hide: jest.fn(),
+      dispose: jest.fn(),
+    }),
+  ),
+};
+
+export const env = {
+  openExternal: jest.fn().mockResolvedValue(true),
 };
 
 export const commands = {
@@ -913,6 +934,13 @@ export class MarkdownString {
   }
 }
 
+export class ThemeColor {
+  id: string;
+  constructor(id: string) {
+    this.id = id;
+  }
+}
+
 export class SnippetString {
   value: string;
 
@@ -982,7 +1010,7 @@ const createUriObject = (path: string): Uri => ({
 
 export const Uri = {
   file: createUriObject,
-  parse: jest.fn(),
+  parse: jest.fn((uri: string) => createUriObject(uri)),
 };
 
 /**
@@ -1223,6 +1251,7 @@ export default {
   Uri,
   workspace,
   window,
+  env,
   commands,
   languages,
   DiagnosticSeverity,
@@ -1232,6 +1261,8 @@ export default {
   ConfigurationTarget,
   EndOfLine,
   ProgressLocation,
+  StatusBarAlignment,
+  ThemeColor,
   CodeActionTriggerKind,
   Range,
   Position,

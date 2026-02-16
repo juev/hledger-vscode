@@ -4,6 +4,13 @@ import {
   createMockExtensionContext,
 } from "../../__mocks__/vscode";
 
+jest.mock("../lsp/LSPStatusBar", () => ({
+  LSPStatusBar: jest.fn().mockImplementation(() => ({
+    update: jest.fn(),
+    dispose: jest.fn(),
+  })),
+}));
+
 jest.mock("../lsp", () => ({
   LSPManager: jest.fn().mockImplementation(() => ({
     dispose: jest.fn(),
@@ -12,6 +19,7 @@ jest.mock("../lsp", () => ({
     isServerAvailable: jest.fn().mockResolvedValue(false),
     getLanguageClient: jest.fn().mockReturnValue(null),
     getStatus: jest.fn().mockReturnValue("stopped"),
+    onStatusChange: jest.fn(),
   })),
   StartupChecker: jest.fn().mockImplementation(() => ({
     checkOnActivation: jest.fn().mockResolvedValue({ action: "none" }),

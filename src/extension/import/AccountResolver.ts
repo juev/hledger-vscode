@@ -645,17 +645,4 @@ export class AccountResolver {
         );
     }
 
-    /**
-     * Format account with annotation comment
-     */
-    static formatWithAnnotation(
-        resolution: AccountResolution,
-        includeAnnotation = true
-    ): string {
-        if (!includeAnnotation || resolution.source === 'default') {
-            return resolution.account;
-        }
-
-        return `${resolution.account}  ; matched: ${this.describeSource(resolution.source)}`;
-    }
 }

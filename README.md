@@ -71,6 +71,9 @@ Transform your plain text accounting experience with powerful IDE capabilities:
 
 - **Required LSP backend**, auto-installed on first activation
 - **Auto-download** of LSP binary from GitHub releases
+- **Status bar indicator** showing LSP state (Running, Error, etc.)
+- **Output channel** for diagnostics (`View → Output → HLedger`)
+- **Guided walkthrough** for new users (Command Palette → "Get Started: HLedger")
 - **CodeLens** balance check indicators on transactions (opt-in)
 - Cross-platform support (macOS, Linux, Windows)
 
