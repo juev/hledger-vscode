@@ -38,6 +38,13 @@ interface GitHubReleaseResponse {
   assets: Array<{ name: string; browser_download_url: string }>;
 }
 
+class NonRetryableError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "NonRetryableError";
+  }
+}
+
 function isValidGitHubRelease(data: unknown): data is GitHubReleaseResponse {
   if (typeof data !== "object" || data === null) {
     return false;
@@ -136,16 +143,13 @@ export class BinaryManager {
     }
   }
 
-  private async fetchWithRetry(
-    url: string,
-    init?: RequestInit,
-    timeoutMs: number = API_TIMEOUT_MS,
-  ): Promise<Response> {
-    let lastError: Error | undefined;
+  private async withRetry<T>(fn: () => Promise<T>): Promise<T> {
+    let lastError: Error = new Error("All retry attempts failed");
     for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
       try {
-        return await this.fetchWithTimeout(url, init, timeoutMs);
+        return await fn();
       } catch (error: unknown) {
+        if (error instanceof NonRetryableError) throw error;
         lastError = error instanceof Error ? error : new Error(String(error));
         if (attempt < MAX_RETRIES - 1) {
           const delay = Math.min(
@@ -156,7 +160,15 @@ export class BinaryManager {
         }
       }
     }
-    throw lastError!;
+    throw lastError;
+  }
+
+  private fetchWithRetry(
+    url: string,
+    init?: RequestInit,
+    timeoutMs: number = API_TIMEOUT_MS,
+  ): Promise<Response> {
+    return this.withRetry(() => this.fetchWithTimeout(url, init, timeoutMs));
   }
 
   private async streamDownload(
@@ -175,15 +187,15 @@ export class BinaryManager {
     if (contentLengthHeader) {
       const size = parseInt(contentLengthHeader, 10);
       if (Number.isNaN(size)) {
-        throw new Error("Invalid Content-Length header: not a valid number");
+        throw new NonRetryableError("Invalid Content-Length header: not a valid number");
       }
       if (size > MAX_BINARY_SIZE) {
-        throw new Error(
+        throw new NonRetryableError(
           `Binary size ${size} exceeds maximum allowed size ${MAX_BINARY_SIZE}`
         );
       }
       if (size < MIN_BINARY_SIZE) {
-        throw new Error(
+        throw new NonRetryableError(
           `Binary size ${size} is below minimum required size ${MIN_BINARY_SIZE}`
         );
       }
@@ -192,6 +204,11 @@ export class BinaryManager {
 
     if (!response.body) {
       const buffer = await response.arrayBuffer();
+      if (buffer.byteLength > MAX_BINARY_SIZE) {
+        throw new NonRetryableError(
+          `Binary size ${buffer.byteLength} exceeds maximum allowed size ${MAX_BINARY_SIZE}`
+        );
+      }
       onProgress?.(buffer.byteLength, totalSize);
       return buffer;
     }
@@ -219,7 +236,7 @@ export class BinaryManager {
         if (result.value) {
           downloaded += result.value.byteLength;
           if (downloaded > MAX_BINARY_SIZE) {
-            throw new Error(
+            throw new NonRetryableError(
               `Binary size exceeds maximum allowed size ${MAX_BINARY_SIZE}`
             );
           }
@@ -243,26 +260,11 @@ export class BinaryManager {
     );
   }
 
-  private async downloadBinaryWithRetry(
+  private downloadBinaryWithRetry(
     url: string,
     onProgress?: (downloaded: number, total: number | null) => void,
   ): Promise<ArrayBuffer> {
-    let lastError: Error | undefined;
-    for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
-      try {
-        return await this.streamDownload(url, onProgress);
-      } catch (error: unknown) {
-        lastError = error instanceof Error ? error : new Error(String(error));
-        if (attempt < MAX_RETRIES - 1) {
-          const delay = Math.min(
-            BASE_RETRY_DELAY_MS * Math.pow(2, attempt) + Math.random() * 500,
-            MAX_RETRY_DELAY_MS,
-          );
-          await new Promise((resolve) => setTimeout(resolve, delay));
-        }
-      }
-    }
-    throw lastError!;
+    return this.withRetry(() => this.streamDownload(url, onProgress));
   }
 
   getBinaryPath(): string {
@@ -419,6 +421,9 @@ export class BinaryManager {
       (downloaded, total) => {
         if (total !== null && total > 0) {
           const pct = 10 + Math.floor(Math.min(downloaded / total, 1) * 85);
+          onProgress?.(pct);
+        } else {
+          const pct = Math.min(10 + Math.ceil(downloaded / (100 * 1024)), 90);
           onProgress?.(pct);
         }
       },

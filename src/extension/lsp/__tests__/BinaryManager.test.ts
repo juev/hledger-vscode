@@ -697,6 +697,120 @@ describe("BinaryManager", () => {
         /Checksum verification failed/
       );
     });
+
+    it("does not retry on non-retryable size validation error", async () => {
+      const largeBinary = Buffer.alloc(60 * 1024 * 1024);
+      const assetSuffix = getPlatformInfo(os.platform(), os.arch()).assetSuffix;
+      const checksumContent =
+        `cf5ac69ca412f9b3b1a8b8de27d368c5c05ed4b1b6aa40e6c38d9cbf23711342  hledger-lsp_${assetSuffix}\n`;
+
+      let binaryFetchCount = 0;
+      const mockFetch = jest.fn().mockImplementation((url: string) => {
+        if (url.includes("api.github.com")) {
+          return Promise.resolve(makeGitHubReleaseMock(assetSuffix));
+        }
+        if (url.includes("checksums.txt")) {
+          return Promise.resolve({
+            ok: true,
+            text: () => Promise.resolve(checksumContent),
+          });
+        }
+        binaryFetchCount++;
+        return Promise.resolve({
+          ok: true,
+          headers: createMockHeaders(largeBinary.byteLength),
+          arrayBuffer: () =>
+            Promise.resolve(
+              largeBinary.buffer.slice(
+                largeBinary.byteOffset,
+                largeBinary.byteOffset + largeBinary.byteLength
+              )
+            ),
+        });
+      });
+
+      manager = new BinaryManager(tempDir, mockFetch);
+
+      await expect(manager.download()).rejects.toThrow(
+        /Binary size .+ exceeds maximum allowed size/
+      );
+      expect(binaryFetchCount).toBe(1);
+    });
+
+    it("validates buffer size in arrayBuffer fallback without Content-Length", async () => {
+      const largeBinary = Buffer.alloc(60 * 1024 * 1024);
+      const assetSuffix = getPlatformInfo(os.platform(), os.arch()).assetSuffix;
+      const checksumContent =
+        `cf5ac69ca412f9b3b1a8b8de27d368c5c05ed4b1b6aa40e6c38d9cbf23711342  hledger-lsp_${assetSuffix}\n`;
+
+      const mockFetch = jest.fn().mockImplementation((url: string) => {
+        if (url.includes("api.github.com")) {
+          return Promise.resolve(makeGitHubReleaseMock(assetSuffix));
+        }
+        if (url.includes("checksums.txt")) {
+          return Promise.resolve({
+            ok: true,
+            text: () => Promise.resolve(checksumContent),
+          });
+        }
+        return Promise.resolve({
+          ok: true,
+          headers: createMockHeaders(),
+          arrayBuffer: () =>
+            Promise.resolve(
+              largeBinary.buffer.slice(
+                largeBinary.byteOffset,
+                largeBinary.byteOffset + largeBinary.byteLength
+              )
+            ),
+        });
+      });
+
+      manager = new BinaryManager(tempDir, mockFetch);
+
+      await expect(manager.download()).rejects.toThrow(
+        /Binary size .+ exceeds maximum allowed size/
+      );
+    });
+
+    it("reports progress when Content-Length is absent", async () => {
+      const binaryContent = Buffer.alloc(2048, "x");
+      const assetSuffix = getPlatformInfo(os.platform(), os.arch()).assetSuffix;
+      const checksum = computeSha256(binaryContent);
+      const checksumContent = `${checksum}  hledger-lsp_${assetSuffix}\n`;
+
+      const progressValues: number[] = [];
+
+      const mockFetch = jest.fn().mockImplementation((url: string) => {
+        if (url.includes("api.github.com")) {
+          return Promise.resolve(makeGitHubReleaseMock(assetSuffix));
+        }
+        if (url.includes("checksums.txt")) {
+          return Promise.resolve({
+            ok: true,
+            text: () => Promise.resolve(checksumContent),
+          });
+        }
+        return Promise.resolve({
+          ok: true,
+          headers: createMockHeaders(),
+          body: createMockReadableStream(binaryContent, 256),
+          arrayBuffer: () =>
+            Promise.resolve(
+              binaryContent.buffer.slice(
+                binaryContent.byteOffset,
+                binaryContent.byteOffset + binaryContent.byteLength
+              )
+            ),
+        });
+      });
+
+      manager = new BinaryManager(tempDir, mockFetch);
+      await manager.download((pct) => progressValues.push(pct));
+
+      const downloadProgress = progressValues.filter((p) => p > 10 && p < 95);
+      expect(downloadProgress.length).toBeGreaterThan(0);
+    });
   });
 
   describe("ensureInstalled", () => {
@@ -793,7 +907,7 @@ describe("BinaryManager", () => {
               tag_name: "v0.1.0",
               assets: [
                 {
-                  name: "hledger-lsp_darwin_arm64",
+                  name: `hledger-lsp_${getPlatformInfo(os.platform(), os.arch()).assetSuffix}`,
                   browser_download_url: "https://example.com/binary",
                 },
               ],
