@@ -19,7 +19,7 @@ jest.mock("../lsp", () => ({
     isServerAvailable: jest.fn().mockResolvedValue(false),
     getLanguageClient: jest.fn().mockReturnValue(null),
     getStatus: jest.fn().mockReturnValue("stopped"),
-    onStatusChange: jest.fn(),
+    onStatusChange: jest.fn().mockReturnValue({ dispose: jest.fn() }),
   })),
   StartupChecker: jest.fn().mockImplementation(() => ({
     checkOnActivation: jest.fn().mockResolvedValue({ action: "none" }),

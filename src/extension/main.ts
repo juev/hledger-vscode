@@ -23,7 +23,9 @@ export function activate(context: vscode.ExtensionContext): void {
 
     const statusBar = new LSPStatusBar();
     context.subscriptions.push(statusBar);
-    lspManager.onStatusChange((status) => statusBar.update(status));
+    context.subscriptions.push(
+      lspManager.onStatusChange((status) => statusBar.update(status))
+    );
 
     const startupChecker = new StartupChecker(lspManager, context);
 
