@@ -102,6 +102,24 @@ const syntaxTestCases: SyntaxTestCase[] = [
       amount: 'constant.numeric.amount.hledger',
       commodity: 'entity.name.type.commodity.hledger'
     }
+  },
+  {
+    description: 'Permissive account name as per hledger spec',
+    line: '    Expenses:Some account (~`@#$%^&*_-+={}[]|,.<>?/"\'\\)    100 USD',
+    expectedScopes: {
+      account: 'entity.name.type.account.expenses.hledger',
+      amount: 'constant.numeric.amount.hledger',
+      commodity: 'entity.name.type.commodity.hledger'
+    }
+  },
+  {
+    description: 'Permissive generic account name as per hledger spec',
+    line: '    E(~`@#$%^&*_-+={}[]|,.<>?/"\'\\):Some account (~`@#$%^&*_-+={}[]|,.<>?/"\'\\)    100 USD',
+    expectedScopes: {
+      account: 'entity.name.type.account.hledger',
+      amount: 'constant.numeric.amount.hledger',
+      commodity: 'entity.name.type.commodity.hledger'
+    }
   }
 ];
 
@@ -128,7 +146,7 @@ describe('Syntax Highlighting Tests', () => {
 
         // Verify account name follows hledger rules
         assert.ok(
-          /^[\p{L}][\p{L}\p{N}\s_-]*(?::[\p{L}][\p{L}\p{N}\s_-]*)*$/u.test(accountName) ||
+          /^[\p{L}]([^:;\s]|\s(?!\s))*(?::[\p{L}]([^:;\s]|\s(?!\s))*)*$/u.test(accountName) ||
           /^\([^)]+\)$/.test(accountName) ||
           /^\[[^\]]+\]$/.test(accountName),
           `Account name "${accountName}" should be valid in: ${testCase.description}`
@@ -162,12 +180,12 @@ describe('Syntax Highlighting Tests', () => {
   test('Account name regex patterns should handle spaces correctly', () => {
     // Test the individual account patterns
     const accountPatterns = [
-      { name: 'assets', pattern: /\b(Assets?|Активы)(?::[\p{L}][\p{L}\p{N}\s_-]*)*/u },
-      { name: 'expenses', pattern: /\b(Expenses?|Расходы)(?::[\p{L}][\p{L}\p{N}\s_-]*)*/u },
-      { name: 'liabilities', pattern: /\b(Liabilit(?:y|ies)|Пассивы)(?::[\p{L}][\p{L}\p{N}\s_-]*)*/u },
-      { name: 'equity', pattern: /\b(Equity|Собственные)(?::[\p{L}][\p{L}\p{N}\s_-]*)*/u },
-      { name: 'income', pattern: /\b(Income|Revenue|Доходы)(?::[\p{L}][\p{L}\p{N}\s_-]*)*/u },
-      { name: 'generic', pattern: /[\p{L}][\p{L}\p{N}\s_-]*(?::[\p{L}][\p{L}\p{N}\s_-]*)*/u }
+      { name: 'assets', pattern: /\b(Assets?|Активы)(?::[\p{L}]([^:;\s]|\s(?!\s))*)*/u },
+      { name: 'expenses', pattern: /\b(Expenses?|Расходы)(?::[\p{L}]([^:;\s]|\s(?!\s))*)*/u },
+      { name: 'liabilities', pattern: /\b(Liabilit(?:y|ies)|Пассивы)(?::[\p{L}]([^:;\s]|\s(?!\s))*)*/u },
+      { name: 'equity', pattern: /\b(Equity|Собственные)(?::[\p{L}]([^:;\s]|\s(?!\s))*)*/u },
+      { name: 'income', pattern: /\b(Income|Revenue|Доходы)(?::[\p{L}]([^:;\s]|\s(?!\s))*)*/u },
+      { name: 'generic', pattern: /[\p{L}]([^:;\s]|\s(?!\s))*(?::[\p{L}]([^:;\s]|\s(?!\s))*)*/u }
     ];
 
     const testAccounts = [
@@ -211,7 +229,7 @@ describe('hledger Specification Compliance', () => {
       'Assets:Банковский Счет'
     ];
 
-    const accountPattern = /^[\p{L}][\p{L}\p{N}\s_-]*(?::[\p{L}][\p{L}\p{N}\s_-]*)*$/u;
+    const accountPattern = /^[\p{L}]([^:;\s]|\s(?!\s))*(?::[\p{L}]([^:;\s]|\s(?!\s))*)*$/u;
 
     for (const account of validAccounts) {
       assert.ok(

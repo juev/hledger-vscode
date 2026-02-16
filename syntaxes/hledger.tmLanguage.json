@@ -183,27 +183,27 @@
         },
         {
           "name": "entity.name.type.account.assets.hledger",
-          "match": "(^|\\s)(Assets?|Активы)(?::[\\p{L}][\\p{L}\\p{N}\\s_-]*)*"
+          "match": "(^|\\s)(Assets?|Активы)(?::[\\p{L}]([^:;\\s]|\\s(?!\\s))*)*"
         },
         {
           "name": "entity.name.type.account.expenses.hledger",
-          "match": "(^|\\s)(Expenses?|Расходы)(?::[\\p{L}][\\p{L}\\p{N}\\s_-]*)*"
+          "match": "(^|\\s)(Expenses?|Расходы)(?::[\\p{L}]([^:;\\s]|\\s(?!\\s))*)*"
         },
         {
           "name": "entity.name.type.account.liabilities.hledger",
-          "match": "(^|\\s)(Liabilit(?:y|ies)|Пассивы)(?::[\\p{L}][\\p{L}\\p{N}\\s_-]*)*"
+          "match": "(^|\\s)(Liabilit(?:y|ies)|Пассивы)(?::[\\p{L}]([^:;\\s]|\\s(?!\\s))*)*"
         },
         {
           "name": "entity.name.type.account.equity.hledger",
-          "match": "(^|\\s)(Equity|Собственные)(?::[\\p{L}][\\p{L}\\p{N}\\s_-]*)*"
+          "match": "(^|\\s)(Equity|Собственные)(?::[\\p{L}]([^:;\\s]|\\s(?!\\s))*)*"
         },
         {
           "name": "entity.name.type.account.income.hledger",
-          "match": "(^|\\s)(Income|Revenue|Доходы)(?::[\\p{L}][\\p{L}\\p{N}\\s_-]*)*"
+          "match": "(^|\\s)(Income|Revenue|Доходы)(?::[\\p{L}]([^:;\\s]|\\s(?!\\s))*)*"
         },
         {
           "name": "entity.name.type.account.hledger",
-          "match": "[\\p{L}][\\p{L}\\p{N}\\s_-]*(?::[\\p{L}][\\p{L}\\p{N}\\s_-]*)*"
+          "match": "[\\p{L}]([^:;\\s]|\\s(?!\\s))*(?::[\\p{L}]([^:;\\s]|\\s(?!\\s))*)*"
         }
       ]
     },
