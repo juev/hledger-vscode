@@ -1,3 +1,4 @@
+import * as crypto from "crypto";
 import * as fs from "fs";
 import * as os from "os";
 import * as path from "path";
@@ -9,7 +10,6 @@ import {
   getBinaryName,
 } from "../BinaryManager";
 
-// Helper to create mock headers for fetch responses
 function createMockHeaders(contentLength?: number) {
   return {
     get: (name: string) => {
@@ -19,6 +19,76 @@ function createMockHeaders(contentLength?: number) {
       return null;
     },
   };
+}
+
+function createMockReadableStream(data: Buffer, chunkSize = data.byteLength): ReadableStream<Uint8Array> {
+  let offset = 0;
+  return new ReadableStream({
+    pull(controller) {
+      if (offset >= data.byteLength) {
+        controller.close();
+        return;
+      }
+      const end = Math.min(offset + chunkSize, data.byteLength);
+      controller.enqueue(new Uint8Array(data.subarray(offset, end)));
+      offset = end;
+    },
+  });
+}
+
+function createStallingStream(initialChunk: Uint8Array): ReadableStream<Uint8Array> {
+  let delivered = false;
+  return new ReadableStream({
+    pull(controller) {
+      if (!delivered) {
+        delivered = true;
+        controller.enqueue(initialChunk);
+        return;
+      }
+      return new Promise(() => {});
+    },
+  });
+}
+
+function createSignalAwareHangingFetch() {
+  return jest.fn().mockImplementation((_url: string, init?: RequestInit) => {
+    return new Promise((_resolve, reject) => {
+      const onAbort = () => {
+        const err = new Error("The operation was aborted");
+        err.name = "AbortError";
+        reject(err);
+      };
+      if (init?.signal?.aborted) {
+        onAbort();
+        return;
+      }
+      init?.signal?.addEventListener("abort", onAbort);
+    });
+  });
+}
+
+function makeGitHubReleaseMock(assetSuffix: string) {
+  return {
+    ok: true,
+    json: () =>
+      Promise.resolve({
+        tag_name: "v0.1.0",
+        assets: [
+          {
+            name: `hledger-lsp_${assetSuffix}`,
+            browser_download_url: "https://example.com/binary",
+          },
+          {
+            name: "checksums.txt",
+            browser_download_url: "https://example.com/checksums.txt",
+          },
+        ],
+      }),
+  };
+}
+
+function computeSha256(data: Buffer): string {
+  return crypto.createHash("sha256").update(data).digest("hex");
 }
 
 describe("getPlatformInfo", () => {
@@ -690,6 +760,256 @@ describe("BinaryManager", () => {
       const result = await manager.ensureInstalled();
 
       expect(result).toBe(binaryPath);
+    });
+  });
+
+  describe("timeout and retry", () => {
+    it("getLatestRelease times out on slow API and retries 3 times", async () => {
+      jest.useFakeTimers();
+      const mockFetch = createSignalAwareHangingFetch();
+      manager = new BinaryManager(tempDir, mockFetch);
+
+      const promise = manager.getLatestRelease();
+      const assertion = expect(promise).rejects.toThrow(/timed out/i);
+      await jest.advanceTimersByTimeAsync(200_000);
+      await assertion;
+
+      expect(mockFetch).toHaveBeenCalledTimes(3);
+      jest.useRealTimers();
+    });
+
+    it("getLatestRelease retries on transient failure and succeeds", async () => {
+      jest.useFakeTimers();
+      let callCount = 0;
+      const mockFetch = jest.fn().mockImplementation(() => {
+        callCount++;
+        if (callCount <= 2) {
+          return Promise.reject(new Error("Network error"));
+        }
+        return Promise.resolve({
+          ok: true,
+          json: () =>
+            Promise.resolve({
+              tag_name: "v0.1.0",
+              assets: [
+                {
+                  name: "hledger-lsp_darwin_arm64",
+                  browser_download_url: "https://example.com/binary",
+                },
+              ],
+            }),
+        });
+      });
+
+      manager = new BinaryManager(tempDir, mockFetch);
+      const promise = manager.getLatestRelease();
+      await jest.advanceTimersByTimeAsync(50_000);
+
+      const release = await promise;
+      expect(release.version).toBe("v0.1.0");
+      expect(mockFetch).toHaveBeenCalledTimes(3);
+      jest.useRealTimers();
+    });
+
+    it("getLatestRelease fails after MAX_RETRIES exhausted", async () => {
+      jest.useFakeTimers();
+      const mockFetch = jest.fn().mockRejectedValue(new Error("Network error"));
+      manager = new BinaryManager(tempDir, mockFetch);
+
+      const promise = manager.getLatestRelease();
+      const assertion = expect(promise).rejects.toThrow(/Network error/);
+      await jest.advanceTimersByTimeAsync(50_000);
+      await assertion;
+
+      expect(mockFetch).toHaveBeenCalledTimes(3);
+      jest.useRealTimers();
+    });
+
+    it("passes AbortController signal to fetchFn", async () => {
+      const mockFetch = jest.fn().mockResolvedValue({
+        ok: true,
+        json: () =>
+          Promise.resolve({
+            tag_name: "v0.1.0",
+            assets: [],
+          }),
+      });
+
+      manager = new BinaryManager(tempDir, mockFetch);
+      await manager.getLatestRelease();
+
+      const callInit = mockFetch.mock.calls[0][1];
+      expect(callInit.signal).toBeInstanceOf(AbortSignal);
+    });
+  });
+
+  describe("streaming download", () => {
+    it("reports granular progress with ReadableStream body", async () => {
+      const binaryContent = Buffer.alloc(2048, "x");
+      const assetSuffix = getPlatformInfo(os.platform(), os.arch()).assetSuffix;
+      const checksum = computeSha256(binaryContent);
+      const checksumContent = `${checksum}  hledger-lsp_${assetSuffix}\n`;
+
+      const progressValues: number[] = [];
+
+      const mockFetch = jest.fn().mockImplementation((url: string) => {
+        if (url.includes("api.github.com")) {
+          return Promise.resolve(makeGitHubReleaseMock(assetSuffix));
+        }
+        if (url.includes("checksums.txt")) {
+          return Promise.resolve({
+            ok: true,
+            text: () => Promise.resolve(checksumContent),
+          });
+        }
+        return Promise.resolve({
+          ok: true,
+          headers: createMockHeaders(binaryContent.byteLength),
+          body: createMockReadableStream(binaryContent, 256),
+          arrayBuffer: () =>
+            Promise.resolve(
+              binaryContent.buffer.slice(
+                binaryContent.byteOffset,
+                binaryContent.byteOffset + binaryContent.byteLength
+              )
+            ),
+        });
+      });
+
+      manager = new BinaryManager(tempDir, mockFetch);
+      await manager.download((pct) => progressValues.push(pct));
+
+      const downloadProgress = progressValues.filter((p) => p > 10 && p < 95);
+      expect(downloadProgress.length).toBeGreaterThan(1);
+      for (let i = 1; i < downloadProgress.length; i++) {
+        expect(downloadProgress[i]).toBeGreaterThanOrEqual(downloadProgress[i - 1]!);
+      }
+      expect(progressValues).toContain(100);
+    });
+
+    it("falls back to arrayBuffer when body is null", async () => {
+      const binaryContent = Buffer.alloc(2048, "x");
+      const assetSuffix = getPlatformInfo(os.platform(), os.arch()).assetSuffix;
+      const checksum = computeSha256(binaryContent);
+      const checksumContent = `${checksum}  hledger-lsp_${assetSuffix}\n`;
+
+      const mockFetch = jest.fn().mockImplementation((url: string) => {
+        if (url.includes("api.github.com")) {
+          return Promise.resolve(makeGitHubReleaseMock(assetSuffix));
+        }
+        if (url.includes("checksums.txt")) {
+          return Promise.resolve({
+            ok: true,
+            text: () => Promise.resolve(checksumContent),
+          });
+        }
+        return Promise.resolve({
+          ok: true,
+          headers: createMockHeaders(binaryContent.byteLength),
+          arrayBuffer: () =>
+            Promise.resolve(
+              binaryContent.buffer.slice(
+                binaryContent.byteOffset,
+                binaryContent.byteOffset + binaryContent.byteLength
+              )
+            ),
+        });
+      });
+
+      manager = new BinaryManager(tempDir, mockFetch);
+      await manager.download();
+
+      expect(await manager.isInstalled()).toBe(true);
+      expect(await manager.getInstalledVersion()).toBe("v0.1.0");
+    });
+
+    it("detects stall and retries download", async () => {
+      jest.useFakeTimers();
+      const binaryContent = Buffer.alloc(2048, "x");
+      const assetSuffix = getPlatformInfo(os.platform(), os.arch()).assetSuffix;
+      const checksum = computeSha256(binaryContent);
+      const checksumContent = `${checksum}  hledger-lsp_${assetSuffix}\n`;
+
+      let binaryFetchCount = 0;
+
+      const mockFetch = jest.fn().mockImplementation((url: string) => {
+        if (url.includes("api.github.com")) {
+          return Promise.resolve(makeGitHubReleaseMock(assetSuffix));
+        }
+        if (url.includes("checksums.txt")) {
+          return Promise.resolve({
+            ok: true,
+            text: () => Promise.resolve(checksumContent),
+          });
+        }
+        binaryFetchCount++;
+        if (binaryFetchCount === 1) {
+          return Promise.resolve({
+            ok: true,
+            headers: createMockHeaders(binaryContent.byteLength),
+            body: createStallingStream(new Uint8Array(256)),
+          });
+        }
+        return Promise.resolve({
+          ok: true,
+          headers: createMockHeaders(binaryContent.byteLength),
+          body: createMockReadableStream(binaryContent, 512),
+        });
+      });
+
+      manager = new BinaryManager(tempDir, mockFetch);
+      const promise = manager.download();
+      await jest.runAllTimersAsync();
+      await promise;
+
+      expect(binaryFetchCount).toBe(2);
+      expect(await manager.isInstalled()).toBe(true);
+      jest.useRealTimers();
+    });
+
+    it("retries binary download on network failure", async () => {
+      jest.useFakeTimers();
+      const binaryContent = Buffer.alloc(2048, "x");
+      const assetSuffix = getPlatformInfo(os.platform(), os.arch()).assetSuffix;
+      const checksum = computeSha256(binaryContent);
+      const checksumContent = `${checksum}  hledger-lsp_${assetSuffix}\n`;
+
+      let binaryFetchCount = 0;
+
+      const mockFetch = jest.fn().mockImplementation((url: string) => {
+        if (url.includes("api.github.com")) {
+          return Promise.resolve(makeGitHubReleaseMock(assetSuffix));
+        }
+        if (url.includes("checksums.txt")) {
+          return Promise.resolve({
+            ok: true,
+            text: () => Promise.resolve(checksumContent),
+          });
+        }
+        binaryFetchCount++;
+        if (binaryFetchCount === 1) {
+          return Promise.resolve({
+            ok: false,
+            status: 503,
+            statusText: "Service Unavailable",
+            headers: createMockHeaders(),
+          });
+        }
+        return Promise.resolve({
+          ok: true,
+          headers: createMockHeaders(binaryContent.byteLength),
+          body: createMockReadableStream(binaryContent, 512),
+        });
+      });
+
+      manager = new BinaryManager(tempDir, mockFetch);
+      const promise = manager.download();
+      await jest.runAllTimersAsync();
+      await promise;
+
+      expect(binaryFetchCount).toBe(2);
+      expect(await manager.isInstalled()).toBe(true);
+      jest.useRealTimers();
     });
   });
 });

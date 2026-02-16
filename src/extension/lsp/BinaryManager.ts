@@ -8,6 +8,13 @@ const GITHUB_API_URL = `https://api.github.com/repos/${GITHUB_REPO}/releases/lat
 const MAX_BINARY_SIZE = 50 * 1024 * 1024;
 const MIN_BINARY_SIZE = 1024;
 
+const API_TIMEOUT_MS = 30_000;
+const DOWNLOAD_TIMEOUT_MS = 300_000;
+const STALL_TIMEOUT_MS = 30_000;
+const MAX_RETRIES = 3;
+const BASE_RETRY_DELAY_MS = 1_000;
+const MAX_RETRY_DELAY_MS = 10_000;
+
 export interface PlatformInfo {
   platform: "darwin" | "linux" | "windows";
   arch: "amd64" | "arm64";
@@ -109,6 +116,155 @@ export class BinaryManager {
     this.platformInfo = platformInfo ?? getPlatformInfo(os.platform(), os.arch());
   }
 
+  private async fetchWithTimeout(
+    url: string,
+    init?: RequestInit,
+    timeoutMs: number = API_TIMEOUT_MS,
+  ): Promise<Response> {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+    try {
+      const response = await this.fetchFn(url, { ...init, signal: controller.signal });
+      return response;
+    } catch (error: unknown) {
+      if (error instanceof Error && error.name === "AbortError") {
+        throw new Error(`Request timed out after ${timeoutMs}ms: ${url}`);
+      }
+      throw error;
+    } finally {
+      clearTimeout(timeoutId);
+    }
+  }
+
+  private async fetchWithRetry(
+    url: string,
+    init?: RequestInit,
+    timeoutMs: number = API_TIMEOUT_MS,
+  ): Promise<Response> {
+    let lastError: Error | undefined;
+    for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
+      try {
+        return await this.fetchWithTimeout(url, init, timeoutMs);
+      } catch (error: unknown) {
+        lastError = error instanceof Error ? error : new Error(String(error));
+        if (attempt < MAX_RETRIES - 1) {
+          const delay = Math.min(
+            BASE_RETRY_DELAY_MS * Math.pow(2, attempt) + Math.random() * 500,
+            MAX_RETRY_DELAY_MS,
+          );
+          await new Promise((resolve) => setTimeout(resolve, delay));
+        }
+      }
+    }
+    throw lastError!;
+  }
+
+  private async streamDownload(
+    url: string,
+    onProgress?: (downloaded: number, total: number | null) => void,
+  ): Promise<ArrayBuffer> {
+    const response = await this.fetchWithTimeout(url, undefined, DOWNLOAD_TIMEOUT_MS);
+    if (!response.ok) {
+      throw new Error(
+        `Failed to download binary: ${response.status} ${response.statusText}`
+      );
+    }
+
+    const contentLengthHeader = response.headers.get("content-length");
+    let totalSize: number | null = null;
+    if (contentLengthHeader) {
+      const size = parseInt(contentLengthHeader, 10);
+      if (Number.isNaN(size)) {
+        throw new Error("Invalid Content-Length header: not a valid number");
+      }
+      if (size > MAX_BINARY_SIZE) {
+        throw new Error(
+          `Binary size ${size} exceeds maximum allowed size ${MAX_BINARY_SIZE}`
+        );
+      }
+      if (size < MIN_BINARY_SIZE) {
+        throw new Error(
+          `Binary size ${size} is below minimum required size ${MIN_BINARY_SIZE}`
+        );
+      }
+      totalSize = size;
+    }
+
+    if (!response.body) {
+      const buffer = await response.arrayBuffer();
+      onProgress?.(buffer.byteLength, totalSize);
+      return buffer;
+    }
+
+    const reader = response.body.getReader();
+    const chunks: Uint8Array[] = [];
+    let downloaded = 0;
+
+    try {
+      for (;;) {
+        const result = await new Promise<{ done: boolean; value?: Uint8Array }>(
+          (resolve, reject) => {
+            const stallId = setTimeout(() => {
+              reject(new Error(`Download stalled: no data received for ${STALL_TIMEOUT_MS}ms`));
+            }, STALL_TIMEOUT_MS);
+
+            reader.read().then(
+              (r) => { clearTimeout(stallId); resolve(r); },
+              (e: unknown) => { clearTimeout(stallId); reject(e); },
+            );
+          },
+        );
+
+        if (result.done) break;
+        if (result.value) {
+          downloaded += result.value.byteLength;
+          if (downloaded > MAX_BINARY_SIZE) {
+            throw new Error(
+              `Binary size exceeds maximum allowed size ${MAX_BINARY_SIZE}`
+            );
+          }
+          chunks.push(result.value);
+          onProgress?.(downloaded, totalSize);
+        }
+      }
+    } finally {
+      reader.cancel().catch(() => {});
+    }
+
+    const combined = new Uint8Array(downloaded);
+    let offset = 0;
+    for (const chunk of chunks) {
+      combined.set(chunk, offset);
+      offset += chunk.byteLength;
+    }
+    return combined.buffer.slice(
+      combined.byteOffset,
+      combined.byteOffset + combined.byteLength,
+    );
+  }
+
+  private async downloadBinaryWithRetry(
+    url: string,
+    onProgress?: (downloaded: number, total: number | null) => void,
+  ): Promise<ArrayBuffer> {
+    let lastError: Error | undefined;
+    for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
+      try {
+        return await this.streamDownload(url, onProgress);
+      } catch (error: unknown) {
+        lastError = error instanceof Error ? error : new Error(String(error));
+        if (attempt < MAX_RETRIES - 1) {
+          const delay = Math.min(
+            BASE_RETRY_DELAY_MS * Math.pow(2, attempt) + Math.random() * 500,
+            MAX_RETRY_DELAY_MS,
+          );
+          await new Promise((resolve) => setTimeout(resolve, delay));
+        }
+      }
+    }
+    throw lastError!;
+  }
+
   getBinaryPath(): string {
     const binaryName = getBinaryName(this.platformInfo.platform);
     return path.join(this.storageDir, binaryName);
@@ -138,12 +294,16 @@ export class BinaryManager {
   }
 
   async getLatestRelease(): Promise<ReleaseInfo> {
-    const response = await this.fetchFn(GITHUB_API_URL, {
-      headers: {
-        Accept: "application/vnd.github.v3+json",
-        "User-Agent": "hledger-vscode",
+    const response = await this.fetchWithRetry(
+      GITHUB_API_URL,
+      {
+        headers: {
+          Accept: "application/vnd.github.v3+json",
+          "User-Agent": "hledger-vscode",
+        },
       },
-    });
+      API_TIMEOUT_MS,
+    );
 
     if (!response.ok) {
       if (response.status === 403) {
@@ -203,7 +363,7 @@ export class BinaryManager {
       );
     }
 
-    const response = await this.fetchFn(checksumAsset.downloadUrl);
+    const response = await this.fetchWithRetry(checksumAsset.downloadUrl, undefined, API_TIMEOUT_MS);
     if (!response.ok) {
       throw new Error(
         `Failed to download checksums: ${response.status} ${response.statusText}`
@@ -254,43 +414,15 @@ export class BinaryManager {
       throw new Error(`No checksum found for ${expectedAssetName}`);
     }
 
-    // Binary download is the main operation (10% to 95% of total progress)
-    const response = await this.fetchFn(asset.downloadUrl);
-    if (!response.ok) {
-      throw new Error(
-        `Failed to download binary: ${response.status} ${response.statusText}`
-      );
-    }
-
-    // Validate Content-Length before loading into memory to prevent memory exhaustion
-    const contentLength = response.headers.get('content-length');
-    if (contentLength) {
-      const size = parseInt(contentLength, 10);
-      if (Number.isNaN(size)) {
-        throw new Error('Invalid Content-Length header: not a valid number');
-      }
-      if (size > MAX_BINARY_SIZE) {
-        throw new Error(
-          `Binary size ${size} exceeds maximum allowed size ${MAX_BINARY_SIZE}`
-        );
-      }
-      if (size < MIN_BINARY_SIZE) {
-        throw new Error(
-          `Binary size ${size} is below minimum required size ${MIN_BINARY_SIZE}`
-        );
-      }
-    }
-    // Note: If Content-Length is missing, we rely on the post-download size check below.
-    // This is acceptable because checksum verification will catch corrupted/malicious downloads.
-
-    const buffer = await response.arrayBuffer();
-
-    // Double-check actual size after download
-    if (buffer.byteLength > MAX_BINARY_SIZE) {
-      throw new Error(
-        `Binary size ${buffer.byteLength} exceeds maximum allowed size ${MAX_BINARY_SIZE}`
-      );
-    }
+    const buffer = await this.downloadBinaryWithRetry(
+      asset.downloadUrl,
+      (downloaded, total) => {
+        if (total !== null && total > 0) {
+          const pct = 10 + Math.floor(Math.min(downloaded / total, 1) * 85);
+          onProgress?.(pct);
+        }
+      },
+    );
 
     if (buffer.byteLength < MIN_BINARY_SIZE) {
       throw new Error(
@@ -298,7 +430,6 @@ export class BinaryManager {
       );
     }
 
-    // Download complete (95%), now verify checksum and write file (remaining 5%)
     onProgress?.(95);
     if (!this.verifyChecksum(buffer, expectedChecksum)) {
       throw new Error("Checksum verification failed - binary may be corrupted");
