@@ -1,5 +1,15 @@
 # Change Log
 
+## [0.5.7] - 2026-02-17
+
+### Added
+- test(grammar): add sync comment, percent case, and @-prefix invalid test
+
+### Fixed
+- fix(grammar): address code review findings for account name regex
+- fix(grammar): allow special characters in account names
+
+
 ## [0.5.6] - 2026-02-17
 
 ### Added
