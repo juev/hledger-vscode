@@ -488,6 +488,11 @@
         "command": "hledger.editor.alignAmount",
         "title": "HLedger: Align Amount to Column",
         "category": "HLedger"
+      },
+      {
+        "command": "hledger.getStarted",
+        "title": "HLedger: Get Started",
+        "category": "HLedger"
       }
     ],
     "keybindings": [

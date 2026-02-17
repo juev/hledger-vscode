@@ -100,4 +100,33 @@ describe("activate", () => {
 
     expect(editorCommands).toContain("hledger.positionCursorAfterTemplate");
   });
+
+  it("should register hledger.getStarted command", () => {
+    const context =
+      createMockExtensionContext() as unknown as vscode.ExtensionContext;
+    activate(context);
+
+    expect(getRegisteredCommandNames()).toContain("hledger.getStarted");
+  });
+
+  it("should open walkthrough when hledger.getStarted is executed", () => {
+    const context =
+      createMockExtensionContext() as unknown as vscode.ExtensionContext;
+    activate(context);
+
+    const registerCalls = (mockCommands.registerCommand as jest.Mock).mock
+      .calls;
+    const getStartedCall = registerCalls.find(
+      (call: unknown[]) => call[0] === "hledger.getStarted",
+    );
+    expect(getStartedCall).toBeDefined();
+
+    const handler = getStartedCall![1] as () => void;
+    handler();
+
+    expect(mockCommands.executeCommand).toHaveBeenCalledWith(
+      "workbench.action.openWalkthrough",
+      "evsyukov.hledger#hledger.getStarted",
+    );
+  });
 });

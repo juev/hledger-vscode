@@ -220,6 +220,16 @@ export function activate(context: vscode.ExtensionContext): void {
       ),
     );
 
+    // Register walkthrough command
+    context.subscriptions.push(
+      vscode.commands.registerCommand("hledger.getStarted", () => {
+        vscode.commands.executeCommand(
+          "workbench.action.openWalkthrough",
+          "evsyukov.hledger#hledger.getStarted",
+        );
+      }),
+    );
+
     // Register LSP commands
     context.subscriptions.push(
       vscode.commands.registerCommand("hledger.lsp.update", async () => {

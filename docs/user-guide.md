@@ -753,7 +753,7 @@ The Language Server is required and auto-installed on first activation. If the L
 
 The Language Server is automatically installed on first activation. If prompted, accept the installation to enable all features. The binary is stored in VS Code's global storage directory.
 
-A **Get Started** walkthrough is available on first install (Command Palette → "Get Started: HLedger") that guides you through Language Server installation, opening a journal file, and importing from CSV.
+A **Get Started** walkthrough is available via Command Palette → **HLedger: Get Started**. It guides you through Language Server installation, opening a journal file, and importing from CSV.
 
 To manually reinstall or update:
 
@@ -1017,6 +1017,7 @@ All commands accessible via Command Palette (`Ctrl+Shift+P` or `Cmd+Shift+P`):
 | `hledger.lsp.showVersion` | HLedger: Show Language Server Version | Show LSP version info |
 | `hledger.lsp.restart` | HLedger: Restart Language Server | Restart the LSP server |
 | `hledger.editor.alignAmount` | HLedger: Align Amount to Column | Align amount at cursor via LSP |
+| `hledger.getStarted` | HLedger: Get Started | Open the Get Started walkthrough |
 
 ---
 
