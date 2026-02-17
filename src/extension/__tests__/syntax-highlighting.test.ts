@@ -147,6 +147,15 @@ const syntaxTestCases: SyntaxTestCase[] = [
       amount: 'constant.numeric.amount.hledger',
       commodity: 'entity.name.type.commodity.hledger'
     }
+  },
+  {
+    description: 'Account name with percent symbol',
+    line: '    Assets:Pct100%  500 USD',
+    expectedScopes: {
+      account: 'entity.name.type.account.assets.hledger',
+      amount: 'constant.numeric.amount.hledger',
+      commodity: 'entity.name.type.commodity.hledger'
+    }
   }
 ];
 
@@ -205,7 +214,8 @@ describe('Syntax Highlighting Tests', () => {
   });
 
   test('Account name regex patterns should handle spaces correctly', () => {
-    // Test the individual account patterns
+    // These patterns mirror syntaxes/hledger.tmLanguage.json #account patterns.
+    // Keep in sync: JS uses `*` (greedy) instead of Oniguruma `*+` (possessive).
     const accountPatterns = [
       { name: 'assets', pattern: /\b(Assets?|Активы)(?::[\p{L}](?:[^:;\s]|\s(?!\s))*)*/u },
       { name: 'expenses', pattern: /\b(Expenses?|Расходы)(?::[\p{L}](?:[^:;\s]|\s(?!\s))*)*/u },
@@ -317,6 +327,7 @@ describe('hledger Specification Compliance', () => {
       'Assets:Foo:',
       ':Assets:Foo',
       '123:Assets',
+      'Assets:@Foo',
     ];
 
     for (const account of invalidAccounts) {
