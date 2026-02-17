@@ -323,6 +323,12 @@ When exactly two commodities are used without explicit cost notation, hledger in
 | Unicode letters | `активы:банк` | - |
 | Numbers after letters | `card1` | - |
 | Symbols in name | `a]b` | - |
+| Parentheses in name | `Level Five (SYM2.0)` | - |
+| Dots in name | `Foo.Bar` | - |
+| @ in name | `Foo@Bar` | - |
+| # in name | `Foo#Bar` | - |
+| Semicolon NOT allowed | - | `Foo;Bar` |
+| Double space NOT allowed | - | `Foo  Bar` |
 
 ### Examples
 
@@ -334,6 +340,10 @@ revenues:salary:bonus
 equity:opening balances
 активы:наличные                ; Russian
 支出:食品                       ; Chinese
+assets:investments:Level Five (SYM2.0)
+expenses:tax (2024)
+assets:broker.account
+assets:user@domain
 ```
 
 ### Account Hierarchy
