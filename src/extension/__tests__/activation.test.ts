@@ -119,9 +119,11 @@ describe("activate", () => {
     const getStartedCall = registerCalls.find(
       (call: unknown[]) => call[0] === "hledger.getStarted",
     );
-    expect(getStartedCall).toBeDefined();
+    if (!getStartedCall) {
+      throw new Error("hledger.getStarted command not registered");
+    }
 
-    const handler = getStartedCall![1] as () => void;
+    const handler = getStartedCall[1] as () => void;
     handler();
 
     expect(mockCommands.executeCommand).toHaveBeenCalledWith(
