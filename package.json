@@ -579,9 +579,9 @@
           {
             "id": "hledger.installLSP",
             "title": "Install Language Server",
-            "description": "The HLedger Language Server provides syntax highlighting, completion, diagnostics, and formatting.\n\n[Install Language Server](command:hledger.lsp.update)",
+            "description": "The Language Server is **automatically installed** when you first open a journal file. Use the button below to manually reinstall or update.\n\n[Install/Update Language Server](command:hledger.lsp.update)",
             "media": {
-              "markdown": "docs/user-guide.md"
+              "markdown": "docs/walkthrough/install-lsp.md"
             },
             "completionEvents": [
               "onCommand:hledger.lsp.update"
@@ -592,7 +592,7 @@
             "title": "Open a Journal File",
             "description": "Open a `.journal`, `.hledger`, or `.ledger` file to see syntax highlighting, completion, and diagnostics in action.",
             "media": {
-              "markdown": "docs/user-guide.md"
+              "markdown": "docs/walkthrough/open-journal.md"
             },
             "completionEvents": [
               "onLanguage:hledger"
@@ -601,9 +601,9 @@
           {
             "id": "hledger.importCSV",
             "title": "Import from CSV",
-            "description": "Import transactions from CSV/TSV files into hledger format.\n\n[Learn more about CSV import](command:workbench.action.openWalkthrough?%7B%22category%22%3A%22evsyukov.hledger%23hledger.getStarted%22%7D)",
+            "description": "Import transactions from CSV/TSV files into hledger format.\n\n[Import from Selection](command:hledger.import.fromSelection)\n\n[Import from File](command:hledger.import.fromFile)",
             "media": {
-              "markdown": "docs/user-guide.md"
+              "markdown": "docs/walkthrough/import-csv.md"
             },
             "completionEvents": [
               "onCommand:hledger.import.fromFile",
