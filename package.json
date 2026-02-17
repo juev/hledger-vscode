@@ -601,7 +601,7 @@
           {
             "id": "hledger.importCSV",
             "title": "Import from CSV",
-            "description": "Import transactions from CSV/TSV files into hledger format.\n\n[Import from Selection](command:hledger.import.fromSelection)\n\n[Import from File](command:hledger.import.fromFile)",
+            "description": "Import transactions from CSV/TSV files into hledger format.\n\n[Import from File](command:hledger.import.fromFile)",
             "media": {
               "markdown": "docs/walkthrough/import-csv.md"
             },

@@ -35,9 +35,7 @@ mise.toml
 # Documentation (keep only README.md and LICENSE)
 docs/**
 !docs/user-guide.md
-!docs/walkthrough/install-lsp.md
-!docs/walkthrough/open-journal.md
-!docs/walkthrough/import-csv.md
+!docs/walkthrough/**
 examples/**
 CHANGELOG.md
 CLAUDE.md
