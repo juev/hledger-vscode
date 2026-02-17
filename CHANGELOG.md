@@ -1,5 +1,18 @@
 # Change Log
 
+## [0.5.6] - 2026-02-17
+
+### Added
+- feat(walkthrough): add Get Started command to Command Palette
+
+### Fixed
+- fix(walkthrough): address second code review findings
+- fix(walkthrough): address code review findings for walkthrough steps
+- fix(walkthrough): add per-step media and fix descriptions
+- fix(walkthrough): address code review nits for getStarted command
+- fix(walkthrough): include user-guide.md in VSIX and fix extension ID
+
+
 ## [0.5.5] - 2026-02-16
 
 ### Added
