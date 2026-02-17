@@ -579,7 +579,7 @@
           {
             "id": "hledger.installLSP",
             "title": "Install Language Server",
-            "description": "The Language Server is **automatically installed** when you first open a journal file. Use the button below to manually reinstall or update.\n\n[Install/Update Language Server](command:hledger.lsp.update)",
+            "description": "You will be **prompted to install** the Language Server when you first open a journal file. Use the button below to manually reinstall or update.\n\n[Install/Update Language Server](command:hledger.lsp.update)",
             "media": {
               "markdown": "docs/walkthrough/install-lsp.md"
             },

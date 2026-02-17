@@ -1,8 +1,8 @@
 # Language Server
 
-The **hledger Language Server** is automatically installed when you first open a journal file. No manual setup required.
+You will be **prompted to install** the **hledger Language Server** when you first open a journal file. Click "Install" to proceed.
 
-The button below is for manual reinstallation or updating to a newer version.
+Use the "Install/Update Language Server" button in the walkthrough panel to manually reinstall or update.
 
 ## What the Language Server provides
 
@@ -28,12 +28,12 @@ The button below is for manual reinstallation or updating to a newer version.
 
 The status bar (bottom-right) shows the Language Server state:
 
-| Icon | State |
-|------|-------|
-| `$(server)` | Running |
-| `$(sync~spin)` | Starting / Downloading |
-| `$(warning)` | Error (click to restart) |
-| `$(cloud-download)` | Not installed |
+| Indicator | State |
+|-----------|-------|
+| Server icon | Running |
+| Spinning icon | Starting / Downloading |
+| Warning icon | Error (click to restart) |
+| Download icon | Not installed |
 
 Click the status bar item to restart the Language Server.
 

@@ -27,7 +27,7 @@ The extension activates for files with these extensions:
 
 ## Enter and Tab behavior
 
-With `editor.formatOnType` enabled (default for hledger files):
+With `editor.formatOnType` enabled (default for hledger files) and Language Server running:
 
 | Key | Context | Result |
 |-----|---------|--------|

@@ -12,7 +12,7 @@
 The extension auto-detects the delimiter:
 - Tab (TSV)
 - Comma (CSV)
-- Semicolon
+- Semicolon (`;`)
 - Pipe (`|`)
 
 ## Column detection
