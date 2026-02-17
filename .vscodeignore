@@ -34,6 +34,7 @@ mise.toml
 
 # Documentation (keep only README.md and LICENSE)
 docs/**
+!docs/user-guide.md
 examples/**
 CHANGELOG.md
 CLAUDE.md

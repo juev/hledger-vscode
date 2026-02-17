@@ -596,7 +596,7 @@
           {
             "id": "hledger.importCSV",
             "title": "Import from CSV",
-            "description": "Import transactions from CSV/TSV files into hledger format.\n\n[Learn more about CSV import](command:workbench.action.openWalkthrough?%7B%22category%22%3A%22juev.hledger%23hledger.getStarted%22%7D)",
+            "description": "Import transactions from CSV/TSV files into hledger format.\n\n[Learn more about CSV import](command:workbench.action.openWalkthrough?%7B%22category%22%3A%22evsyukov.hledger%23hledger.getStarted%22%7D)",
             "media": {
               "markdown": "docs/user-guide.md"
             },
