@@ -138,6 +138,15 @@ const syntaxTestCases: SyntaxTestCase[] = [
       amount: 'constant.numeric.amount.hledger',
       commodity: 'entity.name.type.commodity.hledger'
     }
+  },
+  {
+    description: 'Account name with @ symbol and cost notation',
+    line: '    Assets:Foo@Bar  100 USD @ 2 EUR',
+    expectedScopes: {
+      account: 'entity.name.type.account.assets.hledger',
+      amount: 'constant.numeric.amount.hledger',
+      commodity: 'entity.name.type.commodity.hledger'
+    }
   }
 ];
 
@@ -304,6 +313,7 @@ describe('hledger Specification Compliance', () => {
 
     const invalidAccounts = [
       'Assets:Foo;Bar',
+      'Assets:Foo  Bar',
       'Assets:Foo:',
       ':Assets:Foo',
       '123:Assets',

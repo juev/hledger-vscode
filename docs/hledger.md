@@ -340,10 +340,10 @@ revenues:salary:bonus
 equity:opening balances
 активы:наличные                ; Russian
 支出:食品                       ; Chinese
-assets:investments:Level Five (SYM2.0)
-expenses:tax (2024)
-assets:broker.account
-assets:user@domain
+Assets:Investments:Level Five (SYM2.0)
+Expenses:Tax (2024)
+Assets:Broker.Account
+Assets:User@Domain
 ```
 
 ### Account Hierarchy
