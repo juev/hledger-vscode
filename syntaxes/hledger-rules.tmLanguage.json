@@ -26,23 +26,30 @@
       ]
     },
     "directive": {
-      "match": "^(skip|fields|separator|source|date-format|timezone|decimal-mark|encoding|balance-type|include|newest-first|intra-day-reversed|archive)\\b",
+      "match": "^(skip|fields|separator|source|date-format|timezone|decimal-mark|encoding|balance-type|include|newest-first|latest-first|intra-day-reversed|archive)\\b",
       "name": "keyword.control.directive.hledger-rules"
     },
     "if-block": {
+      "begin": "^(if)\\b(.*)",
+      "end": "^(end)\\b",
+      "beginCaptures": {
+        "1": { "name": "keyword.control.if.hledger-rules" },
+        "2": { "name": "string.regexp.hledger-rules" }
+      },
+      "endCaptures": {
+        "1": { "name": "keyword.control.end.hledger-rules" }
+      },
       "patterns": [
+        { "include": "#comment" },
+        { "include": "#field-assignment" },
         {
-          "name": "keyword.control.if.hledger-rules",
-          "match": "^if\\b"
-        },
-        {
-          "name": "keyword.control.end.hledger-rules",
-          "match": "^end\\b"
+          "name": "string.regexp.hledger-rules",
+          "match": "^\\S.*$"
         }
       ]
     },
     "field-assignment": {
-      "match": "^\\s*(account[0-9]*|amount[0-9]*-?|amount-in|amount-out|balance[12]?|code|comment|date[12]?|description|payee|status|currency|timezone)\\s+(.+)$",
+      "match": "^\\s*(account[0-9]*|amount[0-9]*|amount-in|amount-out|balance[12]?|code|comment|date[12]?|description|payee|status|currency|timezone)\\s+(.+)$",
       "name": "meta.field-assignment.hledger-rules",
       "captures": {
         "1": { "name": "variable.parameter.field.hledger-rules" },

@@ -79,6 +79,9 @@ The extension fully supports hledger CSV import rules files (`.rules`). These fi
 Features available in `.rules` files:
 - Syntax highlighting (comments, directives, field assignments, if/end blocks)
 - LSP diagnostics, completion, and navigation via the Language Server
+- Hover information on directives and field names
+- Go to Definition and Find References for included files
+- Folding ranges for if/end blocks
 
 Features **not** available in `.rules` files (journal-only):
 - Tab amount alignment

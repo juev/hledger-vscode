@@ -73,6 +73,14 @@ describe("hledger-rules TextMate grammar", () => {
       expect(re.test("fields date, description, amount")).toBe(true);
       expect(re.test("separator ,")).toBe(true);
     });
+
+    it("directive rule matches latest-first directive", () => {
+      const grammar = JSON.parse(fs.readFileSync(grammarPath, "utf-8")) as {
+        repository: { directive: { match: string } };
+      };
+      const re = new RegExp(grammar.repository["directive"].match);
+      expect(re.test("latest-first")).toBe(true);
+    });
   });
 
   describe("if/end keyword patterns", () => {
@@ -123,6 +131,14 @@ describe("hledger-rules TextMate grammar", () => {
       expect(re.test("account10 Assets:Bank")).toBe(true);
       expect(re.test("amount-in %5")).toBe(true);
       expect(re.test("amount-out %6")).toBe(true);
+    });
+
+    it("field-assignment rule does not match bare amount- without a valid suffix", () => {
+      const grammar = JSON.parse(fs.readFileSync(grammarPath, "utf-8")) as {
+        repository: { "field-assignment": { match: string } };
+      };
+      const re = new RegExp(grammar.repository["field-assignment"].match);
+      expect(re.test("amount- %7")).toBe(false);
     });
   });
 });

@@ -405,11 +405,21 @@
       {
         "language": "hledger-rules",
         "scopes": {
-          "comment": ["comment.line"],
-          "string": ["string.quoted"],
-          "keyword": ["keyword.control"],
-          "regexp": ["string.regexp"],
-          "parameter": ["variable.parameter"]
+          "comment": [
+            "comment.line"
+          ],
+          "string": [
+            "string.quoted"
+          ],
+          "keyword": [
+            "keyword.control"
+          ],
+          "regexp": [
+            "string.regexp"
+          ],
+          "parameter": [
+            "variable.parameter"
+          ]
         }
       },
       {
@@ -677,7 +687,9 @@
     "ovsx": "^0.8.4",
     "rimraf": "^6.0.1",
     "ts-jest": "^29.4.5",
-    "typescript": "^4.9.4"
+    "typescript": "^4.9.4",
+    "vscode-oniguruma": "^2.0.1",
+    "vscode-textmate": "^9.3.2"
   },
   "license": "MIT",
   "repository": {
