@@ -41,6 +41,17 @@
           ".journal"
         ],
         "configuration": "./language-configuration.json"
+      },
+      {
+        "id": "hledger-rules",
+        "aliases": [
+          "HLedger Rules",
+          "hledger-rules"
+        ],
+        "extensions": [
+          ".rules"
+        ],
+        "configuration": "./language-configuration-rules.json"
       }
     ],
     "grammars": [
@@ -48,6 +59,11 @@
         "language": "hledger",
         "scopeName": "source.hledger",
         "path": "./syntaxes/hledger.tmLanguage.json"
+      },
+      {
+        "language": "hledger-rules",
+        "scopeName": "source.hledger-rules",
+        "path": "./syntaxes/hledger-rules.tmLanguage.json"
       }
     ],
     "configuration": {
@@ -387,6 +403,16 @@
     ],
     "semanticTokenScopes": [
       {
+        "language": "hledger-rules",
+        "scopes": {
+          "comment": ["comment.line"],
+          "string": ["string.quoted"],
+          "keyword": ["keyword.control"],
+          "regexp": ["string.regexp"],
+          "parameter": ["variable.parameter"]
+        }
+      },
+      {
         "language": "hledger",
         "scopes": {
           "account": [
@@ -520,7 +546,8 @@
         "*.journal": "hledger",
         "*.hledger": "hledger",
         "*.ledger": "hledger",
-        "journal": "hledger"
+        "journal": "hledger",
+        "*.rules": "hledger-rules"
       }
     },
     "submenus": [

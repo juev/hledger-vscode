@@ -39,10 +39,13 @@ describe("createServerOptions", () => {
 });
 
 describe("createClientOptions", () => {
-  it("creates client options for hledger language", () => {
+  it("creates client options for hledger and hledger-rules languages", () => {
     const options = createClientOptions();
 
-    expect(options.documentSelector).toEqual([{ language: "hledger" }]);
+    expect(options.documentSelector).toEqual([
+      { language: "hledger" },
+      { language: "hledger-rules" },
+    ]);
   });
 
   it("includes synchronize configuration for hledger", () => {

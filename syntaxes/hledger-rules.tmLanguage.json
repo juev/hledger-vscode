@@ -1,0 +1,53 @@
+{
+  "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+  "name": "hledger-rules",
+  "scopeName": "source.hledger-rules",
+  "patterns": [
+    { "include": "#comment" },
+    { "include": "#if-block" },
+    { "include": "#directive" },
+    { "include": "#field-assignment" }
+  ],
+  "repository": {
+    "comment": {
+      "patterns": [
+        {
+          "name": "comment.line.number-sign.hledger-rules",
+          "match": "^#.*$"
+        },
+        {
+          "name": "comment.line.semicolon.hledger-rules",
+          "match": "^;.*$"
+        },
+        {
+          "name": "comment.line.asterisk.hledger-rules",
+          "match": "^\\*.*$"
+        }
+      ]
+    },
+    "directive": {
+      "match": "^(skip|fields|separator|source|date-format|timezone|decimal-mark|encoding|balance-type|include|newest-first|intra-day-reversed|archive)\\b",
+      "name": "keyword.control.directive.hledger-rules"
+    },
+    "if-block": {
+      "patterns": [
+        {
+          "name": "keyword.control.if.hledger-rules",
+          "match": "^if\\b"
+        },
+        {
+          "name": "keyword.control.end.hledger-rules",
+          "match": "^end\\b"
+        }
+      ]
+    },
+    "field-assignment": {
+      "match": "^(account[12]?|amount[12]?-?|balance[12]?|code|comment|date[12]?|description|payee|status|currency|timezone)\\s+(.+)$",
+      "name": "meta.field-assignment.hledger-rules",
+      "captures": {
+        "1": { "name": "variable.parameter.field.hledger-rules" },
+        "2": { "name": "string.unquoted.value.hledger-rules" }
+      }
+    }
+  }
+}

@@ -34,6 +34,7 @@ The extension activates for files with these extensions:
 - `.hledger`
 - `.ledger`
 - Files named `journal` or `.journal` (without extension)
+- `.rules` — hledger CSV import rules files (language ID: `hledger-rules`)
 
 ---
 
@@ -53,10 +54,10 @@ The extension activates for files with these extensions:
 
 ### File Associations
 
-The extension automatically associates with `.journal`, `.hledger`, and `.ledger` files. If files aren't recognized:
+The extension automatically associates with `.journal`, `.hledger`, `.ledger`, and `.rules` files. If files aren't recognized:
 
 1. Click the language indicator in the bottom-right corner of VS Code
-2. Select "hledger" from the list
+2. Select "hledger" (for journal files) or "hledger-rules" (for rules files) from the list
 
 Or add to your `settings.json`:
 
@@ -65,10 +66,25 @@ Or add to your `settings.json`:
   "files.associations": {
     "*.journal": "hledger",
     "*.hledger": "hledger",
-    "*.ledger": "hledger"
+    "*.ledger": "hledger",
+    "*.rules": "hledger-rules"
   }
 }
 ```
+
+### CSV Import Rules Files (`.rules`)
+
+The extension fully supports hledger CSV import rules files (`.rules`). These files use a different syntax from journal files and are registered as a separate language (`hledger-rules`).
+
+Features available in `.rules` files:
+- Syntax highlighting (comments, directives, field assignments, if/end blocks)
+- LSP diagnostics, completion, and navigation via the Language Server
+
+Features **not** available in `.rules` files (journal-only):
+- Tab amount alignment
+- CLI commands (balance, stats, income statement)
+- Inline ghost text completion
+- Format on type
 
 ---
 

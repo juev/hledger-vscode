@@ -93,7 +93,7 @@ Transform your plain text accounting experience with powerful IDE capabilities:
 - [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=evsyukov.hledger)
 - [Open VSX Registry](https://open-vsx.org/extension/evsyukov/hledger)
 
-**Supported files:** `.journal`, `.hledger`, `.ledger`
+**Supported files:** `.journal`, `.hledger`, `.ledger`, `.rules`
 
 ---
 
