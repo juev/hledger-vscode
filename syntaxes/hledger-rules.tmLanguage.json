@@ -42,7 +42,7 @@
       ]
     },
     "field-assignment": {
-      "match": "^(account[12]?|amount[12]?-?|balance[12]?|code|comment|date[12]?|description|payee|status|currency|timezone)\\s+(.+)$",
+      "match": "^\\s*(account[0-9]*|amount[0-9]*-?|amount-in|amount-out|balance[12]?|code|comment|date[12]?|description|payee|status|currency|timezone)\\s+(.+)$",
       "name": "meta.field-assignment.hledger-rules",
       "captures": {
         "1": { "name": "variable.parameter.field.hledger-rules" },

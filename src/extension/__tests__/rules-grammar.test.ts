@@ -104,5 +104,25 @@ describe("hledger-rules TextMate grammar", () => {
       expect(re.test("amount %4")).toBe(true);
       expect(re.test("description %payee")).toBe(true);
     });
+
+    it("field-assignment rule matches indented assignments inside if-blocks", () => {
+      const grammar = JSON.parse(fs.readFileSync(grammarPath, "utf-8")) as {
+        repository: { "field-assignment": { match: string } };
+      };
+      const re = new RegExp(grammar.repository["field-assignment"].match);
+      expect(re.test("  account1 Expenses:Food")).toBe(true);
+      expect(re.test("    amount1 %3")).toBe(true);
+    });
+
+    it("field-assignment rule matches higher-numbered accounts and amount variants", () => {
+      const grammar = JSON.parse(fs.readFileSync(grammarPath, "utf-8")) as {
+        repository: { "field-assignment": { match: string } };
+      };
+      const re = new RegExp(grammar.repository["field-assignment"].match);
+      expect(re.test("account3 Expenses:Other")).toBe(true);
+      expect(re.test("account10 Assets:Bank")).toBe(true);
+      expect(re.test("amount-in %5")).toBe(true);
+      expect(re.test("amount-out %6")).toBe(true);
+    });
   });
 });
