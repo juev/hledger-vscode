@@ -133,6 +133,14 @@ describe("hledger-rules TextMate grammar", () => {
       expect(re.test("amount-out %6")).toBe(true);
     });
 
+    it("field-assignment rule matches note field assignment", () => {
+      const grammar = JSON.parse(fs.readFileSync(grammarPath, "utf-8")) as {
+        repository: { "field-assignment": { match: string } };
+      };
+      const re = new RegExp(grammar.repository["field-assignment"].match);
+      expect(re.test("note %description")).toBe(true);
+    });
+
     it("field-assignment rule does not match bare amount- without a valid suffix", () => {
       const grammar = JSON.parse(fs.readFileSync(grammarPath, "utf-8")) as {
         repository: { "field-assignment": { match: string } };
