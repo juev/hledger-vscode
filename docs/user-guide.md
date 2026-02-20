@@ -491,6 +491,47 @@ The extension uses standard TextMate scopes that are automatically styled by VS 
 
 No additional configuration is needed for standard themes to work correctly.
 
+### Rules File Highlighting
+
+`.rules` files (CSV import rules) use a TextMate grammar for syntax highlighting — not LSP semantic tokens. The grammar assigns standard TextMate scopes to each element:
+
+| Element | TextMate Scope | Typical Color | Description |
+|---------|---------------|---------------|-------------|
+| Comments (`#`, `;`, `*`) | `comment.line` | Green | Line comments |
+| Directives (`skip`, `fields`, `separator`, etc.) | `keyword.control.directive` | Purple | Configuration directives |
+| Directive values | `string.unquoted.value` | Orange | Values after directives |
+| `if` / `end` keywords | `keyword.control.if` / `keyword.control.end` | Purple | Conditional block markers |
+| Regex patterns | `string.regexp` | Orange/Red | Match patterns in if-blocks |
+| Field names (`account1`, `description`, etc.) | `entity.name.tag` | Blue | Field assignment names |
+| Field values | `string.unquoted.value` | Orange | Values assigned to fields |
+
+#### Customizing Rules File Colors
+
+Add `textMateRules` in your VS Code settings. Use the `.hledger-rules` suffix to target only rules files without affecting other languages:
+
+```json
+{
+  "editor.tokenColorCustomizations": {
+    "textMateRules": [
+      {
+        "scope": "entity.name.tag.hledger-rules",
+        "settings": { "foreground": "#268BD2" }
+      },
+      {
+        "scope": "keyword.control.directive.hledger-rules",
+        "settings": { "foreground": "#6C71C4" }
+      },
+      {
+        "scope": "string.regexp.hledger-rules",
+        "settings": { "foreground": "#DC322F" }
+      }
+    ]
+  }
+}
+```
+
+> **Tip:** Using the full scope with `.hledger-rules` suffix ensures your customizations apply only to `.rules` files — no side effects on other languages.
+
 ---
 
 ## Diagnostics & Validation
