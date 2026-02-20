@@ -330,6 +330,18 @@ exports[`hledger-rules grammar snapshot tokenizes representative rules file 1`] 
     ],
   },
   {
+    "line": "comment",
+    "tokens": [
+      {
+        "scopes": [
+          "meta.field-assignment.hledger-rules",
+          "entity.name.tag.hledger-rules",
+        ],
+        "text": "comment",
+      },
+    ],
+  },
+  {
     "line": "",
     "tokens": [
       {

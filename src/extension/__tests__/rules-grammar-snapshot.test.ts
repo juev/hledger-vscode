@@ -27,6 +27,7 @@ BONUS
 end
 
 account1 Expenses:Unknown
+comment
 `;
 
 describe("hledger-rules grammar snapshot", () => {

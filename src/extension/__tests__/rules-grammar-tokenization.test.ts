@@ -252,6 +252,32 @@ describe("hledger-rules grammar tokenization", () => {
     });
   });
 
+  describe("bare field names (clearing fields)", () => {
+    it("bare comment gets entity.name.tag scope with no value token", () => {
+      const { tokens } = grammar.tokenizeLine("comment", INITIAL);
+      const fieldToken = tokens.find((t) =>
+        t.scopes.some((s) => s.includes("entity.name.tag"))
+      );
+      expect(fieldToken).toBeDefined();
+      const valueToken = tokens.find((t) =>
+        t.scopes.some((s) => s.includes("string.unquoted.value"))
+      );
+      expect(valueToken).toBeUndefined();
+    });
+
+    it("bare description inside if-block gets entity.name.tag scope", () => {
+      const result = tokenizeLines([
+        "if PATTERN",
+        "  description",
+        "end",
+      ]);
+      const fieldTokens = result[1]!;
+      const fieldName = fieldTokens.find((t) => t.text.trim() === "description");
+      expect(fieldName).toBeDefined();
+      expect(fieldName!.scopes.some((s) => s.includes("entity.name.tag"))).toBe(true);
+    });
+  });
+
   describe("edge cases", () => {
     it("end without preceding if gets source scope only", () => {
       const { tokens } = grammar.tokenizeLine("end", INITIAL);

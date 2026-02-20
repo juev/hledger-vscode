@@ -109,5 +109,12 @@ describe("hledger-rules TextMate grammar", () => {
       const re = new RegExp(grammar.repository["field-assignment"].match);
       expect(re.test("amount- %7")).toBe(false);
     });
+
+    it("field-assignment rule matches bare field name without value", () => {
+      const re = new RegExp(grammar.repository["field-assignment"].match);
+      expect(re.test("comment")).toBe(true);
+      expect(re.test("description")).toBe(true);
+      expect(re.test("  comment")).toBe(true);
+    });
   });
 });

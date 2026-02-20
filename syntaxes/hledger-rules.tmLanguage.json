@@ -52,7 +52,7 @@
       ]
     },
     "field-assignment": {
-      "match": "^\\s*(account[0-9]*|amount[0-9]*|amount-in|amount-out|balance[12]?|code|comment|date[12]?|description|note|payee|status|currency|timezone)\\s+(.+)$",
+      "match": "^\\s*(account[0-9]*|amount[0-9]*|amount-in|amount-out|balance[12]?|code|comment|date[12]?|description|note|payee|status|currency|timezone)(?:\\s+(.+))?$",
       "name": "meta.field-assignment.hledger-rules",
       "captures": {
         "1": { "name": "entity.name.tag.hledger-rules" },
