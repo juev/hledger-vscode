@@ -97,6 +97,65 @@ describe("hledger-rules grammar tokenization", () => {
       const scopes = scopesAt("latest-first", 0);
       expect(scopes.some((s) => s.includes("keyword.control.directive"))).toBe(true);
     });
+
+    it("fields directive value gets string.unquoted.value scope", () => {
+      const line = "fields date, description, amount";
+      const { tokens } = grammar.tokenizeLine(line, INITIAL);
+      const valueToken = tokens.find((t) =>
+        line.substring(t.startIndex, t.endIndex).includes("date, description, amount")
+      );
+      expect(valueToken).toBeDefined();
+      expect(valueToken!.scopes.some((s) => s.includes("string.unquoted.value"))).toBe(true);
+    });
+
+    it("date-format directive value gets string.unquoted.value scope", () => {
+      const line = "date-format %Y-%m-%d";
+      const { tokens } = grammar.tokenizeLine(line, INITIAL);
+      const valueToken = tokens.find((t) =>
+        line.substring(t.startIndex, t.endIndex).includes("%Y-%m-%d")
+      );
+      expect(valueToken).toBeDefined();
+      expect(valueToken!.scopes.some((s) => s.includes("string.unquoted.value"))).toBe(true);
+    });
+
+    it("skip directive value gets string.unquoted.value scope", () => {
+      const line = "skip 2";
+      const { tokens } = grammar.tokenizeLine(line, INITIAL);
+      const valueToken = tokens.find((t) =>
+        line.substring(t.startIndex, t.endIndex).includes("2")
+      );
+      expect(valueToken).toBeDefined();
+      expect(valueToken!.scopes.some((s) => s.includes("string.unquoted.value"))).toBe(true);
+    });
+
+    it("separator directive value gets string.unquoted.value scope", () => {
+      const line = "separator TAB";
+      const { tokens } = grammar.tokenizeLine(line, INITIAL);
+      const valueToken = tokens.find((t) =>
+        line.substring(t.startIndex, t.endIndex).includes("TAB")
+      );
+      expect(valueToken).toBeDefined();
+      expect(valueToken!.scopes.some((s) => s.includes("string.unquoted.value"))).toBe(true);
+    });
+
+    it("include directive value gets string.unquoted.value scope", () => {
+      const line = "include common.rules";
+      const { tokens } = grammar.tokenizeLine(line, INITIAL);
+      const valueToken = tokens.find((t) =>
+        line.substring(t.startIndex, t.endIndex).includes("common.rules")
+      );
+      expect(valueToken).toBeDefined();
+      expect(valueToken!.scopes.some((s) => s.includes("string.unquoted.value"))).toBe(true);
+    });
+
+    it("newest-first boolean directive emits no value token", () => {
+      const line = "newest-first";
+      const { tokens } = grammar.tokenizeLine(line, INITIAL);
+      const valueToken = tokens.find((t) =>
+        t.scopes.some((s) => s.includes("string.unquoted.value"))
+      );
+      expect(valueToken).toBeUndefined();
+    });
   });
 
   describe("if/end keywords", () => {

@@ -26,8 +26,11 @@
       ]
     },
     "directive": {
-      "match": "^(skip|fields|separator|source|date-format|timezone|decimal-mark|encoding|balance-type|include|newest-first|latest-first|intra-day-reversed|archive)\\b",
-      "name": "keyword.control.directive.hledger-rules"
+      "match": "^(skip|fields|separator|source|date-format|timezone|decimal-mark|encoding|balance-type|include|newest-first|latest-first|intra-day-reversed|archive)\\b(?:\\s+(.+))?$",
+      "captures": {
+        "1": { "name": "keyword.control.directive.hledger-rules" },
+        "2": { "name": "string.unquoted.value.hledger-rules" }
+      }
     },
     "if-block": {
       "begin": "^(if)\\b(.*)",
