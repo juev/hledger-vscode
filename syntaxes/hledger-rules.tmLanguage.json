@@ -33,7 +33,7 @@
       }
     },
     "if-block": {
-      "begin": "^(if)\\b(.*)",
+      "begin": "^(if)\\b(?:\\s+(.*))?$",
       "end": "^(end)\\b",
       "beginCaptures": {
         "1": { "name": "keyword.control.if.hledger-rules" },

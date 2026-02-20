@@ -181,6 +181,17 @@ describe("hledger-rules grammar tokenization", () => {
       expect(patternToken).toBeDefined();
       expect(patternToken!.scopes.some((s) => s.includes("string.regexp"))).toBe(true);
     });
+
+    it("regex on if line does not include leading space", () => {
+      const line = "if Groceries";
+      const { tokens } = grammar.tokenizeLine(line, INITIAL);
+      const regexpToken = tokens.find((t) =>
+        t.scopes.some((s) => s.includes("string.regexp"))
+      );
+      expect(regexpToken).toBeDefined();
+      const text = line.substring(regexpToken!.startIndex, regexpToken!.endIndex);
+      expect(text).toBe("Groceries");
+    });
   });
 
   describe("if-block regex condition lines", () => {
@@ -238,6 +249,33 @@ describe("hledger-rules grammar tokenization", () => {
       const fieldName = fieldTokens.find((t) => t.text.trim() === "account1");
       expect(fieldName).toBeDefined();
       expect(fieldName!.scopes.some((s) => s.includes("entity.name.tag"))).toBe(true);
+    });
+  });
+
+  describe("edge cases", () => {
+    it("end without preceding if gets source scope only", () => {
+      const { tokens } = grammar.tokenizeLine("end", INITIAL);
+      expect(tokens.length).toBeGreaterThan(0);
+      const endToken = tokens.find((t) =>
+        t.scopes.some((s) => s.includes("keyword.control.end"))
+      );
+      expect(endToken).toBeUndefined();
+    });
+
+    it("unclosed if-block still scopes field assignments", () => {
+      const result = tokenizeLines([
+        "if PATTERN",
+        "  account1 Expenses:Food",
+      ]);
+      const fieldTokens = result[1]!;
+      const fieldName = fieldTokens.find((t) => t.text.trim() === "account1");
+      expect(fieldName).toBeDefined();
+      expect(fieldName!.scopes.some((s) => s.includes("entity.name.tag"))).toBe(true);
+    });
+
+    it("empty if line still highlights if keyword", () => {
+      const scopes = scopesAt("if", 0);
+      expect(scopes.some((s) => s.includes("keyword.control.if"))).toBe(true);
     });
   });
 });

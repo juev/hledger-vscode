@@ -505,6 +505,8 @@ No additional configuration is needed for standard themes to work correctly.
 | Field names (`account1`, `description`, etc.) | `entity.name.tag` | Blue | Field assignment names |
 | Field values | `string.unquoted.value` | Orange | Values assigned to fields |
 
+> **Note:** Colors in the "Typical Color" column are approximate and vary by theme.
+
 #### Customizing Rules File Colors
 
 Add `textMateRules` in your VS Code settings. Use the `.hledger-rules` suffix to target only rules files without affecting other languages:
