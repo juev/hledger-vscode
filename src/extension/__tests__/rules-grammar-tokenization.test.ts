@@ -207,15 +207,15 @@ describe("hledger-rules grammar tokenization", () => {
       const fieldTokens = result[2]!;
       const fieldName = fieldTokens.find((t) => t.text.trim() === "account1");
       expect(fieldName).toBeDefined();
-      expect(fieldName!.scopes.some((s) => s.includes("variable.parameter.field"))).toBe(true);
+      expect(fieldName!.scopes.some((s) => s.includes("entity.name.tag"))).toBe(true);
     });
   });
 
   describe("field assignments", () => {
-    it("account1 field name gets variable.parameter.field scope", () => {
+    it("account1 field name gets entity.name.tag scope", () => {
       const { tokens } = grammar.tokenizeLine("account1 Expenses:Food", INITIAL);
       const fieldToken = tokens.find((t) =>
-        t.scopes.some((s) => s.includes("variable.parameter.field"))
+        t.scopes.some((s) => s.includes("entity.name.tag"))
       );
       expect(fieldToken).toBeDefined();
     });
@@ -237,7 +237,7 @@ describe("hledger-rules grammar tokenization", () => {
       const fieldTokens = result[1]!;
       const fieldName = fieldTokens.find((t) => t.text.trim() === "account1");
       expect(fieldName).toBeDefined();
-      expect(fieldName!.scopes.some((s) => s.includes("variable.parameter.field"))).toBe(true);
+      expect(fieldName!.scopes.some((s) => s.includes("entity.name.tag"))).toBe(true);
     });
   });
 });
