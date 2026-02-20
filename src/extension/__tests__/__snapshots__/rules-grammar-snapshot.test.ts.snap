@@ -1,0 +1,354 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`hledger-rules grammar snapshot tokenizes representative rules file 1`] = `
+[
+  {
+    "line": "# Bank CSV import rules",
+    "tokens": [
+      {
+        "scopes": [
+          "comment.line.number-sign.hledger-rules",
+        ],
+        "text": "# Bank CSV import rules",
+      },
+    ],
+  },
+  {
+    "line": "skip 1",
+    "tokens": [
+      {
+        "scopes": [
+          "keyword.control.directive.hledger-rules",
+        ],
+        "text": "skip",
+      },
+      {
+        "scopes": [],
+        "text": " ",
+      },
+      {
+        "scopes": [
+          "string.unquoted.value.hledger-rules",
+        ],
+        "text": "1",
+      },
+    ],
+  },
+  {
+    "line": "fields date, description, amount",
+    "tokens": [
+      {
+        "scopes": [
+          "keyword.control.directive.hledger-rules",
+        ],
+        "text": "fields",
+      },
+      {
+        "scopes": [],
+        "text": " ",
+      },
+      {
+        "scopes": [
+          "string.unquoted.value.hledger-rules",
+        ],
+        "text": "date, description, amount",
+      },
+    ],
+  },
+  {
+    "line": "separator ,",
+    "tokens": [
+      {
+        "scopes": [
+          "keyword.control.directive.hledger-rules",
+        ],
+        "text": "separator",
+      },
+      {
+        "scopes": [],
+        "text": " ",
+      },
+      {
+        "scopes": [
+          "string.unquoted.value.hledger-rules",
+        ],
+        "text": ",",
+      },
+    ],
+  },
+  {
+    "line": "date-format %Y-%m-%d",
+    "tokens": [
+      {
+        "scopes": [
+          "keyword.control.directive.hledger-rules",
+        ],
+        "text": "date-format",
+      },
+      {
+        "scopes": [],
+        "text": " ",
+      },
+      {
+        "scopes": [
+          "string.unquoted.value.hledger-rules",
+        ],
+        "text": "%Y-%m-%d",
+      },
+    ],
+  },
+  {
+    "line": "newest-first",
+    "tokens": [
+      {
+        "scopes": [
+          "keyword.control.directive.hledger-rules",
+        ],
+        "text": "newest-first",
+      },
+    ],
+  },
+  {
+    "line": "",
+    "tokens": [
+      {
+        "scopes": [],
+        "text": "",
+      },
+    ],
+  },
+  {
+    "line": "if Groceries",
+    "tokens": [
+      {
+        "scopes": [
+          "keyword.control.if.hledger-rules",
+        ],
+        "text": "if",
+      },
+      {
+        "scopes": [],
+        "text": " ",
+      },
+      {
+        "scopes": [
+          "string.regexp.hledger-rules",
+        ],
+        "text": "Groceries",
+      },
+    ],
+  },
+  {
+    "line": "  account1 Expenses:Food",
+    "tokens": [
+      {
+        "scopes": [
+          "meta.field-assignment.hledger-rules",
+        ],
+        "text": "  ",
+      },
+      {
+        "scopes": [
+          "meta.field-assignment.hledger-rules",
+          "entity.name.tag.hledger-rules",
+        ],
+        "text": "account1",
+      },
+      {
+        "scopes": [
+          "meta.field-assignment.hledger-rules",
+        ],
+        "text": " ",
+      },
+      {
+        "scopes": [
+          "meta.field-assignment.hledger-rules",
+          "string.unquoted.value.hledger-rules",
+        ],
+        "text": "Expenses:Food",
+      },
+    ],
+  },
+  {
+    "line": "end",
+    "tokens": [
+      {
+        "scopes": [
+          "keyword.control.end.hledger-rules",
+        ],
+        "text": "end",
+      },
+    ],
+  },
+  {
+    "line": "",
+    "tokens": [
+      {
+        "scopes": [],
+        "text": "",
+      },
+    ],
+  },
+  {
+    "line": "if",
+    "tokens": [
+      {
+        "scopes": [
+          "keyword.control.if.hledger-rules",
+        ],
+        "text": "if",
+      },
+    ],
+  },
+  {
+    "line": "SALARY",
+    "tokens": [
+      {
+        "scopes": [
+          "string.regexp.hledger-rules",
+        ],
+        "text": "SALARY",
+      },
+    ],
+  },
+  {
+    "line": "BONUS",
+    "tokens": [
+      {
+        "scopes": [
+          "string.regexp.hledger-rules",
+        ],
+        "text": "BONUS",
+      },
+    ],
+  },
+  {
+    "line": "  account1 Income:Salary",
+    "tokens": [
+      {
+        "scopes": [
+          "meta.field-assignment.hledger-rules",
+        ],
+        "text": "  ",
+      },
+      {
+        "scopes": [
+          "meta.field-assignment.hledger-rules",
+          "entity.name.tag.hledger-rules",
+        ],
+        "text": "account1",
+      },
+      {
+        "scopes": [
+          "meta.field-assignment.hledger-rules",
+        ],
+        "text": " ",
+      },
+      {
+        "scopes": [
+          "meta.field-assignment.hledger-rules",
+          "string.unquoted.value.hledger-rules",
+        ],
+        "text": "Income:Salary",
+      },
+    ],
+  },
+  {
+    "line": "  description %payee - %description",
+    "tokens": [
+      {
+        "scopes": [
+          "meta.field-assignment.hledger-rules",
+        ],
+        "text": "  ",
+      },
+      {
+        "scopes": [
+          "meta.field-assignment.hledger-rules",
+          "entity.name.tag.hledger-rules",
+        ],
+        "text": "description",
+      },
+      {
+        "scopes": [
+          "meta.field-assignment.hledger-rules",
+        ],
+        "text": " ",
+      },
+      {
+        "scopes": [
+          "meta.field-assignment.hledger-rules",
+          "string.unquoted.value.hledger-rules",
+        ],
+        "text": "%payee - %description",
+      },
+    ],
+  },
+  {
+    "line": "end",
+    "tokens": [
+      {
+        "scopes": [
+          "keyword.control.end.hledger-rules",
+        ],
+        "text": "end",
+      },
+    ],
+  },
+  {
+    "line": "",
+    "tokens": [
+      {
+        "scopes": [],
+        "text": "",
+      },
+    ],
+  },
+  {
+    "line": "account1 Expenses:Unknown",
+    "tokens": [
+      {
+        "scopes": [
+          "meta.field-assignment.hledger-rules",
+          "entity.name.tag.hledger-rules",
+        ],
+        "text": "account1",
+      },
+      {
+        "scopes": [
+          "meta.field-assignment.hledger-rules",
+        ],
+        "text": " ",
+      },
+      {
+        "scopes": [
+          "meta.field-assignment.hledger-rules",
+          "string.unquoted.value.hledger-rules",
+        ],
+        "text": "Expenses:Unknown",
+      },
+    ],
+  },
+  {
+    "line": "comment",
+    "tokens": [
+      {
+        "scopes": [
+          "meta.field-assignment.hledger-rules",
+          "entity.name.tag.hledger-rules",
+        ],
+        "text": "comment",
+      },
+    ],
+  },
+  {
+    "line": "",
+    "tokens": [
+      {
+        "scopes": [],
+        "text": "",
+      },
+    ],
+  },
+]
+`;

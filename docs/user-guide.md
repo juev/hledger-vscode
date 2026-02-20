@@ -34,6 +34,7 @@ The extension activates for files with these extensions:
 - `.hledger`
 - `.ledger`
 - Files named `journal` or `.journal` (without extension)
+- `.rules` — hledger CSV import rules files (language ID: `hledger-rules`)
 
 ---
 
@@ -53,10 +54,10 @@ The extension activates for files with these extensions:
 
 ### File Associations
 
-The extension automatically associates with `.journal`, `.hledger`, and `.ledger` files. If files aren't recognized:
+The extension automatically associates with `.journal`, `.hledger`, `.ledger`, and `.rules` files. If files aren't recognized:
 
 1. Click the language indicator in the bottom-right corner of VS Code
-2. Select "hledger" from the list
+2. Select "hledger" (for journal files) or "hledger-rules" (for rules files) from the list
 
 Or add to your `settings.json`:
 
@@ -65,10 +66,28 @@ Or add to your `settings.json`:
   "files.associations": {
     "*.journal": "hledger",
     "*.hledger": "hledger",
-    "*.ledger": "hledger"
+    "*.ledger": "hledger",
+    "*.rules": "hledger-rules"
   }
 }
 ```
+
+### CSV Import Rules Files (`.rules`)
+
+The extension fully supports hledger CSV import rules files (`.rules`). These files use a different syntax from journal files and are registered as a separate language (`hledger-rules`).
+
+Features available in `.rules` files:
+- Syntax highlighting (comments, directives, field assignments, if/end blocks)
+- LSP diagnostics, completion, and navigation via the Language Server
+- Hover information on directives and field names
+- Go to Definition and Find References for included files
+- Folding ranges for if/end blocks
+
+Features **not** available in `.rules` files (journal-only):
+- Tab amount alignment
+- CLI commands (balance, stats, income statement)
+- Inline ghost text completion
+- Format on type
 
 ---
 
@@ -471,6 +490,49 @@ The extension uses standard TextMate scopes that are automatically styled by VS 
 - **Light+**: Similar semantic colors with adjusted brightness for light backgrounds
 
 No additional configuration is needed for standard themes to work correctly.
+
+### Rules File Highlighting
+
+`.rules` files (CSV import rules) use a TextMate grammar for syntax highlighting — not LSP semantic tokens. The grammar assigns standard TextMate scopes to each element:
+
+| Element | TextMate Scope | Typical Color | Description |
+|---------|---------------|---------------|-------------|
+| Comments (`#`, `;`, `*`) | `comment.line` | Green | Line comments |
+| Directives (`skip`, `fields`, `separator`, etc.) | `keyword.control.directive` | Purple | Configuration directives |
+| Directive values | `string.unquoted.value` | Orange | Values after directives |
+| `if` / `end` keywords | `keyword.control.if` / `keyword.control.end` | Purple | Conditional block markers |
+| Regex patterns | `string.regexp` | Orange/Red | Match patterns in if-blocks |
+| Field names (`account1`, `description`, etc.) | `entity.name.tag` | Blue | Field assignment names |
+| Field values | `string.unquoted.value` | Orange | Values assigned to fields |
+
+> **Note:** Colors in the "Typical Color" column are approximate and vary by theme.
+
+#### Customizing Rules File Colors
+
+Add `textMateRules` in your VS Code settings. Use the `.hledger-rules` suffix to target only rules files without affecting other languages:
+
+```json
+{
+  "editor.tokenColorCustomizations": {
+    "textMateRules": [
+      {
+        "scope": "entity.name.tag.hledger-rules",
+        "settings": { "foreground": "#268BD2" }
+      },
+      {
+        "scope": "keyword.control.directive.hledger-rules",
+        "settings": { "foreground": "#6C71C4" }
+      },
+      {
+        "scope": "string.regexp.hledger-rules",
+        "settings": { "foreground": "#DC322F" }
+      }
+    ]
+  }
+}
+```
+
+> **Tip:** Using the full scope with `.hledger-rules` suffix ensures your customizations apply only to `.rules` files — no side effects on other languages.
 
 ---
 

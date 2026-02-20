@@ -17,7 +17,7 @@ These rules are essential when implementing validation or completion features:
 
 ## Project Overview
 
-VS Code extension for hledger plain text accounting. Supported file extensions: `.journal`, `.hledger`, `.ledger`
+VS Code extension for hledger plain text accounting. Supported file extensions: `.journal`, `.hledger`, `.ledger`, `.rules` (CSV import rules, language ID: `hledger-rules`)
 
 ## Development Commands
 
