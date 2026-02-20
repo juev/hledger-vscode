@@ -1,5 +1,21 @@
 # Change Log
 
+## [0.5.8] - 2026-02-20
+
+### Added
+- docs(rules): add color customization documentation for .rules files
+- feat(rules): highlight directive parameters in hledger-rules grammar
+- feat(rules): add .rules file support as hledger-rules language
+
+### Fixed
+- fix(rules): allow bare field names without values in hledger-rules grammar
+- fix(rules): address S4 nit findings from code review
+- fix(rules): use entity.name.tag scope for field names in hledger-rules grammar
+- fix(rules): add missing note field to field-assignment grammar rule
+- fix(rules): address code review findings for hledger-rules grammar
+- fix(rules): fix field-assignment regex for indented and extended field names
+
+
 ## [0.5.7] - 2026-02-17
 
 ### Added
