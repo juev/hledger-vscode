@@ -1,5 +1,17 @@
 # Change Log
 
+## [0.5.9] - 2026-02-27
+
+### Changed
+- refactor(semantic-tokens): replace custom token types with standard LSP types
+
+### Fixed
+- fix(semantic-tokens): address code review findings
+
+### Other
+- chore(deps-dev): bump minimatch from 3.1.2 to 3.1.4
+
+
 ## [0.5.8] - 2026-02-20
 
 ### Added
