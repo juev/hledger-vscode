@@ -243,17 +243,17 @@ Customize syntax colors for any theme:
 {
   "editor.semanticTokenColorCustomizations": {
     "rules": {
-      "account:hledger": "#0EA5E9",
-      "amount:hledger": "#F59E0B",
-      "payee:hledger": "#EF4444",
-      "tag:hledger": "#EC4899",
-      "commodity:hledger": "#A855F7"
+      "namespace:hledger": "#0EA5E9",
+      "number:hledger": "#F59E0B",
+      "function:hledger": "#EF4444",
+      "decorator:hledger": "#EC4899",
+      "type:hledger": "#A855F7"
     }
   }
 }
 ```
 
-**Available tokens:** `account`, `accountVirtual`, `amount`, `date`, `time`, `commodity`, `payee`, `note`, `tag`, `tagValue`, `directive`, `code`, `status`, `link`
+**Available tokens:** `namespace`, `type`, `function`, `number`, `decorator`, `keyword`, `string`, `operator`, `comment`
 
 ---
 

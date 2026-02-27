@@ -329,78 +329,6 @@
         }
       }
     },
-    "semanticTokenTypes": [
-      {
-        "id": "account",
-        "superType": "namespace",
-        "description": "HLedger account names"
-      },
-      {
-        "id": "amount",
-        "superType": "number",
-        "description": "HLedger amounts"
-      },
-      {
-        "id": "date",
-        "superType": "number",
-        "description": "HLedger dates"
-      },
-      {
-        "id": "time",
-        "superType": "number",
-        "description": "HLedger times"
-      },
-      {
-        "id": "accountVirtual",
-        "superType": "namespace",
-        "description": "HLedger virtual accounts"
-      },
-      {
-        "id": "commodity",
-        "superType": "type",
-        "description": "HLedger commodities"
-      },
-      {
-        "id": "payee",
-        "superType": "function",
-        "description": "HLedger payees"
-      },
-      {
-        "id": "note",
-        "superType": "comment",
-        "description": "HLedger notes"
-      },
-      {
-        "id": "tag",
-        "superType": "decorator",
-        "description": "HLedger tags"
-      },
-      {
-        "id": "directive",
-        "superType": "keyword",
-        "description": "HLedger directives"
-      },
-      {
-        "id": "code",
-        "superType": "string",
-        "description": "HLedger transaction codes"
-      },
-      {
-        "id": "link",
-        "superType": "label",
-        "description": "HLedger links"
-      },
-      {
-        "id": "status",
-        "superType": "operator",
-        "description": "HLedger transaction status markers"
-      },
-      {
-        "id": "tagValue",
-        "superType": "string",
-        "description": "HLedger tag values"
-      }
-    ],
     "semanticTokenScopes": [
       {
         "language": "hledger-rules",
@@ -425,53 +353,32 @@
       {
         "language": "hledger",
         "scopes": {
-          "account": [
+          "namespace": [
             "entity.name.namespace"
           ],
-          "accountVirtual": [
-            "entity.name.namespace"
-          ],
-          "amount": [
-            "constant.numeric"
-          ],
-          "date": [
-            "constant.numeric"
-          ],
-          "time": [
-            "constant.numeric"
-          ],
-          "commodity": [
+          "type": [
             "entity.name.type"
           ],
-          "payee": [
+          "function": [
             "entity.name.function"
           ],
-          "note": [
-            "comment.block"
+          "number": [
+            "constant.numeric"
           ],
-          "tag": [
+          "decorator": [
             "entity.name.tag"
           ],
-          "tagValue": [
-            "string"
-          ],
-          "directive": [
+          "keyword": [
             "keyword.control"
           ],
-          "code": [
+          "string": [
             "string.quoted"
-          ],
-          "status": [
-            "keyword.operator"
-          ],
-          "link": [
-            "markup.underline.link"
-          ],
-          "comment": [
-            "comment.line"
           ],
           "operator": [
             "keyword.operator"
+          ],
+          "comment": [
+            "comment.line"
           ]
         }
       }

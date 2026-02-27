@@ -407,24 +407,23 @@ Semantic highlighting is enabled by default:
 
 ### Semantic Token Types
 
-| Token | VS Code Type | TextMate Scope | Dark+ Color | Description |
-|-------|--------------|----------------|-------------|-------------|
-| `account` | `namespace` | `entity.name.namespace` | Cyan (#4EC9B0) | Account names |
-| `accountVirtual` | `namespace` | `entity.name.namespace` | Cyan (#4EC9B0) | Virtual accounts in `()` or `[]` |
-| `amount` | `number` | `constant.numeric` | Green (#B5CEA8) | Numeric amounts |
-| `date` | `number` | `constant.numeric` | Green (#B5CEA8) | Transaction dates |
-| `time` | `number` | `constant.numeric` | Green (#B5CEA8) | Time values |
-| `commodity` | `type` | `entity.name.type` | Cyan (#4EC9B0) | Currency/commodity codes |
-| `payee` | `function` | `entity.name.function` | Yellow (#DCDCAA) | Payee names |
-| `note` | `comment` | `comment.block` | Green (#6A9955) | Metadata notes |
-| `tag` | `decorator` | `entity.name.tag` | Blue (#569CD6) | Tag names |
-| `tagValue` | `string` | `string` | Orange (#CE9178) | Tag values |
-| `directive` | `keyword` | `keyword.control` | Purple (#C586C0) | Directives (include, account, etc.) |
-| `code` | `string` | `string.quoted` | Orange (#CE9178) | Transaction codes |
-| `status` | `operator` | `keyword.operator` | Light (#D4D4D4) | Status markers (`*`, `!`) |
-| `link` | `label` | `markup.underline.link` | Blue (underlined) | Inter-transaction links |
+The LSP server uses standard semantic token types:
 
-Additionally, `comment` and `operator` have scope mappings in `semanticTokenScopes` (for `comment.line` and `keyword.operator` respectively) but are not registered as formal semantic token types.
+| Standard Type | TextMate Scope | Dark+ Color | hledger Elements |
+|---------------|----------------|-------------|------------------|
+| `namespace` | `entity.name.namespace` | Cyan (#4EC9B0) | Account names (including virtual accounts) |
+| `type` | `entity.name.type` | Cyan (#4EC9B0) | Currency/commodity codes |
+| `function` | `entity.name.function` | Yellow (#DCDCAA) | Payee names |
+| `number` | `constant.numeric` | Green (#B5CEA8) | Dates and amounts |
+| `decorator` | `entity.name.tag` | Blue (#569CD6) | Tag names |
+| `keyword` | `keyword.control` | Purple (#C586C0) | Directives (include, account, etc.) |
+| `string` | `string.quoted` | Orange (#CE9178) | Transaction codes, tag values, text |
+| `operator` | `keyword.operator` | Light (#D4D4D4) | Status markers (`*`, `!`), operators |
+| `comment` | `comment.line` | Green (#6A9955) | Comments and notes |
+| `regexp` | `string.regexp` | Red (#D16969) | Regex patterns (rules files) |
+| `parameter` | `variable.parameter` | Light blue (#9CDCFE) | Field names (rules files) |
+
+Virtual accounts are distinguished from regular accounts by the `abstract` modifier.
 
 **How highlighting works:**
 1. **TextMate Scopes** (highest priority) - Standard scopes like `entity.name.namespace`, `constant.numeric` that themes understand
@@ -445,12 +444,11 @@ Override colors specifically for hledger tokens. This works with any theme and d
 {
   "editor.semanticTokenColorCustomizations": {
     "rules": {
-      "account:hledger": "#0EA5E9",
-      "payee:hledger": "#EF4444",
-      "date:hledger": "#22C55E",
-      "amount:hledger": "#F59E0B",
-      "commodity:hledger": "#A855F7",
-      "tag:hledger": "#EC4899"
+      "namespace:hledger": "#0EA5E9",
+      "function:hledger": "#EF4444",
+      "number:hledger": "#22C55E",
+      "type:hledger": "#A855F7",
+      "decorator:hledger": "#EC4899"
     }
   }
 }

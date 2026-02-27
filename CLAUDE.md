@@ -83,17 +83,16 @@ The hledger-lsp Language Server provides:
 
 Syntax highlighting is provided exclusively by the Language Server using semantic tokens:
 
-- **Semantic Tokens**: 16 token types (account, amount, date, payee, etc.)
+- **Semantic Tokens**: 12 standard token types (namespace, type, function, number, decorator, keyword, string, operator, comment, regexp, parameter)
 - **TextMate Scopes**: Standard scopes (e.g., `entity.name.namespace`, `constant.numeric`, `entity.name.function`) recognized by all VS Code themes
 - **Requires**: hledger-lsp server must be running
 - **Configuration**: Enabled via `hledger.features.semanticTokens` (default: true)
 
 **Color Priority:**
 1. `semanticTokenScopes` → TextMate scope → theme tokenColors (HIGHEST)
-2. `superType` → fallback to standard semantic type (if no scope match)
-3. Theme defaults (LOWEST)
+2. Theme defaults (LOWEST)
 
-The extension uses standard TextMate scopes without `.hledger` suffixes, ensuring proper theme integration. Users can customize colors either per token type (`"account:hledger": "#color"`) or globally via TextMate scope rules.
+The extension uses standard TextMate scopes without `.hledger` suffixes, ensuring proper theme integration. Users can customize colors either per token type (`"namespace:hledger": "#color"`) or globally via TextMate scope rules.
 
 **Fallback behavior:** When the Language Server is not running or semantic tokens are disabled, VS Code automatically uses the TextMate grammar (`syntaxes/hledger.tmLanguage.json`) for syntax highlighting. Basic syntax highlighting is always available, but semantic tokens from LSP provide richer, context-aware highlighting.
 
