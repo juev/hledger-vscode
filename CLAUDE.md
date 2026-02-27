@@ -83,7 +83,7 @@ The hledger-lsp Language Server provides:
 
 Syntax highlighting is provided exclusively by the Language Server using semantic tokens:
 
-- **Semantic Tokens**: 12 standard token types (namespace, type, function, number, decorator, keyword, string, operator, comment, regexp, parameter)
+- **Semantic Tokens**: 11 standard token types (namespace, type, function, number, decorator, keyword, string, operator, comment, regexp, parameter)
 - **TextMate Scopes**: Standard scopes (e.g., `entity.name.namespace`, `constant.numeric`, `entity.name.function`) recognized by all VS Code themes
 - **Requires**: hledger-lsp server must be running
 - **Configuration**: Enabled via `hledger.features.semanticTokens` (default: true)

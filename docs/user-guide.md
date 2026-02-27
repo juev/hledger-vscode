@@ -423,7 +423,9 @@ The LSP server uses standard semantic token types:
 | `regexp` | `string.regexp` | Red (#D16969) | Regex patterns (rules files) |
 | `parameter` | `variable.parameter` | Light blue (#9CDCFE) | Field names (rules files) |
 
-Virtual accounts are distinguished from regular accounts by the `abstract` modifier.
+Virtual accounts are distinguished from regular accounts by the `abstract` modifier (`"namespace.abstract:hledger": "#color"`).
+
+> **Note:** Some elements share the same token type: dates and amounts are both `number`, comments and notes are both `comment`, transaction codes and tag values are both `string`. They cannot be styled independently.
 
 **How highlighting works:**
 1. **TextMate Scopes** (highest priority) - Standard scopes like `entity.name.namespace`, `constant.numeric` that themes understand
@@ -446,7 +448,7 @@ Override colors specifically for hledger tokens. This works with any theme and d
     "rules": {
       "namespace:hledger": "#0EA5E9",
       "function:hledger": "#EF4444",
-      "number:hledger": "#22C55E",
+      "number:hledger": "#F59E0B",
       "type:hledger": "#A855F7",
       "decorator:hledger": "#EC4899"
     }

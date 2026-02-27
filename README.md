@@ -253,7 +253,7 @@ Customize syntax colors for any theme:
 }
 ```
 
-**Available tokens:** `namespace`, `type`, `function`, `number`, `decorator`, `keyword`, `string`, `operator`, `comment`
+**Available tokens:** `namespace`, `type`, `function`, `number`, `decorator`, `keyword`, `string`, `operator`, `comment` (plus `regexp` and `parameter` for `.rules` files — see [User Guide](docs/user-guide.md) for details)
 
 ---
 
