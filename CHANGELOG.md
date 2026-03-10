@@ -1,5 +1,12 @@
 # Change Log
 
+## [0.5.10] - 2026-03-10
+
+### Fixed
+- fix(lsp): sync settings with hledger-lsp server
+- docs(links): fix broken hledger.org URLs in learning resources
+
+
 ## [0.5.9] - 2026-02-27
 
 ### Changed
