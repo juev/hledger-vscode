@@ -290,8 +290,8 @@ Having issues? Check our comprehensive [**Troubleshooting Guide**](./TROUBLESHOO
 
 New to hledger?
 
-- [Official Tutorial](https://hledger.org/quickstart.html)
-- [Example Files](https://hledger.org/examples.html)
+- [Official Tutorial](https://hledger.org/5-minute-quick-start.html)
+- [Common Journal Entries](https://hledger.org/common-journal-entries.html)
 - [Accounting Concepts](https://hledger.org/accounting.html)
 - [CLI Reference](https://hledger.org/hledger.html)
 

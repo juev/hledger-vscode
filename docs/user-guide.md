@@ -1166,7 +1166,7 @@ If experiencing slowness:
 
 - [Troubleshooting Guide](../TROUBLESHOOTING.md) - Common issues and solutions
 - [hledger Official Documentation](https://hledger.org/hledger.html) - Complete hledger reference
-- [hledger Tutorial](https://hledger.org/quickstart.html) - Getting started with hledger
+- [hledger Tutorial](https://hledger.org/5-minute-quick-start.html) - Getting started with hledger
 - [Plain Text Accounting](https://plaintextaccounting.org) - Community resources
 - [GitHub Issues](https://github.com/juev/hledger-vscode/issues) - Report bugs or request features
 
