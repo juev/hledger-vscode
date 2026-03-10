@@ -119,13 +119,10 @@ function getVSCodeSettings(): VSCodeSettings {
       amountAlignmentColumn: config.get<number>("formatting.amountAlignmentColumn"),
       indentSize: config.get<number>("formatting.indentSize"),
       alignAmounts: config.get<boolean>("formatting.alignAmounts"),
-      minAlignmentColumn: config.get<number>("formatting.minAlignmentColumn"),
-    },
-    semanticHighlighting: {
-      enabled: config.get<boolean>("semanticHighlighting.enabled"),
     },
     cli: {
       enabled: config.get<boolean>("cli.enabled"),
+      path: config.get<string>("cli.path"),
       timeout: config.get<number>("cli.timeout"),
     },
     limits: {

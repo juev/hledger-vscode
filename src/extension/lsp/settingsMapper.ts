@@ -39,7 +39,6 @@ export interface VSCodeSettings {
     amountAlignmentColumn?: number;
     indentSize?: number;
     alignAmounts?: boolean;
-    minAlignmentColumn?: number;
   };
   inlineCompletion?: {
     enabled?: boolean;
@@ -80,20 +79,12 @@ export interface LSPSettings {
     codeLens: boolean;
   };
   completion: {
-    enabled: boolean;
     maxResults: number;
-    maxAccountResults: number;
-    transactionTemplates: {
-      enabled: boolean;
-    };
-    snippets: boolean;
     fuzzyMatching: boolean;
     showCounts: boolean;
     includeNotes: boolean;
   };
   diagnostics: {
-    enabled: boolean;
-    checkBalance: boolean;
     balanceTolerance: number;
     undeclaredAccounts: boolean;
     undeclaredCommodities: boolean;
@@ -103,13 +94,10 @@ export interface LSPSettings {
     amountAlignmentColumn: number;
     indentSize: number;
     alignAmounts: boolean;
-    minAlignmentColumn: number;
-  };
-  semanticHighlighting: {
-    enabled: boolean;
   };
   cli: {
     enabled: boolean;
+    path: string;
     timeout: number;
   };
   limits: {
@@ -133,20 +121,12 @@ const DEFAULT_SETTINGS: LSPSettings = {
     codeLens: false,
   },
   completion: {
-    enabled: true,
     maxResults: 25,
-    maxAccountResults: 30,
-    transactionTemplates: {
-      enabled: true,
-    },
-    snippets: true,
     fuzzyMatching: true,
     showCounts: true,
     includeNotes: true,
   },
   diagnostics: {
-    enabled: true,
-    checkBalance: true,
     balanceTolerance: 1e-10,
     undeclaredAccounts: true,
     undeclaredCommodities: true,
@@ -156,13 +136,10 @@ const DEFAULT_SETTINGS: LSPSettings = {
     amountAlignmentColumn: 40,
     indentSize: 4,
     alignAmounts: true,
-    minAlignmentColumn: 0,
-  },
-  semanticHighlighting: {
-    enabled: true,
   },
   cli: {
     enabled: true,
+    path: "hledger",
     timeout: 30000,
   },
   limits: {
@@ -218,30 +195,17 @@ export function mapVSCodeSettingsToLSP(settings: VSCodeSettings): LSPSettings {
       codeLens: settings.features?.codeLens ?? DEFAULT_SETTINGS.features.codeLens,
     },
     completion: {
-      enabled: settings.autoCompletion?.enabled ?? DEFAULT_SETTINGS.completion.enabled,
       maxResults: validateNumber(
         settings.completion?.maxResults ?? settings.autoCompletion?.maxResults,
         DEFAULT_SETTINGS.completion.maxResults,
         5,
         200
       ),
-      maxAccountResults: validateNumber(
-        settings.autoCompletion?.maxAccountResults,
-        DEFAULT_SETTINGS.completion.maxAccountResults,
-        5,
-        50
-      ),
-      transactionTemplates: {
-        enabled: settings.autoCompletion?.transactionTemplates?.enabled ?? DEFAULT_SETTINGS.completion.transactionTemplates.enabled,
-      },
-      snippets: settings.completion?.snippets ?? DEFAULT_SETTINGS.completion.snippets,
       fuzzyMatching: settings.completion?.fuzzyMatching ?? DEFAULT_SETTINGS.completion.fuzzyMatching,
       showCounts: settings.completion?.showCounts ?? DEFAULT_SETTINGS.completion.showCounts,
       includeNotes: settings.completion?.includeNotes ?? DEFAULT_SETTINGS.completion.includeNotes,
     },
     diagnostics: {
-      enabled: settings.diagnostics?.enabled ?? DEFAULT_SETTINGS.diagnostics.enabled,
-      checkBalance: settings.diagnostics?.checkBalance ?? DEFAULT_SETTINGS.diagnostics.checkBalance,
       balanceTolerance: validateNumber(
         settings.diagnostics?.balanceTolerance,
         DEFAULT_SETTINGS.diagnostics.balanceTolerance,
@@ -266,18 +230,10 @@ export function mapVSCodeSettingsToLSP(settings: VSCodeSettings): LSPSettings {
         8
       ),
       alignAmounts: settings.formatting?.alignAmounts ?? DEFAULT_SETTINGS.formatting.alignAmounts,
-      minAlignmentColumn: validateNumber(
-        settings.formatting?.minAlignmentColumn,
-        DEFAULT_SETTINGS.formatting.minAlignmentColumn,
-        0,
-        200
-      ),
-    },
-    semanticHighlighting: {
-      enabled: semanticTokensEnabled,
     },
     cli: {
       enabled: settings.cli?.enabled ?? DEFAULT_SETTINGS.cli.enabled,
+      path: settings.cli?.path ?? DEFAULT_SETTINGS.cli.path,
       timeout: validateNumber(
         settings.cli?.timeout,
         DEFAULT_SETTINGS.cli.timeout,

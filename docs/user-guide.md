@@ -805,7 +805,10 @@ The Language Server is required and auto-installed on first activation. If the L
 - Auto-completion (accounts, payees, dates, etc.)
 - Diagnostics and validation
 - Document formatting
-- Code navigation (Go to Definition, Find References)
+- Code navigation (Go to Definition, Find References, Rename Symbol)
+- Document Highlight (highlight all occurrences of a symbol)
+- Selection Range (smart expand/shrink selection)
+- Range Formatting (format selected text)
 - Hover information
 - Folding ranges
 - Workspace symbols

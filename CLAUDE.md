@@ -74,7 +74,9 @@ The hledger-lsp Language Server provides:
 - **Formatting**: Automatic transaction alignment and formatting (document + on-type via `\n`/`\t` triggers)
 - **Code Actions**: Quick fixes for common issues (e.g., balance assertions)
 - **Hover**: Documentation and information on hover
-- **Navigation**: Go to Definition, Find References
+- **Navigation**: Go to Definition, Find References, Rename Symbol
+- **Document Highlight**: Highlight all occurrences of a symbol
+- **Selection Range**: Smart expand/shrink selection
 - **Folding**: Transaction and directive folding ranges
 - **Document Links**: Clickable include directives
 - **Workspace Symbols**: Symbol search across all files

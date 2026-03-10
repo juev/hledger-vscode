@@ -72,21 +72,24 @@
         "hledger.autoCompletion.enabled": {
           "type": "boolean",
           "default": true,
-          "description": "Enable automatic completion without keyboard shortcuts (Ctrl+Space)"
+          "description": "Enable automatic completion without keyboard shortcuts (Ctrl+Space)",
+          "deprecationMessage": "Use hledger.features.completion instead."
         },
         "hledger.autoCompletion.maxResults": {
           "type": "number",
           "default": 25,
           "minimum": 5,
           "maximum": 50,
-          "description": "Maximum number of completion items to show"
+          "description": "Maximum number of completion items to show",
+          "deprecationMessage": "Use hledger.completion.maxResults instead."
         },
         "hledger.autoCompletion.maxAccountResults": {
           "type": "number",
           "default": 30,
           "minimum": 5,
           "maximum": 50,
-          "description": "Maximum number of account completion items to show (accounts are hierarchical, so more items are useful)"
+          "description": "Maximum number of account completion items to show (accounts are hierarchical, so more items are useful)",
+          "deprecationMessage": "This setting is no longer used by the LSP server."
         },
         "hledger.cli.path": {
           "type": "string",
@@ -101,12 +104,14 @@
         "hledger.diagnostics.enabled": {
           "type": "boolean",
           "default": true,
-          "description": "Enable diagnostics validation for hledger files (account checks, tag format, amount format)"
+          "description": "Enable diagnostics validation for hledger files (account checks, tag format, amount format)",
+          "deprecationMessage": "Use hledger.features.diagnostics instead."
         },
         "hledger.diagnostics.checkBalance": {
           "type": "boolean",
           "default": true,
-          "description": "Check that transactions balance correctly (all postings sum to zero per commodity)"
+          "description": "Check that transactions balance correctly (all postings sum to zero per commodity)",
+          "deprecationMessage": "Use hledger.diagnostics.unbalancedTransactions instead."
         },
         "hledger.diagnostics.balanceTolerance": {
           "type": "number",
@@ -124,7 +129,8 @@
         "hledger.autoCompletion.transactionTemplates.enabled": {
           "type": "boolean",
           "default": true,
-          "description": "Enable transaction template completion. When typing a payee name, suggests complete transactions with accounts and amounts based on history."
+          "description": "Enable transaction template completion. When typing a payee name, suggests complete transactions with accounts and amounts based on history.",
+          "deprecationMessage": "This setting is no longer used by the LSP server."
         },
         "hledger.inlineCompletion.enabled": {
           "type": "boolean",

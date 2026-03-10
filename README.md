@@ -55,6 +55,13 @@ Transform your plain text accounting experience with powerful IDE capabilities:
 - **On-type formatting** via LSP - auto-indent and amount alignment as you type
 - **Multi-language** Unicode support (Cyrillic, Asian languages, etc.)
 
+### 🧭 **Code Navigation**
+
+- **Go to Definition** and **Find References** for accounts, payees, commodities
+- **Rename Symbol** - rename accounts/payees across the entire journal
+- **Document Highlight** - highlight all occurrences of a symbol
+- **Smart Selection** - expand/shrink selection by semantic ranges
+
 ### 📊 **CLI Integration**
 
 - Insert **balance sheets**, **income statements**, and **statistics** directly into journals

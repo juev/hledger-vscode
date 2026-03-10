@@ -1,6 +1,5 @@
 import {
   mapVSCodeSettingsToLSP,
-  LSPSettings,
   VSCodeSettings,
 } from "../settingsMapper";
 
@@ -24,18 +23,12 @@ describe("mapVSCodeSettingsToLSP", () => {
           codeLens: false,
         },
         completion: {
-          enabled: true,
           maxResults: 25,
-          maxAccountResults: 30,
-          transactionTemplates: { enabled: true },
-          snippets: true,
           fuzzyMatching: true,
           showCounts: true,
           includeNotes: true,
         },
         diagnostics: {
-          enabled: true,
-          checkBalance: true,
           balanceTolerance: 1e-10,
           undeclaredAccounts: true,
           undeclaredCommodities: true,
@@ -45,13 +38,10 @@ describe("mapVSCodeSettingsToLSP", () => {
           amountAlignmentColumn: 40,
           indentSize: 4,
           alignAmounts: true,
-          minAlignmentColumn: 0,
-        },
-        semanticHighlighting: {
-          enabled: true,
         },
         cli: {
           enabled: true,
+          path: "hledger",
           timeout: 30000,
         },
         limits: {
@@ -150,28 +140,21 @@ describe("mapVSCodeSettingsToLSP", () => {
   });
 
   describe("completion settings", () => {
-    it("maps completion settings", () => {
+    it("maps completion.maxResults from autoCompletion fallback", () => {
       const settings: VSCodeSettings = {
         autoCompletion: {
-          enabled: false,
           maxResults: 50,
-          maxAccountResults: 40,
-          transactionTemplates: { enabled: false },
         },
       };
 
       const result = mapVSCodeSettingsToLSP(settings);
 
-      expect(result.completion.enabled).toBe(false);
       expect(result.completion.maxResults).toBe(50);
-      expect(result.completion.maxAccountResults).toBe(40);
-      expect(result.completion.transactionTemplates.enabled).toBe(false);
     });
 
     it("maps new completion namespace settings", () => {
       const settings: VSCodeSettings = {
         completion: {
-          snippets: false,
           fuzzyMatching: false,
           showCounts: false,
         },
@@ -179,7 +162,6 @@ describe("mapVSCodeSettingsToLSP", () => {
 
       const result = mapVSCodeSettingsToLSP(settings);
 
-      expect(result.completion.snippets).toBe(false);
       expect(result.completion.fuzzyMatching).toBe(false);
       expect(result.completion.showCounts).toBe(false);
     });
@@ -207,19 +189,15 @@ describe("mapVSCodeSettingsToLSP", () => {
   });
 
   describe("diagnostics settings", () => {
-    it("maps legacy diagnostics settings", () => {
+    it("maps diagnostics.balanceTolerance", () => {
       const settings: VSCodeSettings = {
         diagnostics: {
-          enabled: false,
-          checkBalance: false,
           balanceTolerance: 1e-8,
         },
       };
 
       const result = mapVSCodeSettingsToLSP(settings);
 
-      expect(result.diagnostics.enabled).toBe(false);
-      expect(result.diagnostics.checkBalance).toBe(false);
       expect(result.diagnostics.balanceTolerance).toBe(1e-8);
     });
 
@@ -279,46 +257,6 @@ describe("mapVSCodeSettingsToLSP", () => {
       expect(result.formatting.alignAmounts).toBe(false);
     });
 
-    it("maps minAlignmentColumn independently from amountAlignmentColumn", () => {
-      const settings: VSCodeSettings = {
-        formatting: {
-          amountAlignmentColumn: 55,
-          minAlignmentColumn: 20,
-        },
-      };
-
-      const result = mapVSCodeSettingsToLSP(settings);
-
-      expect(result.formatting.amountAlignmentColumn).toBe(55);
-      expect(result.formatting.minAlignmentColumn).toBe(20);
-    });
-
-    it("uses default for minAlignmentColumn when not specified", () => {
-      const settings: VSCodeSettings = {
-        formatting: {
-          amountAlignmentColumn: 55,
-        },
-      };
-
-      const result = mapVSCodeSettingsToLSP(settings);
-
-      expect(result.formatting.amountAlignmentColumn).toBe(55);
-      expect(result.formatting.minAlignmentColumn).toBe(0);
-    });
-  });
-
-  describe("semantic highlighting settings", () => {
-    it("maps semanticHighlighting.enabled from features.semanticTokens", () => {
-      const settings: VSCodeSettings = {
-        features: {
-          semanticTokens: false,
-        },
-      };
-
-      const result = mapVSCodeSettingsToLSP(settings);
-
-      expect(result.semanticHighlighting.enabled).toBe(false);
-    });
   });
 
   describe("CLI settings", () => {
@@ -341,6 +279,24 @@ describe("mapVSCodeSettingsToLSP", () => {
 
       expect(result.cli.enabled).toBe(false);
       expect(result.cli.timeout).toBe(60000);
+    });
+
+    it("maps cli.path to LSP settings", () => {
+      const settings: VSCodeSettings = {
+        cli: {
+          path: "/usr/local/bin/hledger",
+        },
+      };
+
+      const result = mapVSCodeSettingsToLSP(settings);
+
+      expect(result.cli.path).toBe("/usr/local/bin/hledger");
+    });
+
+    it("defaults cli.path to 'hledger'", () => {
+      const result = mapVSCodeSettingsToLSP({});
+
+      expect(result.cli.path).toBe("hledger");
     });
   });
 
@@ -371,15 +327,14 @@ describe("mapVSCodeSettingsToLSP", () => {
     it("preserves partial settings with defaults for missing values", () => {
       const settings: VSCodeSettings = {
         autoCompletion: {
-          enabled: true,
           maxResults: 15,
         },
       };
 
       const result = mapVSCodeSettingsToLSP(settings);
 
-      expect(result.completion.maxAccountResults).toBe(30);
-      expect(result.completion.transactionTemplates.enabled).toBe(true);
+      expect(result.completion.maxResults).toBe(15);
+      expect(result.completion.fuzzyMatching).toBe(true);
     });
 
     it("applies defaults for partially specified features", () => {
