@@ -47,7 +47,7 @@
     {
       "beforeText": "^\\s+\\S.*$",
       "action": {
-        "indent": "indent"
+        "indent": "none"
       }
     }
   ],
