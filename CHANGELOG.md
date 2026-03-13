@@ -1,5 +1,11 @@
 # Change Log
 
+## [0.5.11] - 2026-03-13
+
+### Fixed
+- fix(lang): use IndentAction.None for posting onEnterRule
+
+
 ## [0.5.10] - 2026-03-10
 
 ### Fixed
