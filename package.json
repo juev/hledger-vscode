@@ -439,6 +439,11 @@
         "category": "HLedger"
       },
       {
+        "command": "hledger.editor.enterAndSuggest",
+        "title": "HLedger: Enter and Suggest Inline Completion",
+        "category": "HLedger"
+      },
+      {
         "command": "hledger.getStarted",
         "title": "HLedger: Get Started",
         "category": "HLedger"
@@ -454,6 +459,11 @@
         "command": "editor.action.inlineSuggest.commit",
         "key": "enter",
         "when": "editorTextFocus && editorLangId == hledger && inlineSuggestionVisible"
+      },
+      {
+        "command": "hledger.editor.enterAndSuggest",
+        "key": "enter",
+        "when": "editorTextFocus && editorLangId == hledger && !suggestWidgetVisible && !inlineSuggestionVisible && !inSnippetMode"
       },
       {
         "command": "hledger.editor.alignAmount",

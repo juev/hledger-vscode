@@ -6,6 +6,7 @@ import { HLedgerCliService } from "./services/HLedgerCliService";
 import { HLedgerImportCommands } from "./HLedgerImportCommands";
 import { LSPManager, StartupChecker } from "./lsp";
 import { alignAmount } from "./commands/alignAmount";
+import { enterAndSuggest } from "./commands/enterAndSuggest";
 import { InlineCompletionProvider } from "./inline/InlineCompletionProvider";
 import { Logger } from "./Logger";
 import { LSPStatusBar } from "./lsp/LSPStatusBar";
@@ -217,6 +218,13 @@ export function activate(context: vscode.ExtensionContext): void {
         async () => {
           await alignAmount(() => lspManager.getLanguageClient());
         },
+      ),
+    );
+
+    context.subscriptions.push(
+      vscode.commands.registerCommand(
+        "hledger.editor.enterAndSuggest",
+        enterAndSuggest,
       ),
     );
 
