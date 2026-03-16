@@ -1,5 +1,23 @@
 # Change Log
 
+## [0.5.12] - 2026-03-16
+
+### Added
+- chore: add dependabot.yml to ignore yauzl v3
+
+### Fixed
+- fix(editor): trigger inline completion after Enter
+
+### Other
+- chore(deps-dev): bump eslint from 9.39.1 to 10.0.3
+- chore(deps-dev): bump @typescript-eslint/* to 8.57.0
+- chore(deps-dev): bump @types/node from 18.19.130 to 25.5.0
+- chore(deps-dev): bump esbuild from 0.27.0 to 0.27.4
+- chore(deps-dev): bump ovsx from 0.8.4 to 0.10.9
+- chore(deps-dev): bump ts-jest from 29.4.5 to 29.4.6
+- chore(deps): bump undici from 7.16.0 to 7.24.1
+
+
 ## [0.5.11] - 2026-03-13
 
 ### Fixed
