@@ -1,5 +1,20 @@
 # Change Log
 
+## [0.5.13] - 2026-03-24
+
+### Fixed
+- fix(inline): respect hledger.features.inlineCompletion setting (#108)
+
+### Other
+- chore(deps-dev): bump flatted from 3.3.3 to 3.4.2
+- chore(deps-dev): bump @typescript-eslint/eslint-plugin
+- chore: bump engines.vscode to ^1.110.0
+- chore(deps-dev): bump @types/vscode from 1.106.0 to 1.110.0
+- chore(deps-dev): bump typescript from 4.9.5 to 5.9.3
+- chore(deps-dev): bump @typescript-eslint/parser from 8.57.0 to 8.57.1
+- chore(deps-dev): bump rimraf from 6.1.0 to 6.1.3
+
+
 ## [0.5.12] - 2026-03-16
 
 ### Added
