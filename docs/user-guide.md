@@ -254,8 +254,7 @@ Shows complete posting structure as ghost text:
 
 | Setting | Description | Default |
 |---------|-------------|---------|
-| `hledger.inlineCompletion.enabled` | Enable/disable inline completions | `true` |
-| `hledger.inlineCompletion.minPayeeChars` | Minimum characters before showing | `2` |
+| `hledger.features.inlineCompletion` | Enable/disable inline completions | `true` |
 
 ### LSP Dependency
 
@@ -965,8 +964,7 @@ Auto-download supports:
 
 | Setting | Type | Default | Description |
 |---------|------|---------|-------------|
-| `hledger.inlineCompletion.enabled` | boolean | `true` | Enable ghost text completions |
-| `hledger.inlineCompletion.minPayeeChars` | number | `2` | Minimum chars before showing (1-10) |
+| `hledger.features.inlineCompletion` | boolean | `true` | Enable ghost text completions |
 
 ### CLI Integration Settings
 

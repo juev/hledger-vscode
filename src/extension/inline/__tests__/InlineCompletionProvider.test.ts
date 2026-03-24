@@ -39,6 +39,51 @@ describe("InlineCompletionProvider", () => {
   });
 
   describe("provideInlineCompletionItems", () => {
+    it("returns undefined when inlineCompletion feature is disabled", async () => {
+      (vscode.workspace.getConfiguration as jest.Mock).mockReturnValue({
+        get: jest.fn((key: string) => {
+          if (key === "features.inlineCompletion") return false;
+          return undefined;
+        }),
+      });
+
+      const provider = new InlineCompletionProvider(() => mockClient);
+
+      const result = await provider.provideInlineCompletionItems(
+        createMockDocument(),
+        createMockPosition(),
+        createMockContext(),
+        createMockToken(),
+      );
+
+      expect(result).toBeUndefined();
+      expect(mockClient.sendRequest).not.toHaveBeenCalled();
+    });
+
+    it("sends request when inlineCompletion feature is enabled", async () => {
+      (vscode.workspace.getConfiguration as jest.Mock).mockReturnValue({
+        get: jest.fn((key: string) => {
+          if (key === "features.inlineCompletion") return true;
+          return undefined;
+        }),
+      });
+
+      mockClient.sendRequest.mockResolvedValue({
+        items: [{ insertText: "    Expenses:Food  $10.00" }],
+      });
+      const provider = new InlineCompletionProvider(() => mockClient);
+
+      const result = await provider.provideInlineCompletionItems(
+        createMockDocument(),
+        createMockPosition(),
+        createMockContext(),
+        createMockToken(),
+      );
+
+      expect(result).toHaveLength(1);
+      expect(mockClient.sendRequest).toHaveBeenCalled();
+    });
+
     it("returns undefined when client is null", async () => {
       const provider = new InlineCompletionProvider(() => null);
 

@@ -220,8 +220,7 @@ Import bank statements and transaction data from CSV/TSV files.
   "hledger.autoCompletion.transactionTemplates.enabled": true,  // Suggest full transactions based on history
 
   // Inline completions (ghost text)
-  "hledger.inlineCompletion.enabled": true,
-  "hledger.inlineCompletion.minPayeeChars": 2,  // Min chars before showing suggestions
+  "hledger.features.inlineCompletion": true,
 
   // Formatting
   "editor.formatOnType": true,   // Enable on-type formatting (Enter/Tab via LSP)

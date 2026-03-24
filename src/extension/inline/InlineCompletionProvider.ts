@@ -97,6 +97,11 @@ export class InlineCompletionProvider
     context: vscode.InlineCompletionContext,
     token: vscode.CancellationToken,
   ): Promise<vscode.InlineCompletionItem[] | undefined> {
+    const config = vscode.workspace.getConfiguration("hledger");
+    if (!config.get<boolean>("features.inlineCompletion", true)) {
+      return undefined;
+    }
+
     const client = this.getClient();
     if (!client) {
       return undefined;

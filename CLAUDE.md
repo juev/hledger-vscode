@@ -112,7 +112,7 @@ The extension's `InlineCompletionProvider` handles ghost text completions for tr
 
 **Trigger rules** (`InlineCompletionProvider.ts`):
 
-- Minimum 2 characters before showing payee ghost text (`minPayeeChars` setting)
+- Controlled by `hledger.features.inlineCompletion` setting (default: `true`)
 - Template ghost text uses `SnippetString` for tabstops, not plain text
 
 ### Key Directories

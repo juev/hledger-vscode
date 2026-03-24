@@ -90,9 +90,8 @@ Quick Navigation:
 
 **Solutions:**
 
-1. Check setting: `hledger.inlineCompletion.enabled` should be `true`
-2. Type at least 2 characters (configurable via `hledger.inlineCompletion.minPayeeChars`)
-3. Ensure payee exists in journal history (inline completions learn from existing transactions)
+1. Check setting: `hledger.features.inlineCompletion` should be `true`
+2. Ensure payee exists in journal history (inline completions learn from existing transactions)
 4. Check cursor position: Must be on new line after date, not inside existing transaction
 5. Ensure not in snippet mode: Ghost text disabled during snippet editing (Tab navigation)
 6. **Ensure Language Server is running:** Inline completions require hledger-lsp. Check with `Ctrl+Shift+P` → "HLedger: Show Language Server Version"

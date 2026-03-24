@@ -42,7 +42,6 @@ export interface VSCodeSettings {
   };
   inlineCompletion?: {
     enabled?: boolean;
-    minPayeeChars?: number;
   };
   cli?: {
     path?: string;
