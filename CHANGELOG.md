@@ -1,5 +1,20 @@
 # Change Log
 
+## [0.5.14] - 2026-03-26
+
+### Fixed
+- fix: update snapshot header for Jest 30 compatibility
+
+### Other
+- chore(deps-dev): bump picomatch from 2.3.1 to 2.3.2
+- chore(deps-dev): bump @typescript-eslint/eslint-plugin
+- chore: ignore TypeScript >=6.0.0 in dependabot
+- chore(deps-dev): bump jest and @types/jest
+- chore(deps-dev): bump @vscode/vsce from 2.32.0 to 3.7.1
+- chore(deps-dev): bump eslint from 10.0.3 to 10.1.0
+- chore(deps-dev): bump @typescript-eslint/parser from 8.57.1 to 8.57.2
+
+
 ## [0.5.13] - 2026-03-24
 
 ### Fixed
