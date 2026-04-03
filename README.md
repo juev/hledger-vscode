@@ -36,7 +36,7 @@ Transform your plain text accounting experience with powerful IDE capabilities:
 
 ### ⚡ **Automatic Formatting**
 
-- **Smart alignment** for amounts and comments
+- **Smart alignment** for amounts and comments (right-edge or decimal/mantissa alignment)
 - **Format on save** - keep your journals tidy automatically
 - **Multi-currency support** with international number formats
 - **Commodity-aware formatting** - amounts formatted according to `commodity` directives
@@ -237,7 +237,9 @@ Import bank statements and transaction data from CSV/TSV files.
   "hledger.diagnostics.enabled": true,  // Disable to turn off validation warnings
 
   // Formatting
-  "hledger.formatting.amountAlignmentColumn": 40  // Column for amount alignment (20-120)
+  "hledger.formatting.amountAlignmentColumn": 40,  // Column for amount alignment (20-120)
+  "hledger.formatting.alignAmounts": true,  // Align amounts in postings
+  "hledger.formatting.amountAlignmentMode": "right"  // "right" (right edge) or "decimal" (mantissa)
 }
 ```
 
