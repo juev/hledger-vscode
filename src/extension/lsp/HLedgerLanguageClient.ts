@@ -119,6 +119,7 @@ function getVSCodeSettings(): VSCodeSettings {
       amountAlignmentColumn: config.get<number>("formatting.amountAlignmentColumn"),
       indentSize: config.get<number>("formatting.indentSize"),
       alignAmounts: config.get<boolean>("formatting.alignAmounts"),
+      amountAlignmentMode: config.get<string>("formatting.amountAlignmentMode"),
     },
     cli: {
       enabled: config.get<boolean>("cli.enabled"),

@@ -295,6 +295,15 @@
           "default": true,
           "description": "Align amounts in postings"
         },
+        "hledger.formatting.amountAlignmentMode": {
+          "type": "string",
+          "enum": [
+            "right",
+            "decimal"
+          ],
+          "default": "right",
+          "description": "Amount alignment mode. 'right' aligns amounts by their right edge (default). 'decimal' aligns amounts by the decimal point (mantissa alignment)."
+        },
         "hledger.cli.enabled": {
           "type": "boolean",
           "default": true,

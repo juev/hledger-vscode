@@ -39,6 +39,7 @@ export interface VSCodeSettings {
     amountAlignmentColumn?: number;
     indentSize?: number;
     alignAmounts?: boolean;
+    amountAlignmentMode?: "right" | "decimal";
   };
   inlineCompletion?: {
     enabled?: boolean;
@@ -93,6 +94,7 @@ export interface LSPSettings {
     amountAlignmentColumn: number;
     indentSize: number;
     alignAmounts: boolean;
+    amountAlignmentMode: "right" | "decimal";
   };
   cli: {
     enabled: boolean;
@@ -135,6 +137,7 @@ const DEFAULT_SETTINGS: LSPSettings = {
     amountAlignmentColumn: 40,
     indentSize: 4,
     alignAmounts: true,
+    amountAlignmentMode: "right",
   },
   cli: {
     enabled: true,
@@ -161,6 +164,15 @@ function validateNumber(
     return defaultValue;
   }
   return clamp(value, min, max);
+}
+
+const VALID_ALIGNMENT_MODES: ReadonlyArray<"right" | "decimal"> = ["right", "decimal"];
+
+function validateAlignmentMode(value: unknown): "right" | "decimal" {
+  if (typeof value === "string" && VALID_ALIGNMENT_MODES.includes(value as "right" | "decimal")) {
+    return value as "right" | "decimal";
+  }
+  return DEFAULT_SETTINGS.formatting.amountAlignmentMode;
 }
 
 export function mapVSCodeSettingsToLSP(settings: VSCodeSettings): LSPSettings {
@@ -229,6 +241,7 @@ export function mapVSCodeSettingsToLSP(settings: VSCodeSettings): LSPSettings {
         8
       ),
       alignAmounts: settings.formatting?.alignAmounts ?? DEFAULT_SETTINGS.formatting.alignAmounts,
+      amountAlignmentMode: validateAlignmentMode(settings.formatting?.amountAlignmentMode),
     },
     cli: {
       enabled: settings.cli?.enabled ?? DEFAULT_SETTINGS.cli.enabled,

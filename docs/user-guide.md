@@ -318,7 +318,7 @@ Add to your `settings.json`:
 
 | Element | Formatting Applied |
 |---------|-------------------|
-| Amounts | Right-aligned at consistent column |
+| Amounts | Aligned at consistent column (right-edge or decimal point) |
 | Comments | Right-aligned |
 | Posting indentation | Normalized to 4 spaces |
 | Account-amount spacing | Standardized using 2+ spaces |
@@ -986,8 +986,13 @@ Auto-download supports:
 | Setting | Type | Default | Description |
 |---------|------|---------|-------------|
 | `hledger.formatting.amountAlignmentColumn` | number | `40` | Minimum column for amount alignment (20-120) |
+| `hledger.formatting.amountAlignmentMode` | string | `"right"` | Alignment mode: `"right"` (right edge) or `"decimal"` (decimal point) |
 
 **Note:** The `amountAlignmentColumn` setting specifies the minimum column position. Amounts are aligned at least at this column, but may shift further right when account names are long enough to require additional space.
+
+The `amountAlignmentMode` setting controls how amounts are aligned within that column:
+- `"right"` (default) — amounts align by their right edge
+- `"decimal"` — amounts align by the decimal point (mantissa alignment, matching `hledger print` default)
 
 ### Import Settings
 
@@ -1048,6 +1053,7 @@ Auto-download supports:
 |---------|------|---------|-------------|
 | `hledger.formatting.indentSize` | number | `4` | Posting indentation (2-8 spaces) |
 | `hledger.formatting.alignAmounts` | boolean | `true` | Align amounts in postings |
+| `hledger.formatting.amountAlignmentMode` | string | `"right"` | `"right"` (right edge) or `"decimal"` (decimal point) |
 
 ### CLI Settings (Extended)
 

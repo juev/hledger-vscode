@@ -38,6 +38,7 @@ describe("mapVSCodeSettingsToLSP", () => {
           amountAlignmentColumn: 40,
           indentSize: 4,
           alignAmounts: true,
+          amountAlignmentMode: "right",
         },
         cli: {
           enabled: true,
@@ -255,6 +256,36 @@ describe("mapVSCodeSettingsToLSP", () => {
 
       expect(result.formatting.indentSize).toBe(2);
       expect(result.formatting.alignAmounts).toBe(false);
+    });
+
+    it("defaults amountAlignmentMode to 'right'", () => {
+      const result = mapVSCodeSettingsToLSP({});
+
+      expect(result.formatting.amountAlignmentMode).toBe("right");
+    });
+
+    it("maps amountAlignmentMode 'decimal'", () => {
+      const settings: VSCodeSettings = {
+        formatting: {
+          amountAlignmentMode: "decimal",
+        },
+      };
+
+      const result = mapVSCodeSettingsToLSP(settings);
+
+      expect(result.formatting.amountAlignmentMode).toBe("decimal");
+    });
+
+    it("falls back to default for invalid amountAlignmentMode", () => {
+      const settings: VSCodeSettings = {
+        formatting: {
+          amountAlignmentMode: "invalid" as "right" | "decimal",
+        },
+      };
+
+      const result = mapVSCodeSettingsToLSP(settings);
+
+      expect(result.formatting.amountAlignmentMode).toBe("right");
     });
 
   });
