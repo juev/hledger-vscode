@@ -1,5 +1,20 @@
 # Change Log
 
+## [0.5.15] - 2026-04-03
+
+### Added
+- feat(formatting): add amount alignment mode setting
+
+### Other
+- docs(readme): clarify amount alignment modes and formatting options
+- chore(deps): bump lodash from 4.17.23 to 4.18.1
+- chore(deps-dev): bump @typescript-eslint/eslint-plugin
+- chore(deps-dev): bump ovsx from 0.10.9 to 0.10.10
+- chore(deps-dev): bump @typescript-eslint/parser from 8.57.2 to 8.58.0
+- chore(deps-dev): bump brace-expansion from 1.1.12 to 1.1.13
+- chore(deps-dev): bump handlebars from 4.7.8 to 4.7.9
+
+
 ## [0.5.14] - 2026-03-26
 
 ### Fixed
