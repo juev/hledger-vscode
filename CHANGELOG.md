@@ -1,5 +1,11 @@
 # Change Log
 
+## [0.5.16] - 2026-04-06
+
+### Added
+- feat(editor): add transaction and posting status toggle commands
+
+
 ## [0.5.15] - 2026-04-03
 
 ### Added
