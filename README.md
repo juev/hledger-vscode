@@ -53,6 +53,7 @@ Transform your plain text accounting experience with powerful IDE capabilities:
 ### 🔧 **Smart Editing**
 
 - **On-type formatting** via LSP - auto-indent and amount alignment as you type
+- **Transaction status toggle** - cycle through unmarked/pending/cleared with keyboard shortcuts
 - **Multi-language** Unicode support (Cyrillic, Asian languages, etc.)
 
 ### 🧭 **Code Navigation**

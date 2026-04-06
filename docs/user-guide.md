@@ -625,6 +625,65 @@ If diagnostics are not needed:
 
 ---
 
+## Transaction Status Toggle
+
+Toggle transaction and posting status markers (`!` pending, `*` cleared) using keyboard shortcuts.
+
+### How It Works
+
+- **Cursor on transaction header** (line starting with date): toggles the transaction status
+- **Cursor on posting line** (indented line): toggles the posting status
+
+### Status Cycle
+
+Pressing the cycle shortcut rotates through: **unmarked** → `!` (pending) → `*` (cleared) → **unmarked**
+
+### Examples
+
+```hledger
+; Before: cursor on transaction header, press Cmd+K S
+2024-01-15 Grocery Store
+    expenses:food    $50.00
+    assets:checking
+
+; After: status set to pending
+2024-01-15 ! Grocery Store
+    expenses:food    $50.00
+    assets:checking
+
+; Press Cmd+K S again: status set to cleared
+2024-01-15 * Grocery Store
+    expenses:food    $50.00
+    assets:checking
+
+; Press Cmd+K S again: status removed
+2024-01-15 Grocery Store
+    expenses:food    $50.00
+    assets:checking
+```
+
+Individual posting status:
+
+```hledger
+; Cursor on posting line, press Cmd+K 2 to set cleared
+2024-01-15 Transaction
+    * assets:checking    $-100
+    expenses:food         $100
+```
+
+### Keyboard Shortcuts
+
+| Shortcut | Action |
+|----------|--------|
+| `Cmd+K S` / `Ctrl+K S` | Cycle status (unmarked → ! → * → unmarked) |
+| `Cmd+K 0` / `Ctrl+K 0` | Set to unmarked (remove status) |
+| `Cmd+K 1` / `Ctrl+K 1` | Set to pending (`!`) |
+| `Cmd+K 2` / `Ctrl+K 2` | Set to cleared (`*`) |
+
+All shortcuts can be customized via VS Code Keyboard Shortcuts (`Cmd+K Cmd+S`).
+
+---
+
 ## CLI Integration
 
 Run hledger commands directly from VS Code and insert results into your journal.
@@ -1086,6 +1145,10 @@ All commands accessible via Command Palette (`Ctrl+Shift+P` or `Cmd+Shift+P`):
 | `hledger.lsp.showVersion` | HLedger: Show Language Server Version | Show LSP version info |
 | `hledger.lsp.restart` | HLedger: Restart Language Server | Restart the LSP server |
 | `hledger.editor.alignAmount` | HLedger: Align Amount to Column | Align amount at cursor via LSP |
+| `hledger.editor.cycleStatus` | HLedger: Cycle Transaction/Posting Status | Cycle status: unmarked → ! → * → unmarked |
+| `hledger.editor.setStatusUnmarked` | HLedger: Set Status to Unmarked | Remove status marker |
+| `hledger.editor.setStatusPending` | HLedger: Set Status to Pending (!) | Set pending status |
+| `hledger.editor.setStatusCleared` | HLedger: Set Status to Cleared (*) | Set cleared status |
 | `hledger.getStarted` | HLedger: Get Started | Open the Get Started walkthrough |
 
 ---
@@ -1099,6 +1162,10 @@ All commands accessible via Command Palette (`Ctrl+Shift+P` or `Cmd+Shift+P`):
 | `Enter` | Accept completion | When completion widget is visible |
 | `Enter` | Accept inline suggestion | When ghost text is visible |
 | `Tab` | Align amount to column | When no suggestions/snippets active |
+| `Cmd+K S` / `Ctrl+K S` | Cycle transaction/posting status | In hledger files |
+| `Cmd+K 0` / `Ctrl+K 0` | Set status to unmarked | In hledger files |
+| `Cmd+K 1` / `Ctrl+K 1` | Set status to pending (!) | In hledger files |
+| `Cmd+K 2` / `Ctrl+K 2` | Set status to cleared (*) | In hledger files |
 | `Ctrl+Space` | Manual completion trigger | Always |
 
 **On-type formatting** (Enter/Tab) is handled by the Language Server when `editor.formatOnType` is enabled.

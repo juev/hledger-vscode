@@ -109,6 +109,18 @@ describe("activate", () => {
     expect(getRegisteredCommandNames()).toContain("hledger.getStarted");
   });
 
+  it("should register status toggle commands", () => {
+    const context =
+      createMockExtensionContext() as unknown as vscode.ExtensionContext;
+    activate(context);
+
+    const registeredCommands = getRegisteredCommandNames();
+    expect(registeredCommands).toContain("hledger.editor.cycleStatus");
+    expect(registeredCommands).toContain("hledger.editor.setStatusUnmarked");
+    expect(registeredCommands).toContain("hledger.editor.setStatusPending");
+    expect(registeredCommands).toContain("hledger.editor.setStatusCleared");
+  });
+
   it("should open walkthrough when hledger.getStarted is executed", () => {
     const context =
       createMockExtensionContext() as unknown as vscode.ExtensionContext;

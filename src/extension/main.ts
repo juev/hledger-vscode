@@ -7,6 +7,7 @@ import { HLedgerImportCommands } from "./HLedgerImportCommands";
 import { LSPManager, StartupChecker } from "./lsp";
 import { alignAmount } from "./commands/alignAmount";
 import { enterAndSuggest } from "./commands/enterAndSuggest";
+import { cycleStatus, setStatus } from "./commands/toggleStatus";
 import { InlineCompletionProvider } from "./inline/InlineCompletionProvider";
 import { Logger } from "./Logger";
 import { LSPStatusBar } from "./lsp/LSPStatusBar";
@@ -225,6 +226,35 @@ export function activate(context: vscode.ExtensionContext): void {
       vscode.commands.registerCommand(
         "hledger.editor.enterAndSuggest",
         enterAndSuggest,
+      ),
+    );
+
+    // Register status toggle commands
+    context.subscriptions.push(
+      vscode.commands.registerCommand(
+        "hledger.editor.cycleStatus",
+        cycleStatus,
+      ),
+    );
+
+    context.subscriptions.push(
+      vscode.commands.registerCommand(
+        "hledger.editor.setStatusUnmarked",
+        async () => { await setStatus(""); },
+      ),
+    );
+
+    context.subscriptions.push(
+      vscode.commands.registerCommand(
+        "hledger.editor.setStatusPending",
+        async () => { await setStatus("!"); },
+      ),
+    );
+
+    context.subscriptions.push(
+      vscode.commands.registerCommand(
+        "hledger.editor.setStatusCleared",
+        async () => { await setStatus("*"); },
       ),
     );
 

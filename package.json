@@ -444,6 +444,30 @@
         "command": "hledger.getStarted",
         "title": "HLedger: Get Started",
         "category": "HLedger"
+      },
+      {
+        "command": "hledger.editor.cycleStatus",
+        "title": "HLedger: Cycle Transaction/Posting Status",
+        "category": "HLedger",
+        "when": "editorTextFocus && editorLangId == hledger"
+      },
+      {
+        "command": "hledger.editor.setStatusUnmarked",
+        "title": "HLedger: Set Status to Unmarked",
+        "category": "HLedger",
+        "when": "editorTextFocus && editorLangId == hledger"
+      },
+      {
+        "command": "hledger.editor.setStatusPending",
+        "title": "HLedger: Set Status to Pending (!)",
+        "category": "HLedger",
+        "when": "editorTextFocus && editorLangId == hledger"
+      },
+      {
+        "command": "hledger.editor.setStatusCleared",
+        "title": "HLedger: Set Status to Cleared (*)",
+        "category": "HLedger",
+        "when": "editorTextFocus && editorLangId == hledger"
       }
     ],
     "keybindings": [
@@ -466,6 +490,38 @@
         "command": "hledger.editor.alignAmount",
         "key": "tab",
         "when": "editorTextFocus && editorLangId == hledger && !suggestWidgetVisible && !inlineSuggestionVisible && !inSnippetMode && !hasSnippetCompletions"
+      },
+      {
+        "command": "hledger.editor.cycleStatus",
+        "key": "cmd+k s",
+        "mac": "cmd+k s",
+        "win": "ctrl+k s",
+        "linux": "ctrl+k s",
+        "when": "editorTextFocus && editorLangId == hledger"
+      },
+      {
+        "command": "hledger.editor.setStatusUnmarked",
+        "key": "cmd+k 0",
+        "mac": "cmd+k 0",
+        "win": "ctrl+k 0",
+        "linux": "ctrl+k 0",
+        "when": "editorTextFocus && editorLangId == hledger"
+      },
+      {
+        "command": "hledger.editor.setStatusPending",
+        "key": "cmd+k 1",
+        "mac": "cmd+k 1",
+        "win": "ctrl+k 1",
+        "linux": "ctrl+k 1",
+        "when": "editorTextFocus && editorLangId == hledger"
+      },
+      {
+        "command": "hledger.editor.setStatusCleared",
+        "key": "cmd+k 2",
+        "mac": "cmd+k 2",
+        "win": "ctrl+k 2",
+        "linux": "ctrl+k 2",
+        "when": "editorTextFocus && editorLangId == hledger"
       }
     ],
     "configurationDefaults": {
@@ -594,6 +650,7 @@
     "publish:ovsx": "ovsx publish"
   },
   "devDependencies": {
+    "@eslint/js": "^10.0.1",
     "@types/jest": "^30.0.0",
     "@types/node": "25.x",
     "@types/vscode": "^1.110.0",
