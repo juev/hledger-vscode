@@ -119,7 +119,7 @@ export function buildStatusEdit(
 
 export async function cycleStatus(): Promise<void> {
   const editor = vscode.window.activeTextEditor;
-  if (!editor || editor.document.languageId !== "hledger") return;
+  if (editor?.document.languageId !== "hledger") return;
 
   const line = editor.selection.active.line;
   const lineText = editor.document.lineAt(line).text;
@@ -139,7 +139,7 @@ export async function setStatus(
   status: TransactionStatus,
 ): Promise<void> {
   const editor = vscode.window.activeTextEditor;
-  if (!editor || editor.document.languageId !== "hledger") return;
+  if (editor?.document.languageId !== "hledger") return;
 
   const line = editor.selection.active.line;
   const lineText = editor.document.lineAt(line).text;

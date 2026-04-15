@@ -236,7 +236,7 @@ export class HLedgerLanguageClient implements vscode.Disposable {
     }
 
     const timeout = 5000;
-    let timeoutId: NodeJS.Timeout | undefined;
+    let timeoutId: ReturnType<typeof setTimeout> | undefined;
     const timeoutPromise = new Promise<null>((resolve) => {
       timeoutId = setTimeout(() => resolve(null), timeout);
     });

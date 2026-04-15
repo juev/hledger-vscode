@@ -452,7 +452,7 @@ export class ColumnDetector {
 
         for (const [key, patterns] of Object.entries(custom)) {
             if (patterns) {
-                result[key] = [...(result[key] || []), ...patterns];
+                result[key] = [...(result[key] ?? []), ...patterns];
             }
         }
 

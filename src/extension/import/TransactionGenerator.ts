@@ -13,7 +13,6 @@ import {
     ImportStatistics,
     ImportWarning,
     ImportError,
-    AccountResolution,
     AccountResolutionSource,
     PayeeAccountHistory,
     DEFAULT_IMPORT_OPTIONS,
@@ -168,7 +167,7 @@ export class TransactionGenerator {
 
         // Resolve account
         const accountResolution = this.accountResolver.resolve(
-            description || 'Unknown',
+            description ?? 'Unknown',
             category,
             amountResult.amount
         );
@@ -180,7 +179,7 @@ export class TransactionGenerator {
         // Create transaction - only include optional properties when they have values
         const transaction: ImportedTransaction = {
             date: dateResult.value,
-            description: description || 'Unknown transaction',
+            description: description ?? 'Unknown transaction',
             amount: amountResult.amount,
             amountFormatted: this.formatAmount(amountResult.amount, currency),
             sourceAccount: accountResolution,
@@ -602,7 +601,7 @@ export class TransactionGenerator {
         const timestamp = new Date().toISOString().split('T')[0];
 
         // Header comment
-        lines.push(`; Imported from ${sourceName || 'CSV'} on ${timestamp}`);
+        lines.push(`; Imported from ${sourceName ?? 'CSV'} on ${timestamp}`);
         lines.push(
             `; Rows: ${result.statistics.processedRows} processed, ${result.statistics.skippedRows} skipped`
         );

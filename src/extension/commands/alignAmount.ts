@@ -60,7 +60,7 @@ export async function alignAmount(
   timeoutMs = DEFAULT_TIMEOUT_MS,
 ): Promise<void> {
   const editor = vscode.window.activeTextEditor;
-  if (!editor || editor.document.languageId !== "hledger") {
+  if (editor?.document.languageId !== "hledger") {
     await fallbackTab();
     return;
   }

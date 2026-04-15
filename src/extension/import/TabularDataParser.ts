@@ -91,32 +91,25 @@ export class TabularDataParser {
         }
 
         // Extract headers and rows
-        let headers: string[] = [];
-        let dataRows: ParsedRow[] = [];
-
-        if (this.options.hasHeader && parsedLinesWithNumbers.length > 0) {
-            const firstEntry = parsedLinesWithNumbers[0];
-            if (firstEntry === undefined) {
-                return failure('No header line found');
-            }
-            headers = this.options.trimCells
-                ? firstEntry.cells.map((h) => h.trim())
-                : firstEntry.cells;
-
-            dataRows = parsedLinesWithNumbers.slice(1).map((entry) => ({
-                cells: this.options.trimCells ? entry.cells.map((c) => c.trim()) : entry.cells,
-                lineNumber: entry.originalLineNumber,
-            }));
-        } else {
-            // Generate column headers
-            const maxColumns = Math.max(...parsedLinesWithNumbers.map((e) => e.cells.length));
-            headers = Array.from({ length: maxColumns }, (_, i) => `Column${i + 1}`);
-
-            dataRows = parsedLinesWithNumbers.map((entry) => ({
-                cells: this.options.trimCells ? entry.cells.map((c) => c.trim()) : entry.cells,
-                lineNumber: entry.originalLineNumber,
-            }));
+        const firstEntry = parsedLinesWithNumbers[0];
+        if (this.options.hasHeader && firstEntry === undefined) {
+            return failure('No header line found');
         }
+
+        const headers = this.options.hasHeader && firstEntry !== undefined
+            ? this.options.trimCells
+                ? firstEntry.cells.map((h) => h.trim())
+                : firstEntry.cells
+            : Array.from(
+                { length: Math.max(...parsedLinesWithNumbers.map((entry) => entry.cells.length)) },
+                (_, i) => `Column${i + 1}`
+            );
+
+        const dataRows = (this.options.hasHeader ? parsedLinesWithNumbers.slice(1) : parsedLinesWithNumbers)
+            .map((entry) => ({
+                cells: this.options.trimCells ? entry.cells.map((c) => c.trim()) : entry.cells,
+                lineNumber: entry.originalLineNumber,
+            }));
 
         return success({
             headers,

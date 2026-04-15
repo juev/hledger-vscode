@@ -7,6 +7,21 @@ import { promisify } from 'util';
 const exec = promisify(child_process.exec);
 const execFile = promisify(child_process.execFile);
 
+interface ExecFailure {
+    readonly stderr?: string | Buffer;
+    readonly message?: string;
+}
+
+function isExecFailure(error: unknown): error is ExecFailure {
+    return typeof error === 'object' && error !== null;
+}
+
+function createErrorWithCause(message: string, cause: unknown): Error {
+    const error = new Error(message) as Error & { cause?: unknown };
+    error.cause = cause;
+    return error;
+}
+
 export class HLedgerCliService implements vscode.Disposable {
     private hledgerPath: string | null = null;
     private initializationPromise: Promise<void> | null = null;
@@ -43,7 +58,7 @@ export class HLedgerCliService implements vscode.Disposable {
         }
 
         const version = ++this.initializationVersion;
-        const promise = (async () => {
+        const promise: Promise<void> = (async (): Promise<void> => {
             try {
                 const resolvedPath = await this.resolveHledgerPath();
                 if (this.initializationVersion === version) {
@@ -84,7 +99,7 @@ export class HLedgerCliService implements vscode.Disposable {
             }
 
             return null;
-        } catch (error) {
+        } catch {
             // hledger not found in PATH
             return null;
         }
@@ -137,11 +152,12 @@ export class HLedgerCliService implements vscode.Disposable {
             }
 
             return stdout;
-        } catch (error: any) {
-            if (error.stderr) {
-                throw new Error(`hledger command failed: ${error.stderr}`);
+        } catch (error: unknown) {
+            if (isExecFailure(error) && error.stderr) {
+                throw createErrorWithCause(`hledger command failed: ${error.stderr}`, error);
             }
-            throw new Error(`Failed to execute hledger command: ${error.message}`);
+            const message = error instanceof Error ? error.message : String(error);
+            throw createErrorWithCause(`Failed to execute hledger command: ${message}`, error);
         }
     }
 

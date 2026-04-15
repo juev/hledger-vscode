@@ -45,6 +45,12 @@ class NonRetryableError extends Error {
   }
 }
 
+function createErrorWithCause(message: string, cause: unknown): Error {
+  const error = new Error(message) as Error & { cause?: unknown };
+  error.cause = cause;
+  return error;
+}
+
 function isValidGitHubRelease(data: unknown): data is GitHubReleaseResponse {
   if (typeof data !== "object" || data === null) {
     return false;
@@ -135,7 +141,7 @@ export class BinaryManager {
       return response;
     } catch (error: unknown) {
       if (error instanceof Error && error.name === "AbortError") {
-        throw new Error(`Request timed out after ${timeoutMs}ms: ${url}`);
+        throw createErrorWithCause(`Request timed out after ${timeoutMs}ms: ${url}`, error);
       }
       throw error;
     } finally {
@@ -380,7 +386,7 @@ export class BinaryManager {
     // Restrict filename pattern to expected format for security
     for (const line of text.split("\n")) {
       const match = /^([a-f0-9]{64})\s{2}(hledger-lsp_[a-z0-9_]+(?:\.exe)?)$/.exec(line.trim());
-      if (match && match[1] && match[2]) {
+      if (match?.[1] && match[2]) {
         checksums.set(match[2], match[1]);
       }
     }

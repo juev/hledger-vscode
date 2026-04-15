@@ -1,6 +1,5 @@
 import * as os from 'os';
 
-// eslint-disable-next-line no-undef
 const EXTENSION_VERSION = require('../../package.json').version as string;
 
 export function getErrorContext(): string {

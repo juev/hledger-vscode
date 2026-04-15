@@ -30,6 +30,9 @@ jobs:
     
     - name: Compile TypeScript
       run: npm run compile
+
+    - name: Run lint
+      run: npm run lint
     
     - name: Run tests
       run: npm test
