@@ -7,7 +7,8 @@ on:
     branches: [ "**" ]
 
 jobs:
-  test:
+  ci:
+    name: Build, Lint, Test, Package (Node ${{ matrix.node-version }})
     runs-on: ubuntu-latest
     
     strategy:
@@ -16,10 +17,10 @@ jobs:
     
     steps:
     - name: Checkout
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
     
     - name: Use Node.js ${{ matrix.node-version }}
-      uses: actions/setup-node@v4
+      uses: actions/setup-node@v5
       with:
         node-version: ${{ matrix.node-version }}
     
@@ -42,7 +43,7 @@ jobs:
       run: npx vsce package
     
     - name: Upload VSIX artifact
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v6
       with:
         name: extension-${{ matrix.node-version }}
         path: "*.vsix"
