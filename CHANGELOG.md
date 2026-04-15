@@ -1,5 +1,25 @@
 # Change Log
 
+## [0.5.17] - 2026-04-15
+
+### Added
+- ci(testing): add lint to CI and stabilize jest runtime
+
+### Changed
+- ci(actions): update workflows for node 24 compatible actions
+
+### Other
+- chore(deps-dev): bump follow-redirects from 1.15.11 to 1.16.0 (#135)
+- chore(deps-dev): bump @vscode/vsce from 3.7.1 to 3.8.0 (#132)
+- chore(deps-dev): bump ovsx from 0.10.10 to 0.10.11 (#133)
+- chore(deps-dev): bump @types/node from 25.5.2 to 25.6.0 (#134)
+- chore(deps-dev): bump @typescript-eslint/eslint-plugin (#131)
+- chore(deps-dev): bump esbuild from 0.27.4 to 0.28.0 (#127)
+- chore(deps-dev): bump eslint from 10.1.0 to 10.2.0 (#126)
+- chore(deps-dev): bump @types/node from 25.5.0 to 25.5.2 (#128)
+- chore(deps-dev): bump ts-jest from 29.4.6 to 29.4.9 (#129)
+
+
 ## [0.5.16] - 2026-04-06
 
 ### Added
