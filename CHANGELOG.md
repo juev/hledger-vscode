@@ -1,5 +1,14 @@
 # Change Log
 
+## [0.5.18] - 2026-04-22
+
+### Other
+- chore(deps-dev): bump @typescript-eslint/parser from 8.58.2 to 8.59.0 (#140)
+- chore(deps-dev): bump @typescript-eslint/eslint-plugin (#137)
+- chore(deps-dev): bump @vscode/vsce from 3.8.0 to 3.9.1 (#141)
+- chore(deps-dev): bump eslint from 10.2.0 to 10.2.1 (#138)
+
+
 ## [0.5.17] - 2026-04-15
 
 ### Added
