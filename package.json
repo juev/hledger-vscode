@@ -654,7 +654,7 @@
     "@types/jest": "^30.0.0",
     "@types/node": "25.x",
     "@types/vscode": "^1.110.0",
-    "@typescript-eslint/eslint-plugin": "^8.58.2",
+    "@typescript-eslint/eslint-plugin": "^8.59.0",
     "@typescript-eslint/parser": "^8.59.0",
     "@vscode/test-electron": "^2.5.2",
     "@vscode/vsce": "^3.9.1",
