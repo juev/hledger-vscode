@@ -659,7 +659,7 @@
     "@vscode/test-electron": "^2.5.2",
     "@vscode/vsce": "^3.8.0",
     "esbuild": "^0.28.0",
-    "eslint": "^10.2.0",
+    "eslint": "^10.2.1",
     "jest": "^30.3.0",
     "ovsx": "^0.10.11",
     "rimraf": "^6.1.3",
