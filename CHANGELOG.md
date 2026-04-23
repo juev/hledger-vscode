@@ -1,5 +1,11 @@
 # Change Log
 
+## [0.5.19] - 2026-04-23
+
+### Fixed
+- fix(formatting): change amountAlignmentColumn default from 40 to 0
+
+
 ## [0.5.18] - 2026-04-22
 
 ### Other
