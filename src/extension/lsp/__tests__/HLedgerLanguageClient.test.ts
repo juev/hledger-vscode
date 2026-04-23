@@ -79,7 +79,7 @@ describe("createClientOptions", () => {
     expect(init.completion.maxResults).toBe(25);
     expect(init.completion.includeNotes).toBe(true);
     expect(init.diagnostics.balanceTolerance).toBe(1e-10);
-    expect(init.formatting.amountAlignmentColumn).toBe(40);
+    expect(init.formatting.amountAlignmentColumn).toBe(0);
     expect(init.cli.timeout).toBe(30000);
     expect(init.limits.maxFileSizeBytes).toBe(10485760);
   });

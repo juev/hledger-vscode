@@ -121,10 +121,10 @@
         },
         "hledger.formatting.amountAlignmentColumn": {
           "type": "number",
-          "default": 40,
-          "minimum": 20,
+          "default": 0,
+          "minimum": 0,
           "maximum": 120,
-          "description": "Minimum column position for amount alignment. Amounts align at least at this column, but may shift further right for long account names."
+          "description": "Minimum column position for amount alignment (0 = auto, preserves hand-formatted layout). When > 0, amounts align at least at this column; required for start-column alignment. Leave at 0 to let the LSP detect the alignment from the file's existing layout."
         },
         "hledger.autoCompletion.transactionTemplates.enabled": {
           "type": "boolean",

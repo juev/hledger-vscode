@@ -35,7 +35,7 @@ describe("mapVSCodeSettingsToLSP", () => {
           unbalancedTransactions: true,
         },
         formatting: {
-          amountAlignmentColumn: 40,
+          amountAlignmentColumn: 0,
           indentSize: 4,
           alignAmounts: true,
           amountAlignmentMode: "right",

@@ -238,7 +238,7 @@ Import bank statements and transaction data from CSV/TSV files.
   "hledger.diagnostics.enabled": true,  // Disable to turn off validation warnings
 
   // Formatting
-  "hledger.formatting.amountAlignmentColumn": 40,  // Column for amount alignment (20-120)
+  "hledger.formatting.amountAlignmentColumn": 0,  // Minimum alignment column (0 = auto, preserves hand-formatted layout)
   "hledger.formatting.alignAmounts": true,  // Align amounts in postings
   "hledger.formatting.amountAlignmentMode": "right"  // "right" (right edge) or "decimal" (mantissa)
 }
