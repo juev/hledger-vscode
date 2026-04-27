@@ -1,5 +1,14 @@
 # Change Log
 
+## [0.5.20] - 2026-04-27
+
+### Added
+- feat(formatting): add left amount alignment mode
+
+### Fixed
+- fix(dev): restore extension host launch
+
+
 ## [0.5.19] - 2026-04-23
 
 ### Fixed
