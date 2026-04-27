@@ -39,7 +39,7 @@ export interface VSCodeSettings {
     amountAlignmentColumn?: number;
     indentSize?: number;
     alignAmounts?: boolean;
-    amountAlignmentMode?: "right" | "decimal";
+    amountAlignmentMode?: "left" | "right" | "decimal";
   };
   inlineCompletion?: {
     enabled?: boolean;
@@ -94,7 +94,7 @@ export interface LSPSettings {
     amountAlignmentColumn: number;
     indentSize: number;
     alignAmounts: boolean;
-    amountAlignmentMode: "right" | "decimal";
+    amountAlignmentMode: "left" | "right" | "decimal";
   };
   cli: {
     enabled: boolean;
@@ -166,11 +166,13 @@ function validateNumber(
   return clamp(value, min, max);
 }
 
-const VALID_ALIGNMENT_MODES: ReadonlyArray<"right" | "decimal"> = ["right", "decimal"];
+type AmountAlignmentMode = "left" | "right" | "decimal";
 
-function validateAlignmentMode(value: unknown): "right" | "decimal" {
-  if (typeof value === "string" && VALID_ALIGNMENT_MODES.includes(value as "right" | "decimal")) {
-    return value as "right" | "decimal";
+const VALID_ALIGNMENT_MODES: ReadonlyArray<AmountAlignmentMode> = ["left", "right", "decimal"];
+
+function validateAlignmentMode(value: unknown): AmountAlignmentMode {
+  if (typeof value === "string" && VALID_ALIGNMENT_MODES.includes(value as AmountAlignmentMode)) {
+    return value as AmountAlignmentMode;
   }
   return DEFAULT_SETTINGS.formatting.amountAlignmentMode;
 }

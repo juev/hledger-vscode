@@ -124,7 +124,7 @@
           "default": 0,
           "minimum": 0,
           "maximum": 120,
-          "description": "Minimum column position for amount alignment (0 = auto, preserves hand-formatted layout). When > 0, amounts align at least at this column; required for start-column alignment. Leave at 0 to let the LSP detect the alignment from the file's existing layout."
+          "description": "Fixed mode-specific amount alignment target (0 = auto, preserves hand-formatted layout). In left mode this is the amount start column; in right mode this is the amount end column; in decimal mode this is the decimal-point column."
         },
         "hledger.autoCompletion.transactionTemplates.enabled": {
           "type": "boolean",
@@ -298,11 +298,12 @@
         "hledger.formatting.amountAlignmentMode": {
           "type": "string",
           "enum": [
+            "left",
             "right",
             "decimal"
           ],
           "default": "right",
-          "description": "Amount alignment mode. 'right' aligns amounts by their right edge (default). 'decimal' aligns amounts by the decimal point (mantissa alignment)."
+          "description": "Amount alignment mode. 'left' aligns amount starts. 'right' aligns amounts by their right edge (default). 'decimal' aligns amounts by the decimal point (mantissa alignment)."
         },
         "hledger.cli.enabled": {
           "type": "boolean",

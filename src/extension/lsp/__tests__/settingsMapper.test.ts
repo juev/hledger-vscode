@@ -276,10 +276,22 @@ describe("mapVSCodeSettingsToLSP", () => {
       expect(result.formatting.amountAlignmentMode).toBe("decimal");
     });
 
+    it("maps amountAlignmentMode 'left'", () => {
+      const settings: VSCodeSettings = {
+        formatting: {
+          amountAlignmentMode: "left",
+        },
+      };
+
+      const result = mapVSCodeSettingsToLSP(settings);
+
+      expect(result.formatting.amountAlignmentMode).toBe("left");
+    });
+
     it("falls back to default for invalid amountAlignmentMode", () => {
       const settings: VSCodeSettings = {
         formatting: {
-          amountAlignmentMode: "invalid" as "right" | "decimal",
+          amountAlignmentMode: "invalid" as "left" | "right" | "decimal",
         },
       };
 
