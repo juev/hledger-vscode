@@ -1,5 +1,12 @@
 # Change Log
 
+## [0.5.21] - 2026-04-29
+
+### Other
+- chore(deps): bump uuid and @azure/identity (#144)
+- chore(deps-dev): bump @typescript-eslint/eslint-plugin (#143)
+
+
 ## [0.5.20] - 2026-04-27
 
 ### Added
