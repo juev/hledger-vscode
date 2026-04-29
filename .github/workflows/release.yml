@@ -98,7 +98,6 @@ jobs:
         uses: softprops/action-gh-release@v1
         with:
           tag_name: v${{ steps.extract_version.outputs.version }}
-          name: Release ${{ steps.extract_version.outputs.version }}
           body: ${{ steps.generate_notes.outputs.release_notes }}
           files: "*.vsix"
           draft: false
