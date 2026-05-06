@@ -1,5 +1,13 @@
 # Change Log
 
+## [0.5.22] - 2026-05-06
+
+### Other
+- chore(deps-dev): bump @typescript-eslint/eslint-plugin from 8.59.1 to 8.59.2 (#149)
+- chore(deps-dev): bump eslint from 10.2.1 to 10.3.0 (#146)
+- ci(release): preserve manual release title
+
+
 ## [0.5.21] - 2026-04-29
 
 ### Other
