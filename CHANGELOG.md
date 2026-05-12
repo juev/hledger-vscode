@@ -1,5 +1,11 @@
 # Change Log
 
+## [0.5.23] - 2026-05-12
+
+### Other
+- chore(deps): bump fast-uri from 3.1.0 to 3.1.2 (#150)
+
+
 ## [0.5.22] - 2026-05-06
 
 ### Other
