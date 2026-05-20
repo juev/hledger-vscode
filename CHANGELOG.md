@@ -1,5 +1,17 @@
 # Change Log
 
+## [0.5.24] - 2026-05-20
+
+### Other
+- chore(deps-dev): bump ts-jest from 29.4.9 to 29.4.10 (#160)
+- chore(deps-dev): bump @typescript-eslint/eslint-plugin (#159)
+- chore(deps-dev): bump eslint from 10.3.0 to 10.4.0 (#157)
+- chore(deps-dev): bump ovsx from 0.10.11 to 0.10.12
+- chore(deps-dev): bump @typescript-eslint/eslint-plugin
+- chore(deps-dev): bump jest from 30.3.0 to 30.4.2
+- chore(deps-dev): bump @types/node from 25.6.0 to 25.7.0
+
+
 ## [0.5.23] - 2026-05-12
 
 ### Other
