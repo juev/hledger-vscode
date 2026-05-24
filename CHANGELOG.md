@@ -1,5 +1,11 @@
 # Change Log
 
+## [0.5.25] - 2026-05-24
+
+### Other
+- chore(deps): bump qs from 6.14.2 to 6.15.2 (#162)
+
+
 ## [0.5.24] - 2026-05-20
 
 ### Other
