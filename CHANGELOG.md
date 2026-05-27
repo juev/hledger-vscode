@@ -1,5 +1,17 @@
 # Change Log
 
+## [0.5.26] - 2026-05-27
+
+### Fixed
+- fix(deps): bump tmp to 0.2.6 to fix path traversal (GHSA-ph9p-34f9-6g65) (#169)
+
+### Other
+- chore(deps-dev): bump @typescript-eslint/eslint-plugin (#167)
+- chore(deps-dev): bump ts-jest from 29.4.10 to 29.4.11 (#166)
+- chore(deps-dev): bump @typescript-eslint/parser from 8.59.4 to 8.60.0 (#165)
+- chore(deps-dev): bump @types/node from 25.7.0 to 25.9.1 (#164)
+
+
 ## [0.5.25] - 2026-05-24
 
 ### Other
