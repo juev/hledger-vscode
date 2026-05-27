@@ -55,18 +55,6 @@ jobs:
         env:
           GITHUB_REF_NAME: ${{ github.ref_name }}
 
-      - name: Commit CHANGELOG.md
-        run: |
-          git config --local user.email "action@github.com"
-          git config --local user.name "GitHub Action"
-          git add CHANGELOG.md
-          if git diff --staged --quiet; then
-            echo "No changes to CHANGELOG.md"
-          else
-            git commit -m "chore: update CHANGELOG.md for v${{ steps.extract_version.outputs.version }}"
-            git push origin HEAD:main
-          fi
-
       - name: Package extension
         run: npx vsce package
 
@@ -104,3 +92,27 @@ jobs:
           prerelease: false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # Runs last and never fails the release: publishing the artifacts is the
+      # critical work and already happened above. The tag-triggered checkout is
+      # a detached HEAD on the tag commit, so main may have moved ahead; rebase
+      # onto the latest main before pushing to avoid a non-fast-forward error.
+      - name: Commit CHANGELOG.md
+        if: always()
+        continue-on-error: true
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add CHANGELOG.md
+          if git diff --staged --quiet; then
+            echo "No changes to CHANGELOG.md"
+          else
+            git commit -m "chore: update CHANGELOG.md for v${{ steps.extract_version.outputs.version }}"
+            git fetch origin main
+            if ! git rebase origin/main; then
+              echo "Rebase onto origin/main failed; skipping CHANGELOG push"
+              git rebase --abort || true
+              exit 0
+            fi
+            git push origin HEAD:main || echo "Failed to push CHANGELOG.md (non-fatal)"
+          fi
