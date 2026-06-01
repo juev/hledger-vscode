@@ -80,6 +80,8 @@ describe("createClientOptions", () => {
     expect(init.completion.includeNotes).toBe(true);
     expect(init.diagnostics.balanceTolerance).toBe(1e-10);
     expect(init.formatting.amountAlignmentColumn).toBe(0);
+    expect(init.formatting.minAlignmentColumn).toBe(0);
+    expect(init.formatting.amountAlignmentTarget).toBe("cost");
     expect(init.cli.timeout).toBe(30000);
     expect(init.limits.maxFileSizeBytes).toBe(10485760);
   });

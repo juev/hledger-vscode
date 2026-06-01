@@ -126,6 +126,13 @@
           "maximum": 120,
           "description": "Fixed mode-specific amount alignment target (0 = auto, preserves hand-formatted layout). In left mode this is the amount start column; in right mode this is the amount end column; in decimal mode this is the decimal-point column."
         },
+        "hledger.formatting.minAlignmentColumn": {
+          "type": "number",
+          "default": 0,
+          "minimum": 0,
+          "maximum": 120,
+          "description": "Minimum column floor for amount alignment (0 = auto from file content). Set a positive integer to enforce a minimum alignment column across files; the column still shifts further right if account names require it. Use amountAlignmentColumn instead for a fixed (non-floor) target."
+        },
         "hledger.autoCompletion.transactionTemplates.enabled": {
           "type": "boolean",
           "default": true,
@@ -304,6 +311,15 @@
           ],
           "default": "right",
           "description": "Amount alignment mode. 'left' aligns amount starts. 'right' aligns amounts by their right edge (default). 'decimal' aligns amounts by the decimal point (mantissa alignment)."
+        },
+        "hledger.formatting.amountAlignmentTarget": {
+          "type": "string",
+          "enum": [
+            "cost",
+            "posting"
+          ],
+          "default": "cost",
+          "description": "For postings with cost notation (@/@@), which amount anchors alignment. 'cost' aligns the cost (second) amount — hledger 1.x behavior. 'posting' aligns the posting (first) amount and lets the cost annotation trail freely — hledger 2.x 'print' behavior."
         },
         "hledger.cli.enabled": {
           "type": "boolean",
