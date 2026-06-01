@@ -39,6 +39,8 @@ describe("mapVSCodeSettingsToLSP", () => {
           indentSize: 4,
           alignAmounts: true,
           amountAlignmentMode: "right",
+          minAlignmentColumn: 0,
+          amountAlignmentTarget: "cost",
         },
         cli: {
           enabled: true,
@@ -298,6 +300,73 @@ describe("mapVSCodeSettingsToLSP", () => {
       const result = mapVSCodeSettingsToLSP(settings);
 
       expect(result.formatting.amountAlignmentMode).toBe("right");
+    });
+
+    it("defaults minAlignmentColumn to 0 and amountAlignmentTarget to 'cost'", () => {
+      const result = mapVSCodeSettingsToLSP({});
+
+      expect(result.formatting.minAlignmentColumn).toBe(0);
+      expect(result.formatting.amountAlignmentTarget).toBe("cost");
+    });
+
+    it("maps minAlignmentColumn", () => {
+      const settings: VSCodeSettings = {
+        formatting: {
+          minAlignmentColumn: 40,
+        },
+      };
+
+      const result = mapVSCodeSettingsToLSP(settings);
+
+      expect(result.formatting.minAlignmentColumn).toBe(40);
+    });
+
+    it("clamps minAlignmentColumn above maximum", () => {
+      const settings: VSCodeSettings = {
+        formatting: {
+          minAlignmentColumn: 999,
+        },
+      };
+
+      const result = mapVSCodeSettingsToLSP(settings);
+
+      expect(result.formatting.minAlignmentColumn).toBe(120);
+    });
+
+    it("clamps minAlignmentColumn below minimum", () => {
+      const settings: VSCodeSettings = {
+        formatting: {
+          minAlignmentColumn: -10,
+        },
+      };
+
+      const result = mapVSCodeSettingsToLSP(settings);
+
+      expect(result.formatting.minAlignmentColumn).toBe(0);
+    });
+
+    it("maps amountAlignmentTarget 'posting'", () => {
+      const settings: VSCodeSettings = {
+        formatting: {
+          amountAlignmentTarget: "posting",
+        },
+      };
+
+      const result = mapVSCodeSettingsToLSP(settings);
+
+      expect(result.formatting.amountAlignmentTarget).toBe("posting");
+    });
+
+    it("falls back to default for invalid amountAlignmentTarget", () => {
+      const settings: VSCodeSettings = {
+        formatting: {
+          amountAlignmentTarget: "invalid" as "cost" | "posting",
+        },
+      };
+
+      const result = mapVSCodeSettingsToLSP(settings);
+
+      expect(result.formatting.amountAlignmentTarget).toBe("cost");
     });
 
   });

@@ -239,8 +239,10 @@ Import bank statements and transaction data from CSV/TSV files.
 
   // Formatting
   "hledger.formatting.amountAlignmentColumn": 0,  // Mode-specific target column (0 = auto, preserves hand-formatted layout)
+  "hledger.formatting.minAlignmentColumn": 0,  // Minimum column floor for amount alignment (0 = auto)
   "hledger.formatting.alignAmounts": true,  // Align amounts in postings
-  "hledger.formatting.amountAlignmentMode": "right"  // "left" (start), "right" (right edge), or "decimal" (mantissa)
+  "hledger.formatting.amountAlignmentMode": "right",  // "left" (start), "right" (right edge), or "decimal" (mantissa)
+  "hledger.formatting.amountAlignmentTarget": "cost"  // Cost-notation anchor: "cost" or "posting"
 }
 ```
 

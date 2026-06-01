@@ -1045,14 +1045,27 @@ Auto-download supports:
 | Setting | Type | Default | Description |
 |---------|------|---------|-------------|
 | `hledger.formatting.amountAlignmentColumn` | number | `0` | Fixed mode-specific target column for amount alignment (0 = auto) |
+| `hledger.formatting.minAlignmentColumn` | number | `0` | Minimum column floor for amount alignment (0 = auto). Enforces a minimum column across files; shifts further right if account names require it |
 | `hledger.formatting.amountAlignmentMode` | string | `"right"` | Alignment mode: `"left"` (start), `"right"` (right edge), or `"decimal"` (decimal point) |
+| `hledger.formatting.amountAlignmentTarget` | string | `"cost"` | For cost-notation postings (`@`/`@@`), which amount anchors alignment: `"cost"` (cost amount) or `"posting"` (posting amount) |
 
-**Note:** The `amountAlignmentColumn` setting specifies a fixed target for the selected mode. With `0`, the LSP detects alignment from the file's content and preserves hand-formatted layout.
+**Note:** The `amountAlignmentColumn` setting specifies a fixed target for the selected mode. With `0`, the LSP detects alignment from the file's content and preserves hand-formatted layout. Use `minAlignmentColumn` instead when you want a *floor* (minimum column) rather than a fixed target — the column can still grow to fit long account names.
 
 The `amountAlignmentMode` setting controls how amounts are aligned within that column:
 - `"left"` — amount starts align at the target column
 - `"right"` (default) — amounts align by their right edge
 - `"decimal"` — amounts align by the decimal point (mantissa alignment, matching `hledger print` default)
+
+The `amountAlignmentTarget` setting applies to postings that carry cost notation, e.g. `2.36 EUR @@ 3.12 USD`:
+- `"cost"` (default) — the cost (second) amount is aligned (hledger 1.x behavior)
+- `"posting"` — the posting (first) amount is aligned and the cost annotation trails freely (hledger 2.x `print` behavior)
+
+```jsonc
+{
+  "hledger.formatting.amountAlignmentMode": "decimal",
+  "hledger.formatting.amountAlignmentTarget": "posting"
+}
+```
 
 ### Import Settings
 
@@ -1114,6 +1127,8 @@ The `amountAlignmentMode` setting controls how amounts are aligned within that c
 | `hledger.formatting.indentSize` | number | `4` | Posting indentation (2-8 spaces) |
 | `hledger.formatting.alignAmounts` | boolean | `true` | Align amounts in postings |
 | `hledger.formatting.amountAlignmentMode` | string | `"right"` | `"left"` (start), `"right"` (right edge), or `"decimal"` (decimal point) |
+| `hledger.formatting.minAlignmentColumn` | number | `0` | Minimum column floor for amount alignment (0 = auto) |
+| `hledger.formatting.amountAlignmentTarget` | string | `"cost"` | Cost-notation anchor: `"cost"` or `"posting"` |
 
 ### CLI Settings (Extended)
 

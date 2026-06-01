@@ -40,6 +40,8 @@ export interface VSCodeSettings {
     indentSize?: number;
     alignAmounts?: boolean;
     amountAlignmentMode?: "left" | "right" | "decimal";
+    minAlignmentColumn?: number;
+    amountAlignmentTarget?: "cost" | "posting";
   };
   inlineCompletion?: {
     enabled?: boolean;
@@ -95,6 +97,8 @@ export interface LSPSettings {
     indentSize: number;
     alignAmounts: boolean;
     amountAlignmentMode: "left" | "right" | "decimal";
+    minAlignmentColumn: number;
+    amountAlignmentTarget: "cost" | "posting";
   };
   cli: {
     enabled: boolean;
@@ -138,6 +142,8 @@ const DEFAULT_SETTINGS: LSPSettings = {
     indentSize: 4,
     alignAmounts: true,
     amountAlignmentMode: "right",
+    minAlignmentColumn: 0,
+    amountAlignmentTarget: "cost",
   },
   cli: {
     enabled: true,
@@ -175,6 +181,17 @@ function validateAlignmentMode(value: unknown): AmountAlignmentMode {
     return value as AmountAlignmentMode;
   }
   return DEFAULT_SETTINGS.formatting.amountAlignmentMode;
+}
+
+type AmountAlignmentTarget = "cost" | "posting";
+
+const VALID_ALIGNMENT_TARGETS: ReadonlyArray<AmountAlignmentTarget> = ["cost", "posting"];
+
+function validateAlignmentTarget(value: unknown): AmountAlignmentTarget {
+  if (typeof value === "string" && VALID_ALIGNMENT_TARGETS.includes(value as AmountAlignmentTarget)) {
+    return value as AmountAlignmentTarget;
+  }
+  return DEFAULT_SETTINGS.formatting.amountAlignmentTarget;
 }
 
 export function mapVSCodeSettingsToLSP(settings: VSCodeSettings): LSPSettings {
@@ -244,6 +261,13 @@ export function mapVSCodeSettingsToLSP(settings: VSCodeSettings): LSPSettings {
       ),
       alignAmounts: settings.formatting?.alignAmounts ?? DEFAULT_SETTINGS.formatting.alignAmounts,
       amountAlignmentMode: validateAlignmentMode(settings.formatting?.amountAlignmentMode),
+      minAlignmentColumn: validateNumber(
+        settings.formatting?.minAlignmentColumn,
+        DEFAULT_SETTINGS.formatting.minAlignmentColumn,
+        0,
+        120
+      ),
+      amountAlignmentTarget: validateAlignmentTarget(settings.formatting?.amountAlignmentTarget),
     },
     cli: {
       enabled: settings.cli?.enabled ?? DEFAULT_SETTINGS.cli.enabled,

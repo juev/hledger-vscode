@@ -120,6 +120,8 @@ function getVSCodeSettings(): VSCodeSettings {
       indentSize: config.get<number>("formatting.indentSize"),
       alignAmounts: config.get<boolean>("formatting.alignAmounts"),
       amountAlignmentMode: config.get<string>("formatting.amountAlignmentMode"),
+      minAlignmentColumn: config.get<number>("formatting.minAlignmentColumn"),
+      amountAlignmentTarget: config.get<"cost" | "posting">("formatting.amountAlignmentTarget"),
     },
     cli: {
       enabled: config.get<boolean>("cli.enabled"),
