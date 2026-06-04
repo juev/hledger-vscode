@@ -696,6 +696,6 @@
   "homepage": "https://github.com/juev/hledger-vscode#readme",
   "icon": "images/icon.png",
   "dependencies": {
-    "vscode-languageclient": "^9.0.1"
+    "vscode-languageclient": "^10.0.0"
   }
 }

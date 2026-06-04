@@ -28,6 +28,11 @@
     "allowUnusedLabels": false,
 
     // Module resolution and compatibility
+    // See tsconfig.json for why vscode-languageclient/node is mapped here.
+    "baseUrl": ".",
+    "paths": {
+      "vscode-languageclient/node": ["node_modules/vscode-languageclient/lib/node/main"]
+    },
     "esModuleInterop": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,

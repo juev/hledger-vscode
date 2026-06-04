@@ -28,6 +28,15 @@
     "allowUnusedLabels": false,
     
     // Module resolution and compatibility
+    // vscode-languageclient v10 exposes its node entrypoint only via the
+    // package.json "exports" map, which the classic "node" resolver ignores.
+    // Map the subpath to the real types so resolution works without switching
+    // the whole project to node16/bundler resolution (which would force ESM
+    // emit or .js import extensions and break the CJS dev build and ts-jest).
+    "baseUrl": ".",
+    "paths": {
+      "vscode-languageclient/node": ["node_modules/vscode-languageclient/lib/node/main"]
+    },
     "esModuleInterop": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
