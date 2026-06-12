@@ -97,6 +97,9 @@ jobs:
       # critical work and already happened above. The tag-triggered checkout is
       # a detached HEAD on the tag commit, so main may have moved ahead; rebase
       # onto the latest main before pushing to avoid a non-fast-forward error.
+      # --autostash is required: the "Update package.json version" step leaves
+      # package.json/package-lock.json dirty (the bump is never committed), and
+      # a plain rebase refuses to run with unstaged changes.
       - name: Commit CHANGELOG.md
         if: always()
         continue-on-error: true
@@ -109,7 +112,7 @@ jobs:
           else
             git commit -m "chore: update CHANGELOG.md for v${{ steps.extract_version.outputs.version }}"
             git fetch origin main
-            if ! git rebase origin/main; then
+            if ! git rebase --autostash origin/main; then
               echo "Rebase onto origin/main failed; skipping CHANGELOG push"
               git rebase --abort || true
               exit 0
