@@ -88,7 +88,7 @@
     },
     "tag": {
       "name": "meta.tag.hledger",
-      "match": "\\b([\\p{L}][\\p{L}\\p{N}_-]*)(:)\\s*([^,;\\n\\r\\s]*(?:\\s[^,;\\n\\r\\s]+)*)(?=\\s*[,;]|\\s{2,}|\\s*$)",
+      "match": "\\b([\\p{L}][\\p{L}\\p{N}_-]*)(:)[ \\t]*([^,\\r\\n]*[^,\\s])?",
       "captures": {
         "1": {
           "name": "entity.name.tag.hledger"
