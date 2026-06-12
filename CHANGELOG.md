@@ -1,5 +1,46 @@
 # Change Log
 
+## [0.5.30] - 2026-06-12
+
+### Fixed
+- fix(syntax): tag values preserve internal whitespace until comma
+- chore(deps): fix npm audit vulnerabilities (brace-expansion, underscore)
+
+### Removed
+- chore(deps-dev): remove unused @vscode/test-electron
+
+
+## [0.5.29] - 2026-06-10
+
+### Other
+- chore(deps-dev): bump @typescript-eslint/eslint-plugin (#181)
+- chore(deps-dev): bump @vscode/test-electron from 2.5.2 to 3.0.0 (#180)
+- chore(deps-dev): bump @vscode/vsce from 3.9.1 to 3.9.2 (#179)
+- chore(deps-dev): bump @typescript-eslint/parser from 8.60.1 to 8.61.0 (#178)
+- chore(deps-dev): bump @types/node from 25.9.1 to 25.9.2 (#177)
+
+
+## [0.5.28] - 2026-06-04
+
+### Other
+- chore(deps): bump vscode-languageclient from 9.0.1 to 10.0.0 (#173)
+- chore(deps-dev): bump eslint from 10.4.0 to 10.4.1 (#176)
+- chore(deps-dev): bump ovsx from 0.10.12 to 1.0.0 (#175)
+- chore(deps-dev): bump @typescript-eslint/eslint-plugin (#172)
+
+
+## [0.5.27] - 2026-06-01
+
+### Added
+- feat(formatting): add minAlignmentColumn and amountAlignmentTarget settings (#171)
+
+### Changed
+- ci(release): publish before committing changelog and make changelog push non-fatal
+
+### Other
+- ci: bump GitHub Actions to latest major versions (#170)
+
+
 ## [0.5.26] - 2026-05-27
 
 ### Fixed
