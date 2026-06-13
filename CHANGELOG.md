@@ -1,5 +1,15 @@
 # Change Log
 
+## [0.5.31] - 2026-06-13
+
+### Changed
+- docs(changelog): backfill entries for v0.5.27-v0.5.30
+- ci(release): rebase changelog commit with --autostash
+
+### Other
+- chore(deps-dev): bump esbuild from 0.28.0 to 0.28.1 (#183)
+
+
 ## [0.5.30] - 2026-06-12
 
 ### Fixed
