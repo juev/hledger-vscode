@@ -58,14 +58,50 @@ jobs:
       - name: Package extension
         run: npx vsce package
 
+      # Retry transient Marketplace failures (e.g. "Request timeout" from the
+      # gallery API, which has flaked before). If a prior attempt actually
+      # registered the version, the next one reports "already exists" — treat
+      # that as success rather than failing the release.
       - name: Publish to Visual Studio Marketplace
-        run: npx vsce publish --packagePath *.vsix -p ${{ secrets.VSCE_PAT }}
         env:
           VSCE_PAT: ${{ secrets.VSCE_PAT }}
+        run: |
+          for attempt in 1 2 3; do
+            out=$(npx vsce publish --packagePath *.vsix -p "$VSCE_PAT" 2>&1) && status=0 || status=$?
+            echo "$out"
+            if [ "$status" -eq 0 ]; then
+              echo "Published to Marketplace on attempt $attempt"
+              exit 0
+            fi
+            if echo "$out" | grep -qi "already exists"; then
+              echo "Version already on Marketplace; treating as success"
+              exit 0
+            fi
+            echo "vsce publish attempt $attempt failed (exit $status); retrying in 30s..."
+            sleep 30
+          done
+          echo "vsce publish failed after 3 attempts"
+          exit 1
 
       - name: Publish to Open VSX
         if: ${{ env.OVSX_PAT != '' }}
-        run: npx ovsx publish *.vsix
+        run: |
+          for attempt in 1 2 3; do
+            out=$(npx ovsx publish *.vsix 2>&1) && status=0 || status=$?
+            echo "$out"
+            if [ "$status" -eq 0 ]; then
+              echo "Published to Open VSX on attempt $attempt"
+              exit 0
+            fi
+            if echo "$out" | grep -qi "already exists"; then
+              echo "Version already on Open VSX; treating as success"
+              exit 0
+            fi
+            echo "ovsx publish attempt $attempt failed (exit $status); retrying in 30s..."
+            sleep 30
+          done
+          echo "ovsx publish failed after 3 attempts"
+          exit 1
 
       - name: Generate release notes
         id: generate_notes
