@@ -1,5 +1,17 @@
 # Change Log
 
+## [0.5.32] - 2026-06-16
+
+### Security
+- chore(deps): bump form-data, markdown-it, @babel/core, js-yaml for security alerts (#187)
+
+### Added
+- ci(release): add retry logic for transient Marketplace/Open VSX failures
+
+### Other
+- chore(deps): bump tmp from 0.2.6 to 0.2.7 (#184)
+
+
 ## [0.5.31] - 2026-06-13
 
 ### Changed
