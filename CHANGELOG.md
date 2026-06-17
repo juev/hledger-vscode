@@ -1,5 +1,14 @@
 # Change Log
 
+## [0.5.33] - 2026-06-17
+
+### Other
+- chore(deps-dev): bump ovsx from 1.0.0 to 1.0.1 (#192)
+- chore(deps-dev): bump eslint from 10.4.1 to 10.5.0 (#191)
+- chore(deps-dev): bump @typescript-eslint/eslint-plugin (#189)
+- chore(deps-dev): bump @types/node from 25.9.2 to 25.9.3 (#188)
+
+
 ## [0.5.32] - 2026-06-16
 
 ### Security
