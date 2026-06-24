@@ -1,5 +1,14 @@
 # Change Log
 
+## [0.5.34] - 2026-06-24
+
+### Other
+- chore(deps-dev): bump @types/node from 25.9.3 to 26.0.0 (#198)
+- chore(deps-dev): bump ovsx from 1.0.1 to 1.0.2 (#197)
+- chore(deps-dev): bump @typescript-eslint/eslint-plugin (#194)
+- chore(deps): bump undici from 7.24.1 to 7.28.0 (#193)
+
+
 ## [0.5.33] - 2026-06-17
 
 ### Other
