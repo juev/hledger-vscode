@@ -1,5 +1,15 @@
 # Change Log
 
+## [0.5.36] - 2026-07-08
+
+### Other
+- chore(deps-dev): bump @typescript-eslint/eslint-plugin (#208)
+- chore(deps-dev): bump @types/node from 26.0.1 to 26.1.0 (#207)
+- chore(deps-dev): bump @typescript-eslint/parser from 8.62.1 to 8.63.0 (#206)
+- chore(deps): bump vscode-languageclient from 10.0.1 to 10.1.0 (#205)
+- build(deps): bump js-yaml from 3.14.2 to 3.15.0
+
+
 ## [0.5.35] - 2026-07-01
 
 ### Other
