@@ -1,5 +1,23 @@
 # Change Log
 
+## [0.5.37] - 2026-07-22
+
+### Added
+- feat(security): verify minisign signature before installing LSP binary (#226)
+
+### Fixed
+- fix(deps): resolve remaining security advisories via npm audit fix
+
+### Other
+- chore(deps): bump linkify-it from 5.0.1 to 5.0.2 (#225)
+- chore(deps): bump fast-uri from 3.1.2 to 3.1.4 (#224)
+- chore(deps-dev): bump @typescript-eslint/parser from 8.63.0 to 8.65.0
+- chore(deps-dev): bump @typescript-eslint/eslint-plugin (#222)
+- chore(deps-dev): bump @typescript-eslint/eslint-plugin (#211)
+- chore(deps-dev): bump eslint from 10.6.0 to 10.7.0 (#210)
+- chore(deps-dev): bump @types/node from 26.1.0 to 26.1.1 (#209)
+
+
 ## [0.5.36] - 2026-07-08
 
 ### Other
