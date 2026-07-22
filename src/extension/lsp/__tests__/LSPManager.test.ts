@@ -102,7 +102,21 @@ describe("LSPManager", () => {
       expect(binaryPath).toMatch(/hledger-lsp(\.exe)?$/);
     });
 
-    it("throws when custom path contains shell metacharacters", () => {
+    it("accepts Windows-style path with backslashes", () => {
+      const vscode = require("vscode");
+      vscode.workspace.getConfiguration = jest.fn().mockReturnValue({
+        get: (key: string) => {
+          if (key === "path") return "C:\\tools\\hledger-lsp.exe";
+          return undefined;
+        },
+      });
+
+      const manager = new LSPManager(mockContext);
+
+      expect(manager.getBinaryPath()).toBe("C:\\tools\\hledger-lsp.exe");
+    });
+
+    it("accepts path with shell metacharacters (no shell is spawned)", () => {
       const vscode = require("vscode");
       vscode.workspace.getConfiguration = jest.fn().mockReturnValue({
         get: (key: string) => {
@@ -113,21 +127,7 @@ describe("LSPManager", () => {
 
       const manager = new LSPManager(mockContext);
 
-      expect(() => manager.getBinaryPath()).toThrow(/shell metacharacters/);
-    });
-
-    it("throws for path with ampersand", () => {
-      const vscode = require("vscode");
-      vscode.workspace.getConfiguration = jest.fn().mockReturnValue({
-        get: (key: string) => {
-          if (key === "path") return "/path && malicious";
-          return undefined;
-        },
-      });
-
-      const manager = new LSPManager(mockContext);
-
-      expect(() => manager.getBinaryPath()).toThrow(/shell metacharacters/);
+      expect(manager.getBinaryPath()).toBe("/path/to/lsp; rm -rf /");
     });
 
     it("returns custom path when valid and set", () => {

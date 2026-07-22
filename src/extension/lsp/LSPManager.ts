@@ -3,7 +3,6 @@ import * as fs from "fs";
 import { BinaryManager } from "./BinaryManager";
 import { HLedgerLanguageClient, LanguageClientState, PayeeAccountHistoryResult } from "./HLedgerLanguageClient";
 import { hasCustomLSPPath, getCustomLSPPath } from "./lspConfig";
-import { validatePathSafety } from "../security/shellValidation";
 
 export interface LSPManagerLike {
   isServerAvailable(): Promise<boolean>;
@@ -93,7 +92,6 @@ export class LSPManager implements vscode.Disposable {
   getBinaryPath(): string {
     const customPath = getCustomLSPPath();
     if (customPath !== null) {
-      validatePathSafety(customPath);
       return customPath;
     }
     return this.binaryManager.getBinaryPath();
