@@ -7,4 +7,4 @@
 // To rotate: generate a new key pair, update this constant and the
 // GitHub Actions secret in the same release cycle.
 export const MINISIGN_PUBLIC_KEY =
-  "RWQ_PLACEHOLDER_REPLACE_AFTER_KEY_GENERATION";
+  "RWQrqo1HFNu6atxzZuaGpH+4mY0MvXUFdu8TmNhyCtsLnp3Seo3YhjP1";
