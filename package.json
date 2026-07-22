@@ -644,6 +644,31 @@
               "onCommand:hledger.import.fromFile",
               "onCommand:hledger.import.fromSelection"
             ]
+          },
+          {
+            "id": "hledger.reports",
+            "title": "Generate Reports",
+            "description": "Insert balance sheet, income statement, and statistics reports directly into your journal.\n\n[Insert Balance Sheet](command:hledger.cli.balance)",
+            "media": {
+              "markdown": "docs/walkthrough/reports.md"
+            },
+            "completionEvents": [
+              "onCommand:hledger.cli.balance",
+              "onCommand:hledger.cli.incomestatement",
+              "onCommand:hledger.cli.stats"
+            ]
+          },
+          {
+            "id": "hledger.keybindings",
+            "title": "Keyboard Shortcuts",
+            "description": "Use **Cmd+K S** to cycle transaction status, **Tab** to align amounts, and **Enter** to accept inline suggestions.",
+            "media": {
+              "markdown": "docs/walkthrough/keybindings.md"
+            },
+            "completionEvents": [
+              "onCommand:hledger.editor.cycleStatus",
+              "onCommand:hledger.editor.alignAmount"
+            ]
           }
         ]
       }

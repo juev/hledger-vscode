@@ -1186,6 +1186,16 @@ All commands accessible via Command Palette (`Ctrl+Shift+P` or `Cmd+Shift+P`):
 
 **On-type formatting** (Enter/Tab) is handled by the Language Server when `editor.formatOnType` is enabled.
 
+### Status Bar Hints
+
+When editing an hledger file, the status bar shows a quick reference for the most useful keybindings:
+
+```
+⌘K S: status · Tab: align · Enter: suggest
+```
+
+This hint is visible only in hledger files and requires no configuration.
+
 ### Completion Trigger Characters
 
 These characters automatically trigger completions:

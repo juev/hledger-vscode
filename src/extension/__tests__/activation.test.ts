@@ -11,6 +11,12 @@ jest.mock("../lsp/LSPStatusBar", () => ({
   })),
 }));
 
+jest.mock("../KeybindingHintsStatusBar", () => ({
+  KeybindingHintsStatusBar: jest.fn().mockImplementation(() => ({
+    dispose: jest.fn(),
+  })),
+}));
+
 jest.mock("../lsp", () => ({
   LSPManager: jest.fn().mockImplementation(() => ({
     dispose: jest.fn(),
