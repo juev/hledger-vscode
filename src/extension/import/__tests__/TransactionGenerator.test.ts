@@ -869,4 +869,106 @@ describe('TransactionGenerator', () => {
             expect(result.transactions[0]!.amount).toBeCloseTo(1234.56);
         });
     });
+
+    describe('date format auto-detection', () => {
+        it('should disambiguate US dates (MM/DD) when day > 12 appears in second position', () => {
+            const data = createData(
+                ['Date', 'Description', 'Amount'],
+                [
+                    ['03/25/2024', 'Purchase 1', '-50.00'],
+                    ['04/15/2024', 'Purchase 2', '-30.00'],
+                ],
+                createMappings([
+                    { type: 'date', index: 0 },
+                    { type: 'description', index: 1 },
+                    { type: 'amount', index: 2 },
+                ])
+            );
+
+            const result = generator.generate(data);
+
+            expect(result.transactions).toHaveLength(2);
+            expect(result.transactions[0]!.date).toBe('2024-03-25');
+            expect(result.transactions[1]!.date).toBe('2024-04-15');
+        });
+
+        it('should disambiguate EU dates (DD/MM) when day > 12 appears in first position', () => {
+            const data = createData(
+                ['Date', 'Description', 'Amount'],
+                [
+                    ['25/03/2024', 'Purchase 1', '-50.00'],
+                    ['15/04/2024', 'Purchase 2', '-30.00'],
+                ],
+                createMappings([
+                    { type: 'date', index: 0 },
+                    { type: 'description', index: 1 },
+                    { type: 'amount', index: 2 },
+                ])
+            );
+
+            const result = generator.generate(data);
+
+            expect(result.transactions).toHaveLength(2);
+            expect(result.transactions[0]!.date).toBe('2024-03-25');
+            expect(result.transactions[1]!.date).toBe('2024-04-15');
+        });
+
+        it('should warn when slash dates are fully ambiguous (no day > 12)', () => {
+            const data = createData(
+                ['Date', 'Description', 'Amount'],
+                [
+                    ['03/04/2024', 'Purchase 1', '-50.00'],
+                    ['05/06/2024', 'Purchase 2', '-30.00'],
+                ],
+                createMappings([
+                    { type: 'date', index: 0 },
+                    { type: 'description', index: 1 },
+                    { type: 'amount', index: 2 },
+                ])
+            );
+
+            const result = generator.generate(data);
+
+            expect(result.transactions).toHaveLength(2);
+            // Defaults to DD/MM when ambiguous
+            expect(result.transactions[0]!.date).toBe('2024-04-03');
+            expect(result.warnings.some(w => w.message.includes('Ambiguous date format'))).toBe(true);
+        });
+
+        it('should not warn when explicit dateFormat is configured', () => {
+            const usGenerator = new TransactionGenerator({ dateFormat: 'MM/DD/YYYY' });
+
+            const data = createData(
+                ['Date', 'Description', 'Amount'],
+                [['03/04/2024', 'Purchase', '-50.00']],
+                createMappings([
+                    { type: 'date', index: 0 },
+                    { type: 'description', index: 1 },
+                    { type: 'amount', index: 2 },
+                ])
+            );
+
+            const result = usGenerator.generate(data);
+
+            expect(result.transactions[0]!.date).toBe('2024-03-04');
+            expect(result.warnings.some(w => w.message.includes('Ambiguous'))).toBe(false);
+        });
+
+        it('should handle ISO dates without disambiguation', () => {
+            const data = createData(
+                ['Date', 'Description', 'Amount'],
+                [['2024-03-04', 'Purchase', '-50.00']],
+                createMappings([
+                    { type: 'date', index: 0 },
+                    { type: 'description', index: 1 },
+                    { type: 'amount', index: 2 },
+                ])
+            );
+
+            const result = generator.generate(data);
+
+            expect(result.transactions[0]!.date).toBe('2024-03-04');
+            expect(result.warnings.some(w => w.message.includes('Ambiguous'))).toBe(false);
+        });
+    });
 });

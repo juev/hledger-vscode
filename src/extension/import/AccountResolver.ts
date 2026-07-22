@@ -23,8 +23,8 @@ import { AccountName, PayeeName } from '../types';
 const CONFIDENCE = {
     /** Exact payee match from journal history - highest confidence */
     HISTORY_EXACT: 0.95,
-    /** Fuzzy payee match from journal history */
-    HISTORY_FUZZY: 0.85,
+    /** Fuzzy payee match from journal history - below needsReview threshold (0.7) */
+    HISTORY_FUZZY: 0.6,
     /** Direct category match from CSV column (demoted below history) */
     CATEGORY_EXACT: 0.80,
     /** Partial category match (contains/contained by) */
@@ -263,8 +263,13 @@ export class AccountResolver {
         for (const payee of payees) {
             const payeeLower = payee.toLowerCase();
 
-            // Description contains payee (e.g., "AMAZON.COM*123" contains "Amazon")
-            if (descLower.includes(payeeLower) || payeeLower.includes(descLower)) {
+            // Contains-match requires the substring to be at least 3 chars
+            // to prevent short payees ("ID", "A") matching unrelated descriptions
+            const minContainsLength = 3;
+            if (
+                (payeeLower.length >= minContainsLength && descLower.includes(payeeLower)) ||
+                (descLower.length >= minContainsLength && payeeLower.includes(descLower))
+            ) {
                 const accounts = this.payeeHistory.payeeAccounts.get(payee);
                 if (accounts) {
                     const bestAccount = this.selectBestAccount(payee, accounts);
