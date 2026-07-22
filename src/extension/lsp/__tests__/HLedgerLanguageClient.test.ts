@@ -280,7 +280,7 @@ describe("HLedgerLanguageClient", () => {
 
       const internalClient = client.getClient();
       jest.spyOn(internalClient!, "sendRequest").mockImplementation(
-        (_method, _params, token) => new Promise((_resolve, reject) => {
+        (_method: string, _params: unknown, token?: vscode.CancellationToken) => new Promise((_resolve, reject) => {
           token?.onCancellationRequested(() => reject(new Error("Request cancelled")));
         })
       );
