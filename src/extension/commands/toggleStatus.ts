@@ -42,7 +42,7 @@ export function parseLineStatus(lineText: string): StatusInfo | undefined {
     const afterWhitespace = headerMatch[0].length;
 
     const restAfterDate = lineText.substring(afterWhitespace);
-    const statusMatch = /^([*!])\s+/.exec(restAfterDate);
+    const statusMatch = /^([*!])(?:\s+|$)/.exec(restAfterDate);
 
     if (statusMatch) {
       return {
@@ -121,17 +121,19 @@ export async function cycleStatus(): Promise<void> {
   const editor = vscode.window.activeTextEditor;
   if (editor?.document.languageId !== "hledger") return;
 
-  const line = editor.selection.active.line;
-  const lineText = editor.document.lineAt(line).text;
-  const info = parseLineStatus(lineText);
-  if (!info) return;
-
-  const newStatus = nextStatus(info.status);
-  const edit = buildStatusEdit(lineText, line, newStatus);
-  if (!edit) return;
+  const edits = [...new Set(editor.selections.map((selection) => selection.active.line))]
+    .map((line) => {
+      const lineText = editor.document.lineAt(line).text;
+      const info = parseLineStatus(lineText);
+      return info ? buildStatusEdit(lineText, line, nextStatus(info.status)) : undefined;
+    })
+    .filter((edit): edit is { range: vscode.Range; newText: string } => edit !== undefined);
+  if (edits.length === 0) return;
 
   await editor.edit((editBuilder) => {
-    editBuilder.replace(edit.range, edit.newText);
+    for (const edit of edits) {
+      editBuilder.replace(edit.range, edit.newText);
+    }
   });
 }
 
@@ -141,12 +143,14 @@ export async function setStatus(
   const editor = vscode.window.activeTextEditor;
   if (editor?.document.languageId !== "hledger") return;
 
-  const line = editor.selection.active.line;
-  const lineText = editor.document.lineAt(line).text;
-  const edit = buildStatusEdit(lineText, line, status);
-  if (!edit) return;
+  const edits = [...new Set(editor.selections.map((selection) => selection.active.line))]
+    .map((line) => buildStatusEdit(editor.document.lineAt(line).text, line, status))
+    .filter((edit): edit is { range: vscode.Range; newText: string } => edit !== undefined);
+  if (edits.length === 0) return;
 
   await editor.edit((editBuilder) => {
-    editBuilder.replace(edit.range, edit.newText);
+    for (const edit of edits) {
+      editBuilder.replace(edit.range, edit.newText);
+    }
   });
 }

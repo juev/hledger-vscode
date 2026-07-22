@@ -126,7 +126,7 @@ const DEFAULT_SETTINGS: LSPSettings = {
     codeLens: false,
   },
   completion: {
-    maxResults: 25,
+    maxResults: 50,
     fuzzyMatching: true,
     showCounts: true,
     includeNotes: true,
