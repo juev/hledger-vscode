@@ -9,6 +9,11 @@ import {
   getPlatformInfo,
   getBinaryName,
 } from "../BinaryManager";
+import { verify as verifyMinisign } from "../minisignVerify";
+
+jest.mock("../minisignVerify", () => ({
+  verify: jest.fn(),
+}));
 
 function createMockHeaders(contentLength?: number) {
   return {
@@ -81,6 +86,10 @@ function makeGitHubReleaseMock(assetSuffix: string) {
           {
             name: "checksums.txt",
             browser_download_url: "https://example.com/checksums.txt",
+          },
+          {
+            name: `hledger-lsp_${assetSuffix}.minisig`,
+            browser_download_url: "https://example.com/binary.minisig",
           },
         ],
       }),
@@ -163,6 +172,7 @@ describe("BinaryManager", () => {
   beforeEach(() => {
     tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "hledger-lsp-test-"));
     manager = new BinaryManager(tempDir);
+    (verifyMinisign as jest.Mock).mockReturnValue(true);
   });
 
   afterEach(() => {
@@ -410,6 +420,10 @@ describe("BinaryManager", () => {
                     name: "checksums.txt",
                     browser_download_url: "https://example.com/checksums.txt",
                   },
+                  {
+                    name: `hledger-lsp_${assetSuffix}.minisig`,
+                    browser_download_url: "https://example.com/binary.minisig",
+                  },
                 ],
               }),
           });
@@ -418,6 +432,12 @@ describe("BinaryManager", () => {
           return Promise.resolve({
             ok: true,
             text: () => Promise.resolve(checksumContent),
+          });
+        }
+        if (url.includes(".minisig")) {
+          return Promise.resolve({
+            ok: true,
+            text: () => Promise.resolve("untrusted comment: test\nsig\ntrusted comment: ts\nglobalsig"),
           });
         }
         return Promise.resolve({
@@ -791,6 +811,12 @@ describe("BinaryManager", () => {
             text: () => Promise.resolve(checksumContent),
           });
         }
+        if (url.includes(".minisig")) {
+          return Promise.resolve({
+            ok: true,
+            text: () => Promise.resolve("untrusted comment: test\nsig\ntrusted comment: ts\nglobalsig"),
+          });
+        }
         return Promise.resolve({
           ok: true,
           headers: createMockHeaders(),
@@ -836,6 +862,10 @@ describe("BinaryManager", () => {
                     name: "checksums.txt",
                     browser_download_url: "https://example.com/checksums.txt",
                   },
+                  {
+                    name: `hledger-lsp_${assetSuffix}.minisig`,
+                    browser_download_url: "https://example.com/binary.minisig",
+                  },
                 ],
               }),
           });
@@ -844,6 +874,12 @@ describe("BinaryManager", () => {
           return Promise.resolve({
             ok: true,
             text: () => Promise.resolve(checksumContent),
+          });
+        }
+        if (url.includes(".minisig")) {
+          return Promise.resolve({
+            ok: true,
+            text: () => Promise.resolve("untrusted comment: test\nsig\ntrusted comment: ts\nglobalsig"),
           });
         }
         return Promise.resolve({
@@ -976,6 +1012,12 @@ describe("BinaryManager", () => {
             text: () => Promise.resolve(checksumContent),
           });
         }
+        if (url.includes(".minisig")) {
+          return Promise.resolve({
+            ok: true,
+            text: () => Promise.resolve("untrusted comment: test\nsig\ntrusted comment: ts\nglobalsig"),
+          });
+        }
         return Promise.resolve({
           ok: true,
           headers: createMockHeaders(binaryContent.byteLength),
@@ -1017,6 +1059,12 @@ describe("BinaryManager", () => {
             text: () => Promise.resolve(checksumContent),
           });
         }
+        if (url.includes(".minisig")) {
+          return Promise.resolve({
+            ok: true,
+            text: () => Promise.resolve("untrusted comment: test\nsig\ntrusted comment: ts\nglobalsig"),
+          });
+        }
         return Promise.resolve({
           ok: true,
           headers: createMockHeaders(binaryContent.byteLength),
@@ -1054,6 +1102,12 @@ describe("BinaryManager", () => {
           return Promise.resolve({
             ok: true,
             text: () => Promise.resolve(checksumContent),
+          });
+        }
+        if (url.includes(".minisig")) {
+          return Promise.resolve({
+            ok: true,
+            text: () => Promise.resolve("untrusted comment: test\nsig\ntrusted comment: ts\nglobalsig"),
           });
         }
         binaryFetchCount++;
@@ -1100,6 +1154,12 @@ describe("BinaryManager", () => {
             text: () => Promise.resolve(checksumContent),
           });
         }
+        if (url.includes(".minisig")) {
+          return Promise.resolve({
+            ok: true,
+            text: () => Promise.resolve("untrusted comment: test\nsig\ntrusted comment: ts\nglobalsig"),
+          });
+        }
         binaryFetchCount++;
         if (binaryFetchCount === 1) {
           return Promise.resolve({
@@ -1124,6 +1184,197 @@ describe("BinaryManager", () => {
       expect(binaryFetchCount).toBe(2);
       expect(await manager.isInstalled()).toBe(true);
       jest.useRealTimers();
+    });
+  });
+
+  describe("signature verification", () => {
+    it("rejects binary when signature verification fails", async () => {
+      (verifyMinisign as jest.Mock).mockReturnValue(false);
+
+      const binaryContent = Buffer.alloc(2048, "x");
+      const assetSuffix = getPlatformInfo(os.platform(), os.arch()).assetSuffix;
+      const checksum = computeSha256(binaryContent);
+      const checksumContent = `${checksum}  hledger-lsp_${assetSuffix}\n`;
+
+      const mockFetch = jest.fn().mockImplementation((url: string) => {
+        if (url.includes("api.github.com")) {
+          return Promise.resolve(makeGitHubReleaseMock(assetSuffix));
+        }
+        if (url.includes("checksums.txt")) {
+          return Promise.resolve({
+            ok: true,
+            text: () => Promise.resolve(checksumContent),
+          });
+        }
+        if (url.includes(".minisig")) {
+          return Promise.resolve({
+            ok: true,
+            text: () => Promise.resolve("untrusted comment: test\nsig\ntrusted comment: ts\nglobalsig"),
+          });
+        }
+        return Promise.resolve({
+          ok: true,
+          headers: createMockHeaders(binaryContent.byteLength),
+          arrayBuffer: () =>
+            Promise.resolve(
+              binaryContent.buffer.slice(
+                binaryContent.byteOffset,
+                binaryContent.byteOffset + binaryContent.byteLength
+              )
+            ),
+        });
+      });
+
+      manager = new BinaryManager(tempDir, mockFetch);
+
+      await expect(manager.download()).rejects.toThrow(
+        /Signature verification failed/
+      );
+      expect(await manager.isInstalled()).toBe(false);
+    });
+
+    it("rejects binary when .minisig asset is missing from release", async () => {
+      const binaryContent = Buffer.alloc(2048, "x");
+      const assetSuffix = getPlatformInfo(os.platform(), os.arch()).assetSuffix;
+      const checksum = computeSha256(binaryContent);
+      const checksumContent = `${checksum}  hledger-lsp_${assetSuffix}\n`;
+
+      const mockFetch = jest.fn().mockImplementation((url: string) => {
+        if (url.includes("api.github.com")) {
+          return Promise.resolve({
+            ok: true,
+            json: () =>
+              Promise.resolve({
+                tag_name: "v0.1.0",
+                assets: [
+                  {
+                    name: `hledger-lsp_${assetSuffix}`,
+                    browser_download_url: "https://example.com/binary",
+                  },
+                  {
+                    name: "checksums.txt",
+                    browser_download_url: "https://example.com/checksums.txt",
+                  },
+                ],
+              }),
+          });
+        }
+        if (url.includes("checksums.txt")) {
+          return Promise.resolve({
+            ok: true,
+            text: () => Promise.resolve(checksumContent),
+          });
+        }
+        return Promise.resolve({
+          ok: true,
+          headers: createMockHeaders(binaryContent.byteLength),
+          arrayBuffer: () =>
+            Promise.resolve(
+              binaryContent.buffer.slice(
+                binaryContent.byteOffset,
+                binaryContent.byteOffset + binaryContent.byteLength
+              )
+            ),
+        });
+      });
+
+      manager = new BinaryManager(tempDir, mockFetch);
+
+      await expect(manager.download()).rejects.toThrow(
+        /No signature file .* found in release/
+      );
+      expect(await manager.isInstalled()).toBe(false);
+    });
+
+    it("rejects binary when .minisig download fails", async () => {
+      const binaryContent = Buffer.alloc(2048, "x");
+      const assetSuffix = getPlatformInfo(os.platform(), os.arch()).assetSuffix;
+      const checksum = computeSha256(binaryContent);
+      const checksumContent = `${checksum}  hledger-lsp_${assetSuffix}\n`;
+
+      const mockFetch = jest.fn().mockImplementation((url: string) => {
+        if (url.includes("api.github.com")) {
+          return Promise.resolve(makeGitHubReleaseMock(assetSuffix));
+        }
+        if (url.includes("checksums.txt")) {
+          return Promise.resolve({
+            ok: true,
+            text: () => Promise.resolve(checksumContent),
+          });
+        }
+        if (url.includes(".minisig")) {
+          return Promise.resolve({
+            ok: false,
+            status: 404,
+            statusText: "Not Found",
+          });
+        }
+        return Promise.resolve({
+          ok: true,
+          headers: createMockHeaders(binaryContent.byteLength),
+          arrayBuffer: () =>
+            Promise.resolve(
+              binaryContent.buffer.slice(
+                binaryContent.byteOffset,
+                binaryContent.byteOffset + binaryContent.byteLength
+              )
+            ),
+        });
+      });
+
+      manager = new BinaryManager(tempDir, mockFetch);
+
+      await expect(manager.download()).rejects.toThrow(
+        /Failed to download signature/
+      );
+      expect(await manager.isInstalled()).toBe(false);
+    });
+
+    it("does not write binary to disk when signature is invalid", async () => {
+      (verifyMinisign as jest.Mock).mockReturnValue(false);
+
+      const binaryContent = Buffer.alloc(2048, "x");
+      const assetSuffix = getPlatformInfo(os.platform(), os.arch()).assetSuffix;
+      const checksum = computeSha256(binaryContent);
+      const checksumContent = `${checksum}  hledger-lsp_${assetSuffix}\n`;
+
+      const mockFetch = jest.fn().mockImplementation((url: string) => {
+        if (url.includes("api.github.com")) {
+          return Promise.resolve(makeGitHubReleaseMock(assetSuffix));
+        }
+        if (url.includes("checksums.txt")) {
+          return Promise.resolve({
+            ok: true,
+            text: () => Promise.resolve(checksumContent),
+          });
+        }
+        if (url.includes(".minisig")) {
+          return Promise.resolve({
+            ok: true,
+            text: () => Promise.resolve("untrusted comment: test\nsig\ntrusted comment: ts\nglobalsig"),
+          });
+        }
+        return Promise.resolve({
+          ok: true,
+          headers: createMockHeaders(binaryContent.byteLength),
+          arrayBuffer: () =>
+            Promise.resolve(
+              binaryContent.buffer.slice(
+                binaryContent.byteOffset,
+                binaryContent.byteOffset + binaryContent.byteLength
+              )
+            ),
+        });
+      });
+
+      manager = new BinaryManager(tempDir, mockFetch);
+
+      await expect(manager.download()).rejects.toThrow();
+
+      const binaryPath = manager.getBinaryPath();
+      expect(fs.existsSync(binaryPath)).toBe(false);
+      const versionPath = path.join(tempDir, "version.txt");
+      expect(fs.existsSync(versionPath)).toBe(false);
     });
   });
 });
