@@ -12,7 +12,7 @@ interface LSPTextEdit {
   newText: string;
 }
 
-const DEFAULT_TIMEOUT_MS = 3000;
+const DEFAULT_TIMEOUT_MS = 600;
 
 async function fallbackTab(): Promise<void> {
   await vscode.commands.executeCommand("tab");
