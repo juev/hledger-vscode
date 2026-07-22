@@ -876,6 +876,8 @@ The Language Server is required and auto-installed on first activation. If the L
 
 The Language Server is automatically installed on first activation. If prompted, accept the installation to enable all features. The binary is stored in VS Code's global storage directory.
 
+If downloads require a proxy, set VS Code's `http.proxy`. Its non-empty value is used for both HTTP and HTTPS release downloads. When `http.proxy` is empty, the extension uses `HTTP_PROXY` and `HTTPS_PROXY` from the environment; `NO_PROXY` still bypasses the proxy for matching hosts. Reload VS Code after changing proxy settings so the Language Server download transport is recreated.
+
 A **Get Started** walkthrough is available via Command Palette → **HLedger: Get Started**. It guides you through Language Server installation, opening a journal file, and importing from CSV.
 
 To manually reinstall or update:

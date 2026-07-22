@@ -187,6 +187,7 @@ export class LSPManager implements vscode.Disposable {
   }
 
   dispose(): void {
+    this.binaryManager.dispose();
     if (this.client !== null) {
       this.client.dispose();
       this.client = null;

@@ -300,6 +300,8 @@ The Language Server is auto-installed on first activation. If it is not installe
    - Extract to a permanent location
    - Set in settings: `"hledger.lsp.path": "/path/to/hledger-lsp"`
 
+4. **Corporate proxy:** Set VS Code's `http.proxy` to use that proxy for both HTTP and HTTPS Language Server downloads. If `http.proxy` is empty, downloads use `HTTP_PROXY` and `HTTPS_PROXY`; `NO_PROXY` still bypasses the proxy for matching hosts. Reload VS Code after changing proxy settings. Manual installation remains available if the network policy requires a proxy method the extension does not support.
+
 ### GitHub Rate Limit Errors
 
 **Symptoms:** "GitHub API rate limit exceeded" when installing/updating
