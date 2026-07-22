@@ -11,6 +11,19 @@ import {
 } from "../BinaryManager";
 import { verify as verifyMinisign } from "../minisignVerify";
 
+jest.mock("undici", () => ({
+  fetch: jest.fn(),
+  EnvHttpProxyAgent: jest.fn(),
+}));
+
+interface UndiciMock {
+  fetch: jest.Mock;
+  EnvHttpProxyAgent: jest.Mock;
+}
+
+const { fetch: mockUndiciFetch, EnvHttpProxyAgent: mockEnvHttpProxyAgent } =
+  jest.requireMock<UndiciMock>("undici");
+
 jest.mock("../minisignVerify", () => ({
   verify: jest.fn(),
 }));
@@ -224,6 +237,166 @@ describe("BinaryManager", () => {
   });
 
   describe("getLatestRelease", () => {
+    it("creates a local proxy dispatcher lazily and caches it for default requests", async () => {
+      const vscode = require("vscode");
+      const originalGetConfiguration = vscode.workspace.getConfiguration;
+      const dispatcher = { destroy: jest.fn().mockResolvedValue(undefined) };
+      const releaseResponse = {
+        ok: true,
+        json: () => Promise.resolve({ tag_name: "v0.2.0", assets: [] }),
+      };
+      const configuration = { get: jest.fn().mockReturnValue("  http://proxy.example:8080  ") };
+
+      vscode.workspace.getConfiguration = jest.fn().mockReturnValue(configuration);
+      mockEnvHttpProxyAgent.mockReturnValue(dispatcher);
+      mockUndiciFetch.mockResolvedValue(releaseResponse);
+
+      try {
+        manager = new BinaryManager(tempDir);
+
+        expect(vscode.workspace.getConfiguration).not.toHaveBeenCalled();
+        expect(mockEnvHttpProxyAgent).not.toHaveBeenCalled();
+
+        await manager.getLatestRelease();
+        await manager.getLatestRelease();
+
+        expect(vscode.workspace.getConfiguration).toHaveBeenCalledWith("http");
+        expect(configuration.get).toHaveBeenCalledWith("proxy");
+        expect(mockEnvHttpProxyAgent).toHaveBeenCalledTimes(1);
+        expect(mockEnvHttpProxyAgent).toHaveBeenCalledWith({
+          httpProxy: "http://proxy.example:8080",
+          httpsProxy: "http://proxy.example:8080",
+        });
+        expect(mockUndiciFetch).toHaveBeenCalledTimes(2);
+        expect(mockUndiciFetch.mock.calls[0]?.[1]).toEqual(
+          expect.objectContaining({ dispatcher, signal: expect.any(AbortSignal) }),
+        );
+        expect(mockUndiciFetch.mock.calls[1]?.[1]).toEqual(
+          expect.objectContaining({ dispatcher, signal: expect.any(AbortSignal) }),
+        );
+      } finally {
+        vscode.workspace.getConfiguration = originalGetConfiguration;
+      }
+    });
+
+    it("uses environment proxy settings when http.proxy is blank", async () => {
+      const vscode = require("vscode");
+      const originalGetConfiguration = vscode.workspace.getConfiguration;
+      const dispatcher = { destroy: jest.fn().mockResolvedValue(undefined) };
+
+      vscode.workspace.getConfiguration = jest.fn().mockReturnValue({
+        get: jest.fn().mockReturnValue("   "),
+      });
+      mockEnvHttpProxyAgent.mockReturnValue(dispatcher);
+      mockUndiciFetch.mockResolvedValue({
+        ok: true,
+        json: () => Promise.resolve({ tag_name: "v0.2.0", assets: [] }),
+      });
+
+      try {
+        manager = new BinaryManager(tempDir);
+
+        await manager.getLatestRelease();
+
+        expect(mockEnvHttpProxyAgent).toHaveBeenCalledWith();
+      } finally {
+        vscode.workspace.getConfiguration = originalGetConfiguration;
+      }
+    });
+
+    it("keeps injected fetch independent from proxy configuration", async () => {
+      const vscode = require("vscode");
+      const originalGetConfiguration = vscode.workspace.getConfiguration;
+      const injectedFetch = jest.fn().mockResolvedValue({
+        ok: true,
+        json: () => Promise.resolve({ tag_name: "v0.2.0", assets: [] }),
+      });
+
+      vscode.workspace.getConfiguration = jest.fn();
+
+      try {
+        manager = new BinaryManager(tempDir, injectedFetch);
+
+        await manager.getLatestRelease();
+
+        expect(injectedFetch).toHaveBeenCalledTimes(1);
+        expect(vscode.workspace.getConfiguration).not.toHaveBeenCalled();
+        expect(mockEnvHttpProxyAgent).not.toHaveBeenCalled();
+      } finally {
+        vscode.workspace.getConfiguration = originalGetConfiguration;
+      }
+    });
+
+    it("rejects network use after disposal before proxy or fetch side effects", async () => {
+      const vscode = require("vscode");
+      const originalGetConfiguration = vscode.workspace.getConfiguration;
+      const injectedFetch = jest.fn();
+
+      vscode.workspace.getConfiguration = jest.fn();
+
+      try {
+        manager = new BinaryManager(tempDir, injectedFetch);
+        manager.dispose();
+
+        await expect(manager.getLatestRelease()).rejects.toThrow("disposed");
+
+        expect(vscode.workspace.getConfiguration).not.toHaveBeenCalled();
+        expect(mockEnvHttpProxyAgent).not.toHaveBeenCalled();
+        expect(injectedFetch).not.toHaveBeenCalled();
+      } finally {
+        vscode.workspace.getConfiguration = originalGetConfiguration;
+      }
+    });
+
+    it("rejects default network use after disposal before proxy side effects", async () => {
+      const vscode = require("vscode");
+      const originalGetConfiguration = vscode.workspace.getConfiguration;
+
+      vscode.workspace.getConfiguration = jest.fn();
+
+      try {
+        manager = new BinaryManager(tempDir);
+        manager.dispose();
+
+        await expect(manager.getLatestRelease()).rejects.toThrow("disposed");
+
+        expect(vscode.workspace.getConfiguration).not.toHaveBeenCalled();
+        expect(mockEnvHttpProxyAgent).not.toHaveBeenCalled();
+        expect(mockUndiciFetch).not.toHaveBeenCalled();
+      } finally {
+        vscode.workspace.getConfiguration = originalGetConfiguration;
+      }
+    });
+
+    it("sets disposal state before destroying the cached dispatcher and destroys it once", async () => {
+      let requestDuringDestroy: Promise<ReleaseInfo> | undefined;
+      const dispatcher = {
+        destroy: jest.fn().mockImplementation(() => {
+          requestDuringDestroy = manager.getLatestRelease();
+          return Promise.reject(new Error("destroy failed"));
+        }),
+      };
+      mockEnvHttpProxyAgent.mockReturnValue(dispatcher);
+      mockUndiciFetch.mockResolvedValue({
+        ok: true,
+        json: () => Promise.resolve({ tag_name: "v0.2.0", assets: [] }),
+      });
+
+      manager = new BinaryManager(tempDir);
+      await manager.getLatestRelease();
+      mockEnvHttpProxyAgent.mockClear();
+      mockUndiciFetch.mockClear();
+
+      manager.dispose();
+      manager.dispose();
+      await Promise.resolve();
+
+      expect(dispatcher.destroy).toHaveBeenCalledTimes(1);
+      await expect(requestDuringDestroy).rejects.toThrow("disposed");
+      expect(mockEnvHttpProxyAgent).not.toHaveBeenCalled();
+      expect(mockUndiciFetch).not.toHaveBeenCalled();
+    });
+
     it("fetches release info from GitHub API", async () => {
       const mockFetch = jest.fn().mockResolvedValue({
         ok: true,

@@ -2,6 +2,12 @@ import * as crypto from "crypto";
 import * as fs from "fs";
 import * as os from "os";
 import * as path from "path";
+import * as vscode from "vscode";
+import {
+  EnvHttpProxyAgent,
+  fetch as undiciFetch,
+  type RequestInit as UndiciRequestInit,
+} from "undici";
 import { verify as verifyMinisign } from "./minisignVerify";
 import { MINISIGN_PUBLIC_KEY } from "./signingKey";
 
@@ -34,6 +40,27 @@ export interface ReleaseInfo {
 }
 
 type FetchFn = (url: string, init?: RequestInit) => Promise<Response>;
+
+interface FetchRequestInit {
+  headers?: Record<string, string>;
+  signal?: AbortSignal;
+}
+
+interface FetchReader {
+  read(): Promise<{ done: boolean; value?: Uint8Array }>;
+  cancel(): Promise<void>;
+}
+
+interface FetchResponse {
+  ok: boolean;
+  status: number;
+  statusText: string;
+  headers: { get(name: string): string | null };
+  json(): Promise<unknown>;
+  text(): Promise<string>;
+  arrayBuffer(): Promise<ArrayBuffer>;
+  body: { getReader(): FetchReader } | null;
+}
 
 interface GitHubReleaseResponse {
   tag_name: string;
@@ -122,24 +149,66 @@ export function getBinaryName(platform: string): string {
 
 export class BinaryManager {
   private readonly storageDir: string;
-  private readonly fetchFn: FetchFn;
+  private readonly injectedFetchFn: FetchFn | undefined;
   private readonly platformInfo: PlatformInfo;
+  private dispatcher: EnvHttpProxyAgent | undefined;
+  private disposed = false;
 
   constructor(storageDir: string, fetchFn?: FetchFn, platformInfo?: PlatformInfo) {
     this.storageDir = storageDir;
-    this.fetchFn = fetchFn ?? fetch;
+    this.injectedFetchFn = fetchFn;
     this.platformInfo = platformInfo ?? getPlatformInfo(os.platform(), os.arch());
+  }
+
+  private async fetchDefault(
+    url: string,
+    init: FetchRequestInit,
+  ): Promise<FetchResponse> {
+    if (this.disposed) {
+      throw new NonRetryableError("BinaryManager has been disposed");
+    }
+
+    if (!this.dispatcher) {
+      const proxy = vscode.workspace.getConfiguration("http").get<string>("proxy")?.trim();
+      this.dispatcher = proxy
+        ? new EnvHttpProxyAgent({ httpProxy: proxy, httpsProxy: proxy })
+        : new EnvHttpProxyAgent();
+    }
+
+    const dispatcher = this.dispatcher;
+    const requestInit: UndiciRequestInit = { ...init, dispatcher };
+    return undiciFetch(url, requestInit);
+  }
+
+  dispose(): void {
+    if (this.disposed) {
+      return;
+    }
+
+    this.disposed = true;
+    const dispatcher = this.dispatcher;
+    this.dispatcher = undefined;
+    if (dispatcher) {
+      dispatcher.destroy().catch(() => {});
+    }
   }
 
   private async fetchWithTimeout(
     url: string,
-    init?: RequestInit,
+    init?: FetchRequestInit,
     timeoutMs: number = API_TIMEOUT_MS,
-  ): Promise<Response> {
+  ): Promise<FetchResponse> {
+    if (this.disposed) {
+      throw new NonRetryableError("BinaryManager has been disposed");
+    }
+
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
     try {
-      const response = await this.fetchFn(url, { ...init, signal: controller.signal });
+      const requestInit = { ...init, signal: controller.signal };
+      const response = this.injectedFetchFn
+        ? await this.injectedFetchFn(url, requestInit)
+        : await this.fetchDefault(url, requestInit);
       return response;
     } catch (error: unknown) {
       if (error instanceof Error && error.name === "AbortError") {
@@ -173,9 +242,9 @@ export class BinaryManager {
 
   private fetchWithRetry(
     url: string,
-    init?: RequestInit,
+    init?: FetchRequestInit,
     timeoutMs: number = API_TIMEOUT_MS,
-  ): Promise<Response> {
+  ): Promise<FetchResponse> {
     return this.withRetry(() => this.fetchWithTimeout(url, init, timeoutMs));
   }
 

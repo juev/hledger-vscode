@@ -1,7 +1,29 @@
 import * as fs from "fs";
 import * as os from "os";
 import * as path from "path";
+import { BinaryManager } from "../BinaryManager";
 import { LSPManager, LSPStatus } from "../LSPManager";
+
+jest.mock("undici", () => ({
+  fetch: jest.fn(),
+  EnvHttpProxyAgent: jest.fn(),
+}));
+
+interface UndiciMock {
+  fetch: jest.Mock;
+  EnvHttpProxyAgent: jest.Mock;
+}
+
+const { fetch: mockUndiciFetch, EnvHttpProxyAgent: mockEnvHttpProxyAgent } =
+  jest.requireMock<UndiciMock>("undici");
+
+function createDeferred<T>() {
+  let resolve!: (value: T) => void;
+  const promise = new Promise<T>((resolvePromise) => {
+    resolve = resolvePromise;
+  });
+  return { promise, resolve };
+}
 
 describe("LSPManager", () => {
   let tempDir: string;
@@ -31,6 +53,16 @@ describe("LSPManager", () => {
       const manager = new LSPManager(mockContext);
 
       expect(manager.getStatus()).toBe(LSPStatus.NotInstalled);
+    });
+
+    it("does not read proxy configuration while activating", () => {
+      const vscode = require("vscode");
+      vscode.workspace.getConfiguration = jest.fn();
+
+      new LSPManager(mockContext);
+
+      expect(vscode.workspace.getConfiguration).not.toHaveBeenCalledWith("http");
+      expect(mockEnvHttpProxyAgent).not.toHaveBeenCalled();
     });
   });
 
@@ -89,6 +121,37 @@ describe("LSPManager", () => {
       const manager = new LSPManager(mockContext);
 
       expect(() => manager.dispose()).not.toThrow();
+    });
+
+    it("always disposes the binary manager", () => {
+      const dispose = jest.spyOn(BinaryManager.prototype, "dispose");
+      const manager = new LSPManager(mockContext);
+
+      manager.dispose();
+
+      expect(dispose).toHaveBeenCalledTimes(1);
+    });
+
+    it("rejects a deferred update check after deactivate without proxy resurrection", async () => {
+      const vscode = require("vscode");
+      const version = createDeferred<string | null>();
+      const getInstalledVersion = jest
+        .spyOn(BinaryManager.prototype, "getInstalledVersion")
+        .mockReturnValue(version.promise);
+
+      vscode.workspace.getConfiguration = jest.fn();
+      const manager = new LSPManager(mockContext);
+      const updateCheck = manager.checkForUpdates();
+
+      manager.dispose();
+      version.resolve(null);
+
+      await expect(updateCheck).rejects.toThrow("disposed");
+      expect(vscode.workspace.getConfiguration).not.toHaveBeenCalledWith("http");
+      expect(mockEnvHttpProxyAgent).not.toHaveBeenCalled();
+      expect(mockUndiciFetch).not.toHaveBeenCalled();
+
+      getInstalledVersion.mockRestore();
     });
   });
 
