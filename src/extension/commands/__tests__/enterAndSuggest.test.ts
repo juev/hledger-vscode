@@ -10,7 +10,7 @@ describe("enterAndSuggest", () => {
     executeCommandMock.mockResolvedValue(undefined);
   });
 
-  it("executes default Enter then triggers inline suggestion", async () => {
+  it("inserts a newline then triggers inline suggestion", async () => {
     await enterAndSuggest();
 
     expect(executeCommandMock).toHaveBeenCalledTimes(2);
