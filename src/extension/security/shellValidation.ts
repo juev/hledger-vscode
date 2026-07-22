@@ -1,9 +1,13 @@
-// Shell metacharacter pattern for path validation
-// Prevents command injection by rejecting paths with shell special characters
-const SHELL_METACHAR_PATTERN = /[;&|`$()[\]{}^"<>#!*?~\\'\n\r]/;
+// Shell metacharacter pattern for path validation.
+// Backslash is excluded: it is the Windows path separator, not a shell
+// metacharacter in the contexts where this validation applies (execFile /
+// Executable — no shell is spawned).  Characters #, ~, ' are legitimate in
+// file paths and are also excluded.
+const SHELL_METACHAR_PATTERN = /[;|&`$()[\]{}^"<>\n\r]/;
 
 /**
- * Validates that a path doesn't contain shell metacharacters
+ * Validates that a path doesn't contain shell metacharacters.
+ * Use only where a path is interpolated into a shell command.
  * @param path - The path to validate
  * @throws Error if path contains shell metacharacters
  */

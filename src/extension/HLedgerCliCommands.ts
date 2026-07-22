@@ -3,6 +3,7 @@
 import * as vscode from "vscode";
 import * as fs from "fs";
 import { HLedgerCliService } from "./services/HLedgerCliService";
+import { validatePathSafety } from "./security/shellValidation";
 
 export class HLedgerCliCommands implements vscode.Disposable {
   private cliService: HLedgerCliService;
@@ -180,12 +181,7 @@ export class HLedgerCliCommands implements vscode.Disposable {
    * @throws Error if path contains shell metacharacters or is inaccessible
    */
   private sanitizeJournalPath(filePath: string): string {
-    // Dangerous shell metacharacters (excluding backslash for Windows path compatibility)
-    const dangerousChars = /[;|&`$()[\]{}^"<>]/;
-
-    if (dangerousChars.test(filePath)) {
-      throw new Error(`Path contains shell metacharacters: ${filePath}`);
-    }
+    validatePathSafety(filePath);
 
     try {
       fs.accessSync(filePath, fs.constants.R_OK);
