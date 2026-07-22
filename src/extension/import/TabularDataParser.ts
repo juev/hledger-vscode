@@ -50,14 +50,7 @@ export class TabularDataParser {
 
         // Normalize line endings
         const normalizedContent = content.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
-        const lines = normalizedContent.split('\n');
-
-        // Track original line numbers before filtering
-        // Each entry is { line: string, originalLineNumber: number }
-        const linesWithNumbers = lines.map((line, index) => ({
-            line,
-            originalLineNumber: index + 1,
-        }));
+        const linesWithNumbers = this.splitLogicalRecords(normalizedContent);
 
         // Filter empty lines if configured, preserving original line numbers
         const nonEmptyLinesWithNumbers = this.options.skipEmptyRows
@@ -68,7 +61,7 @@ export class TabularDataParser {
             return failure('No data lines found');
         }
 
-        // Extract just the lines for delimiter detection
+        // Extract just the logical records for delimiter detection
         const nonEmptyLines = nonEmptyLinesWithNumbers.map((entry) => entry.line);
 
         // Detect delimiter if not specified
@@ -121,7 +114,7 @@ export class TabularDataParser {
 
     /**
      * Auto-detect delimiter from content
-     * Analyzes first 10 lines to determine most likely delimiter
+     * Analyzes first 10 logical records to determine most likely delimiter
      */
     detectDelimiter(lines: string[]): Delimiter | null {
         const delimiters: Delimiter[] = [',', '\t', ';', '|'];
@@ -204,6 +197,46 @@ export class TabularDataParser {
         }
 
         return count;
+    }
+
+    /**
+     * Split content into RFC 4180 logical records while preserving each record's
+     * starting physical line number.
+     */
+    private splitLogicalRecords(content: string): Array<{ line: string; originalLineNumber: number }> {
+        const records: Array<{ line: string; originalLineNumber: number }> = [];
+        let line = '';
+        let inQuotes = false;
+        let physicalLineNumber = 1;
+        let recordStartLineNumber = 1;
+
+        for (let i = 0; i < content.length; i++) {
+            const char = content[i];
+
+            if (char === '"') {
+                line += char;
+                if (inQuotes && i + 1 < content.length && content[i + 1] === '"') {
+                    line += '"';
+                    i++;
+                } else {
+                    inQuotes = !inQuotes;
+                }
+            } else if (char === '\n') {
+                physicalLineNumber++;
+                if (inQuotes) {
+                    line += char;
+                } else {
+                    records.push({ line, originalLineNumber: recordStartLineNumber });
+                    line = '';
+                    recordStartLineNumber = physicalLineNumber;
+                }
+            } else {
+                line += char;
+            }
+        }
+
+        records.push({ line, originalLineNumber: recordStartLineNumber });
+        return records;
     }
 
     /**

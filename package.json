@@ -725,6 +725,8 @@
   "homepage": "https://github.com/juev/hledger-vscode#readme",
   "icon": "images/icon.png",
   "dependencies": {
+    "decimal.js": "^10.6.0",
+    "string-width": "^4.2.3",
     "undici": "^6.27.0",
     "vscode-languageclient": "^10.1.0"
   }

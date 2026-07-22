@@ -1,5 +1,6 @@
 import { TransactionGenerator } from '../TransactionGenerator';
 import { ParsedTabularData, ColumnMapping, ParsedRow, DEFAULT_IMPORT_OPTIONS } from '../types';
+import stringWidth from 'string-width';
 
 describe('TransactionGenerator', () => {
     let generator: TransactionGenerator;
@@ -48,7 +49,7 @@ describe('TransactionGenerator', () => {
             expect(result.transactions).toHaveLength(1);
             expect(result.transactions[0]!.date).toBe('2024-01-15');
             expect(result.transactions[0]!.description).toBe('Grocery Store');
-            expect(result.transactions[0]!.amount).toBe(-50);
+            expect(result.transactions[0]!.amount.toNumber()).toBe(-50);
         });
 
         it('should generate multiple transactions', () => {
@@ -127,8 +128,8 @@ describe('TransactionGenerator', () => {
             const result = generator.generate(data);
 
             expect(result.transactions).toHaveLength(2);
-            expect(result.transactions[0]!.amount).toBe(-50); // Debit is negative
-            expect(result.transactions[1]!.amount).toBe(100); // Credit is positive
+            expect(result.transactions[0]!.amount.toNumber()).toBe(-50); // Debit is negative
+            expect(result.transactions[1]!.amount.toNumber()).toBe(100); // Credit is positive
         });
     });
 
@@ -146,7 +147,7 @@ describe('TransactionGenerator', () => {
 
             const result = generator.generate(data);
 
-            expect(result.transactions[0]!.amount).toBeCloseTo(-1234.56);
+            expect(result.transactions[0]!.amount.toNumber()).toBeCloseTo(-1234.56);
         });
 
         it('should handle EU format (1.234,56)', () => {
@@ -162,7 +163,7 @@ describe('TransactionGenerator', () => {
 
             const result = generator.generate(data);
 
-            expect(result.transactions[0]!.amount).toBeCloseTo(-1234.56);
+            expect(result.transactions[0]!.amount.toNumber()).toBeCloseTo(-1234.56);
         });
 
         it('should handle currency symbols', () => {
@@ -178,7 +179,7 @@ describe('TransactionGenerator', () => {
 
             const result = generator.generate(data);
 
-            expect(result.transactions[0]!.amount).toBe(50);
+            expect(result.transactions[0]!.amount.toNumber()).toBe(50);
         });
 
         it('should handle accounting notation (parentheses for negative)', () => {
@@ -194,7 +195,7 @@ describe('TransactionGenerator', () => {
 
             const result = generator.generate(data);
 
-            expect(result.transactions[0]!.amount).toBe(-50);
+            expect(result.transactions[0]!.amount.toNumber()).toBe(-50);
         });
     });
 
@@ -216,7 +217,7 @@ describe('TransactionGenerator', () => {
 
             const result = invertingGenerator.generate(data);
 
-            expect(result.transactions[0]!.amount).toBe(-50);
+            expect(result.transactions[0]!.amount.toNumber()).toBe(-50);
         });
     });
 
@@ -460,7 +461,7 @@ describe('TransactionGenerator', () => {
             const result = generator.generate(data);
 
             expect(result.transactions).toHaveLength(1);
-            expect(result.transactions[0]!.amount).toBeGreaterThan(0);
+            expect(result.transactions[0]!.amount.isPositive()).toBe(true);
         });
 
         it('should reject amount strings over 100 characters', () => {
@@ -530,7 +531,7 @@ describe('TransactionGenerator', () => {
                 const result = generator.generate(data);
 
                 expect(result.transactions).toHaveLength(1);
-                expect(result.transactions[0]!.amount).toBeCloseTo(expected);
+                expect(result.transactions[0]!.amount.toNumber()).toBeCloseTo(expected);
             }
         });
     });
@@ -746,7 +747,7 @@ describe('TransactionGenerator', () => {
 
             const result = generator.generate(data);
 
-            expect(result.transactions[0]!.amount).toBeCloseTo(1.23);
+            expect(result.transactions[0]!.amount.toNumber()).toBeCloseTo(1.23);
         });
 
         it('should use heuristic by default (auto) - comma as thousand separator for >2 digits', () => {
@@ -762,7 +763,7 @@ describe('TransactionGenerator', () => {
 
             const result = generator.generate(data);
 
-            expect(result.transactions[0]!.amount).toBe(1234);
+            expect(result.transactions[0]!.amount.toNumber()).toBe(1234);
         });
 
         it('should treat comma as decimal separator when hint is "comma"', () => {
@@ -783,7 +784,7 @@ describe('TransactionGenerator', () => {
             const result = commaGenerator.generate(data);
 
             // With comma hint, "1,234" should be parsed as 1.234 (European decimal)
-            expect(result.transactions[0]!.amount).toBeCloseTo(1.234);
+            expect(result.transactions[0]!.amount.toNumber()).toBeCloseTo(1.234);
         });
 
         it('should treat comma as thousand separator when hint is "period"', () => {
@@ -804,7 +805,7 @@ describe('TransactionGenerator', () => {
             const result = periodGenerator.generate(data);
 
             // With period hint, "1,23" should be parsed as 123 (comma is thousand separator)
-            expect(result.transactions[0]!.amount).toBe(123);
+            expect(result.transactions[0]!.amount.toNumber()).toBe(123);
         });
 
         it('should handle explicit auto hint same as default', () => {
@@ -824,7 +825,7 @@ describe('TransactionGenerator', () => {
 
             const result = autoGenerator.generate(data);
 
-            expect(result.transactions[0]!.amount).toBeCloseTo(1.23);
+            expect(result.transactions[0]!.amount.toNumber()).toBeCloseTo(1.23);
         });
 
         it('should not affect parsing when period is clearly decimal', () => {
@@ -845,7 +846,7 @@ describe('TransactionGenerator', () => {
             const result = commaGenerator.generate(data);
 
             // Period as last separator should still be treated as decimal
-            expect(result.transactions[0]!.amount).toBeCloseTo(1234.56);
+            expect(result.transactions[0]!.amount.toNumber()).toBeCloseTo(1234.56);
         });
 
         it('should not affect EU format with both separators', () => {
@@ -866,7 +867,7 @@ describe('TransactionGenerator', () => {
             const result = periodGenerator.generate(data);
 
             // When both separators present, comma after period = EU format
-            expect(result.transactions[0]!.amount).toBeCloseTo(1234.56);
+            expect(result.transactions[0]!.amount.toNumber()).toBeCloseTo(1234.56);
         });
     });
 
@@ -970,5 +971,123 @@ describe('TransactionGenerator', () => {
             expect(result.transactions[0]!.date).toBe('2024-03-04');
             expect(result.warnings.some(w => w.message.includes('Ambiguous'))).toBe(false);
         });
+    });
+
+    describe('exact decimal amounts and display-width alignment', () => {
+        it('preserves values beyond IEEE-754 precision', () => {
+            const result = generator.generate(createData(
+                ['Date', 'Description', 'Amount'],
+                [['2024-01-15', 'Precision', '9007199254740993.01']],
+                createMappings([
+                    { type: 'date', index: 0 },
+                    { type: 'description', index: 1 },
+                    { type: 'amount', index: 2 },
+                ])
+            ));
+
+            expect(result.transactions[0]!.amount.toString()).toBe('9007199254740993.01');
+            expect(result.transactions[0]!.amountFormatted).toBe('9007199254740993.01');
+        });
+
+        it('formats at least two decimal places without rounding away extra precision', () => {
+            const result = generator.generate(createData(
+                ['Date', 'Description', 'Amount'],
+                [['2024-01-15', 'Precision', '1.2345']],
+                createMappings([
+                    { type: 'date', index: 0 },
+                    { type: 'description', index: 1 },
+                    { type: 'amount', index: 2 },
+                ])
+            ));
+
+            expect(result.transactions[0]!.amountFormatted).toBe('1.2345');
+        });
+
+        it('subtracts a 100-character debit from a 100-character credit exactly', () => {
+            const credit = '9'.repeat(100);
+            const debit = `0.${'0'.repeat(97)}1`;
+            const result = generator.generate(createData(
+                ['Date', 'Description', 'Debit', 'Credit'],
+                [['2024-01-15', 'Precision', debit, credit]],
+                createMappings([
+                    { type: 'date', index: 0 },
+                    { type: 'description', index: 1 },
+                    { type: 'debit', index: 2 },
+                    { type: 'credit', index: 3 },
+                ])
+            ));
+
+            expect(result.transactions[0]!.amount.toFixed(98)).toBe(`${'9'.repeat(99)}8.${'9'.repeat(98)}`);
+        });
+
+        it.each(['1e10000', '12abc', '1.2.3'])('rejects malformed normalized amount %s', (amount) => {
+            const result = generator.generate(createData(
+                ['Date', 'Description', 'Amount'],
+                [['2024-01-15', 'Invalid', amount]],
+                createMappings([
+                    { type: 'date', index: 0 },
+                    { type: 'description', index: 1 },
+                    { type: 'amount', index: 2 },
+                ])
+            ));
+
+            expect(result.transactions).toHaveLength(0);
+        });
+
+        it.each([
+            ['12abc', '20'],
+            ['10', '1e10000'],
+        ])('rejects a row when one non-empty debit/credit value is invalid', (debit, credit) => {
+            const result = generator.generate(createData(
+                ['Date', 'Description', 'Debit', 'Credit'],
+                [['2024-01-15', 'Invalid', debit, credit]],
+                createMappings([
+                    { type: 'date', index: 0 },
+                    { type: 'description', index: 1 },
+                    { type: 'debit', index: 2 },
+                    { type: 'credit', index: 3 },
+                ])
+            ));
+
+            expect(result.transactions).toHaveLength(0);
+            expect(result.warnings.some((warning) => warning.message.includes('Invalid amount'))).toBe(true);
+        });
+
+        it.each([
+            ['.5', '0.50'],
+            ['1.', '1.00'],
+        ])('preserves support for plain decimal form %s', (amount, expected) => {
+            const result = generator.generate(createData(
+                ['Date', 'Description', 'Amount'],
+                [['2024-01-15', 'Compatible', amount]],
+                createMappings([
+                    { type: 'date', index: 0 },
+                    { type: 'description', index: 1 },
+                    { type: 'amount', index: 2 },
+                ])
+            ));
+
+            expect(result.transactions[0]!.amountFormatted).toBe(expected);
+        });
+
+        it.each(['assets:cash', '資産:現金', 'assets:cafe\u0301', 'assets:😀'])(
+            'aligns the amount at display column 52 for %s',
+            (account) => {
+                const alignedGenerator = new TransactionGenerator({ defaultDebitAccount: account });
+                const result = alignedGenerator.generate(createData(
+                    ['Date', 'Description', 'Amount'],
+                    [['2024-01-15', 'Width', '-1']],
+                    createMappings([
+                        { type: 'date', index: 0 },
+                        { type: 'description', index: 1 },
+                        { type: 'amount', index: 2 },
+                    ])
+                ));
+                const transaction = result.transactions[0]!;
+                const posting = alignedGenerator.formatTransaction(transaction, false).split('\n')[1]!;
+
+                expect(stringWidth(posting.slice(0, posting.lastIndexOf(transaction.amountFormatted))) + stringWidth(transaction.amountFormatted)).toBe(52);
+            }
+        );
     });
 });
