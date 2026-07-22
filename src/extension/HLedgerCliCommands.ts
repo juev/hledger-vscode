@@ -21,8 +21,8 @@ export class HLedgerCliCommands implements vscode.Disposable {
     // No resources to dispose - cliService is disposed separately
   }
 
-  public async insertBalance(): Promise<void> {
-    await this.insertCliReport("balance");
+  public async insertBalanceSheet(): Promise<void> {
+    await this.insertCliReport("balancesheet");
   }
 
   public async insertStats(): Promise<void> {
@@ -61,39 +61,52 @@ export class HLedgerCliCommands implements vscode.Disposable {
       {
         location: vscode.ProgressLocation.Notification,
         title: `Running hledger ${command}...`,
-        cancellable: false,
+        cancellable: true,
       },
-      async () => {
+      async (_progress, token) => {
+        const abortController = new AbortController();
+        const cancelDisposable = token.onCancellationRequested(() => {
+          abortController.abort();
+        });
+
         try {
           const cliAvailable = await this.ensureCliAvailable();
           if (!cliAvailable) {
             return;
           }
 
-          // Get the journal file path
           const journalFile = this.getJournalFilePath(document);
 
-          // Execute the command
           let output: string;
           let cliCommandName: string;
           switch (command) {
-            case "balance":
-              output = await this.cliService.runBalance(journalFile);
+            case "balancesheet":
+              output = await this.cliService.runBalanceSheet(
+                journalFile,
+                [],
+                abortController.signal,
+              );
               cliCommandName = "bs";
               break;
             case "stats":
-              output = await this.cliService.runStats(journalFile);
+              output = await this.cliService.runStats(
+                journalFile,
+                abortController.signal,
+              );
               cliCommandName = "stats";
               break;
             case "incomestatement":
-              output = await this.cliService.runIncomestatement(journalFile);
+              output = await this.cliService.runIncomestatement(
+                journalFile,
+                [],
+                abortController.signal,
+              );
               cliCommandName = "incomestatement";
               break;
             default:
               throw new Error(`Unknown command: ${command}`);
           }
 
-          // Format as comment and insert
           const comment = this.cliService.formatAsComment(
             output,
             cliCommandName,
@@ -104,9 +117,17 @@ export class HLedgerCliCommands implements vscode.Disposable {
             `hledger ${cliCommandName} report inserted successfully.`,
           );
         } catch (error: unknown) {
+          if (abortController.signal.aborted) {
+            vscode.window.showInformationMessage(
+              `hledger ${command} was cancelled.`,
+            );
+            return;
+          }
           vscode.window.showErrorMessage(
             `Failed to run hledger ${command}: ${error instanceof Error ? error.message : String(error)}`,
           );
+        } finally {
+          cancelDisposable.dispose();
         }
       },
     );

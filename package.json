@@ -406,7 +406,7 @@
     "commands": [
       {
         "command": "hledger.cli.balance",
-        "title": "HLedger: Insert Balance Report",
+        "title": "HLedger: Insert Balance Sheet",
         "category": "HLedger",
         "when": "editorTextFocus && editorLangId == hledger"
       },

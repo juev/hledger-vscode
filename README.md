@@ -137,7 +137,7 @@ Insert hledger reports directly into your journals as formatted comments.
 
 **Available Commands** (via Command Palette `Ctrl+Shift+P`):
 
-- `HLedger: Insert Balance Report` - Balance sheet with assets/liabilities
+- `HLedger: Insert Balance Sheet` - Balance sheet with assets/liabilities
 - `HLedger: Insert Income Statement` - Revenue and expense summary
 - `HLedger: Insert Statistics Report` - File stats and metrics
 
