@@ -2,6 +2,8 @@ import * as crypto from "crypto";
 import * as fs from "fs";
 import * as os from "os";
 import * as path from "path";
+import { verify as verifyMinisign } from "./minisignVerify";
+import { MINISIGN_PUBLIC_KEY } from "./signingKey";
 
 const GITHUB_REPO = "juev/hledger-lsp";
 const GITHUB_API_URL = `https://api.github.com/repos/${GITHUB_REPO}/releases/latest`;
@@ -394,6 +396,32 @@ export class BinaryManager {
     return checksums;
   }
 
+  private async downloadSignature(
+    release: ReleaseInfo,
+    assetName: string
+  ): Promise<string> {
+    const sigAssetName = `${assetName}.minisig`;
+    const sigAsset = release.assets.find((a) => a.name === sigAssetName);
+    if (!sigAsset) {
+      throw new Error(
+        `No signature file (${sigAssetName}) found in release - cannot verify binary authenticity`
+      );
+    }
+
+    const response = await this.fetchWithRetry(
+      sigAsset.downloadUrl,
+      undefined,
+      API_TIMEOUT_MS
+    );
+    if (!response.ok) {
+      throw new Error(
+        `Failed to download signature: ${response.status} ${response.statusText}`
+      );
+    }
+
+    return response.text();
+  }
+
   private verifyChecksum(buffer: ArrayBuffer, expectedHash: string): boolean {
     const hash = crypto.createHash("sha256");
     hash.update(Buffer.from(buffer));
@@ -444,6 +472,23 @@ export class BinaryManager {
     onProgress?.(95);
     if (!this.verifyChecksum(buffer, expectedChecksum)) {
       throw new Error("Checksum verification failed - binary may be corrupted");
+    }
+
+    const signatureContent = await this.downloadSignature(
+      release,
+      expectedAssetName
+    );
+    if (
+      !verifyMinisign(
+        MINISIGN_PUBLIC_KEY,
+        signatureContent,
+        new Uint8Array(buffer)
+      )
+    ) {
+      throw new Error(
+        "Signature verification failed - binary authenticity cannot be confirmed. " +
+          "The release may have been tampered with."
+      );
     }
 
     const binaryPath = this.getBinaryPath();
