@@ -25,7 +25,7 @@ import { ColumnDetector } from './ColumnDetector';
  * Generator for hledger transactions from tabular data
  */
 export class TransactionGenerator {
-    private readonly dateParser: DateParser;
+    private dateParser: DateParser;
     private readonly accountResolver: AccountResolver;
     private readonly options: ImportOptions;
 
@@ -54,6 +54,11 @@ export class TransactionGenerator {
             return this.createResult(transactions, warnings, errors, data.rows.length);
         }
 
+        // Auto-detect date format from column samples when not explicitly configured
+        if (this.options.dateFormat === 'auto') {
+            this.detectAndApplyDateFormat(data, warnings);
+        }
+
         // Process each row
         for (const row of data.rows) {
             const result = this.processRow(row, data.columnMappings);
@@ -78,6 +83,48 @@ export class TransactionGenerator {
         }
 
         return this.createResult(transactions, warnings, errors, data.rows.length);
+    }
+
+    /**
+     * Detect date format from column samples and reconfigure the parser.
+     * Uses disambiguateSlashFormat to resolve DD/MM vs MM/DD ambiguity.
+     */
+    private detectAndApplyDateFormat(data: ParsedTabularData, warnings: ImportWarning[]): void {
+        const dateMapping = ColumnDetector.findMapping(data.columnMappings, 'date');
+        if (!dateMapping) {
+            return;
+        }
+
+        const samples = data.rows
+            .map((row) => this.getCellValue(row, dateMapping.index))
+            .filter((s) => s.length > 0);
+
+        if (samples.length === 0) {
+            return;
+        }
+
+        const detected = this.dateParser.detectFormat(samples);
+
+        if (detected === 'DD/MM/YYYY' || detected === 'MM/DD/YYYY') {
+            const resolved = DateParser.disambiguateSlashFormat(samples);
+            this.dateParser = new DateParser(resolved);
+
+            const hasDecisiveEvidence = samples.some((s) => {
+                const m = s.match(/^(\d{1,2})\/(\d{1,2})\/\d{4}$/);
+                if (!m) return false;
+                return parseInt(m[1] ?? '', 10) > 12 || parseInt(m[2] ?? '', 10) > 12;
+            });
+
+            if (!hasDecisiveEvidence) {
+                warnings.push({
+                    lineNumber: 0,
+                    message: `Ambiguous date format: assuming ${resolved} (no day value > 12 found to disambiguate)`,
+                    field: 'date',
+                });
+            }
+        } else if (detected !== 'auto') {
+            this.dateParser = new DateParser(detected);
+        }
     }
 
     /**

@@ -78,7 +78,7 @@ describe('AccountResolver with journal history', () => {
     });
 
     describe('fuzzy payee match from history', () => {
-        it('should resolve fuzzy match with medium-high confidence', () => {
+        it('should resolve fuzzy match below review threshold', () => {
             const history = createHistory([
                 { payee: 'Starbucks Coffee Shop', accounts: ['expenses:food:coffee'] },
             ]);
@@ -88,11 +88,11 @@ describe('AccountResolver with journal history', () => {
 
             expect(result.account).toBe('expenses:food:coffee');
             expect(result.source).toBe('history');
-            expect(result.confidence).toBeGreaterThanOrEqual(0.8);
-            expect(result.confidence).toBeLessThan(0.95);
+            expect(result.confidence).toBe(0.6);
+            expect(AccountResolver.needsReview(result)).toBe(true);
         });
 
-        it('should match partial description containing payee', () => {
+        it('should match partial description containing payee (>= 3 chars)', () => {
             const history = createHistory([
                 { payee: 'Amazon', accounts: ['expenses:shopping:amazon'] },
             ]);
@@ -102,6 +102,31 @@ describe('AccountResolver with journal history', () => {
 
             expect(result.account).toBe('expenses:shopping:amazon');
             expect(result.source).toBe('history');
+        });
+
+        it('should not contains-match short payees (< 3 chars)', () => {
+            const history = createHistory([
+                { payee: 'ID', accounts: ['expenses:misc'] },
+            ]);
+
+            const resolver = new AccountResolver(DEFAULT_IMPORT_OPTIONS, history);
+            // "FLORIDA" contains "ID" but payee is too short for contains-match
+            const result = resolver.resolve('FLORIDA', undefined, -10);
+
+            expect(result.source).not.toBe('history');
+        });
+
+        it('should flag short descriptions for review even if fuzzy-matched', () => {
+            const history = createHistory([
+                { payee: 'FLORIDA STORE', accounts: ['expenses:misc'] },
+            ]);
+
+            const resolver = new AccountResolver(DEFAULT_IMPORT_OPTIONS, history);
+            // "ID" is contained in "FLORIDA STORE" but too short for contains-match;
+            // fuzzy matcher may still match, but confidence must be below review threshold
+            const result = resolver.resolve('ID', undefined, -10);
+
+            expect(AccountResolver.needsReview(result)).toBe(true);
         });
     });
 
