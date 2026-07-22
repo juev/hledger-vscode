@@ -532,6 +532,11 @@ describe("cycleStatus", () => {
       selection: {
         active: new vscode.Position(line, 0),
       },
+      selections: [
+        {
+          active: new vscode.Position(line, 0),
+        },
+      ],
       edit: editMock,
     };
   }
@@ -602,6 +607,56 @@ describe("cycleStatus", () => {
     );
   });
 
+  it("cycles a status marker at the end of a transaction header", async () => {
+    setupEditor("2024-01-15 !");
+    await cycleStatus();
+    const builder = { replace: jest.fn() };
+    editMock.mock.calls[0][0](builder);
+    expect(builder.replace).toHaveBeenCalledWith(
+      new vscode.Range(0, 11, 0, 12),
+      "* ",
+    );
+  });
+
+  it("cycles each unique selected line in one edit", async () => {
+    editMock = jest.fn().mockImplementation(
+      (callback: (builder: { replace: jest.Mock }) => void) => {
+        const builder = { replace: jest.fn() };
+        callback(builder);
+        return Promise.resolve(true);
+      },
+    );
+    (vscode.window as any).activeTextEditor = {
+      document: {
+        languageId: "hledger",
+        lineAt: jest.fn((line: number) => ({
+          text: ["2024-01-15 Grocery Store", "    * assets:checking  $100"][line],
+        })),
+      },
+      selection: { active: new vscode.Position(0, 0) },
+      selections: [
+        { active: new vscode.Position(0, 0) },
+        { active: new vscode.Position(1, 0) },
+        { active: new vscode.Position(0, 5) },
+      ],
+      edit: editMock,
+    };
+
+    await cycleStatus();
+
+    const builder = { replace: jest.fn() };
+    editMock.mock.calls[0][0](builder);
+    expect(builder.replace).toHaveBeenCalledTimes(2);
+    expect(builder.replace).toHaveBeenCalledWith(
+      new vscode.Range(0, 11, 0, 11),
+      "! ",
+    );
+    expect(builder.replace).toHaveBeenCalledWith(
+      new vscode.Range(1, 4, 1, 6),
+      "",
+    );
+  });
+
   it("cycles unmarked posting to pending", async () => {
     setupEditor("    assets:checking  $100", 1);
     await cycleStatus();
@@ -647,6 +702,11 @@ describe("setStatus", () => {
       selection: {
         active: new vscode.Position(line, 0),
       },
+      selections: [
+        {
+          active: new vscode.Position(line, 0),
+        },
+      ],
       edit: editMock,
     };
   }
@@ -705,6 +765,45 @@ describe("setStatus", () => {
     expect(editMock).toHaveBeenCalledTimes(1);
     const builder = { replace: jest.fn() };
     editMock.mock.calls[0][0](builder);
+    expect(builder.replace).toHaveBeenCalledWith(
+      new vscode.Range(1, 4, 1, 4),
+      "* ",
+    );
+  });
+
+  it("sets status on each unique selected line in one edit", async () => {
+    editMock = jest.fn().mockImplementation(
+      (callback: (builder: { replace: jest.Mock }) => void) => {
+        const builder = { replace: jest.fn() };
+        callback(builder);
+        return Promise.resolve(true);
+      },
+    );
+    (vscode.window as any).activeTextEditor = {
+      document: {
+        languageId: "hledger",
+        lineAt: jest.fn((line: number) => ({
+          text: ["2024-01-15 Grocery Store", "    assets:checking  $100"][line],
+        })),
+      },
+      selection: { active: new vscode.Position(0, 0) },
+      selections: [
+        { active: new vscode.Position(0, 0) },
+        { active: new vscode.Position(1, 0) },
+        { active: new vscode.Position(1, 5) },
+      ],
+      edit: editMock,
+    };
+
+    await setStatus("*");
+
+    const builder = { replace: jest.fn() };
+    editMock.mock.calls[0][0](builder);
+    expect(builder.replace).toHaveBeenCalledTimes(2);
+    expect(builder.replace).toHaveBeenCalledWith(
+      new vscode.Range(0, 11, 0, 11),
+      "* ",
+    );
     expect(builder.replace).toHaveBeenCalledWith(
       new vscode.Range(1, 4, 1, 4),
       "* ",

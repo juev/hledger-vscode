@@ -152,22 +152,6 @@ export function activate(context: vscode.ExtensionContext): void {
     );
     context.subscriptions.push(inlineProvider);
 
-    // Register manual completion commands
-    context.subscriptions.push(
-      vscode.commands.registerCommand("hledger.triggerDateCompletion", () => {
-        vscode.commands.executeCommand("editor.action.triggerSuggest");
-      }),
-    );
-
-    context.subscriptions.push(
-      vscode.commands.registerCommand(
-        "hledger.triggerAccountCompletion",
-        () => {
-          vscode.commands.executeCommand("editor.action.triggerSuggest");
-        },
-      ),
-    );
-
     // Create CLI service and commands
     const cliService = new HLedgerCliService();
     const cliCommands = new HLedgerCliCommands(cliService);

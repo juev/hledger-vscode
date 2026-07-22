@@ -93,7 +93,7 @@ export async function alignAmount(
     const workspaceEdit = new vscode.WorkspaceEdit();
     for (const edit of edits) {
       workspaceEdit.replace(
-        document.uri as unknown as vscode.Uri,
+        document.uri,
         new vscode.Range(
           edit.range.start.line,
           edit.range.start.character,
