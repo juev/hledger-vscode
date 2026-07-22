@@ -823,7 +823,15 @@ export const window = {
     document: null,
     edit: jest.fn(),
   },
-  withProgress: jest.fn((options, task) => task({ report: jest.fn() })),
+  withProgress: jest.fn((options, task) =>
+    task(
+      { report: jest.fn() },
+      {
+        isCancellationRequested: false,
+        onCancellationRequested: jest.fn(() => ({ dispose: jest.fn() })),
+      },
+    ),
+  ),
   createOutputChannel: jest.fn(
     (name: string): OutputChannel => ({
       name,

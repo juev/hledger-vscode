@@ -699,7 +699,7 @@ Access via Command Palette (`Ctrl+Shift+P` or `Cmd+Shift+P`):
 
 | Command | Description | hledger command |
 |---------|-------------|-----------------|
-| HLedger: Insert Balance Report | Balance sheet with assets/liabilities | `hledger bs` |
+| HLedger: Insert Balance Sheet | Balance sheet with assets/liabilities | `hledger bs` |
 | HLedger: Insert Income Statement | Revenue and expense summary | `hledger incomestatement` |
 | HLedger: Insert Statistics Report | File statistics and metrics | `hledger stats` |
 
@@ -751,7 +751,7 @@ Right-click in the editor to access the HLedger submenu with quick access to CLI
 
 | Command | Description |
 |---------|-------------|
-| **Insert Balance Report** | Insert `hledger bs` output as comment |
+| **Insert Balance Sheet** | Insert `hledger bs` output as comment |
 | **Insert Income Statement** | Insert `hledger is` output as comment |
 | **Insert Statistics** | Insert `hledger stats` output as comment |
 
@@ -1152,7 +1152,7 @@ All commands accessible via Command Palette (`Ctrl+Shift+P` or `Cmd+Shift+P`):
 
 | Command | Title | Description |
 |---------|-------|-------------|
-| `hledger.cli.balance` | HLedger: Insert Balance Report | Insert balance sheet as comment |
+| `hledger.cli.balance` | HLedger: Insert Balance Sheet | Insert balance sheet as comment |
 | `hledger.cli.stats` | HLedger: Insert Statistics Report | Insert file statistics as comment |
 | `hledger.cli.incomestatement` | HLedger: Insert Income Statement | Insert income statement as comment |
 | `hledger.import.fromSelection` | HLedger: Import Selected Tabular Data | Import selected CSV/TSV |

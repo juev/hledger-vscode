@@ -137,15 +137,26 @@ export class HLedgerCliService implements vscode.Disposable {
         }
     }
 
-    public async executeCommand(subcommand: string, journalFile: string, args: string[] = []): Promise<string> {
+    public async executeCommand(
+        subcommand: string,
+        journalFile: string,
+        args: string[] = [],
+        signal?: AbortSignal,
+    ): Promise<string> {
         const hledgerPath = await this.getHledgerPath();
         if (!hledgerPath) {
             throw new Error('hledger executable not found. Please install hledger or configure the path in settings.');
         }
 
+        const timeout = vscode.workspace.getConfiguration('hledger').get<number>('cli.timeout', 30000);
+
         try {
             const cliArgs = ['-f', journalFile, subcommand, ...args];
-            const { stdout, stderr } = await execFile(hledgerPath, cliArgs, { maxBuffer: 10 * 1024 * 1024 });
+            const { stdout, stderr } = await execFile(hledgerPath, cliArgs, {
+                maxBuffer: 10 * 1024 * 1024,
+                timeout,
+                signal,
+            });
 
             if (stderr) {
                 console.warn('hledger stderr:', stderr);
@@ -153,24 +164,33 @@ export class HLedgerCliService implements vscode.Disposable {
 
             return stdout;
         } catch (error: unknown) {
+            if (signal?.aborted) {
+                throw new Error(`hledger ${subcommand} was cancelled.`);
+            }
             if (isExecFailure(error) && error.stderr) {
                 throw createErrorWithCause(`hledger command failed: ${error.stderr}`, error);
             }
             const message = error instanceof Error ? error.message : String(error);
+            if (message.includes('ETIMEDOUT') || message.includes('timed out')) {
+                throw createErrorWithCause(
+                    `hledger ${subcommand} timed out after ${timeout}ms. Increase hledger.cli.timeout if needed.`,
+                    error,
+                );
+            }
             throw createErrorWithCause(`Failed to execute hledger command: ${message}`, error);
         }
     }
 
-    public async runBalance(journalFile: string, extraArgs: string[] = []): Promise<string> {
-        return this.executeCommand('bs', journalFile, extraArgs);
+    public async runBalanceSheet(journalFile: string, extraArgs: string[] = [], signal?: AbortSignal): Promise<string> {
+        return this.executeCommand('bs', journalFile, extraArgs, signal);
     }
 
-    public async runStats(journalFile: string): Promise<string> {
-        return this.executeCommand('stats', journalFile);
+    public async runStats(journalFile: string, signal?: AbortSignal): Promise<string> {
+        return this.executeCommand('stats', journalFile, [], signal);
     }
 
-    public async runIncomestatement(journalFile: string, extraArgs: string[] = []): Promise<string> {
-        return this.executeCommand('incomestatement', journalFile, extraArgs);
+    public async runIncomestatement(journalFile: string, extraArgs: string[] = [], signal?: AbortSignal): Promise<string> {
+        return this.executeCommand('incomestatement', journalFile, extraArgs, signal);
     }
 
     public formatAsComment(output: string, command: string): string {

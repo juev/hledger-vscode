@@ -173,7 +173,7 @@ export function activate(context: vscode.ExtensionContext): void {
     // Register CLI commands
     context.subscriptions.push(
       vscode.commands.registerCommand("hledger.cli.balance", async () => {
-        await cliCommands.insertBalance();
+        await cliCommands.insertBalanceSheet();
       }),
     );
 

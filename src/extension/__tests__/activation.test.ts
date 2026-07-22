@@ -35,7 +35,7 @@ jest.mock("../services/HLedgerCliService", () => ({
 jest.mock("../HLedgerCliCommands", () => ({
   HLedgerCliCommands: jest.fn().mockImplementation(() => ({
     dispose: jest.fn(),
-    insertBalance: jest.fn(),
+    insertBalanceSheet: jest.fn(),
     insertStats: jest.fn(),
     insertIncomestatement: jest.fn(),
   })),
