@@ -1,6 +1,7 @@
 import * as fs from "fs";
 import * as os from "os";
 import * as path from "path";
+import * as vscode from "vscode";
 import {
   HLedgerLanguageClient,
   LanguageClientState,
@@ -230,63 +231,76 @@ describe("HLedgerLanguageClient", () => {
       expect(result).toBeNull();
     });
 
-    it("returns null when sendRequest throws", async () => {
+    it("passes a cancellation token and disposes it after a successful request", async () => {
       const client = new HLedgerLanguageClient(binaryPath);
       await client.start();
 
-      // Mock sendRequest to throw
       const internalClient = client.getClient();
-      jest.spyOn(internalClient!, "sendRequest").mockRejectedValue(new Error("Network error"));
-
-      const result = await client.getPayeeAccountHistory("file:///test.journal");
-      expect(result).toBeNull();
-
-      client.dispose();
-    });
-
-    it("returns result on success", async () => {
-      const client = new HLedgerLanguageClient(binaryPath);
-      await client.start();
-
       const mockResult = {
         payeeAccounts: { "Store": ["Expenses:Food"] },
-        pairUsage: { "Store::Expenses:Food": 5 }
+        pairUsage: { "Store::Expenses:Food": 5 },
       };
-
-      const internalClient = client.getClient();
-      jest.spyOn(internalClient!, "sendRequest").mockResolvedValue(mockResult);
+      const sendRequestSpy = jest.spyOn(internalClient!, "sendRequest").mockResolvedValue(mockResult);
+      const cancelSpy = jest.spyOn(vscode.CancellationTokenSource.prototype, "cancel");
+      const disposeSpy = jest.spyOn(vscode.CancellationTokenSource.prototype, "dispose");
 
       const result = await client.getPayeeAccountHistory("file:///test.journal");
       expect(result).toEqual(mockResult);
+      expect(sendRequestSpy).toHaveBeenCalledWith(
+        "hledger/payeeAccountHistory",
+        { textDocument: { uri: "file:///test.journal" } },
+        expect.objectContaining({ isCancellationRequested: false })
+      );
+      expect(cancelSpy).not.toHaveBeenCalled();
+      expect(disposeSpy).toHaveBeenCalledTimes(1);
 
       client.dispose();
     });
 
-    it("returns null when request times out and clears timer", async () => {
+    it("disposes the cancellation token without cancelling when sendRequest rejects", async () => {
       const client = new HLedgerLanguageClient(binaryPath);
       await client.start();
 
-      // Mock request that never resolves
+      const internalClient = client.getClient();
+      jest.spyOn(internalClient!, "sendRequest").mockRejectedValue(new Error("Network error"));
+      const cancelSpy = jest.spyOn(vscode.CancellationTokenSource.prototype, "cancel");
+      const disposeSpy = jest.spyOn(vscode.CancellationTokenSource.prototype, "dispose");
+
+      const result = await client.getPayeeAccountHistory("file:///test.journal");
+      expect(result).toBeNull();
+      expect(cancelSpy).not.toHaveBeenCalled();
+      expect(disposeSpy).toHaveBeenCalledTimes(1);
+
+      client.dispose();
+    });
+
+    it("cancels at the 5000ms timeout after resolving null and disposes the token", async () => {
+      const client = new HLedgerLanguageClient(binaryPath);
+      await client.start();
+
       const internalClient = client.getClient();
       jest.spyOn(internalClient!, "sendRequest").mockImplementation(
-        () => new Promise(() => {}) // Never resolves
+        (_method, _params, token) => new Promise((_resolve, reject) => {
+          token?.onCancellationRequested(() => reject(new Error("Request cancelled")));
+        })
       );
 
       jest.useFakeTimers();
-      const clearTimeoutSpy = jest.spyOn(global, 'clearTimeout');
+      const cancelSpy = jest.spyOn(vscode.CancellationTokenSource.prototype, "cancel");
+      const disposeSpy = jest.spyOn(vscode.CancellationTokenSource.prototype, "dispose");
 
       const resultPromise = client.getPayeeAccountHistory("file:///test.journal");
 
-      // Advance time past 5000ms timeout
-      jest.advanceTimersByTime(5001);
+      jest.advanceTimersByTime(4999);
+      expect(cancelSpy).not.toHaveBeenCalled();
+
+      jest.advanceTimersByTime(1);
 
       const result = await resultPromise;
       expect(result).toBeNull();
+      expect(cancelSpy).toHaveBeenCalledTimes(1);
+      expect(disposeSpy).toHaveBeenCalledTimes(1);
 
-      // Verify timer was cleaned up
-      expect(clearTimeoutSpy).toHaveBeenCalled();
-
-      clearTimeoutSpy.mockRestore();
       jest.useRealTimers();
       client.dispose();
     });
