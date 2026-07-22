@@ -112,6 +112,44 @@ export interface CancellationToken {
   onCancellationRequested: any;
 }
 
+export class CancellationTokenSource {
+  private isCancelled = false;
+  private isDisposed = false;
+  private readonly listeners = new Set<() => void>();
+  readonly token: CancellationToken;
+
+  constructor() {
+    const source = this;
+    this.token = {
+      get isCancellationRequested(): boolean {
+        return source.isCancelled;
+      },
+      onCancellationRequested: (listener: () => void) => {
+        source.listeners.add(listener);
+        return {
+          dispose: () => source.listeners.delete(listener),
+        };
+      },
+    };
+  }
+
+  cancel(): void {
+    if (this.isCancelled || this.isDisposed) {
+      return;
+    }
+
+    this.isCancelled = true;
+    for (const listener of this.listeners) {
+      listener();
+    }
+  }
+
+  dispose(): void {
+    this.isDisposed = true;
+    this.listeners.clear();
+  }
+}
+
 export class CompletionItem {
   label: string;
   kind?: CompletionItemKind;

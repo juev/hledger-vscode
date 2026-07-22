@@ -238,23 +238,23 @@ export class HLedgerLanguageClient implements vscode.Disposable {
     }
 
     const timeout = 5000;
+    const cancellationTokenSource = new vscode.CancellationTokenSource();
     let timeoutId: ReturnType<typeof setTimeout> | undefined;
     const timeoutPromise = new Promise<null>((resolve) => {
-      timeoutId = setTimeout(() => resolve(null), timeout);
+      timeoutId = setTimeout(() => {
+        resolve(null);
+        cancellationTokenSource.cancel();
+      }, timeout);
     });
 
     try {
       const requestPromise = this.client.sendRequest<PayeeAccountHistoryResult>(
         'hledger/payeeAccountHistory',
-        { textDocument: { uri } }
+        { textDocument: { uri } },
+        cancellationTokenSource.token
       );
 
       const result = await Promise.race([requestPromise, timeoutPromise]);
-
-      // Clear timeout immediately after race completes
-      if (timeoutId !== undefined) {
-        clearTimeout(timeoutId);
-      }
 
       // Validate response schema
       if (result !== null && !isValidPayeeAccountHistory(result)) {
@@ -264,12 +264,13 @@ export class HLedgerLanguageClient implements vscode.Disposable {
 
       return result;
     } catch (error) {
-      // Clear timeout on error
+      console.error('LSP payee account history request failed:', error);
+      return null;
+    } finally {
       if (timeoutId !== undefined) {
         clearTimeout(timeoutId);
       }
-      console.error('LSP payee account history request failed:', error);
-      return null;
+      cancellationTokenSource.dispose();
     }
   }
 
