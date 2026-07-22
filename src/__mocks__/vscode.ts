@@ -823,6 +823,7 @@ export const window = {
     document: null,
     edit: jest.fn(),
   },
+  onDidChangeActiveTextEditor: jest.fn(() => ({ dispose: jest.fn() })),
   withProgress: jest.fn((options, task) =>
     task(
       { report: jest.fn() },
@@ -847,6 +848,7 @@ export const window = {
     (_alignment?: StatusBarAlignment, _priority?: number) => ({
       text: '',
       tooltip: '',
+      name: undefined as string | undefined,
       command: undefined as string | undefined,
       color: undefined as string | undefined,
       backgroundColor: undefined as any,

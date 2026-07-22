@@ -9,6 +9,7 @@ import { alignAmount } from "./commands/alignAmount";
 import { enterAndSuggest } from "./commands/enterAndSuggest";
 import { cycleStatus, setStatus } from "./commands/toggleStatus";
 import { InlineCompletionProvider } from "./inline/InlineCompletionProvider";
+import { KeybindingHintsStatusBar } from "./KeybindingHintsStatusBar";
 import { Logger } from "./Logger";
 import { LSPStatusBar } from "./lsp/LSPStatusBar";
 import { formatErrorWithContext } from "./ErrorContext";
@@ -28,6 +29,9 @@ export function activate(context: vscode.ExtensionContext): void {
     context.subscriptions.push(
       lspManager.onStatusChange((status) => statusBar.update(status))
     );
+
+    const keybindingHints = new KeybindingHintsStatusBar();
+    context.subscriptions.push(keybindingHints);
 
     const startupChecker = new StartupChecker(lspManager, context);
 
