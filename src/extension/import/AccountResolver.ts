@@ -4,6 +4,7 @@
  */
 
 import * as vscode from 'vscode';
+import Decimal from 'decimal.js';
 import {
     AccountResolution,
     AccountResolutionSource,
@@ -157,7 +158,7 @@ export class AccountResolver {
     resolve(
         description: string,
         category?: string,
-        amount?: number
+        amount?: Decimal | number
     ): AccountResolution {
         // Strategy 1: Journal history (highest priority)
         if (this.useHistory && description) {
@@ -402,14 +403,21 @@ export class AccountResolver {
     /**
      * Resolve account from amount sign
      */
-    private resolveFromAmount(amount: number): AccountResolution {
-        if (amount > 0) {
+    private resolveFromAmount(amount: Decimal | number): AccountResolution {
+        const isPositive = typeof amount === 'number'
+            ? amount > 0
+            : !amount.isZero() && amount.isPositive();
+        const isNegative = typeof amount === 'number'
+            ? amount < 0
+            : !amount.isZero() && amount.isNegative();
+
+        if (isPositive) {
             return {
                 account: this.defaultCreditAccount,
                 confidence: CONFIDENCE.AMOUNT_SIGN,
                 source: 'sign',
             };
-        } else if (amount < 0) {
+        } else if (isNegative) {
             return {
                 account: this.defaultDebitAccount,
                 confidence: CONFIDENCE.AMOUNT_SIGN,

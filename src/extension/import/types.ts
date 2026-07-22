@@ -3,6 +3,7 @@
  */
 
 import { AccountName, PayeeName, UsageCount } from '../types';
+import Decimal from 'decimal.js';
 
 /**
  * Payee-to-account mapping from journal history.
@@ -76,7 +77,7 @@ export interface AccountResolution {
 export interface ImportedTransaction {
     readonly date: string; // YYYY-MM-DD format
     readonly description: string;
-    readonly amount: number;
+    readonly amount: Decimal;
     readonly amountFormatted: string;
     readonly currency?: string;
     readonly sourceAccount: AccountResolution;

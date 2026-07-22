@@ -1,5 +1,6 @@
 import { AccountResolver } from '../AccountResolver';
 import { DEFAULT_IMPORT_OPTIONS } from '../types';
+import Decimal from 'decimal.js';
 
 describe('AccountResolver', () => {
     let resolver: AccountResolver;
@@ -116,6 +117,13 @@ describe('AccountResolver', () => {
 
         it('should use default placeholder for zero amount', () => {
             const result = resolver.resolve('Unknown Merchant', undefined, 0);
+
+            expect(result.account).toBe('TODO:account');
+            expect(result.source).toBe('default');
+        });
+
+        it('should use default placeholder for a Decimal zero amount', () => {
+            const result = resolver.resolve('Unknown Merchant', undefined, new Decimal(0));
 
             expect(result.account).toBe('TODO:account');
             expect(result.source).toBe('default');

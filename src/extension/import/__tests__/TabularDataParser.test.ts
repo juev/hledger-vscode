@@ -215,6 +215,35 @@ describe('TabularDataParser', () => {
                 expect(result.value.rows).toHaveLength(2);
             }
         });
+
+        it('should parse quoted values that span multiple physical lines', () => {
+            const content = `Date,Description,Amount
+2024-01-15,"First line
+second line",5.50
+2024-01-16,Gas Station,30.00`;
+
+            const result = parser.parse(content);
+
+            expect(result.success).toBe(true);
+            if (result.success) {
+                expect(result.value.rows[0]!.cells).toEqual(['2024-01-15', 'First line\nsecond line', '5.50']);
+                expect(result.value.rows[0]!.lineNumber).toBe(2);
+                expect(result.value.rows[1]!.lineNumber).toBe(4);
+            }
+        });
+
+        it('should preserve escaped quotes adjacent to a newline inside quoted values', () => {
+            const content = `Date,Description,Amount
+2024-01-15,"First line ""
+second line",5.50`;
+
+            const result = parser.parse(content);
+
+            expect(result.success).toBe(true);
+            if (result.success) {
+                expect(result.value.rows[0]!.cells[1]).toBe('First line "\nsecond line');
+            }
+        });
     });
 
     describe('error handling', () => {
@@ -239,6 +268,20 @@ describe('TabularDataParser', () => {
             const result = parser.parse(content);
             expect(result.success).toBe(false);
         });
+
+        it('should report the starting physical line for an unclosed multiline quote', () => {
+            const content = `Date,Description,Amount
+2024-01-15,Grocery Store,50.00
+2024-01-16,"Unclosed quote
+that continues`;
+
+            const result = parser.parse(content);
+
+            expect(result.success).toBe(false);
+            if (result.success === false) {
+                expect(result.error).toBe('Error parsing line 3: Unclosed quote');
+            }
+        });
     });
 
     describe('explicit delimiter', () => {
@@ -251,6 +294,23 @@ describe('TabularDataParser', () => {
             if (result.success) {
                 expect(result.value.delimiter).toBe(';');
                 expect(result.value.headers).toEqual(['Date,Description', 'Amount']);
+            }
+        });
+    });
+
+    describe('delimiter detection with logical records', () => {
+        it('should ignore delimiters inside quoted multiline values', () => {
+            const content = `Date;Description;Amount
+2024-01-15;"Coffee, Bakery
+and Deli";5.50
+2024-01-16;Gas Station;30.00`;
+
+            const result = parser.parse(content);
+
+            expect(result.success).toBe(true);
+            if (result.success) {
+                expect(result.value.delimiter).toBe(';');
+                expect(result.value.rows[0]!.cells).toEqual(['2024-01-15', 'Coffee, Bakery\nand Deli', '5.50']);
             }
         });
     });

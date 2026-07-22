@@ -17,9 +17,14 @@ import {
     PayeeAccountHistory,
     DEFAULT_IMPORT_OPTIONS,
 } from './types';
+import Decimal from 'decimal.js';
+import stringWidth from 'string-width';
 import { DateParser } from './DateParser';
 import { AccountResolver } from './AccountResolver';
 import { ColumnDetector } from './ColumnDetector';
+
+const MAX_AMOUNT_INPUT_LENGTH = 100;
+const DecimalAmount = Decimal.clone({ precision: 2 * MAX_AMOUNT_INPUT_LENGTH + 2 });
 
 /**
  * Generator for hledger transactions from tabular data
@@ -281,7 +286,7 @@ export class TransactionGenerator {
     private extractAmount(
         row: ParsedRow,
         mappings: readonly ColumnMapping[]
-    ): { success: true; amount: number } | { success: false; error: string } {
+    ): { success: true; amount: Decimal } | { success: false; error: string } {
         // Try single amount column
         const amountMapping = ColumnDetector.findMapping(mappings, 'amount');
         if (amountMapping) {
@@ -289,7 +294,7 @@ export class TransactionGenerator {
             if (amountStr) {
                 const parsed = this.parseAmountString(amountStr);
                 if (parsed !== null) {
-                    const amount = this.options.invertAmounts ? -parsed : parsed;
+                    const amount = this.options.invertAmounts ? parsed.negated() : parsed;
                     return { success: true, amount };
                 }
                 return { success: false, error: `Invalid amount: ${amountStr}` };
@@ -301,15 +306,16 @@ export class TransactionGenerator {
         const creditMapping = ColumnDetector.findMapping(mappings, 'credit');
 
         if (debitMapping || creditMapping) {
-            let amount = 0;
+            let amount = new DecimalAmount(0);
 
             if (debitMapping) {
                 const debitStr = this.getCellValue(row, debitMapping.index);
                 if (debitStr) {
                     const parsed = this.parseAmountString(debitStr);
-                    if (parsed !== null) {
-                        amount -= Math.abs(parsed); // Debits are negative
+                    if (parsed === null) {
+                        return { success: false, error: `Invalid amount: ${debitStr}` };
                     }
+                    amount = amount.minus(parsed.abs()); // Debits are negative
                 }
             }
 
@@ -317,14 +323,15 @@ export class TransactionGenerator {
                 const creditStr = this.getCellValue(row, creditMapping.index);
                 if (creditStr) {
                     const parsed = this.parseAmountString(creditStr);
-                    if (parsed !== null) {
-                        amount += Math.abs(parsed); // Credits are positive
+                    if (parsed === null) {
+                        return { success: false, error: `Invalid amount: ${creditStr}` };
                     }
+                    amount = amount.plus(parsed.abs()); // Credits are positive
                 }
             }
 
-            if (amount !== 0) {
-                const finalAmount = this.options.invertAmounts ? -amount : amount;
+            if (!amount.isZero()) {
+                const finalAmount = this.options.invertAmounts ? amount.negated() : amount;
                 return { success: true, amount: finalAmount };
             }
         }
@@ -408,7 +415,7 @@ export class TransactionGenerator {
      * 5. Applies explicit signs (`+`/`-`) and accounting notation signs
      *
      * @param {string} amountStr - The amount string to parse (e.g., `$1,234.56`, `1.234,56`, `(100)`)
-     * @returns {number | null} The parsed numeric value, or null if parsing fails. Returns null for:
+     * @returns {Decimal | null} The parsed numeric value, or null if parsing fails. Returns null for:
      *   - Strings longer than 100 characters (DoS protection)
      *   - Malformed amounts that cannot be parsed as valid numbers
      *   - Empty strings or strings containing only non-numeric characters
@@ -426,9 +433,9 @@ export class TransactionGenerator {
      * @security No nested loops or backtracking, safe from algorithmic complexity attacks.
      *           DoS protection: rejects strings > 100 characters.
      */
-    private parseAmountString(amountStr: string): number | null {
+    private parseAmountString(amountStr: string): Decimal | null {
         // DoS protection: reject strings over 100 characters
-        if (amountStr.length > 100) {
+        if (amountStr.length > MAX_AMOUNT_INPUT_LENGTH) {
             return null;
         }
 
@@ -441,13 +448,12 @@ export class TransactionGenerator {
         const unsigned = hasSign ? withoutParens.slice(1) : withoutParens;
 
         const normalized = this.normalizeDecimalSeparator(unsigned);
-        const numericValue = parseFloat(normalized);
-
-        if (isNaN(numericValue)) {
+        if (!/^(?:\d+(?:\.\d*)?|\.\d+)$/.test(normalized)) {
             return null;
         }
 
-        return (isNegative ? -1 : 1) * sign * numericValue;
+        const numericValue = new DecimalAmount(normalized);
+        return isNegative !== (sign < 0) ? numericValue.negated() : numericValue;
     }
 
     /**
@@ -535,12 +541,11 @@ export class TransactionGenerator {
     /**
      * Format amount with currency
      */
-    private formatAmount(amount: number, currency?: string): string {
-        const absAmount = Math.abs(amount);
-        const sign = amount < 0 ? '-' : '';
+    private formatAmount(amount: Decimal, currency?: string): string {
+        const absAmount = amount.abs();
+        const sign = amount.isNegative() ? '-' : '';
 
-        // Format with 2 decimal places
-        const formatted = absAmount.toFixed(2);
+        const formatted = absAmount.toFixed(Math.max(2, absAmount.decimalPlaces() ?? 0));
 
         if (currency) {
             // Check if currency is a symbol or code
@@ -622,7 +627,7 @@ export class TransactionGenerator {
 
         // Calculate padding for alignment
         const accountPart = `    ${tx.sourceAccount.account}`;
-        const padding = Math.max(4, 52 - accountPart.length - tx.amountFormatted.length);
+        const padding = Math.max(4, 52 - stringWidth(accountPart) - stringWidth(tx.amountFormatted));
         const amountPadding = ' '.repeat(padding);
 
         if (includeAnnotations && tx.sourceAccount.source !== 'default') {
