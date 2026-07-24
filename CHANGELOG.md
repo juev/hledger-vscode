@@ -1,5 +1,11 @@
 # Change Log
 
+## [0.5.39] - 2026-07-24
+
+### Fixed
+- fix(lsp): verify releases before replacing server (#239)
+
+
 ## [0.5.38] - 2026-07-24
 
 ### Added
