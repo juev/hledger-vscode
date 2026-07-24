@@ -40,17 +40,27 @@ describe('keybinding contributions', () => {
     expect(properties?.['hledger.keybindings.alignAmount']?.default).toBe(true);
   });
 
-  it('claims Enter and Tab for hledger when inline suggestions are visible', () => {
+  it('claims Enter for hledger when inline suggestions are visible', () => {
     const enterKeybinding = getKeybinding('hledger.editor.enterAndSuggest');
-    const tabKeybinding = getKeybinding('hledger.editor.alignAmount');
 
     expect(enterKeybinding?.key).toBe('enter');
     expect(enterKeybinding?.when).toContain('editorLangId == hledger');
     expect(enterKeybinding?.when).not.toContain('!inlineSuggestionVisible');
+  });
 
-    expect(tabKeybinding?.key).toBe('tab');
-    expect(tabKeybinding?.when).toContain('editorLangId == hledger');
-    expect(tabKeybinding?.when).not.toContain('!inlineSuggestionVisible');
+  it('commits a visible inline suggestion with Tab and aligns otherwise', () => {
+    const commitKeybinding = getKeybinding(
+      'editor.action.inlineSuggest.commit'
+    );
+    const alignKeybinding = getKeybinding('hledger.editor.alignAmount');
+
+    expect(commitKeybinding?.key).toBe('tab');
+    expect(commitKeybinding?.when).toContain('editorLangId == hledger');
+    expect(commitKeybinding?.when).toContain('inlineSuggestionVisible');
+
+    expect(alignKeybinding?.key).toBe('tab');
+    expect(alignKeybinding?.when).toContain('editorLangId == hledger');
+    expect(alignKeybinding?.when).toContain('!inlineSuggestionVisible');
   });
 
   it('keeps transaction status keybindings active in hledger editors', () => {

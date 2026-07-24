@@ -25,7 +25,9 @@ Example:
 
 ## Tab: align amount
 
-Press **Tab** after typing an account name to move the cursor to the amount column. Amounts are aligned automatically on save when `editor.formatOnType` is enabled.
+Press **Tab** to accept a visible inline suggestion. Otherwise, after typing an
+account name, it moves the cursor to the amount column. Amounts are aligned
+automatically on save when `editor.formatOnType` is enabled.
 
 | Setting | Default | Description |
 |---------|---------|-------------|

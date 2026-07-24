@@ -509,9 +509,14 @@
         "when": "editorTextFocus && editorLangId == hledger && !suggestWidgetVisible && !inSnippetMode && config.hledger.keybindings.enterAndSuggest"
       },
       {
+        "command": "editor.action.inlineSuggest.commit",
+        "key": "tab",
+        "when": "editorTextFocus && editorLangId == hledger && !suggestWidgetVisible && !inSnippetMode && inlineSuggestionVisible"
+      },
+      {
         "command": "hledger.editor.alignAmount",
         "key": "tab",
-        "when": "editorTextFocus && editorLangId == hledger && !suggestWidgetVisible && !inSnippetMode && !hasSnippetCompletions && config.hledger.keybindings.alignAmount"
+        "when": "editorTextFocus && editorLangId == hledger && !suggestWidgetVisible && !inlineSuggestionVisible && !inSnippetMode && !hasSnippetCompletions && config.hledger.keybindings.alignAmount"
       },
       {
         "command": "hledger.editor.cycleStatus",
