@@ -258,6 +258,11 @@
           "default": true,
           "description": "Rebind Tab in hledger files to align amounts via the Language Server (disable to restore default VS Code Tab behavior)"
         },
+        "hledger.keybindings.transactionStatus": {
+          "type": "boolean",
+          "default": false,
+          "description": "Enable keybindings for cycling and setting transaction status in hledger files"
+        },
         "hledger.completion.snippets": {
           "type": "boolean",
           "default": true,
@@ -519,7 +524,7 @@
         "mac": "cmd+k s",
         "win": "ctrl+k s",
         "linux": "ctrl+k s",
-        "when": "editorTextFocus && editorLangId == hledger"
+        "when": "editorTextFocus && editorLangId == hledger && config.hledger.keybindings.transactionStatus"
       },
       {
         "command": "hledger.editor.setStatusUnmarked",
@@ -527,7 +532,7 @@
         "mac": "cmd+k 0",
         "win": "ctrl+k 0",
         "linux": "ctrl+k 0",
-        "when": "editorTextFocus && editorLangId == hledger"
+        "when": "editorTextFocus && editorLangId == hledger && config.hledger.keybindings.transactionStatus"
       },
       {
         "command": "hledger.editor.setStatusPending",
@@ -535,7 +540,7 @@
         "mac": "cmd+k 1",
         "win": "ctrl+k 1",
         "linux": "ctrl+k 1",
-        "when": "editorTextFocus && editorLangId == hledger"
+        "when": "editorTextFocus && editorLangId == hledger && config.hledger.keybindings.transactionStatus"
       },
       {
         "command": "hledger.editor.setStatusCleared",
@@ -543,7 +548,7 @@
         "mac": "cmd+k 2",
         "win": "ctrl+k 2",
         "linux": "ctrl+k 2",
-        "when": "editorTextFocus && editorLangId == hledger"
+        "when": "editorTextFocus && editorLangId == hledger && config.hledger.keybindings.transactionStatus"
       }
     ],
     "configurationDefaults": {
