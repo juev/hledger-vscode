@@ -1,6 +1,8 @@
 # Keyboard Shortcuts
 
 The extension provides keybindings for common editing tasks in hledger files.
+HLedger owns **Enter** and **Tab** in hledger editors, including while inline
+suggestions are visible. Your user keybindings can override these defaults.
 
 ## Status keybindings
 
@@ -12,16 +14,6 @@ Set or cycle the transaction/posting status marker (`*`, `!`, or none):
 | `Cmd+K 0` | `Ctrl+K 0` | Set status to unmarked |
 | `Cmd+K 1` | `Ctrl+K 1` | Set status to pending (`!`) |
 | `Cmd+K 2` | `Ctrl+K 2` | Set status to cleared (`*`) |
-
-These shortcuts are disabled by default. Enable them with the following setting:
-
-| Setting | Default | Description |
-|---------|---------|-------------|
-| `hledger.keybindings.transactionStatus` | `false` | Enable status keybindings |
-
-The status commands remain available in the Command Palette. To use different
-shortcuts, open **Preferences: Open Keyboard Shortcuts**, search for `HLedger`,
-and assign your preferred bindings.
 
 Example:
 
@@ -50,10 +42,10 @@ Press **Enter** after a payee name to accept the ghost text suggestion and inser
 
 ## Status bar hints
 
-When editing an hledger file, the status bar shows a quick reference. It includes the status shortcut only when `hledger.keybindings.transactionStatus` is enabled:
+When editing an hledger file, the status bar shows a quick reference:
 
 ```
-Tab: align · Enter: suggest
+⌘K S: status · Tab: align · Enter: suggest
 ```
 
 ---

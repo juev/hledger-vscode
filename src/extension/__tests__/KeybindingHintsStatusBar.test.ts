@@ -5,16 +5,10 @@ describe('KeybindingHintsStatusBar', () => {
   let statusBar: KeybindingHintsStatusBar;
   let mockItem: any;
   let editorChangeCallback: ((editor: any) => void) | undefined;
-  let configurationChangeCallback:
-    | ((event: vscode.ConfigurationChangeEvent) => void)
-    | undefined;
-  let transactionStatusKeybindingsEnabled: boolean;
 
   beforeEach(() => {
     jest.clearAllMocks();
     editorChangeCallback = undefined;
-    configurationChangeCallback = undefined;
-    transactionStatusKeybindingsEnabled = false;
 
     (vscode.window as any).activeTextEditor = undefined;
 
@@ -34,20 +28,6 @@ describe('KeybindingHintsStatusBar', () => {
         return { dispose: jest.fn() };
       }
     );
-    (vscode.workspace.getConfiguration as jest.Mock).mockReturnValue({
-      get: jest.fn((key: string, defaultValue?: unknown) => {
-        if (key === 'keybindings.transactionStatus') {
-          return transactionStatusKeybindingsEnabled;
-        }
-        return defaultValue;
-      }),
-    });
-    (vscode.workspace.onDidChangeConfiguration as jest.Mock).mockImplementation(
-      (callback: (event: vscode.ConfigurationChangeEvent) => void) => {
-        configurationChangeCallback = callback;
-        return { dispose: jest.fn() };
-      }
-    );
   });
 
   afterEach(() => {
@@ -64,28 +44,19 @@ describe('KeybindingHintsStatusBar', () => {
       );
     });
 
-    it('should not advertise disabled status keybindings', () => {
+    it('should set keybinding hints text', () => {
       statusBar = new KeybindingHintsStatusBar();
 
-      expect(mockItem.text).not.toContain('status');
-      expect(mockItem.text).not.toContain('⌘K S');
+      expect(mockItem.text).toContain('status');
+      expect(mockItem.text).toContain('⌘K S');
       expect(mockItem.text).toContain('align');
       expect(mockItem.text).toContain('suggest');
-    });
-
-    it('should advertise status keybindings when enabled', () => {
-      transactionStatusKeybindingsEnabled = true;
-      statusBar = new KeybindingHintsStatusBar();
-
-      expect(mockItem.text).toContain('⌘K S');
-      expect(mockItem.text).toContain('status');
-      expect(mockItem.tooltip).toContain('Cmd+K S');
     });
 
     it('should set tooltip', () => {
       statusBar = new KeybindingHintsStatusBar();
 
-      expect(mockItem.tooltip).not.toContain('Cmd+K S');
+      expect(mockItem.tooltip).toContain('Cmd+K S');
       expect(mockItem.tooltip).toContain('Tab');
       expect(mockItem.tooltip).toContain('Enter');
     });
@@ -103,18 +74,6 @@ describe('KeybindingHintsStatusBar', () => {
       expect(editorChangeCallback).toBeDefined();
     });
 
-    it('should update status keybinding hints after configuration changes', () => {
-      statusBar = new KeybindingHintsStatusBar();
-
-      transactionStatusKeybindingsEnabled = true;
-      configurationChangeCallback!({
-        affectsConfiguration: (section: string) =>
-          section === 'hledger.keybindings.transactionStatus',
-      });
-
-      expect(mockItem.text).toContain('⌘K S');
-      expect(mockItem.tooltip).toContain('Cmd+K S');
-    });
   });
 
   describe('visibility', () => {

@@ -3,6 +3,7 @@ import * as path from 'path';
 
 interface KeybindingContribution {
   command: string;
+  key?: string;
   when?: string;
 }
 
@@ -25,16 +26,34 @@ describe('keybinding contributions', () => {
     fs.readFileSync(packageJsonPath, 'utf-8')
   ) as ExtensionManifest;
 
-  it('keeps transaction status keybindings disabled by default', () => {
-    const setting =
-      pkg.contributes?.configuration?.properties?.[
-        'hledger.keybindings.transactionStatus'
-      ];
+  const getKeybinding = (command: string): KeybindingContribution | undefined =>
+    pkg.contributes?.keybindings?.find(
+      (keybinding) => keybinding.command === command
+    );
 
-    expect(setting?.default).toBe(false);
+  it('keeps Enter and Tab overrides enabled by default', () => {
+    const properties = pkg.contributes?.configuration?.properties;
+
+    expect(properties?.['hledger.keybindings.enterAndSuggest']?.default).toBe(
+      true
+    );
+    expect(properties?.['hledger.keybindings.alignAmount']?.default).toBe(true);
   });
 
-  it('guards every transaction status keybinding with the opt-in setting', () => {
+  it('claims Enter and Tab for hledger when inline suggestions are visible', () => {
+    const enterKeybinding = getKeybinding('hledger.editor.enterAndSuggest');
+    const tabKeybinding = getKeybinding('hledger.editor.alignAmount');
+
+    expect(enterKeybinding?.key).toBe('enter');
+    expect(enterKeybinding?.when).toContain('editorLangId == hledger');
+    expect(enterKeybinding?.when).not.toContain('!inlineSuggestionVisible');
+
+    expect(tabKeybinding?.key).toBe('tab');
+    expect(tabKeybinding?.when).toContain('editorLangId == hledger');
+    expect(tabKeybinding?.when).not.toContain('!inlineSuggestionVisible');
+  });
+
+  it('keeps transaction status keybindings active in hledger editors', () => {
     const statusCommands = new Set([
       'hledger.editor.cycleStatus',
       'hledger.editor.setStatusUnmarked',
@@ -47,9 +66,16 @@ describe('keybinding contributions', () => {
 
     expect(statusKeybindings).toHaveLength(statusCommands.size);
     for (const keybinding of statusKeybindings) {
-      expect(keybinding.when).toContain(
+      expect(keybinding.when).toContain('editorLangId == hledger');
+      expect(keybinding.when).not.toContain(
         'config.hledger.keybindings.transactionStatus'
       );
     }
+
+    expect(
+      pkg.contributes?.configuration?.properties?.[
+        'hledger.keybindings.transactionStatus'
+      ]
+    ).toBeUndefined();
   });
 });
