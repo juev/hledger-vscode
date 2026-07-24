@@ -14,6 +14,9 @@ export interface LSPManagerLike {
   download(
     progress?: vscode.Progress<{ message?: string; increment?: number }>
   ): Promise<void>;
+  update(
+    progress?: vscode.Progress<{ message?: string; increment?: number }>
+  ): Promise<void>;
   start(): Promise<void>;
   stop(): Promise<void>;
 }
@@ -103,18 +106,63 @@ export class LSPManager implements vscode.Disposable {
     this.setStatus(LSPStatus.Downloading);
 
     try {
-      progress?.report({ message: "Fetching latest release..." });
-      let previousPercent = 0;
-      await this.binaryManager.download((percent) => {
-        const delta = percent - previousPercent;
-        progress?.report({ message: `Downloading... ${percent}%`, increment: delta });
-        previousPercent = percent;
-      });
+      await this.downloadBinary(progress);
       this.setStatus(LSPStatus.Stopped);
     } catch (error) {
       this.setStatus(LSPStatus.Error);
       throw error;
     }
+  }
+
+  async update(
+    progress?: vscode.Progress<{ message?: string; increment?: number }>
+  ): Promise<void> {
+    const previousStatus = this.status;
+    const wasRunning =
+      this.client !== null &&
+      this.client.getState() === LanguageClientState.Running;
+    let stoppedForInstall = false;
+    let installCompleted = false;
+
+    this.setStatus(LSPStatus.Downloading);
+
+    try {
+      await this.downloadBinary(progress, async () => {
+        if (wasRunning) {
+          await this.stop();
+          stoppedForInstall = true;
+        }
+      });
+      installCompleted = true;
+      await this.start();
+    } catch (error) {
+      if (stoppedForInstall && !installCompleted) {
+        try {
+          await this.start();
+        } catch {
+          this.setStatus(LSPStatus.Error);
+        }
+      } else if (!stoppedForInstall) {
+        this.setStatus(previousStatus);
+      }
+      throw error;
+    }
+  }
+
+  private async downloadBinary(
+    progress?: vscode.Progress<{ message?: string; increment?: number }>,
+    beforeInstall?: () => Promise<void>,
+  ): Promise<void> {
+    progress?.report({ message: "Fetching latest release..." });
+    let previousPercent = 0;
+    await this.binaryManager.download((percent) => {
+      const delta = percent - previousPercent;
+      progress?.report({
+        message: `Downloading... ${percent}%`,
+        increment: delta,
+      });
+      previousPercent = percent;
+    }, beforeInstall);
   }
 
   async checkForUpdates(): Promise<{ hasUpdate: boolean; currentVersion: string | null; latestVersion: string }> {

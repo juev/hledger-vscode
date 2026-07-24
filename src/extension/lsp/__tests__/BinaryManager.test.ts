@@ -1363,6 +1363,7 @@ describe("BinaryManager", () => {
   describe("signature verification", () => {
     it("rejects binary when signature verification fails", async () => {
       (verifyMinisign as jest.Mock).mockReturnValue(false);
+      const beforeInstall = jest.fn().mockResolvedValue(undefined);
 
       const binaryContent = Buffer.alloc(2048, "x");
       const assetSuffix = getPlatformInfo(os.platform(), os.arch()).assetSuffix;
@@ -1400,9 +1401,10 @@ describe("BinaryManager", () => {
 
       manager = new BinaryManager(tempDir, mockFetch);
 
-      await expect(manager.download()).rejects.toThrow(
+      await expect(manager.download(undefined, beforeInstall)).rejects.toThrow(
         /Signature verification failed/
       );
+      expect(beforeInstall).not.toHaveBeenCalled();
       expect(await manager.isInstalled()).toBe(false);
     });
 

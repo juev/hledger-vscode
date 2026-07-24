@@ -287,4 +287,77 @@ describe("LSPManager", () => {
       manager.dispose();
     });
   });
+
+  describe("update", () => {
+    it("keeps the running server when verification fails before installation", async () => {
+      const binaryPath = path.join(tempDir, "hledger-lsp");
+      fs.writeFileSync(binaryPath, "#!/bin/bash\necho test");
+      fs.chmodSync(binaryPath, 0o755);
+
+      const download = jest
+        .spyOn(BinaryManager.prototype, "download")
+        .mockRejectedValue(new Error("Signature verification failed"));
+      const manager = new LSPManager(mockContext);
+      await manager.start();
+      const runningClient = manager.getClient();
+
+      await expect(manager.update()).rejects.toThrow(
+        "Signature verification failed"
+      );
+
+      expect(manager.getClient()).toBe(runningClient);
+      expect(manager.getStatus()).toBe(LSPStatus.Running);
+
+      download.mockRestore();
+      manager.dispose();
+    });
+
+    it("stops the running server only after the binary is verified", async () => {
+      const binaryPath = path.join(tempDir, "hledger-lsp");
+      fs.writeFileSync(binaryPath, "#!/bin/bash\necho test");
+      fs.chmodSync(binaryPath, 0o755);
+
+      const manager = new LSPManager(mockContext);
+      await manager.start();
+      const runningClient = manager.getClient();
+      const download = jest
+        .spyOn(BinaryManager.prototype, "download")
+        .mockImplementation(async (_onProgress, beforeInstall) => {
+          expect(manager.getClient()).toBe(runningClient);
+          await beforeInstall?.();
+          expect(manager.getClient()).toBeNull();
+        });
+
+      await manager.update();
+
+      expect(manager.getStatus()).toBe(LSPStatus.Running);
+      expect(manager.getClient()).not.toBe(runningClient);
+
+      download.mockRestore();
+      manager.dispose();
+    });
+
+    it("restarts the old server when installation fails after it was stopped", async () => {
+      const binaryPath = path.join(tempDir, "hledger-lsp");
+      fs.writeFileSync(binaryPath, "#!/bin/bash\necho test");
+      fs.chmodSync(binaryPath, 0o755);
+
+      const manager = new LSPManager(mockContext);
+      await manager.start();
+      const download = jest
+        .spyOn(BinaryManager.prototype, "download")
+        .mockImplementation(async (_onProgress, beforeInstall) => {
+          await beforeInstall?.();
+          throw new Error("Atomic install failed");
+        });
+
+      await expect(manager.update()).rejects.toThrow("Atomic install failed");
+
+      expect(manager.getStatus()).toBe(LSPStatus.Running);
+      expect(manager.getClient()).not.toBeNull();
+
+      download.mockRestore();
+      manager.dispose();
+    });
+  });
 });

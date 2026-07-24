@@ -44,8 +44,8 @@ describe("createClientOptions", () => {
     const options = createClientOptions();
 
     expect(options.documentSelector).toEqual([
-      { language: "hledger" },
-      { language: "hledger-rules" },
+      { scheme: "file", language: "hledger" },
+      { scheme: "file", language: "hledger-rules" },
     ]);
   });
 

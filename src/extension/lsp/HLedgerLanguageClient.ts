@@ -149,7 +149,10 @@ export function createClientOptions(): LanguageClientOptions {
   const lspSettings = mapVSCodeSettingsToLSP(vsCodeSettings);
 
   return {
-    documentSelector: [{ language: "hledger" }, { language: "hledger-rules" }],
+    documentSelector: [
+      { scheme: "file", language: "hledger" },
+      { scheme: "file", language: "hledger-rules" },
+    ],
     initializationOptions: lspSettings,
     synchronize: {
       configurationSection: "hledger",

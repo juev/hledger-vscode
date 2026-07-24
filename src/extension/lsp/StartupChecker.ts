@@ -124,9 +124,7 @@ export class StartupChecker {
         cancellable: false,
       },
       async (progress) => {
-        await this.lspManager.stop();
-        await this.lspManager.download(progress);
-        await this.lspManager.start();
+        await this.lspManager.update(progress);
       }
     );
     vscode.window.showInformationMessage(

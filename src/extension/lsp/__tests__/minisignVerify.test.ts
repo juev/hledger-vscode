@@ -1,7 +1,14 @@
+jest.mock("crypto", () => {
+  const nativeCrypto = jest.requireActual<typeof import("crypto")>("crypto");
+  return { ...nativeCrypto, createHash: jest.fn(nativeCrypto.createHash) };
+});
+
 import * as crypto from "crypto";
 import { verify } from "../minisignVerify";
 
+const nativeCrypto = jest.requireActual<typeof import("crypto")>("crypto");
 const SIG_ALGO = Buffer.from("Ed");
+const PREHASHED_SIG_ALGO = Buffer.from("ED");
 const KEY_ID = Buffer.from("0102030405060708", "hex");
 
 function rawPublicKeyFromKeyObject(key: crypto.KeyObject): Buffer {
@@ -39,6 +46,32 @@ function buildMinisig(
   ].join("\n");
 }
 
+function buildPrehashedMinisig(
+  privateKey: crypto.KeyObject,
+  message: Buffer,
+  trustedComment: string
+): string {
+  const prehashedMessage = crypto.createHash("blake2b512").update(message).digest();
+  const signature = crypto.sign(null, prehashedMessage, privateKey);
+  const globalMsg = Buffer.concat([
+    signature,
+    Buffer.from(trustedComment, "utf-8"),
+  ]);
+  const globalSig = crypto.sign(null, globalMsg, privateKey);
+
+  const sigLine = Buffer.concat([PREHASHED_SIG_ALGO, KEY_ID, signature]).toString(
+    "base64"
+  );
+  const globalSigLine = globalSig.toString("base64");
+
+  return [
+    "untrusted comment: test signature",
+    sigLine,
+    `trusted comment: ${trustedComment}`,
+    globalSigLine,
+  ].join("\n");
+}
+
 describe("minisignVerify", () => {
   let publicKey: crypto.KeyObject;
   let privateKey: crypto.KeyObject;
@@ -56,6 +89,35 @@ describe("minisignVerify", () => {
     const minisig = buildMinisig(privateKey, message, "timestamp:1234\tfile:test");
 
     expect(verify(minisignPk, minisig, message)).toBe(true);
+  });
+
+  it("accepts a valid prehashed ED signature", () => {
+    const message = Buffer.from("hello world");
+    const minisig = buildPrehashedMinisig(
+      privateKey,
+      message,
+      "timestamp:1234\tfile:test"
+    );
+
+    expect(verify(minisignPk, minisig, message)).toBe(true);
+  });
+
+  it("accepts valid ED when native blake2b512 is unavailable", () => {
+    const message = Buffer.from("hello world");
+    const minisig = buildPrehashedMinisig(
+      privateKey,
+      message,
+      "timestamp:1234\tfile:test"
+    );
+    const createHashMock = jest.mocked(crypto.createHash).mockImplementation(() => {
+      throw new Error("blake2b512 is unavailable");
+    });
+
+    try {
+      expect(verify(minisignPk, minisig, message)).toBe(true);
+    } finally {
+      createHashMock.mockImplementation(nativeCrypto.createHash);
+    }
   });
 
   it("rejects a signature over a different message", () => {
