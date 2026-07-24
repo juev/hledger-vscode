@@ -1,5 +1,22 @@
 # Change Log
 
+## [0.5.38] - 2026-07-24
+
+### Added
+- feat(walkthrough): add reports and keybindings steps, keybinding hints in status bar (#221) (#231)
+
+### Fixed
+- fix(keybindings): prioritize HLedger shortcuts in journal files (#237)
+- fix(import): preserve csv records and amount precision (#235)
+- fix(lsp): support proxy-aware binary downloads (#234)
+- fix(lsp): cancel payee history requests on timeout (#233)
+- fix(editor): clean up status and completion behavior (#232)
+- fix(keybindings): stop Enter from committing third-party inline suggestions (#230)
+- fix(cli): rename balance report to balance sheet, add timeout and cancellation (#229)
+- fix(import): disambiguate slash dates and flag weak fuzzy matches for review (#228)
+- fix(lsp): accept Windows paths in hledger.lsp.path setting (#227)
+
+
 ## [0.5.37] - 2026-07-22
 
 ### Added
