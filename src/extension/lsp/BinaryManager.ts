@@ -497,7 +497,10 @@ export class BinaryManager {
     return hash.digest("hex") === expectedHash.toLowerCase();
   }
 
-  async download(onProgress?: (percent: number) => void): Promise<void> {
+  async download(
+    onProgress?: (percent: number) => void,
+    beforeInstall?: () => Promise<void>,
+  ): Promise<void> {
     // Progress allocation: 5% release info, 5% checksums, 85% download, 5% verify/write
     onProgress?.(5);
     const release = await this.getLatestRelease();
@@ -580,6 +583,11 @@ export class BinaryManager {
       } finally {
         await fd.close();
       }
+
+      // Keep the currently running server alive until the candidate binary has
+      // passed all checks and has been staged. This also lets Windows release
+      // the executable before the atomic replacement.
+      await beforeInstall?.();
 
       // Atomic rename: version file first, then binary (safer to have missing version than missing binary)
       await fs.promises.rename(tempVersionPath, versionPath);

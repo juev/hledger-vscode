@@ -1,7 +1,9 @@
 import * as crypto from "crypto";
+import { blake2b } from "blakejs";
 
 const ED25519_SPKI_PREFIX = Buffer.from("302a300506032b6570032100", "hex");
 const SIG_ALGO = Buffer.from("Ed");
+const PREHASHED_SIG_ALGO = Buffer.from("ED");
 const KEY_ID_LEN = 8;
 const SIG_LEN = 64;
 const PK_LEN = 32;
@@ -20,7 +22,7 @@ function toEd25519KeyObject(rawPk: Buffer): crypto.KeyObject {
  *
  * Minisign uses Ed25519. The .minisig format:
  *   untrusted comment: ...
- *   <base64: 2B algo "Ed" + 8B keyId + 64B signature>
+ *   <base64: 2B algo "Ed" or "ED" + 8B keyId + 64B signature>
  *   trusted comment: ...
  *   <base64: 64B global signature over (signature || trustedComment)>
  *
@@ -55,7 +57,9 @@ export function verify(
 
     const sigRaw = Buffer.from(sigLine, "base64");
     if (sigRaw.length < 2 + KEY_ID_LEN + SIG_LEN) return false;
-    if (!sigRaw.subarray(0, 2).equals(SIG_ALGO)) return false;
+    const signatureAlgorithm = sigRaw.subarray(0, 2);
+    const isPrehashed = signatureAlgorithm.equals(PREHASHED_SIG_ALGO);
+    if (!isPrehashed && !signatureAlgorithm.equals(SIG_ALGO)) return false;
     if (!sigRaw.subarray(2, 2 + KEY_ID_LEN).equals(keyId)) return false;
     const signature = sigRaw.subarray(2 + KEY_ID_LEN, 2 + KEY_ID_LEN + SIG_LEN);
 
@@ -64,7 +68,10 @@ export function verify(
     const globalSig = Buffer.from(globalSigLine, "base64");
     if (globalSig.length !== SIG_LEN) return false;
 
-    if (!crypto.verify(null, Buffer.from(message), publicKey, signature))
+    const signedMessage = isPrehashed
+      ? Buffer.from(blake2b(message, undefined, 64))
+      : Buffer.from(message);
+    if (!crypto.verify(null, signedMessage, publicKey, signature))
       return false;
 
     const globalMsg = Buffer.concat([

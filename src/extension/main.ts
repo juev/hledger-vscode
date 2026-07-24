@@ -278,9 +278,7 @@ export function activate(context: vscode.ExtensionContext): void {
                 );
 
                 if (answer === "Update") {
-                  await lspManager.stop();
-                  await lspManager.download(progress);
-                  await lspManager.start();
+                  await lspManager.update(progress);
                   vscode.window.showInformationMessage(
                     `Updated to ${latestVersion}`
                   );

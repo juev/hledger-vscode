@@ -10,6 +10,7 @@ interface MockLSPManager {
     }>
   >;
   download: jest.Mock<Promise<void>>;
+  update: jest.Mock<Promise<void>>;
   start: jest.Mock<Promise<void>>;
   stop: jest.Mock<Promise<void>>;
 }
@@ -26,6 +27,7 @@ describe("StartupChecker", () => {
       isServerAvailable: jest.fn(),
       checkForUpdates: jest.fn(),
       download: jest.fn(),
+      update: jest.fn(),
       start: jest.fn(),
       stop: jest.fn(),
     };
@@ -283,55 +285,27 @@ describe("StartupChecker", () => {
   });
 
   describe("performUpdate", () => {
-    it("stops, downloads, and starts the LSP server", async () => {
+    it("delegates the running-server update lifecycle to LSPManager", async () => {
       mockWithProgress.mockImplementation((_options: any, task: any) =>
         task({ report: jest.fn() })
       );
-      mockLSPManager.stop.mockResolvedValue(undefined);
-      mockLSPManager.download.mockResolvedValue(undefined);
-      mockLSPManager.start.mockResolvedValue(undefined);
+      mockLSPManager.update.mockResolvedValue(undefined);
 
       const checker = new StartupChecker(mockLSPManager, mockContext);
 
       await checker.performUpdate();
 
-      expect(mockLSPManager.stop).toHaveBeenCalled();
-      expect(mockLSPManager.download).toHaveBeenCalled();
-      expect(mockLSPManager.start).toHaveBeenCalled();
-    });
-
-    it("calls stop before download", async () => {
-      const callOrder: string[] = [];
-      mockWithProgress.mockImplementation((_options: any, task: any) =>
-        task({ report: jest.fn() })
-      );
-      mockLSPManager.stop.mockImplementation(() => {
-        callOrder.push("stop");
-        return Promise.resolve();
-      });
-      mockLSPManager.download.mockImplementation(() => {
-        callOrder.push("download");
-        return Promise.resolve();
-      });
-      mockLSPManager.start.mockImplementation(() => {
-        callOrder.push("start");
-        return Promise.resolve();
-      });
-
-      const checker = new StartupChecker(mockLSPManager, mockContext);
-
-      await checker.performUpdate();
-
-      expect(callOrder).toEqual(["stop", "download", "start"]);
+      expect(mockLSPManager.update).toHaveBeenCalled();
+      expect(mockLSPManager.stop).not.toHaveBeenCalled();
+      expect(mockLSPManager.download).not.toHaveBeenCalled();
+      expect(mockLSPManager.start).not.toHaveBeenCalled();
     });
 
     it("shows success notification after update", async () => {
       mockWithProgress.mockImplementation((_options: any, task: any) =>
         task({ report: jest.fn() })
       );
-      mockLSPManager.stop.mockResolvedValue(undefined);
-      mockLSPManager.download.mockResolvedValue(undefined);
-      mockLSPManager.start.mockResolvedValue(undefined);
+      mockLSPManager.update.mockResolvedValue(undefined);
 
       const checker = new StartupChecker(mockLSPManager, mockContext);
 

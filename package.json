@@ -730,6 +730,7 @@
   "homepage": "https://github.com/juev/hledger-vscode#readme",
   "icon": "images/icon.png",
   "dependencies": {
+    "blakejs": "1.2.1",
     "decimal.js": "^10.6.0",
     "string-width": "^4.2.3",
     "undici": "^6.27.0",
