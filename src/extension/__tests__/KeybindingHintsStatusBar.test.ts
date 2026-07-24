@@ -48,6 +48,7 @@ describe('KeybindingHintsStatusBar', () => {
       statusBar = new KeybindingHintsStatusBar();
 
       expect(mockItem.text).toContain('status');
+      expect(mockItem.text).toContain('⌘K S');
       expect(mockItem.text).toContain('align');
       expect(mockItem.text).toContain('suggest');
     });
@@ -72,6 +73,7 @@ describe('KeybindingHintsStatusBar', () => {
       expect(vscode.window.onDidChangeActiveTextEditor).toHaveBeenCalled();
       expect(editorChangeCallback).toBeDefined();
     });
+
   });
 
   describe('visibility', () => {

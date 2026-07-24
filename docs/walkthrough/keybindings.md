@@ -1,6 +1,8 @@
 # Keyboard Shortcuts
 
 The extension provides keybindings for common editing tasks in hledger files.
+HLedger owns **Enter** and **Tab** in hledger editors, including while inline
+suggestions are visible. Your user keybindings can override these defaults.
 
 ## Status keybindings
 
@@ -23,7 +25,9 @@ Example:
 
 ## Tab: align amount
 
-Press **Tab** after typing an account name to move the cursor to the amount column. Amounts are aligned automatically on save when `editor.formatOnType` is enabled.
+Press **Tab** to accept a visible inline suggestion. Otherwise, after typing an
+account name, it moves the cursor to the amount column. Amounts are aligned
+automatically on save when `editor.formatOnType` is enabled.
 
 | Setting | Default | Description |
 |---------|---------|-------------|

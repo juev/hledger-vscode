@@ -20,7 +20,6 @@ export class KeybindingHintsStatusBar implements vscode.Disposable {
         this.updateVisibility(editor);
       })
     );
-
     this.updateVisibility(vscode.window.activeTextEditor);
   }
 
