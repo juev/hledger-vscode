@@ -8,7 +8,13 @@ module.exports = {
       // Use test-specific TypeScript configuration
       tsconfig: 'tsconfig.test.json'
     }],
+    'node_modules/(string-width|strip-ansi|ansi-regex|get-east-asian-width)/.+\\.js$': ['ts-jest', {
+      tsconfig: 'tsconfig.test.json'
+    }],
   },
+  transformIgnorePatterns: [
+    '/node_modules/(?!(string-width|strip-ansi|ansi-regex|get-east-asian-width)/)',
+  ],
   collectCoverageFrom: [
     'src/**/*.ts',
     '!src/**/*.d.ts',
