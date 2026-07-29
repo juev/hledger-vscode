@@ -6,7 +6,7 @@
   "publisher": "evsyukov",
   "engines": {
     "vscode": "^1.110.0",
-    "node": ">=20.0.0"
+    "node": ">=22.19.0"
   },
   "categories": [
     "Language Packs",
