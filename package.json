@@ -732,7 +732,7 @@
   "dependencies": {
     "blakejs": "1.2.1",
     "decimal.js": "^10.6.0",
-    "string-width": "^4.2.3",
+    "string-width": "^8.2.2",
     "undici": "^6.27.0",
     "vscode-languageclient": "^10.1.0"
   }
