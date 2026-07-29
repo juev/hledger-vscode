@@ -1,5 +1,19 @@
 # Change Log
 
+## [0.5.40] - 2026-07-29
+
+### Fixed
+- fix(deps): support string-width 8 ESM
+- fix(deps): update minimatch security patch
+
+### Other
+- chore(deps): bump undici from 6.27.0 to 8.9.0 (#242)
+- build(node): require Node.js 22
+- chore(deps-dev): bump ts-jest from 29.4.11 to 29.4.12 (#244)
+- chore(deps-dev): bump @types/node from 26.1.1 to 26.1.2 (#243)
+- chore(deps-dev): bump eslint from 10.7.0 to 10.8.0 (#241)
+
+
 ## [0.5.39] - 2026-07-24
 
 ### Fixed
