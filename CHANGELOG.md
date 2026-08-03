@@ -1,5 +1,11 @@
 # Change Log
 
+## [0.5.41] - 2026-08-03
+
+### Fixed
+- fix(inlay-hints): expose inlay hint settings and stop the Tab cursor jump (#246)
+
+
 ## [0.5.40] - 2026-07-29
 
 ### Fixed
