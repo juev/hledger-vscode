@@ -1,5 +1,11 @@
 # Change Log
 
+## [0.5.42] - 2026-08-03
+
+### Other
+- chore(deps): bump brace-expansion (#247)
+
+
 ## [0.5.41] - 2026-08-03
 
 ### Fixed
