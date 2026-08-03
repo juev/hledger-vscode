@@ -495,23 +495,21 @@ export class Selection extends Range {
     activeLine?: number,
     activeCharacter?: number,
   ) {
-    if (typeof anchorOrLine === "number") {
-      super(
-        anchorOrLine,
-        anchorCharacterOrActive as number,
-        activeLine!,
-        activeCharacter!,
-      );
-      this.anchor = new Position(
-        anchorOrLine,
-        anchorCharacterOrActive as number,
-      );
-      this.active = new Position(activeLine!, activeCharacter!);
-    } else {
-      super(anchorOrLine, anchorCharacterOrActive as Position);
-      this.anchor = anchorOrLine;
-      this.active = anchorCharacterOrActive as Position;
-    }
+    // super() must be the first statement: with useDefineForClassFields the
+    // class fields below are emitted right after it, and calling it from
+    // inside a branch makes them run before the base constructor.
+    const anchor =
+      typeof anchorOrLine === "number"
+        ? new Position(anchorOrLine, anchorCharacterOrActive as number)
+        : anchorOrLine;
+    const active =
+      typeof anchorOrLine === "number"
+        ? new Position(activeLine!, activeCharacter!)
+        : (anchorCharacterOrActive as Position);
+
+    super(anchor, active);
+    this.anchor = anchor;
+    this.active = active;
   }
 
   get isReversed(): boolean {

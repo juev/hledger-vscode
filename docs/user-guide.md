@@ -912,7 +912,7 @@ Extension logs are available in the Output panel under **HLedger** channel (`Vie
 | `hledger.lsp.showVersion` | Show installed version and status |
 | `hledger.lsp.restart` | Restart the language server |
 
-> **Note:** CLI commands (`hledger.cli.balance`, `hledger.cli.stats`, `hledger.cli.incomestatement`) and `hledger.editor.alignAmount` only appear in the Command Palette when a `.journal`/`.hledger`/`.ledger` file is active. Import and LSP commands are always available.
+> **Note:** CLI commands (`hledger.cli.balance`, `hledger.cli.stats`, `hledger.cli.incomestatement`), `hledger.editor.alignAmount` and `hledger.editor.insertInferredAmount` only appear in the Command Palette when a `.journal`/`.hledger`/`.ledger` file is active. Import and LSP commands are always available.
 
 ### LSP Settings
 
@@ -939,6 +939,7 @@ Control which Language Server features are enabled:
 | `hledger.features.workspaceSymbol` | boolean | `true` | Enable workspace symbol search |
 | `hledger.features.inlineCompletion` | boolean | `true` | Enable inline ghost text completions |
 | `hledger.features.codeLens` | boolean | `false` | Enable balance check indicators on transactions |
+| `hledger.features.inlayHints` | boolean | `true` | Enable inlay hints (requires a server restart) |
 
 ### LSP Completion Settings
 
@@ -1027,6 +1028,19 @@ Auto-download supports:
 |---------|------|---------|-------------|
 | `hledger.features.inlineCompletion` | boolean | `true` | Enable ghost text completions |
 
+### Inlay Hint Settings
+
+Inlay hints are read-only annotations the Language Server renders inside the line. They are not part of the file and are never saved.
+
+| Setting | Type | Default | Description |
+|---------|------|---------|-------------|
+| `hledger.features.inlayHints` | boolean | `true` | Enable inlay hints (requires a server restart) |
+| `hledger.inlayHints.inferredAmounts` | boolean | `false` | Show the amount hledger infers for a posting left without one |
+| `hledger.inlayHints.runningBalances` | boolean | `false` | Show the running account balance after each posting |
+| `hledger.inlayHints.costExpansion` | boolean | `false` | Show the total cost of postings that carry a per-unit price |
+
+Inferred amount hints are off by default. A hint takes up room in the rendered line, so while you are typing an amount it shifts the rest of the line to the right. To write the inferred amount into the file instead, use **HLedger: Insert Inferred Amount** (`Cmd+K =` / `Ctrl+K =`), which works whether or not the hints are shown.
+
 ### CLI Integration Settings
 
 | Setting | Type | Default | Description |
@@ -1103,6 +1117,7 @@ The `amountAlignmentTarget` setting applies to postings that carry cost notation
 | `hledger.features.workspaceSymbol` | boolean | `true` | Enable workspace symbol search |
 | `hledger.features.inlineCompletion` | boolean | `true` | Enable inline ghost text completions |
 | `hledger.features.codeLens` | boolean | `false` | Enable balance check indicators on transactions |
+| `hledger.features.inlayHints` | boolean | `true` | Enable inlay hints (requires a server restart) |
 
 ### LSP Completion Settings
 
@@ -1163,6 +1178,7 @@ All commands accessible via Command Palette (`Ctrl+Shift+P` or `Cmd+Shift+P`):
 | `hledger.lsp.showVersion` | HLedger: Show Language Server Version | Show LSP version info |
 | `hledger.lsp.restart` | HLedger: Restart Language Server | Restart the LSP server |
 | `hledger.editor.alignAmount` | HLedger: Align Amount to Column | Align amount at cursor via LSP |
+| `hledger.editor.insertInferredAmount` | HLedger: Insert Inferred Amount | Write the inferred balancing amount at the amount column |
 | `hledger.editor.cycleStatus` | HLedger: Cycle Transaction/Posting Status | Cycle status: unmarked → ! → * → unmarked |
 | `hledger.editor.setStatusUnmarked` | HLedger: Set Status to Unmarked | Remove status marker |
 | `hledger.editor.setStatusPending` | HLedger: Set Status to Pending (!) | Set pending status |
@@ -1180,6 +1196,7 @@ All commands accessible via Command Palette (`Ctrl+Shift+P` or `Cmd+Shift+P`):
 | `Enter` | Accept completion | When completion widget is visible |
 | `Enter` | Accept inline suggestion | When ghost text is visible |
 | `Tab` | Align amount to column | When no suggestions/snippets active |
+| `Cmd+K =` / `Ctrl+K =` | Insert inferred amount | On a posting hledger can infer an amount for |
 | `Cmd+K S` / `Ctrl+K S` | Cycle transaction/posting status | In hledger files |
 | `Cmd+K 0` / `Ctrl+K 0` | Set status to unmarked | In hledger files |
 | `Cmd+K 1` / `Ctrl+K 1` | Set status to pending (!) | In hledger files |

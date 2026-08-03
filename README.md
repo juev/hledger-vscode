@@ -223,6 +223,10 @@ Import bank statements and transaction data from CSV/TSV files.
   // Inline completions (ghost text)
   "hledger.features.inlineCompletion": true,
 
+  // Inlay hints (rendered inside the line, never saved to the file)
+  "hledger.inlayHints.inferredAmounts": false,  // Show the amount hledger infers for a posting
+  "hledger.inlayHints.runningBalances": false,
+
   // Formatting
   "editor.formatOnType": true,   // Enable on-type formatting (Enter/Tab via LSP)
   "editor.formatOnSave": true,   // Enable auto-formatting on save

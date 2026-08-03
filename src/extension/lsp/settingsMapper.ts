@@ -11,6 +11,12 @@ export interface VSCodeSettings {
     workspaceSymbol?: boolean;
     inlineCompletion?: boolean;
     codeLens?: boolean;
+    inlayHints?: boolean;
+  };
+  inlayHints?: {
+    inferredAmounts?: boolean;
+    runningBalances?: boolean;
+    costExpansion?: boolean;
   };
   autoCompletion?: {
     enabled?: boolean;
@@ -42,9 +48,6 @@ export interface VSCodeSettings {
     amountAlignmentMode?: "left" | "right" | "decimal";
     minAlignmentColumn?: number;
     amountAlignmentTarget?: "cost" | "posting";
-  };
-  inlineCompletion?: {
-    enabled?: boolean;
   };
   cli?: {
     path?: string;
@@ -79,6 +82,12 @@ export interface LSPSettings {
     workspaceSymbol: boolean;
     inlineCompletion: boolean;
     codeLens: boolean;
+    inlayHints: boolean;
+  };
+  inlayHints: {
+    inferredAmounts: boolean;
+    runningBalances: boolean;
+    costExpansion: boolean;
   };
   completion: {
     maxResults: number;
@@ -124,6 +133,14 @@ const DEFAULT_SETTINGS: LSPSettings = {
     workspaceSymbol: true,
     inlineCompletion: true,
     codeLens: false,
+    inlayHints: true,
+  },
+  // Inferred amount hints are opt-in: they render inside the posting line, so
+  // they shift the amount column of the line being edited.
+  inlayHints: {
+    inferredAmounts: false,
+    runningBalances: false,
+    costExpansion: false,
   },
   completion: {
     maxResults: 50,
@@ -223,6 +240,12 @@ export function mapVSCodeSettingsToLSP(settings: VSCodeSettings): LSPSettings {
       workspaceSymbol: settings.features?.workspaceSymbol ?? DEFAULT_SETTINGS.features.workspaceSymbol,
       inlineCompletion: settings.features?.inlineCompletion ?? DEFAULT_SETTINGS.features.inlineCompletion,
       codeLens: settings.features?.codeLens ?? DEFAULT_SETTINGS.features.codeLens,
+      inlayHints: settings.features?.inlayHints ?? DEFAULT_SETTINGS.features.inlayHints,
+    },
+    inlayHints: {
+      inferredAmounts: settings.inlayHints?.inferredAmounts ?? DEFAULT_SETTINGS.inlayHints.inferredAmounts,
+      runningBalances: settings.inlayHints?.runningBalances ?? DEFAULT_SETTINGS.inlayHints.runningBalances,
+      costExpansion: settings.inlayHints?.costExpansion ?? DEFAULT_SETTINGS.inlayHints.costExpansion,
     },
     completion: {
       maxResults: validateNumber(
