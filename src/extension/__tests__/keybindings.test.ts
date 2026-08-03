@@ -63,6 +63,21 @@ describe('keybinding contributions', () => {
     expect(alignKeybinding?.when).toContain('!inlineSuggestionVisible');
   });
 
+  it('binds the inferred amount command behind its own toggle', () => {
+    const keybinding = getKeybinding('hledger.editor.insertInferredAmount');
+
+    expect(keybinding?.key).toBe('ctrl+k =');
+    expect(keybinding?.when).toContain('editorLangId == hledger');
+    expect(keybinding?.when).toContain(
+      'config.hledger.keybindings.insertInferredAmount'
+    );
+    expect(
+      pkg.contributes?.configuration?.properties?.[
+        'hledger.keybindings.insertInferredAmount'
+      ]?.default
+    ).toBe(true);
+  });
+
   it('keeps transaction status keybindings active in hledger editors', () => {
     const statusCommands = new Set([
       'hledger.editor.cycleStatus',

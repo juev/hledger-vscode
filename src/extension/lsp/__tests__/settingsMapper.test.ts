@@ -21,6 +21,12 @@ describe("mapVSCodeSettingsToLSP", () => {
           workspaceSymbol: true,
           inlineCompletion: true,
           codeLens: false,
+          inlayHints: true,
+        },
+        inlayHints: {
+          inferredAmounts: false,
+          runningBalances: false,
+          costExpansion: false,
         },
         completion: {
           maxResults: 50,
@@ -70,6 +76,7 @@ describe("mapVSCodeSettingsToLSP", () => {
           workspaceSymbol: false,
           inlineCompletion: false,
           codeLens: false,
+          inlayHints: false,
         },
       };
 
@@ -87,6 +94,7 @@ describe("mapVSCodeSettingsToLSP", () => {
         workspaceSymbol: false,
         inlineCompletion: false,
         codeLens: false,
+        inlayHints: false,
       });
     });
 
@@ -139,6 +147,40 @@ describe("mapVSCodeSettingsToLSP", () => {
       const result = mapVSCodeSettingsToLSP(settings);
 
       expect(result.features.codeLens).toBe(true);
+    });
+
+    it("maps features.inlayHints when set to false", () => {
+      const settings: VSCodeSettings = {
+        features: { inlayHints: false },
+      };
+
+      const result = mapVSCodeSettingsToLSP(settings);
+
+      expect(result.features.inlayHints).toBe(false);
+    });
+  });
+
+  describe("inlay hint settings", () => {
+    it("keeps inferred amount hints off unless asked for", () => {
+      expect(mapVSCodeSettingsToLSP({}).inlayHints.inferredAmounts).toBe(false);
+    });
+
+    it("maps every inlay hint category", () => {
+      const settings: VSCodeSettings = {
+        inlayHints: {
+          inferredAmounts: true,
+          runningBalances: true,
+          costExpansion: true,
+        },
+      };
+
+      const result = mapVSCodeSettingsToLSP(settings);
+
+      expect(result.inlayHints).toEqual({
+        inferredAmounts: true,
+        runningBalances: true,
+        costExpansion: true,
+      });
     });
   });
 

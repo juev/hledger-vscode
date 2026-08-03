@@ -248,6 +248,26 @@
           "default": false,
           "description": "Enable balance check indicators on transactions (CodeLens)"
         },
+        "hledger.features.inlayHints": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable inlay hints from the Language Server (requires a server restart to take effect)"
+        },
+        "hledger.inlayHints.inferredAmounts": {
+          "type": "boolean",
+          "default": false,
+          "description": "Show the amount hledger infers for a posting left without one. The hint renders inside the posting line, so it shifts the amount column while you type."
+        },
+        "hledger.inlayHints.runningBalances": {
+          "type": "boolean",
+          "default": false,
+          "description": "Show the running account balance after each posting"
+        },
+        "hledger.inlayHints.costExpansion": {
+          "type": "boolean",
+          "default": false,
+          "description": "Show the total cost of postings that carry a per-unit price"
+        },
         "hledger.keybindings.enterAndSuggest": {
           "type": "boolean",
           "default": true,
@@ -257,6 +277,11 @@
           "type": "boolean",
           "default": true,
           "description": "Rebind Tab in hledger files to align amounts via the Language Server (disable to restore default VS Code Tab behavior)"
+        },
+        "hledger.keybindings.insertInferredAmount": {
+          "type": "boolean",
+          "default": true,
+          "description": "Bind Cmd+K = (Ctrl+K = on Windows/Linux) in hledger files to insert the inferred balancing amount at the amount column"
         },
         "hledger.completion.snippets": {
           "type": "boolean",
@@ -463,6 +488,11 @@
         "category": "HLedger"
       },
       {
+        "command": "hledger.editor.insertInferredAmount",
+        "title": "HLedger: Insert Inferred Amount",
+        "category": "HLedger"
+      },
+      {
         "command": "hledger.editor.enterAndSuggest",
         "title": "HLedger: Enter and Suggest Inline Completion",
         "category": "HLedger"
@@ -517,6 +547,14 @@
         "command": "hledger.editor.alignAmount",
         "key": "tab",
         "when": "editorTextFocus && editorLangId == hledger && !suggestWidgetVisible && !inlineSuggestionVisible && !inSnippetMode && !hasSnippetCompletions && config.hledger.keybindings.alignAmount"
+      },
+      {
+        "command": "hledger.editor.insertInferredAmount",
+        "key": "ctrl+k =",
+        "mac": "cmd+k =",
+        "win": "ctrl+k =",
+        "linux": "ctrl+k =",
+        "when": "editorTextFocus && editorLangId == hledger && config.hledger.keybindings.insertInferredAmount"
       },
       {
         "command": "hledger.editor.cycleStatus",
@@ -606,6 +644,10 @@
         },
         {
           "command": "hledger.editor.alignAmount",
+          "when": "editorLangId == hledger"
+        },
+        {
+          "command": "hledger.editor.insertInferredAmount",
           "when": "editorLangId == hledger"
         }
       ]

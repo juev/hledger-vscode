@@ -96,6 +96,26 @@ Quick Navigation:
 5. Ensure not in snippet mode: Ghost text disabled during snippet editing (Tab navigation)
 6. **Ensure Language Server is running:** Inline completions require hledger-lsp. Check with `Ctrl+Shift+P` → "HLedger: Show Language Server Version"
 
+### Cursor Jumps After Pressing Tab
+
+**Symptoms:** Tab moves the cursor to the amount column, then a greyed-out amount such as `= 20.50 USD` appears and the cursor no longer lines up with the amounts above.
+
+**Cause:** That text is an inlay hint showing the amount hledger infers for the posting. Inlay hints are drawn inside the line, so they push everything to their right — including the alignment padding and the cursor. `hledger.features.inlineCompletion` does not control them; it governs ghost text completions, which are a different feature.
+
+**Solutions:**
+
+1. Turn the hints off: `"hledger.inlayHints.inferredAmounts": false` (this is the default)
+2. To write the amount into the file instead, press `Cmd+K =` / `Ctrl+K =` (**HLedger: Insert Inferred Amount**). It aligns the amount to the amount column and works whether or not the hints are shown.
+3. Update the Language Server: `Ctrl+Shift+P` → "HLedger: Install/Update Language Server". Older servers anchor the hint next to the account name, which shifts the cursor the moment the hint appears.
+
+### Feature Settings Have No Effect
+
+**Symptoms:** Toggling a `hledger.features.*` setting changes nothing.
+
+**Cause:** The Language Server registers its capabilities once, during startup.
+
+**Solution:** Accept the "Restart Server" prompt shown after the change, or run `Ctrl+Shift+P` → "HLedger: Restart Language Server". Settings outside `hledger.features.*` — including `hledger.inlayHints.*` — apply immediately.
+
 ---
 
 ## Performance Issues

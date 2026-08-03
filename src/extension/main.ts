@@ -5,8 +5,10 @@ import { HLedgerCliCommands } from "./HLedgerCliCommands";
 import { HLedgerCliService } from "./services/HLedgerCliService";
 import { HLedgerImportCommands } from "./HLedgerImportCommands";
 import { LSPManager, StartupChecker } from "./lsp";
+import { registerFeatureRestartPrompt } from "./lsp/featureRestartPrompt";
 import { alignAmount } from "./commands/alignAmount";
 import { enterAndSuggest } from "./commands/enterAndSuggest";
+import { insertInferredAmount } from "./commands/insertInferredAmount";
 import { cycleStatus, setStatus } from "./commands/toggleStatus";
 import { InlineCompletionProvider } from "./inline/InlineCompletionProvider";
 import { KeybindingHintsStatusBar } from "./KeybindingHintsStatusBar";
@@ -34,6 +36,8 @@ export function activate(context: vscode.ExtensionContext): void {
     context.subscriptions.push(keybindingHints);
 
     const startupChecker = new StartupChecker(lspManager, context);
+
+    context.subscriptions.push(registerFeatureRestartPrompt());
 
     // Consolidated LSP initialization (non-blocking)
     void (async (): Promise<void> => {
@@ -206,6 +210,15 @@ export function activate(context: vscode.ExtensionContext): void {
         "hledger.editor.alignAmount",
         async () => {
           await alignAmount(() => lspManager.getLanguageClient());
+        },
+      ),
+    );
+
+    context.subscriptions.push(
+      vscode.commands.registerCommand(
+        "hledger.editor.insertInferredAmount",
+        async () => {
+          await insertInferredAmount(() => lspManager.getLanguageClient());
         },
       ),
     );

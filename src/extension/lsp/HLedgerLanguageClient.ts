@@ -91,6 +91,12 @@ function getVSCodeSettings(): VSCodeSettings {
       workspaceSymbol: config.get<boolean>("features.workspaceSymbol"),
       inlineCompletion: config.get<boolean>("features.inlineCompletion"),
       codeLens: config.get<boolean>("features.codeLens"),
+      inlayHints: config.get<boolean>("features.inlayHints"),
+    },
+    inlayHints: {
+      inferredAmounts: config.get<boolean>("inlayHints.inferredAmounts"),
+      runningBalances: config.get<boolean>("inlayHints.runningBalances"),
+      costExpansion: config.get<boolean>("inlayHints.costExpansion"),
     },
     autoCompletion: {
       enabled: config.get<boolean>("autoCompletion.enabled"),
