@@ -29,8 +29,10 @@ jobs:
         npm cache clean --force
         npm ci
     
-    - name: Compile TypeScript
-      run: npm run compile
+    # Not `npm run compile`: that emits a debug build into out/, which then gets
+    # packaged alongside the esbuild bundle. Here we only need the type check.
+    - name: Type-check sources
+      run: npm run typecheck
 
     - name: Run lint
       run: npm run lint
