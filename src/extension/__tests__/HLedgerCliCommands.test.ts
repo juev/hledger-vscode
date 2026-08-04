@@ -8,6 +8,9 @@ import { HLedgerCliCommands } from '../HLedgerCliCommands';
 import { HLedgerCliService } from '../services/HLedgerCliService';
 import * as vscode from 'vscode';
 
+/** getuid is absent on Windows, where the optional call yields undefined. */
+const isRoot = process.getuid?.() === 0;
+
 // Constructing HLedgerCliService starts path resolution, which shells out to
 // `which hledger` and then `<path> --version`. No assertion here depends on
 // that -- every test stubs the service methods it uses -- but leaving it real
@@ -318,7 +321,12 @@ describe('HLedgerCliCommands - Command Injection Prevention', () => {
             }).toThrow(/does not exist or is not accessible/);
         });
 
-        it('should reject unreadable paths', () => {
+        // Root bypasses file permission checks, so chmod 000 does not make a
+        // file unreadable and there is nothing for sanitizeJournalPath to
+        // reject. CI runs as a normal user, but container images default to
+        // root -- without this the suite fails there and looks like a real
+        // regression in path validation.
+        it.skipIf(isRoot)('should reject unreadable paths', () => {
             const unreadablePath = path.join(tempDir, 'unreadable.journal');
             fs.writeFileSync(unreadablePath, 'test');
             fs.chmodSync(unreadablePath, 0o000);
