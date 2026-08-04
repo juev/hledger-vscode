@@ -17,8 +17,8 @@ describe("HLedgerImportCommands", () => {
     delete process.env.LEDGER_FILE;
 
     // Mock workspace configuration to return empty values
-    (vscode.workspace as any).getConfiguration = jest.fn(() => ({
-      get: jest.fn(() => "")
+    (vscode.workspace as any).getConfiguration = vi.fn(() => ({
+      get: vi.fn(() => "")
     }));
 
     // Clear workspace folders
@@ -39,7 +39,7 @@ describe("HLedgerImportCommands", () => {
       fs.writeFileSync(journalPath, "; test journal");
       process.env.LEDGER_FILE = journalPath;
 
-      const mockLspClient = jest.fn(() => null);
+      const mockLspClient = vi.fn(() => null);
       const commands = new HLedgerImportCommands(mockLspClient);
 
       // Access private method via any cast for testing
@@ -52,7 +52,7 @@ describe("HLedgerImportCommands", () => {
     it("returns null when LEDGER_FILE points to non-existent file", async () => {
       process.env.LEDGER_FILE = "/non/existent/file.journal";
 
-      const mockLspClient = jest.fn(() => null);
+      const mockLspClient = vi.fn(() => null);
       const commands = new HLedgerImportCommands(mockLspClient);
 
       const getJournalUri = (commands as any).getJournalUri.bind(commands);
@@ -73,7 +73,7 @@ describe("HLedgerImportCommands", () => {
       };
       (vscode.workspace as any).workspaceFolders = [mockFolder];
 
-      const mockLspClient = jest.fn(() => null);
+      const mockLspClient = vi.fn(() => null);
       const commands = new HLedgerImportCommands(mockLspClient);
 
       const getJournalUri = (commands as any).getJournalUri.bind(commands);
@@ -96,7 +96,7 @@ describe("HLedgerImportCommands", () => {
       };
       (vscode.workspace as any).workspaceFolders = [mockFolder];
 
-      const mockLspClient = jest.fn(() => null);
+      const mockLspClient = vi.fn(() => null);
       const commands = new HLedgerImportCommands(mockLspClient);
 
       const getJournalUri = (commands as any).getJournalUri.bind(commands);
@@ -118,7 +118,7 @@ describe("HLedgerImportCommands", () => {
       };
       (vscode.workspace as any).workspaceFolders = [mockFolder];
 
-      const mockLspClient = jest.fn(() => null);
+      const mockLspClient = vi.fn(() => null);
       const commands = new HLedgerImportCommands(mockLspClient);
 
       const getJournalUri = (commands as any).getJournalUri.bind(commands);
@@ -140,7 +140,7 @@ describe("HLedgerImportCommands", () => {
       };
       (vscode.workspace as any).workspaceFolders = [mockFolder];
 
-      const mockLspClient = jest.fn(() => null);
+      const mockLspClient = vi.fn(() => null);
       const commands = new HLedgerImportCommands(mockLspClient);
 
       const getJournalUri = (commands as any).getJournalUri.bind(commands);
@@ -172,7 +172,7 @@ describe("HLedgerImportCommands", () => {
       };
       (vscode.workspace as any).workspaceFolders = [mockFolder];
 
-      const mockLspClient = jest.fn(() => null);
+      const mockLspClient = vi.fn(() => null);
       const commands = new HLedgerImportCommands(mockLspClient);
 
       const getJournalUri = (commands as any).getJournalUri.bind(commands);
@@ -199,7 +199,7 @@ describe("HLedgerImportCommands", () => {
       };
       (vscode.workspace as any).workspaceFolders = [mockFolder];
 
-      const mockLspClient = jest.fn(() => null);
+      const mockLspClient = vi.fn(() => null);
       const commands = new HLedgerImportCommands(mockLspClient);
 
       const getJournalUri = (commands as any).getJournalUri.bind(commands);
@@ -219,7 +219,7 @@ describe("HLedgerImportCommands", () => {
       };
       (vscode.workspace as any).workspaceFolders = [mockFolder];
 
-      const mockLspClient = jest.fn(() => null);
+      const mockLspClient = vi.fn(() => null);
       const commands = new HLedgerImportCommands(mockLspClient);
 
       const getJournalUri = (commands as any).getJournalUri.bind(commands);
@@ -233,7 +233,7 @@ describe("HLedgerImportCommands", () => {
 
   describe("convertToPayeeAccountHistory", () => {
     it("converts valid LSP response correctly", () => {
-      const mockLspClient = jest.fn(() => null);
+      const mockLspClient = vi.fn(() => null);
       const commands = new HLedgerImportCommands(mockLspClient);
 
       const lspResult: PayeeAccountHistoryResult = {
@@ -261,7 +261,7 @@ describe("HLedgerImportCommands", () => {
     });
 
     it("filters out empty payee names", () => {
-      const mockLspClient = jest.fn(() => null);
+      const mockLspClient = vi.fn(() => null);
       const commands = new HLedgerImportCommands(mockLspClient);
 
       const lspResult: PayeeAccountHistoryResult = {
@@ -281,7 +281,7 @@ describe("HLedgerImportCommands", () => {
     });
 
     it("accepts numeric and keyword string payee names", () => {
-      const mockLspClient = jest.fn(() => null);
+      const mockLspClient = vi.fn(() => null);
       const commands = new HLedgerImportCommands(mockLspClient);
 
       const lspResult: any = {
@@ -306,7 +306,7 @@ describe("HLedgerImportCommands", () => {
     });
 
     it("filters out empty account arrays", () => {
-      const mockLspClient = jest.fn(() => null);
+      const mockLspClient = vi.fn(() => null);
       const commands = new HLedgerImportCommands(mockLspClient);
 
       const lspResult: PayeeAccountHistoryResult = {
@@ -326,7 +326,7 @@ describe("HLedgerImportCommands", () => {
     });
 
     it("filters out non-string accounts from arrays", () => {
-      const mockLspClient = jest.fn(() => null);
+      const mockLspClient = vi.fn(() => null);
       const commands = new HLedgerImportCommands(mockLspClient);
 
       const lspResult: any = {
@@ -346,7 +346,7 @@ describe("HLedgerImportCommands", () => {
     });
 
     it("filters out null/undefined accounts arrays", () => {
-      const mockLspClient = jest.fn(() => null);
+      const mockLspClient = vi.fn(() => null);
       const commands = new HLedgerImportCommands(mockLspClient);
 
       const lspResult: any = {
@@ -366,7 +366,7 @@ describe("HLedgerImportCommands", () => {
     });
 
     it("filters out empty pairUsage keys", () => {
-      const mockLspClient = jest.fn(() => null);
+      const mockLspClient = vi.fn(() => null);
       const commands = new HLedgerImportCommands(mockLspClient);
 
       const lspResult: any = {
@@ -386,7 +386,7 @@ describe("HLedgerImportCommands", () => {
     });
 
     it("filters out negative counts in pairUsage", () => {
-      const mockLspClient = jest.fn(() => null);
+      const mockLspClient = vi.fn(() => null);
       const commands = new HLedgerImportCommands(mockLspClient);
 
       const lspResult: any = {
@@ -406,7 +406,7 @@ describe("HLedgerImportCommands", () => {
     });
 
     it("filters out non-number counts in pairUsage", () => {
-      const mockLspClient = jest.fn(() => null);
+      const mockLspClient = vi.fn(() => null);
       const commands = new HLedgerImportCommands(mockLspClient);
 
       const lspResult: any = {
@@ -426,7 +426,7 @@ describe("HLedgerImportCommands", () => {
     });
 
     it("filters out NaN counts in pairUsage", () => {
-      const mockLspClient = jest.fn(() => null);
+      const mockLspClient = vi.fn(() => null);
       const commands = new HLedgerImportCommands(mockLspClient);
 
       const lspResult: any = {
@@ -446,7 +446,7 @@ describe("HLedgerImportCommands", () => {
     });
 
     it("filters out Infinity counts in pairUsage", () => {
-      const mockLspClient = jest.fn(() => null);
+      const mockLspClient = vi.fn(() => null);
       const commands = new HLedgerImportCommands(mockLspClient);
 
       const lspResult: any = {
@@ -468,7 +468,7 @@ describe("HLedgerImportCommands", () => {
     });
 
     it("allows zero counts in pairUsage", () => {
-      const mockLspClient = jest.fn(() => null);
+      const mockLspClient = vi.fn(() => null);
       const commands = new HLedgerImportCommands(mockLspClient);
 
       const lspResult: PayeeAccountHistoryResult = {

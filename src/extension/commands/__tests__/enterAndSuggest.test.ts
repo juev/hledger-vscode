@@ -1,11 +1,12 @@
+import type { Mock } from "vitest";
 import * as vscode from "vscode";
 import { enterAndSuggest } from "../enterAndSuggest";
 
 describe("enterAndSuggest", () => {
-  let executeCommandMock: jest.Mock;
+  let executeCommandMock: Mock;
 
   beforeEach(() => {
-    executeCommandMock = vscode.commands.executeCommand as jest.Mock;
+    executeCommandMock = vscode.commands.executeCommand as Mock;
     executeCommandMock.mockClear();
     executeCommandMock.mockResolvedValue(undefined);
   });

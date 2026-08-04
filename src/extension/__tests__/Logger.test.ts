@@ -1,3 +1,4 @@
+import type { Mock } from "vitest";
 import * as vscode from 'vscode';
 import { Logger } from '../Logger';
 
@@ -7,7 +8,7 @@ describe('Logger', () => {
 
   beforeEach(() => {
     channel = vscode.window.createOutputChannel('HLedger');
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   describe('info', () => {
@@ -58,15 +59,15 @@ describe('Logger', () => {
 
   describe('debug', () => {
     it('should not write debug message when debug is disabled', () => {
-      const getConfig = vscode.workspace.getConfiguration as jest.Mock;
+      const getConfig = vscode.workspace.getConfiguration as Mock;
       getConfig.mockReturnValue({
-        get: jest.fn((key: string, defaultValue?: unknown) => {
+        get: vi.fn((key: string, defaultValue?: unknown) => {
           if (key === 'debug') return false;
           return defaultValue;
         }),
-        update: jest.fn(),
-        has: jest.fn(() => false),
-        inspect: jest.fn(),
+        update: vi.fn(),
+        has: vi.fn(() => false),
+        inspect: vi.fn(),
       });
 
       logger = new Logger(channel);
@@ -76,15 +77,15 @@ describe('Logger', () => {
     });
 
     it('should write debug message when debug is enabled', () => {
-      const getConfig = vscode.workspace.getConfiguration as jest.Mock;
+      const getConfig = vscode.workspace.getConfiguration as Mock;
       getConfig.mockReturnValue({
-        get: jest.fn((key: string, defaultValue?: unknown) => {
+        get: vi.fn((key: string, defaultValue?: unknown) => {
           if (key === 'debug') return true;
           return defaultValue;
         }),
-        update: jest.fn(),
-        has: jest.fn(() => false),
-        inspect: jest.fn(),
+        update: vi.fn(),
+        has: vi.fn(() => false),
+        inspect: vi.fn(),
       });
 
       logger = new Logger(channel);

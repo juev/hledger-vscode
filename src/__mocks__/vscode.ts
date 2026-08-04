@@ -1,3 +1,5 @@
+import { vi } from "vitest";
+
 /**
  * Thenable type for Promise-like objects.
  */
@@ -664,18 +666,18 @@ export const createMockExtensionContext = (
 ): ExtensionContext => ({
   subscriptions: [],
   workspaceState: {
-    get: jest.fn(),
-    update: jest.fn(),
-    keys: jest.fn(() => []),
+    get: vi.fn(),
+    update: vi.fn(),
+    keys: vi.fn(() => []),
   },
-  globalState: { get: jest.fn(), update: jest.fn(), keys: jest.fn(() => []) },
-  secrets: { get: jest.fn(), store: jest.fn(), delete: jest.fn() },
+  globalState: { get: vi.fn(), update: vi.fn(), keys: vi.fn(() => []) },
+  secrets: { get: vi.fn(), store: vi.fn(), delete: vi.fn() },
   extensionUri: Uri.file("/test/extension"),
   extensionPath: "/test/extension",
   environmentVariableCollection: {
-    replace: jest.fn(),
-    append: jest.fn(),
-    prepend: jest.fn(),
+    replace: vi.fn(),
+    append: vi.fn(),
+    prepend: vi.fn(),
   },
   storagePath: "/test/storage",
   globalStoragePath: "/test/global-storage",
@@ -686,12 +688,12 @@ export const createMockExtensionContext = (
   asAbsolutePath: (relativePath: string) => `/test/extension/${relativePath}`,
   extension: { id: "test.extension", packageJSON: {} },
   extensionMode: 1, // Normal extension mode
-  languageModelAccessInformation: { canSendRequest: jest.fn() },
+  languageModelAccessInformation: { canSendRequest: vi.fn() },
   ...overrides,
 });
 
 export const workspace = {
-  getWorkspaceFolder: jest.fn((uri) => {
+  getWorkspaceFolder: vi.fn((uri) => {
     // Return a mock workspace folder for test documents
     if (uri && uri.fsPath && uri.fsPath.startsWith("/test")) {
       return {
@@ -702,7 +704,7 @@ export const workspace = {
           query: "",
           fragment: "",
           fsPath: "/test",
-          with: jest.fn(),
+          with: vi.fn(),
           toString: () => "file:///test",
           toJSON: () => ({
             $mid: 1,
@@ -717,9 +719,9 @@ export const workspace = {
     }
     return undefined;
   }),
-  onDidOpenTextDocument: jest.fn(() => ({ dispose: jest.fn() })),
-  onDidSaveTextDocument: jest.fn(() => ({ dispose: jest.fn() })),
-  onDidChangeConfiguration: jest.fn(() => ({ dispose: jest.fn() })),
+  onDidOpenTextDocument: vi.fn(() => ({ dispose: vi.fn() })),
+  onDidSaveTextDocument: vi.fn(() => ({ dispose: vi.fn() })),
+  onDidChangeConfiguration: vi.fn(() => ({ dispose: vi.fn() })),
   workspaceFolders: [
     {
       uri: {
@@ -729,7 +731,7 @@ export const workspace = {
         query: "",
         fragment: "",
         fsPath: "/test",
-        with: jest.fn(),
+        with: vi.fn(),
         toString: () => "file:///test",
         toJSON: () => ({
           $mid: 1,
@@ -743,19 +745,19 @@ export const workspace = {
     },
   ] as WorkspaceFolder[],
   fs: {
-    readFile: jest.fn(),
-    writeFile: jest.fn(),
+    readFile: vi.fn(),
+    writeFile: vi.fn(),
   },
-  getConfiguration: jest.fn(() => ({
-    get: jest.fn((key: string, defaultValue?: unknown) => {
+  getConfiguration: vi.fn(() => ({
+    get: vi.fn((key: string, defaultValue?: unknown) => {
       if (defaultValue !== undefined) {
         return defaultValue;
       }
       return undefined;
     }),
-    update: jest.fn(),
-    has: jest.fn(() => false),
-    inspect: jest.fn(),
+    update: vi.fn(),
+    has: vi.fn(() => false),
+    inspect: vi.fn(),
   })),
 };
 
@@ -826,16 +828,16 @@ class MockDiagnosticCollection implements DiagnosticCollection {
 }
 
 export const languages = {
-  registerCompletionItemProvider: jest.fn(() => ({ dispose: jest.fn() })),
-  registerDocumentSemanticTokensProvider: jest.fn(() => ({
-    dispose: jest.fn(),
+  registerCompletionItemProvider: vi.fn(() => ({ dispose: vi.fn() })),
+  registerDocumentSemanticTokensProvider: vi.fn(() => ({
+    dispose: vi.fn(),
   })),
-  registerDocumentRangeSemanticTokensProvider: jest.fn(() => ({
-    dispose: jest.fn(),
+  registerDocumentRangeSemanticTokensProvider: vi.fn(() => ({
+    dispose: vi.fn(),
   })),
-  registerCodeActionsProvider: jest.fn(() => ({ dispose: jest.fn() })),
-  registerInlineCompletionItemProvider: jest.fn(() => ({ dispose: jest.fn() })),
-  createDiagnosticCollection: jest.fn(
+  registerCodeActionsProvider: vi.fn(() => ({ dispose: vi.fn() })),
+  registerInlineCompletionItemProvider: vi.fn(() => ({ dispose: vi.fn() })),
+  createDiagnosticCollection: vi.fn(
     (name: string): DiagnosticCollection => new MockDiagnosticCollection(name),
   ),
 };
@@ -851,36 +853,36 @@ export interface OutputChannel {
 }
 
 export const window = {
-  showInformationMessage: jest.fn(),
-  showErrorMessage: jest.fn(),
-  showWarningMessage: jest.fn(),
-  setStatusBarMessage: jest.fn(),
+  showInformationMessage: vi.fn(),
+  showErrorMessage: vi.fn(),
+  showWarningMessage: vi.fn(),
+  setStatusBarMessage: vi.fn(),
   activeTextEditor: {
     document: null,
-    edit: jest.fn(),
+    edit: vi.fn(),
   },
-  onDidChangeActiveTextEditor: jest.fn(() => ({ dispose: jest.fn() })),
-  withProgress: jest.fn((options, task) =>
+  onDidChangeActiveTextEditor: vi.fn(() => ({ dispose: vi.fn() })),
+  withProgress: vi.fn((options, task) =>
     task(
-      { report: jest.fn() },
+      { report: vi.fn() },
       {
         isCancellationRequested: false,
-        onCancellationRequested: jest.fn(() => ({ dispose: jest.fn() })),
+        onCancellationRequested: vi.fn(() => ({ dispose: vi.fn() })),
       },
     ),
   ),
-  createOutputChannel: jest.fn(
+  createOutputChannel: vi.fn(
     (name: string): OutputChannel => ({
       name,
-      append: jest.fn(),
-      appendLine: jest.fn(),
-      clear: jest.fn(),
-      show: jest.fn(),
-      hide: jest.fn(),
-      dispose: jest.fn(),
+      append: vi.fn(),
+      appendLine: vi.fn(),
+      clear: vi.fn(),
+      show: vi.fn(),
+      hide: vi.fn(),
+      dispose: vi.fn(),
     }),
   ),
-  createStatusBarItem: jest.fn(
+  createStatusBarItem: vi.fn(
     (_alignment?: StatusBarAlignment, _priority?: number) => ({
       text: '',
       tooltip: '',
@@ -888,21 +890,21 @@ export const window = {
       command: undefined as string | undefined,
       color: undefined as string | undefined,
       backgroundColor: undefined as any,
-      show: jest.fn(),
-      hide: jest.fn(),
-      dispose: jest.fn(),
+      show: vi.fn(),
+      hide: vi.fn(),
+      dispose: vi.fn(),
     }),
   ),
 };
 
 export const env = {
-  openExternal: jest.fn().mockResolvedValue(true),
+  openExternal: vi.fn().mockResolvedValue(true),
 };
 
 export const commands = {
-  registerCommand: jest.fn(() => ({ dispose: jest.fn() })),
-  registerTextEditorCommand: jest.fn(() => ({ dispose: jest.fn() })),
-  executeCommand: jest.fn(),
+  registerCommand: vi.fn(() => ({ dispose: vi.fn() })),
+  registerTextEditorCommand: vi.fn(() => ({ dispose: vi.fn() })),
+  executeCommand: vi.fn(),
 };
 
 export class SemanticTokensLegend {
@@ -1049,14 +1051,14 @@ const createUriObject = (path: string): Uri => ({
   query: "",
   fragment: "",
   fsPath: path,
-  with: jest.fn(),
+  with: vi.fn(),
   toString: () => `file://${path}`,
   toJSON: () => ({ $mid: 1, fsPath: path, path, scheme: "file" }),
 });
 
 export const Uri = {
   file: createUriObject,
-  parse: jest.fn((uri: string) => createUriObject(uri)),
+  parse: vi.fn((uri: string) => createUriObject(uri)),
 };
 
 /**

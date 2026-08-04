@@ -1,12 +1,12 @@
-jest.mock("crypto", () => {
-  const nativeCrypto = jest.requireActual<typeof import("crypto")>("crypto");
-  return { ...nativeCrypto, createHash: jest.fn(nativeCrypto.createHash) };
+vi.mock("crypto", async () => {
+  const actual = await vi.importActual<typeof import("crypto")>("crypto");
+  return { ...actual, createHash: vi.fn(actual.createHash) };
 });
 
 import * as crypto from "crypto";
 import { verify } from "../minisignVerify";
 
-const nativeCrypto = jest.requireActual<typeof import("crypto")>("crypto");
+const nativeCrypto = await vi.importActual<typeof import("crypto")>("crypto");
 const SIG_ALGO = Buffer.from("Ed");
 const PREHASHED_SIG_ALGO = Buffer.from("ED");
 const KEY_ID = Buffer.from("0102030405060708", "hex");
@@ -109,7 +109,7 @@ describe("minisignVerify", () => {
       message,
       "timestamp:1234\tfile:test"
     );
-    const createHashMock = jest.mocked(crypto.createHash).mockImplementation(() => {
+    const createHashMock = vi.mocked(crypto.createHash).mockImplementation(() => {
       throw new Error("blake2b512 is unavailable");
     });
 

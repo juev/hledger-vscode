@@ -1,22 +1,23 @@
+import type { Mock } from "vitest";
 import * as vscode from "vscode";
 import { alignAmount } from "../alignAmount";
 
 interface MockLSPClient {
-  sendRequest: jest.Mock;
+  sendRequest: Mock;
 }
 
 describe("alignAmount", () => {
   let mockClient: MockLSPClient;
-  let applyEditMock: jest.Mock;
-  let executeCommandMock: jest.Mock;
+  let applyEditMock: Mock;
+  let executeCommandMock: Mock;
 
   beforeEach(() => {
-    mockClient = { sendRequest: jest.fn() };
+    mockClient = { sendRequest: vi.fn() };
 
-    applyEditMock = jest.fn().mockResolvedValue(true);
+    applyEditMock = vi.fn().mockResolvedValue(true);
     (vscode.workspace as any).applyEdit = applyEditMock;
 
-    executeCommandMock = vscode.commands.executeCommand as jest.Mock;
+    executeCommandMock = vscode.commands.executeCommand as Mock;
     executeCommandMock.mockClear();
 
     (vscode.window as any).activeTextEditor = {
@@ -29,8 +30,8 @@ describe("alignAmount", () => {
       },
     };
 
-    (vscode.workspace.getConfiguration as jest.Mock).mockReturnValue({
-      get: jest.fn((key: string, defaultValue?: unknown) => {
+    (vscode.workspace.getConfiguration as Mock).mockReturnValue({
+      get: vi.fn((key: string, defaultValue?: unknown) => {
         if (key === "tabSize") return 4;
         if (key === "insertSpaces") return true;
         return defaultValue;

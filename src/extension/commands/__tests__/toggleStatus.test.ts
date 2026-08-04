@@ -1,3 +1,4 @@
+import type { Mock } from "vitest";
 import * as vscode from "vscode";
 import {
   isTransactionHeader,
@@ -513,12 +514,12 @@ describe("buildStatusEdit", () => {
 });
 
 describe("cycleStatus", () => {
-  let editMock: jest.Mock;
+  let editMock: Mock;
 
   function setupEditor(lineText: string, line: number = 0): void {
-    editMock = jest.fn().mockImplementation(
-      (callback: (builder: { replace: jest.Mock }) => void) => {
-        const builder = { replace: jest.fn() };
+    editMock = vi.fn().mockImplementation(
+      (callback: (builder: { replace: Mock }) => void) => {
+        const builder = { replace: vi.fn() };
         callback(builder);
         return Promise.resolve(true);
       },
@@ -527,7 +528,7 @@ describe("cycleStatus", () => {
     (vscode.window as any).activeTextEditor = {
       document: {
         languageId: "hledger",
-        lineAt: jest.fn().mockReturnValue({ text: lineText }),
+        lineAt: vi.fn().mockReturnValue({ text: lineText }),
       },
       selection: {
         active: new vscode.Position(line, 0),
@@ -575,7 +576,7 @@ describe("cycleStatus", () => {
     setupEditor("2024-01-15 Grocery Store");
     await cycleStatus();
     expect(editMock).toHaveBeenCalledTimes(1);
-    const builder = { replace: jest.fn() };
+    const builder = { replace: vi.fn() };
     editMock.mock.calls[0][0](builder);
     expect(builder.replace).toHaveBeenCalledWith(
       new vscode.Range(0, 11, 0, 11),
@@ -587,7 +588,7 @@ describe("cycleStatus", () => {
     setupEditor("2024-01-15 ! Grocery Store");
     await cycleStatus();
     expect(editMock).toHaveBeenCalledTimes(1);
-    const builder = { replace: jest.fn() };
+    const builder = { replace: vi.fn() };
     editMock.mock.calls[0][0](builder);
     expect(builder.replace).toHaveBeenCalledWith(
       new vscode.Range(0, 11, 0, 13),
@@ -599,7 +600,7 @@ describe("cycleStatus", () => {
     setupEditor("2024-01-15 * Grocery Store");
     await cycleStatus();
     expect(editMock).toHaveBeenCalledTimes(1);
-    const builder = { replace: jest.fn() };
+    const builder = { replace: vi.fn() };
     editMock.mock.calls[0][0](builder);
     expect(builder.replace).toHaveBeenCalledWith(
       new vscode.Range(0, 11, 0, 13),
@@ -610,7 +611,7 @@ describe("cycleStatus", () => {
   it("cycles a status marker at the end of a transaction header", async () => {
     setupEditor("2024-01-15 !");
     await cycleStatus();
-    const builder = { replace: jest.fn() };
+    const builder = { replace: vi.fn() };
     editMock.mock.calls[0][0](builder);
     expect(builder.replace).toHaveBeenCalledWith(
       new vscode.Range(0, 11, 0, 12),
@@ -619,9 +620,9 @@ describe("cycleStatus", () => {
   });
 
   it("cycles each unique selected line in one edit", async () => {
-    editMock = jest.fn().mockImplementation(
-      (callback: (builder: { replace: jest.Mock }) => void) => {
-        const builder = { replace: jest.fn() };
+    editMock = vi.fn().mockImplementation(
+      (callback: (builder: { replace: Mock }) => void) => {
+        const builder = { replace: vi.fn() };
         callback(builder);
         return Promise.resolve(true);
       },
@@ -629,7 +630,7 @@ describe("cycleStatus", () => {
     (vscode.window as any).activeTextEditor = {
       document: {
         languageId: "hledger",
-        lineAt: jest.fn((line: number) => ({
+        lineAt: vi.fn((line: number) => ({
           text: ["2024-01-15 Grocery Store", "    * assets:checking  $100"][line],
         })),
       },
@@ -644,7 +645,7 @@ describe("cycleStatus", () => {
 
     await cycleStatus();
 
-    const builder = { replace: jest.fn() };
+    const builder = { replace: vi.fn() };
     editMock.mock.calls[0][0](builder);
     expect(builder.replace).toHaveBeenCalledTimes(2);
     expect(builder.replace).toHaveBeenCalledWith(
@@ -661,7 +662,7 @@ describe("cycleStatus", () => {
     setupEditor("    assets:checking  $100", 1);
     await cycleStatus();
     expect(editMock).toHaveBeenCalledTimes(1);
-    const builder = { replace: jest.fn() };
+    const builder = { replace: vi.fn() };
     editMock.mock.calls[0][0](builder);
     expect(builder.replace).toHaveBeenCalledWith(
       new vscode.Range(1, 4, 1, 4),
@@ -673,7 +674,7 @@ describe("cycleStatus", () => {
     setupEditor("    * assets:checking  $100", 2);
     await cycleStatus();
     expect(editMock).toHaveBeenCalledTimes(1);
-    const builder = { replace: jest.fn() };
+    const builder = { replace: vi.fn() };
     editMock.mock.calls[0][0](builder);
     expect(builder.replace).toHaveBeenCalledWith(
       new vscode.Range(2, 4, 2, 6),
@@ -683,12 +684,12 @@ describe("cycleStatus", () => {
 });
 
 describe("setStatus", () => {
-  let editMock: jest.Mock;
+  let editMock: Mock;
 
   function setupEditor(lineText: string, line: number = 0): void {
-    editMock = jest.fn().mockImplementation(
-      (callback: (builder: { replace: jest.Mock }) => void) => {
-        const builder = { replace: jest.fn() };
+    editMock = vi.fn().mockImplementation(
+      (callback: (builder: { replace: Mock }) => void) => {
+        const builder = { replace: vi.fn() };
         callback(builder);
         return Promise.resolve(true);
       },
@@ -697,7 +698,7 @@ describe("setStatus", () => {
     (vscode.window as any).activeTextEditor = {
       document: {
         languageId: "hledger",
-        lineAt: jest.fn().mockReturnValue({ text: lineText }),
+        lineAt: vi.fn().mockReturnValue({ text: lineText }),
       },
       selection: {
         active: new vscode.Position(line, 0),
@@ -733,7 +734,7 @@ describe("setStatus", () => {
     setupEditor("2024-01-15 Grocery Store");
     await setStatus("*");
     expect(editMock).toHaveBeenCalledTimes(1);
-    const builder = { replace: jest.fn() };
+    const builder = { replace: vi.fn() };
     editMock.mock.calls[0][0](builder);
     expect(builder.replace).toHaveBeenCalledWith(
       new vscode.Range(0, 11, 0, 11),
@@ -745,7 +746,7 @@ describe("setStatus", () => {
     setupEditor("2024-01-15 * Grocery Store");
     await setStatus("");
     expect(editMock).toHaveBeenCalledTimes(1);
-    const builder = { replace: jest.fn() };
+    const builder = { replace: vi.fn() };
     editMock.mock.calls[0][0](builder);
     expect(builder.replace).toHaveBeenCalledWith(
       new vscode.Range(0, 11, 0, 13),
@@ -763,7 +764,7 @@ describe("setStatus", () => {
     setupEditor("    assets:checking  $100", 1);
     await setStatus("*");
     expect(editMock).toHaveBeenCalledTimes(1);
-    const builder = { replace: jest.fn() };
+    const builder = { replace: vi.fn() };
     editMock.mock.calls[0][0](builder);
     expect(builder.replace).toHaveBeenCalledWith(
       new vscode.Range(1, 4, 1, 4),
@@ -772,9 +773,9 @@ describe("setStatus", () => {
   });
 
   it("sets status on each unique selected line in one edit", async () => {
-    editMock = jest.fn().mockImplementation(
-      (callback: (builder: { replace: jest.Mock }) => void) => {
-        const builder = { replace: jest.fn() };
+    editMock = vi.fn().mockImplementation(
+      (callback: (builder: { replace: Mock }) => void) => {
+        const builder = { replace: vi.fn() };
         callback(builder);
         return Promise.resolve(true);
       },
@@ -782,7 +783,7 @@ describe("setStatus", () => {
     (vscode.window as any).activeTextEditor = {
       document: {
         languageId: "hledger",
-        lineAt: jest.fn((line: number) => ({
+        lineAt: vi.fn((line: number) => ({
           text: ["2024-01-15 Grocery Store", "    assets:checking  $100"][line],
         })),
       },
@@ -797,7 +798,7 @@ describe("setStatus", () => {
 
     await setStatus("*");
 
-    const builder = { replace: jest.fn() };
+    const builder = { replace: vi.fn() };
     editMock.mock.calls[0][0](builder);
     expect(builder.replace).toHaveBeenCalledTimes(2);
     expect(builder.replace).toHaveBeenCalledWith(

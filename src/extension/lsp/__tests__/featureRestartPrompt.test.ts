@@ -1,3 +1,4 @@
+import type { Mock } from "vitest";
 import * as vscode from "vscode";
 import { registerFeatureRestartPrompt } from "../featureRestartPrompt";
 
@@ -6,7 +7,7 @@ type ConfigurationListener = (
 ) => unknown;
 
 function captureListener(): ConfigurationListener {
-  const mock = vscode.workspace.onDidChangeConfiguration as unknown as jest.Mock;
+  const mock = vscode.workspace.onDidChangeConfiguration as unknown as Mock;
   const listener = mock.mock.calls[mock.mock.calls.length - 1]?.[0];
   expect(listener).toBeDefined();
   return listener as ConfigurationListener;
@@ -20,11 +21,11 @@ function changeEvent(changed: string): vscode.ConfigurationChangeEvent {
 
 describe("registerFeatureRestartPrompt", () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   it("offers a restart when a feature toggle changes", async () => {
-    (vscode.window.showInformationMessage as unknown as jest.Mock).mockResolvedValue(
+    (vscode.window.showInformationMessage as unknown as Mock).mockResolvedValue(
       "Restart Server",
     );
 
@@ -41,7 +42,7 @@ describe("registerFeatureRestartPrompt", () => {
   });
 
   it("leaves the server alone when the prompt is dismissed", async () => {
-    (vscode.window.showInformationMessage as unknown as jest.Mock).mockResolvedValue(
+    (vscode.window.showInformationMessage as unknown as Mock).mockResolvedValue(
       undefined,
     );
 

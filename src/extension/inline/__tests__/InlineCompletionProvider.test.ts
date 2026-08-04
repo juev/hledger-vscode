@@ -1,8 +1,9 @@
+import type { Mock } from "vitest";
 import * as vscode from "vscode";
 import { InlineCompletionProvider } from "../InlineCompletionProvider";
 
 interface MockLSPClient {
-  sendRequest: jest.Mock;
+  sendRequest: Mock;
 }
 
 function createMockDocument(uri = "file:///test.journal"): vscode.TextDocument {
@@ -25,7 +26,7 @@ function createMockContext(
 function createMockToken(isCancelled = false): vscode.CancellationToken {
   return {
     isCancellationRequested: isCancelled,
-    onCancellationRequested: jest.fn(() => ({ dispose: jest.fn() })),
+    onCancellationRequested: vi.fn(() => ({ dispose: vi.fn() })),
   };
 }
 
@@ -34,14 +35,14 @@ describe("InlineCompletionProvider", () => {
 
   beforeEach(() => {
     mockClient = {
-      sendRequest: jest.fn(),
+      sendRequest: vi.fn(),
     };
   });
 
   describe("provideInlineCompletionItems", () => {
     it("returns undefined when inlineCompletion feature is disabled", async () => {
-      (vscode.workspace.getConfiguration as jest.Mock).mockReturnValue({
-        get: jest.fn((key: string) => {
+      (vscode.workspace.getConfiguration as Mock).mockReturnValue({
+        get: vi.fn((key: string) => {
           if (key === "features.inlineCompletion") return false;
           return undefined;
         }),
@@ -61,8 +62,8 @@ describe("InlineCompletionProvider", () => {
     });
 
     it("sends request when inlineCompletion feature is enabled", async () => {
-      (vscode.workspace.getConfiguration as jest.Mock).mockReturnValue({
-        get: jest.fn((key: string) => {
+      (vscode.workspace.getConfiguration as Mock).mockReturnValue({
+        get: vi.fn((key: string) => {
           if (key === "features.inlineCompletion") return true;
           return undefined;
         }),
@@ -134,7 +135,7 @@ describe("InlineCompletionProvider", () => {
         get isCancellationRequested() {
           return tokenCancelled;
         },
-        onCancellationRequested: jest.fn(() => ({ dispose: jest.fn() })),
+        onCancellationRequested: vi.fn(() => ({ dispose: vi.fn() })),
       };
 
       mockClient.sendRequest.mockImplementation(async () => {
