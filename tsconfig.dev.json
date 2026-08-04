@@ -1,54 +1,18 @@
 {
+  // The debug build: `npm run compile` emits this into out/ so that F5 in
+  // .vscode/launch.json has per-file JS and source maps to set breakpoints in.
+  // The shipped extension is the esbuild bundle, not this output.
+  //
+  // Everything except the two settings below is inherited, so strictness cannot
+  // drift between this config and tsconfig.json.
+  "extends": "./tsconfig.json",
   "compilerOptions": {
-    "module": "commonjs",
-    "target": "es2018",
-    "outDir": "out",
-    "lib": ["es2018"],
-    "sourceMap": true,
-    "rootDir": "src",
-
-    // Enhanced strict type checking
-    "strict": true,
-    "noImplicitAny": true,
-    "strictNullChecks": true,
-    "strictFunctionTypes": true,
-    "strictBindCallApply": true,
-    "strictPropertyInitialization": true,
-    "noImplicitThis": true,
-    "noImplicitReturns": true,
-    "noFallthroughCasesInSwitch": true,
-    "noUncheckedIndexedAccess": true,
-    "exactOptionalPropertyTypes": true,
-
-    // Additional safety checks (disabled for now to fix existing code gradually)
-    "noUnusedLocals": false,
-    "noUnusedParameters": false,
-    "noPropertyAccessFromIndexSignature": false,
-    "allowUnreachableCode": false,
-    "allowUnusedLabels": false,
-
-    // Module resolution and compatibility
-    // See tsconfig.json for why vscode-languageclient/node is mapped here.
-    "baseUrl": ".",
-    "paths": {
-      "vscode-languageclient/node": ["node_modules/vscode-languageclient/lib/node/main"]
-    },
-    "esModuleInterop": true,
-    "skipLibCheck": true,
-    "forceConsistentCasingInFileNames": true,
-    "allowJs": true,
-    "checkJs": false,
-
-    // Modern TypeScript features
-    "useDefineForClassFields": true,
-    "experimentalDecorators": true,
-    "emitDecoratorMetadata": true
+    "sourceMap": true
   },
   "include": ["src/**/*"],
-  // Tests are type-checked by `npm run typecheck:test` against tsconfig.test.json,
-  // which carries the settings they actually need (ESM for top-level await, and
-  // the relaxed strictness the mocks rely on). This config emits the extension,
-  // so compiling test sources into out/ serves no purpose either.
+  // Same idea as the base config, plus the vscode mock: none of it belongs in a
+  // debug build of the extension. Tests are type-checked by
+  // `npm run typecheck:test` against tsconfig.test.json.
   "exclude": [
     "node_modules",
     ".vscode-test",
