@@ -20,20 +20,20 @@ export default defineConfig({
       provider: 'v8',
       include: ['src/**/*.ts'],
       exclude: ['src/**/*.d.ts', 'src/**/__tests__/**', 'src/__mocks__/**'],
-      // A ratchet, not a target: these sit just under the lowest figure the
-      // suite currently produces, so coverage cannot slide without someone
-      // noticing. Raise them when real coverage rises.
+      // A ratchet, not a target: these sit just under what the suite currently
+      // produces, so coverage cannot slide without someone noticing. Raise them
+      // when real coverage rises.
       //
-      // The headroom is not decorative. Coverage is not deterministic here:
-      // HLedgerCliService swings between 32% and 39% depending on whether its
-      // fire-and-forget constructor init finishes inside the 100 ms sleep the
-      // timeout test waits on, which moves the total by up to 0.9 points. The
-      // observed floor is 81.77 / 76.62 / 81.01 / 82.03.
+      // The margin is small on purpose. Coverage used to swing between runs and
+      // between machines, so the first version of these numbers had to absorb
+      // almost a point of noise. It no longer does: the suite reports
+      // 81.91 / 76.70 / 81.30 / 82.18 on every run, with or without hledger
+      // installed. A drop now means coverage actually fell.
       thresholds: {
-        statements: 81,
-        branches: 76,
-        functions: 80,
-        lines: 81,
+        statements: 81.5,
+        branches: 76.5,
+        functions: 81,
+        lines: 82,
       },
     },
   },

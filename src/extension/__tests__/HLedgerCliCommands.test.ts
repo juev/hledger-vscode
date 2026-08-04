@@ -8,6 +8,28 @@ import { HLedgerCliCommands } from '../HLedgerCliCommands';
 import { HLedgerCliService } from '../services/HLedgerCliService';
 import * as vscode from 'vscode';
 
+// Constructing HLedgerCliService starts path resolution, which shells out to
+// `which hledger` and then `<path> --version`. No assertion here depends on
+// that -- every test stubs the service methods it uses -- but leaving it real
+// made these unit tests spawn processes and behave differently depending on
+// whether hledger happens to be installed. Stub both calls as "not found".
+vi.mock('child_process', () => ({
+    exec: vi.fn((...args: unknown[]) => {
+        const callback = args[args.length - 1];
+        if (typeof callback === 'function') {
+            (callback as (e: Error) => void)(new Error('not found'));
+        }
+        return {};
+    }),
+    execFile: vi.fn((...args: unknown[]) => {
+        const callback = args[args.length - 1];
+        if (typeof callback === 'function') {
+            (callback as (e: Error) => void)(new Error('not found'));
+        }
+        return {};
+    }),
+}));
+
 describe('HLedgerCliCommands - Progress Indicators', () => {
     let tempDir: string;
     let validJournalPath: string;
@@ -16,12 +38,15 @@ describe('HLedgerCliCommands - Progress Indicators', () => {
     let mockEditor: any;
     let mockDocument: any;
 
-    beforeEach(() => {
+    beforeEach(async () => {
         tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'hledger-test-'));
         validJournalPath = path.join(tempDir, 'test.journal');
         fs.writeFileSync(validJournalPath, '2025-01-01 Test\n  Assets:Bank  $100\n');
 
         mockService = new HLedgerCliService();
+        // Await the fire-and-forget init the constructor starts, so it cannot
+        // still be resolving when the test ends and skew coverage.
+        await mockService.getHledgerPath();
         commands = new HLedgerCliCommands(mockService);
 
         mockDocument = {
@@ -166,8 +191,11 @@ describe('HLedgerCliCommands - Command Injection Prevention', () => {
         let commands: HLedgerCliCommands;
         let mockService: HLedgerCliService;
 
-        beforeEach(() => {
+        beforeEach(async () => {
             mockService = new HLedgerCliService();
+            // Await the fire-and-forget init the constructor starts, so it cannot
+            // still be resolving when the test ends and skew coverage.
+            await mockService.getHledgerPath();
             commands = new HLedgerCliCommands(mockService);
         });
 
@@ -331,8 +359,11 @@ describe('HLedgerCliCommands - Command Injection Prevention', () => {
         let mockService: HLedgerCliService;
         let mockDocument: any;
 
-        beforeEach(() => {
+        beforeEach(async () => {
             mockService = new HLedgerCliService();
+            // Await the fire-and-forget init the constructor starts, so it cannot
+            // still be resolving when the test ends and skew coverage.
+            await mockService.getHledgerPath();
             commands = new HLedgerCliCommands(mockService);
             mockDocument = {
                 uri: { fsPath: validJournalPath },

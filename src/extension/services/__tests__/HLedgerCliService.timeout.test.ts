@@ -11,6 +11,23 @@ vi.mock('child_process', () => ({
 }));
 
 const mockExec = child_process.exec as MockedFunction<typeof child_process.exec>;
+const mockExecFile = child_process.execFile as MockedFunction<typeof child_process.execFile>;
+
+/**
+ * Path resolution runs `which hledger` and then validates the candidate with
+ * `<path> --version`. Both go through promisify, so a mock that never invokes
+ * its callback leaves the promise pending forever and initialization never
+ * finishes. Give execFile a callback so awaiting the service actually resolves.
+ */
+function stubExecFileSuccess(): void {
+    mockExecFile.mockImplementation(((...args: unknown[]) => {
+        const callback = args[args.length - 1];
+        if (typeof callback === 'function') {
+            (callback as (e: null, stdout: string, stderr: string) => void)(null, 'hledger 1.52.1\n', '');
+        }
+        return {} as never;
+    }) as never);
+}
 
 describe('HLedgerCliService - Timeout Protection', () => {
     beforeEach(() => {
@@ -28,10 +45,14 @@ describe('HLedgerCliService - Timeout Protection', () => {
                 return {} as any;
             }) as any);
 
+            stubExecFileSuccess();
+
             const service = new HLedgerCliService();
 
-            // Wait for initialization to complete
-            await new Promise(resolve => setTimeout(resolve, 100));
+            // Await the initialization the constructor kicked off. getHledgerPath
+            // goes through the same ensureInitialized promise, so this is exact
+            // where a fixed sleep was a race.
+            await service.getHledgerPath();
 
             // Verify exec was called with timeout option
             expect(mockExec).toHaveBeenCalled();
@@ -68,10 +89,11 @@ describe('HLedgerCliService - Timeout Protection', () => {
                 return {} as any;
             }) as any);
 
+            stubExecFileSuccess();
+
             const service = new HLedgerCliService();
 
-            // Wait for initialization
-            await new Promise(resolve => setTimeout(resolve, 100));
+            await service.getHledgerPath();
 
             // Verify timeout is exactly 5000ms
             expect(timeoutValues).toContain(5000);
