@@ -4,15 +4,21 @@
 .claude/**
 .github/**
 
-# Source code (only compiled JS should be included)
+# Source code (only the esbuild bundle should be included)
 src/**
 *.ts
-*.js.map
-*.map
+*.mts
+*.cts
+**/*.js.map
+**/*.map
+
+# out/ also holds the tsc debug build that `npm run compile` produces for F5.
+# Only the esbuild bundle is loaded at runtime, so ship that and nothing else:
+# package.json "main" points here, and the bundle has no relative requires.
+out/**
+!out/extension/main.js
 
 # Test files and mocks
-out/__mocks__/**
-out/**/__tests__/**
 **/__tests__/**
 **/*.test.js
 **/*.test.ts
