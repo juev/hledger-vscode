@@ -75,18 +75,6 @@ export default [
     },
   },
   {
-    // The mock defaults with `||` in about forty places, imitating how the real
-    // API fills in optional arguments. Switching them to `??` is not a
-    // refactor-in-place: it changes what happens for 0 and "". SnippetString
-    // is the clearest case — `placeholder(0)` currently renders as tabstop 1,
-    // and `??` would silently change that. Whether the mock should behave that
-    // way is a real question, but it is a behaviour question, not a lint one.
-    files: ['src/__mocks__/**/*.ts'],
-    rules: {
-      '@typescript-eslint/prefer-nullish-coalescing': 'off',
-    },
-  },
-  {
     ignores: ['out/**/*', '*.js', 'node_modules/**/*'],
   },
 ];

@@ -175,8 +175,8 @@ export class CompletionList {
   isIncomplete: boolean;
 
   constructor(items?: CompletionItem[], isIncomplete?: boolean) {
-    this.items = items || [];
-    this.isIncomplete = isIncomplete || false;
+    this.items = items ?? [];
+    this.isIncomplete = isIncomplete ?? false;
   }
 }
 
@@ -378,11 +378,11 @@ export class Range {
       "start" in startOrChange
     ) {
       const change = startOrChange as { start?: Position; end?: Position };
-      return new Range(change.start || this.start, change.end || this.end);
+      return new Range(change.start ?? this.start, change.end ?? this.end);
     }
     return new Range(
       (startOrChange as Position) || this.start,
-      end || this.end,
+      end ?? this.end,
     );
   }
 }
@@ -450,13 +450,13 @@ export class Position {
         characterDelta?: number;
       };
       return new Position(
-        this.line + (change.lineDelta || 0),
-        this.character + (change.characterDelta || 0),
+        this.line + (change.lineDelta ?? 0),
+        this.character + (change.characterDelta ?? 0),
       );
     }
     return new Position(
-      this.line + (lineDeltaOrChange || 0),
-      this.character + (characterDelta || 0),
+      this.line + (lineDeltaOrChange ?? 0),
+      this.character + (characterDelta ?? 0),
     );
   }
 
@@ -469,13 +469,13 @@ export class Position {
     if (typeof lineOrChange === "object") {
       const change = lineOrChange as { line?: number; character?: number };
       return new Position(
-        change.line !== undefined ? change.line : this.line,
-        change.character !== undefined ? change.character : this.character,
+        change.line ?? this.line,
+        change.character ?? this.character,
       );
     }
     return new Position(
-      lineOrChange !== undefined ? lineOrChange : this.line,
-      character !== undefined ? character : this.character,
+      lineOrChange ?? this.line,
+      character ?? this.character,
     );
   }
 }
@@ -960,7 +960,7 @@ export class MarkdownString {
   uris?: { [id: string]: Uri };
 
   constructor(value?: string, supportThemeIcons?: boolean) {
-    this.value = value || "";
+    this.value = value ?? "";
     if (supportThemeIcons !== undefined) {
       this.supportThemeIcons = supportThemeIcons;
     }
@@ -977,7 +977,7 @@ export class MarkdownString {
   }
 
   appendCodeblock(value: string, language?: string): MarkdownString {
-    this.value += "```" + (language || "") + "\n" + value + "\n```\n";
+    this.value += "```" + (language ?? "") + "\n" + value + "\n```\n";
     return this;
   }
 }
@@ -992,8 +992,17 @@ export class ThemeColor {
 export class SnippetString {
   value: string;
 
+  /**
+   * Next index handed out when a builder is called without one. The real class
+   * keeps the same counter, starting at 1 and shared between tabstops,
+   * placeholders and choices. An explicit index is used verbatim and does not
+   * advance it -- including 0, which in snippet syntax is the final cursor
+   * position rather than a missing value.
+   */
+  private tabstop = 1;
+
   constructor(value?: string) {
-    this.value = value || "";
+    this.value = value ?? "";
   }
 
   appendText(value: string): SnippetString {
@@ -1002,7 +1011,7 @@ export class SnippetString {
   }
 
   appendTabstop(number?: number): SnippetString {
-    this.value += number !== undefined ? `$${number}` : "$0";
+    this.value += `$${number ?? this.tabstop++}`;
     return this;
   }
 
@@ -1010,18 +1019,19 @@ export class SnippetString {
     value: string | ((snippet: SnippetString) => void),
     number?: number,
   ): SnippetString {
+    const index = number ?? this.tabstop++;
     if (typeof value === "function") {
       const inner = new SnippetString();
       value(inner);
-      this.value += `\${${number || 1}:${inner.value}}`;
+      this.value += `\${${index}:${inner.value}}`;
     } else {
-      this.value += `\${${number || 1}:${value}}`;
+      this.value += `\${${index}:${value}}`;
     }
     return this;
   }
 
   appendChoice(values: string[], number?: number): SnippetString {
-    this.value += `\${${number || 1}|${values.join(",")}|}`;
+    this.value += `\${${number ?? this.tabstop++}|${values.join(",")}|}`;
     return this;
   }
 
@@ -1095,16 +1105,16 @@ export class MockTextDocument implements TextDocument {
       encoding: string;
     }> = {},
   ) {
-    this.uri = options.uri || Uri.file("/test/document.txt");
-    this.fileName = options.fileName || "/test/document.txt";
-    this.languageId = options.languageId || "hledger";
-    this.version = options.version || 1;
-    this.isDirty = options.isDirty || false;
-    this.isClosed = options.isClosed || false;
-    this.isUntitled = options.isUntitled || false;
+    this.uri = options.uri ?? Uri.file("/test/document.txt");
+    this.fileName = options.fileName ?? "/test/document.txt";
+    this.languageId = options.languageId ?? "hledger";
+    this.version = options.version ?? 1;
+    this.isDirty = options.isDirty ?? false;
+    this.isClosed = options.isClosed ?? false;
+    this.isUntitled = options.isUntitled ?? false;
     this.lineCount = this.lines.length;
-    this.eol = options.eol || EndOfLine.LF;
-    this.encoding = options.encoding || "utf8";
+    this.eol = options.eol ?? EndOfLine.LF;
+    this.encoding = options.encoding ?? "utf8";
   }
 
   save(): Thenable<boolean> {
@@ -1128,7 +1138,7 @@ export class MockTextDocument implements TextDocument {
     );
 
     if (startLine === endLine) {
-      const line = this.lines[startLine] || "";
+      const line = this.lines[startLine] ?? "";
       const startChar = Math.max(
         0,
         Math.min(range.start.character, line.length),
@@ -1142,7 +1152,7 @@ export class MockTextDocument implements TextDocument {
 
     const result: string[] = [];
     for (let i = startLine; i <= endLine; i++) {
-      const line = this.lines[i] || "";
+      const line = this.lines[i] ?? "";
       if (i === startLine) {
         const startChar = Math.max(
           0,
@@ -1165,7 +1175,7 @@ export class MockTextDocument implements TextDocument {
   lineAt(lineOrPosition: number | Position): TextLine {
     const lineNumber =
       typeof lineOrPosition === "number" ? lineOrPosition : lineOrPosition.line;
-    const lineText = this.lines[lineNumber] || "";
+    const lineText = this.lines[lineNumber] ?? "";
 
     return {
       lineNumber,
@@ -1180,10 +1190,10 @@ export class MockTextDocument implements TextDocument {
   offsetAt(position: Position): number {
     let offset = 0;
     for (let i = 0; i < Math.min(position.line, this.lines.length); i++) {
-      offset += (this.lines[i] || "").length + 1; // +1 for line break
+      offset += (this.lines[i] ?? "").length + 1; // +1 for line break
     }
     if (position.line < this.lines.length) {
-      const line = this.lines[position.line] || "";
+      const line = this.lines[position.line] ?? "";
       offset += Math.min(position.character, line.length);
     }
     return offset;
@@ -1192,7 +1202,7 @@ export class MockTextDocument implements TextDocument {
   positionAt(offset: number): Position {
     let currentOffset = 0;
     for (let line = 0; line < this.lines.length; line++) {
-      const lineText = this.lines[line] || "";
+      const lineText = this.lines[line] ?? "";
       if (currentOffset + lineText.length >= offset) {
         return new Position(line, offset - currentOffset);
       }
@@ -1200,7 +1210,7 @@ export class MockTextDocument implements TextDocument {
     }
     // If offset is beyond document, return end position
     const lastLine = Math.max(0, this.lines.length - 1);
-    const lastLineText = this.lines[lastLine] || "";
+    const lastLineText = this.lines[lastLine] ?? "";
     return new Position(lastLine, lastLineText.length);
   }
 
@@ -1211,7 +1221,7 @@ export class MockTextDocument implements TextDocument {
     const line = this.lines[position.line];
     if (!line) return undefined;
 
-    const wordRegex = regex || /[-?.:a-zA-Z0-9_\s]+/;
+    const wordRegex = regex ?? /[-?.:a-zA-Z0-9_\s]+/;
     const matches = Array.from(line.matchAll(new RegExp(wordRegex, "g")));
 
     for (const match of matches) {
@@ -1237,8 +1247,8 @@ export class MockTextDocument implements TextDocument {
       Math.min(range.end.line, this.lines.length - 1),
     );
 
-    const startLineText = this.lines[startLine] || "";
-    const endLineText = this.lines[endLine] || "";
+    const startLineText = this.lines[startLine] ?? "";
+    const endLineText = this.lines[endLine] ?? "";
 
     const startChar = Math.max(
       0,
@@ -1254,7 +1264,7 @@ export class MockTextDocument implements TextDocument {
 
   validatePosition(position: Position): Position {
     const line = Math.max(0, Math.min(position.line, this.lines.length - 1));
-    const lineText = this.lines[line] || "";
+    const lineText = this.lines[line] ?? "";
     const character = Math.max(
       0,
       Math.min(position.character, lineText.length),
