@@ -30,9 +30,13 @@
     // Module resolution and compatibility
     // vscode-languageclient v10 exposes its node entrypoint only via the
     // package.json "exports" map, which the classic "node" resolver ignores.
-    // Map the subpath to the real types so resolution works without switching
-    // the whole project to node16/bundler resolution (which would force ESM
-    // emit or .js import extensions and break the CJS dev build and ts-jest).
+    // Mapping the subpath to the real types works around that.
+    //
+    // The alternative is moduleResolution "bundler", under which this mapping
+    // is unnecessary. It is blocked by "module": "commonjs" (TS5095: bundler
+    // needs es2015 or later), and that has to stay: `npm run compile` emits the
+    // per-file debug build that F5 loads through the extension host, which
+    // requires CommonJS. Drop this mapping if that build ever stops being CJS.
     "baseUrl": ".",
     "paths": {
       "vscode-languageclient/node": ["node_modules/vscode-languageclient/lib/node/main"]
