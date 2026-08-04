@@ -34,7 +34,11 @@ jobs:
 
     - name: Run lint
       run: npm run lint
-    
+
+    # esbuild strips types without checking them, so tests need their own pass
+    - name: Type-check tests
+      run: npm run typecheck:test
+
     - name: Run tests
       run: npm test
       if: success()

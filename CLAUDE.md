@@ -24,26 +24,31 @@ VS Code extension for hledger plain text accounting. Supported file extensions: 
 ```bash
 npm run build          # Production build with esbuild
 npm run watch          # Watch mode with esbuild
-npm run test           # Run all Jest tests
+npm run test           # Run all Vitest tests
 npm run test:watch     # Tests in watch mode
 npm run test:coverage  # Tests with coverage report
 npm run lint           # ESLint check
 npm run lint:fix       # ESLint with auto-fix
 npm run package        # Create VSIX for distribution
 npx tsc --noEmit       # TypeScript strict type check (run before committing)
+npm run typecheck:test # Type-check the test sources (esbuild does not)
 ```
+
+**Important:** Vitest transforms tests with esbuild, which strips types without
+checking them. A type error in a test no longer fails the run, so
+`npm run typecheck:test` is what catches it — CI runs it alongside lint.
 
 ### Running Single Tests
 
 ```bash
 # Run a single test file
-npx jest src/extension/__tests__/LSPManager.test.ts
+npx vitest run src/extension/__tests__/LSPManager.test.ts
 
 # Run tests matching a pattern
-npx jest --testNamePattern="should start LSP server"
+npx vitest run -t "should start LSP server"
 
 # Run tests in a specific directory
-npx jest src/extension/import/__tests__/
+npx vitest run src/extension/import/__tests__/
 ```
 
 ## Build System
@@ -125,9 +130,11 @@ The extension's `InlineCompletionProvider` handles ghost text completions for tr
 
 ### Testing
 
-- Jest with ts-jest preset; VS Code mocked in `src/__mocks__/vscode.ts`
+- Vitest with globals enabled (`describe`/`it`/`expect`/`vi` need no import); config in `vitest.config.mts`
+- VS Code is mocked in `src/__mocks__/vscode.ts`, wired through `test.alias` — a CJS `require("vscode")` bypasses that alias, so always import it
+- Mocked classes must use `function` expressions, not arrow functions: Vitest calls them with `new`
 - Grammar tests use `vscode-textmate` and `vscode-oniguruma` for accurate scope testing
-- `grammar.snapshot.test.ts` detects unintended grammar changes
+- `rules-grammar-snapshot.test.ts` detects unintended grammar changes
 
 ## Important Implementation Details
 
