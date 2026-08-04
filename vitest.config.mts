@@ -24,14 +24,18 @@ export default defineConfig({
       // produces, so coverage cannot slide without someone noticing. Raise them
       // when real coverage rises.
       //
-      // The margin is small on purpose. Coverage used to swing between runs and
-      // between machines, so the first version of these numbers had to absorb
-      // almost a point of noise. It no longer does: the suite reports
-      // 81.91 / 76.70 / 81.30 / 82.18 on every run, with or without hledger
-      // installed. A drop now means coverage actually fell.
+      // Statements, functions and lines are now reproducible to the digit --
+      // 81.91 / 81.30 / 82.18 on every run, with or without hledger installed
+      // and on both macOS and the Linux runner -- so their margin is thin on
+      // purpose. A drop there means coverage actually fell.
+      //
+      // Branches still move with the platform: HLedgerImportCommands reports
+      // 44% locally and 42.66% on CI, because a filesystem error path is taken
+      // differently, which shifts the total between 76.62 and 76.70. That one
+      // keeps a wider margin until the branch itself is pinned down.
       thresholds: {
         statements: 81.5,
-        branches: 76.5,
+        branches: 76,
         functions: 81,
         lines: 82,
       },
