@@ -761,6 +761,9 @@
     "vscode-oniguruma": "^2.0.1",
     "vscode-textmate": "^9.3.2"
   },
+  "overrides": {
+    "babel-plugin-istanbul": "^8.0.0"
+  },
   "license": "MIT",
   "repository": {
     "type": "git",
