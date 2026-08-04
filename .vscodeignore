@@ -27,7 +27,6 @@ testdata/**
 # Build and development configuration
 .gitignore
 tsconfig*.json
-jest.config.js
 eslint.config.js
 eslint.config.mjs
 esbuild.js
