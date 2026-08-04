@@ -165,7 +165,7 @@ export class HLedgerCliService implements vscode.Disposable {
             return stdout;
         } catch (error: unknown) {
             if (signal?.aborted) {
-                throw new Error(`hledger ${subcommand} was cancelled.`);
+                throw createErrorWithCause(`hledger ${subcommand} was cancelled.`, error);
             }
             if (isExecFailure(error) && error.stderr) {
                 throw createErrorWithCause(`hledger command failed: ${error.stderr}`, error);

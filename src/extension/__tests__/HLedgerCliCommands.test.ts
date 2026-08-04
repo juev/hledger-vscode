@@ -15,7 +15,6 @@ describe('HLedgerCliCommands - Progress Indicators', () => {
     let commands: HLedgerCliCommands;
     let mockEditor: any;
     let mockDocument: any;
-    let mockProgress: any;
 
     beforeEach(() => {
         tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'hledger-test-'));
@@ -34,10 +33,6 @@ describe('HLedgerCliCommands - Progress Indicators', () => {
             document: mockDocument,
             selection: { active: { line: 0, character: 0 } },
             edit: vi.fn().mockResolvedValue(true)
-        };
-
-        mockProgress = {
-            report: vi.fn()
         };
 
         vscode.window.activeTextEditor = mockEditor;

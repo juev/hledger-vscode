@@ -1,4 +1,3 @@
-import * as vscode from 'vscode';
 import * as assert from 'assert';
 
 // Test cases for syntax highlighting validation
