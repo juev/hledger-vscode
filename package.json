@@ -731,6 +731,7 @@
     "typecheck": "tsc --noEmit -p ./",
     "typecheck:test": "tsc --noEmit -p tsconfig.test.json",
     "watch": "npm run esbuild:watch",
+    "pretest": "npm run typecheck:test",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",

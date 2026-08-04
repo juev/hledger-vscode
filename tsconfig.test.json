@@ -1,40 +1,27 @@
 {
   "extends": "./tsconfig.json",
   "compilerOptions": {
-    // Relax exactOptionalPropertyTypes for tests to allow VSCode mock compatibility
-    "exactOptionalPropertyTypes": false,
-    
-    // Relax strict null checks for tests to handle regex match results.
-    // strictPropertyInitialization must go with it: TS5052 forbids enabling it
-    // (inherited from the base config via "strict") without strictNullChecks.
-    "strictNullChecks": false,
-    "strictPropertyInitialization": false,
-    
-    // Allow unchecked indexed access for test environment
-    "noUncheckedIndexedAccess": false,
-    
-    // Allow implicit any for test environment
-    "noImplicitAny": false,
-    
-    // Allow implicit returns for test mocks
-    "noImplicitReturns": false,
-    
+    // Strictness is inherited from tsconfig.json and deliberately not relaxed:
+    // tests are the only consumer of the hand-written vscode mock, so they are
+    // where its type errors surface first. Only the settings below differ, and
+    // each is about how tests are *run*, not how strictly they are checked.
+
     // Enable types needed for Vitest globals
     "types": ["vitest/globals", "node"],
-    
+
     // Allow importing JSON files for test data
     "resolveJsonModule": true,
-    
+
     // Vitest executes test files as ESM, so top-level await is available here
     // even though the bundled extension itself is emitted as CommonJS.
     "module": "esnext",
 
     // Ensure proper module resolution for test environment
     "moduleResolution": "node",
-    
+
     // Allow synthetic default imports for the hand-written vscode mock
     "allowSyntheticDefaultImports": true,
-    
+
     // Disable noUnusedLocals and noUnusedParameters for test files
     // as tests often have setup code that may appear unused
     "noUnusedLocals": false,
