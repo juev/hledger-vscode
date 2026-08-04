@@ -26,7 +26,7 @@ npm run build          # Production build with esbuild
 npm run watch          # Watch mode with esbuild
 npm run test           # Type-check the tests, then run them
 npm run test:watch     # Tests in watch mode (no type check)
-npm run test:coverage  # Tests with coverage report (no type check)
+npm run test:coverage  # Tests with coverage report, enforces thresholds (no type check)
 npm run lint           # ESLint check
 npm run lint:fix       # ESLint with auto-fix
 npm run package        # Create VSIX for distribution

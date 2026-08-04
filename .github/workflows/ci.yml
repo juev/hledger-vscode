@@ -41,8 +41,10 @@ jobs:
     - name: Type-check tests
       run: npm run typecheck:test
 
-    - name: Run tests
-      run: npm test
+    # Runs the same suite as `npm test` and additionally enforces the coverage
+    # thresholds. Costs about a second; a threshold nothing executes is no guard.
+    - name: Run tests with coverage
+      run: npm run test:coverage
       if: success()
     
     - name: Package extension
