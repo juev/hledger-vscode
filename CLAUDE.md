@@ -127,7 +127,7 @@ The extension's `InlineCompletionProvider` handles ghost text completions for tr
 **Trigger rules** (`InlineCompletionProvider.ts`):
 
 - Controlled by `hledger.features.inlineCompletion` setting (default: `true`)
-- Template ghost text uses `SnippetString` for tabstops, not plain text
+- Ghost text is the plain `insertText` string the LSP returns, wrapped in an `InlineCompletionItem`. `SnippetString` is not involved — VS Code does not expand snippet syntax in inline completions
 
 ### Key Directories
 
