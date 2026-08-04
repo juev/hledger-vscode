@@ -1,3 +1,4 @@
+import type { Mock } from "vitest";
 import * as vscode from 'vscode';
 import { LSPStatusBar } from '../LSPStatusBar';
 import { LSPStatus } from '../LSPManager';
@@ -7,18 +8,18 @@ describe('LSPStatusBar', () => {
   let mockItem: any;
 
   beforeEach(() => {
-    jest.clearAllMocks();
-    mockItem = (vscode.window.createStatusBarItem as jest.Mock).mockReturnValue({
+    vi.clearAllMocks();
+    mockItem = (vscode.window.createStatusBarItem as Mock).mockReturnValue({
       text: '',
       tooltip: '',
       command: undefined as string | undefined,
       color: undefined as string | undefined,
       backgroundColor: undefined as any,
-      show: jest.fn(),
-      hide: jest.fn(),
-      dispose: jest.fn(),
+      show: vi.fn(),
+      hide: vi.fn(),
+      dispose: vi.fn(),
     })();
-    (vscode.window.createStatusBarItem as jest.Mock).mockReturnValue(mockItem);
+    (vscode.window.createStatusBarItem as Mock).mockReturnValue(mockItem);
     statusBar = new LSPStatusBar();
   });
 

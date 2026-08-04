@@ -3,24 +3,22 @@ import {
   isLSPUpdateCheckEnabled,
   getCustomLSPPath,
 } from "../lspConfig";
+import * as vscode from "vscode";
 
 describe("lspConfig", () => {
   let originalGetConfiguration: typeof import("vscode").workspace.getConfiguration;
 
   beforeEach(() => {
-    const vscode = require("vscode");
     originalGetConfiguration = vscode.workspace.getConfiguration;
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   afterEach(() => {
-    const vscode = require("vscode");
     vscode.workspace.getConfiguration = originalGetConfiguration;
   });
 
   function mockConfiguration(config: Record<string, unknown>) {
-    const vscode = require("vscode");
-    vscode.workspace.getConfiguration = jest.fn().mockReturnValue({
+    vscode.workspace.getConfiguration = vi.fn().mockReturnValue({
       get: (key: string, defaultValue?: unknown) => {
         if (key in config) {
           return config[key];

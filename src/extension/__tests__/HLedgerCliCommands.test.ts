@@ -1,10 +1,12 @@
 // HLedgerCliCommands.test.ts - Tests for CLI command handlers
 
+import type { Mock } from 'vitest';
 import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
 import { HLedgerCliCommands } from '../HLedgerCliCommands';
 import { HLedgerCliService } from '../services/HLedgerCliService';
+import * as vscode from 'vscode';
 
 describe('HLedgerCliCommands - Progress Indicators', () => {
     let tempDir: string;
@@ -31,17 +33,16 @@ describe('HLedgerCliCommands - Progress Indicators', () => {
         mockEditor = {
             document: mockDocument,
             selection: { active: { line: 0, character: 0 } },
-            edit: jest.fn().mockResolvedValue(true)
+            edit: vi.fn().mockResolvedValue(true)
         };
 
         mockProgress = {
-            report: jest.fn()
+            report: vi.fn()
         };
 
-        const vscode = require('vscode');
         vscode.window.activeTextEditor = mockEditor;
-        vscode.window.showInformationMessage = jest.fn();
-        vscode.window.showErrorMessage = jest.fn();
+        vscode.window.showInformationMessage = vi.fn();
+        vscode.window.showErrorMessage = vi.fn();
     });
 
     afterEach(() => {
@@ -52,12 +53,11 @@ describe('HLedgerCliCommands - Progress Indicators', () => {
     });
 
     it('should show cancellable progress notification during balance sheet command execution', async () => {
-        const vscode = require('vscode');
-        const withProgressSpy = jest.spyOn(vscode.window, 'withProgress');
+        const withProgressSpy = vi.spyOn(vscode.window, 'withProgress');
 
-        jest.spyOn(mockService, 'isHledgerAvailable').mockResolvedValue(true);
-        jest.spyOn(mockService, 'runBalanceSheet').mockResolvedValue('Balance Sheet Report');
-        jest.spyOn(mockService, 'formatAsComment').mockReturnValue('; Balance Sheet Report');
+        vi.spyOn(mockService, 'isHledgerAvailable').mockResolvedValue(true);
+        vi.spyOn(mockService, 'runBalanceSheet').mockResolvedValue('Balance Sheet Report');
+        vi.spyOn(mockService, 'formatAsComment').mockReturnValue('; Balance Sheet Report');
 
         await commands.insertBalanceSheet();
 
@@ -72,12 +72,11 @@ describe('HLedgerCliCommands - Progress Indicators', () => {
     });
 
     it('should show cancellable progress notification during stats command execution', async () => {
-        const vscode = require('vscode');
-        const withProgressSpy = jest.spyOn(vscode.window, 'withProgress');
+        const withProgressSpy = vi.spyOn(vscode.window, 'withProgress');
 
-        jest.spyOn(mockService, 'isHledgerAvailable').mockResolvedValue(true);
-        jest.spyOn(mockService, 'runStats').mockResolvedValue('Stats Report');
-        jest.spyOn(mockService, 'formatAsComment').mockReturnValue('; Stats Report');
+        vi.spyOn(mockService, 'isHledgerAvailable').mockResolvedValue(true);
+        vi.spyOn(mockService, 'runStats').mockResolvedValue('Stats Report');
+        vi.spyOn(mockService, 'formatAsComment').mockReturnValue('; Stats Report');
 
         await commands.insertStats();
 
@@ -92,12 +91,11 @@ describe('HLedgerCliCommands - Progress Indicators', () => {
     });
 
     it('should show cancellable progress notification during incomestatement command execution', async () => {
-        const vscode = require('vscode');
-        const withProgressSpy = jest.spyOn(vscode.window, 'withProgress');
+        const withProgressSpy = vi.spyOn(vscode.window, 'withProgress');
 
-        jest.spyOn(mockService, 'isHledgerAvailable').mockResolvedValue(true);
-        jest.spyOn(mockService, 'runIncomestatement').mockResolvedValue('Income Statement Report');
-        jest.spyOn(mockService, 'formatAsComment').mockReturnValue('; Income Statement Report');
+        vi.spyOn(mockService, 'isHledgerAvailable').mockResolvedValue(true);
+        vi.spyOn(mockService, 'runIncomestatement').mockResolvedValue('Income Statement Report');
+        vi.spyOn(mockService, 'formatAsComment').mockReturnValue('; Income Statement Report');
 
         await commands.insertIncomestatement();
 
@@ -112,10 +110,9 @@ describe('HLedgerCliCommands - Progress Indicators', () => {
     });
 
     it('should still show error messages when CLI fails inside progress', async () => {
-        const vscode = require('vscode');
 
-        jest.spyOn(mockService, 'isHledgerAvailable').mockResolvedValue(true);
-        jest.spyOn(mockService, 'runBalanceSheet').mockRejectedValue(new Error('CLI execution failed'));
+        vi.spyOn(mockService, 'isHledgerAvailable').mockResolvedValue(true);
+        vi.spyOn(mockService, 'runBalanceSheet').mockRejectedValue(new Error('CLI execution failed'));
 
         await commands.insertBalanceSheet();
 
@@ -125,24 +122,23 @@ describe('HLedgerCliCommands - Progress Indicators', () => {
     });
 
     it('should show info message when command is cancelled', async () => {
-        const vscode = require('vscode');
 
-        jest.spyOn(mockService, 'isHledgerAvailable').mockResolvedValue(true);
-        jest.spyOn(mockService, 'runBalanceSheet').mockImplementation(async () => {
+        vi.spyOn(mockService, 'isHledgerAvailable').mockResolvedValue(true);
+        vi.spyOn(mockService, 'runBalanceSheet').mockImplementation(async () => {
             throw new Error('hledger bs was cancelled.');
         });
 
         // Simulate cancellation by making withProgress trigger the abort
-        vscode.window.withProgress.mockImplementationOnce(async (options: any, task: any) => {
+        (vscode.window.withProgress as unknown as Mock).mockImplementationOnce(async (options: any, task: any) => {
             const listeners: Array<() => void> = [];
             const token = {
                 isCancellationRequested: false,
-                onCancellationRequested: jest.fn((listener: () => void) => {
+                onCancellationRequested: vi.fn((listener: () => void) => {
                     listeners.push(listener);
-                    return { dispose: jest.fn() };
+                    return { dispose: vi.fn() };
                 }),
             };
-            const progressPromise = task({ report: jest.fn() }, token);
+            const progressPromise = task({ report: vi.fn() }, token);
             // Trigger cancellation after the task starts
             listeners.forEach(l => l());
             return progressPromise;

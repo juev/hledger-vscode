@@ -1,21 +1,23 @@
+import type { Mock } from "vitest";
 import * as fs from "fs";
 import * as os from "os";
 import * as path from "path";
 import { BinaryManager } from "../BinaryManager";
 import { LSPManager, LSPStatus } from "../LSPManager";
+import * as vscode from "vscode";
 
-jest.mock("undici", () => ({
-  fetch: jest.fn(),
-  EnvHttpProxyAgent: jest.fn(),
+vi.mock("undici", () => ({
+  fetch: vi.fn(),
+  EnvHttpProxyAgent: vi.fn(),
 }));
 
 interface UndiciMock {
-  fetch: jest.Mock;
-  EnvHttpProxyAgent: jest.Mock;
+  fetch: Mock;
+  EnvHttpProxyAgent: Mock;
 }
 
 const { fetch: mockUndiciFetch, EnvHttpProxyAgent: mockEnvHttpProxyAgent } =
-  jest.requireMock<UndiciMock>("undici");
+  (await vi.importMock<UndiciMock>("undici")) as UndiciMock;
 
 function createDeferred<T>() {
   let resolve!: (value: T) => void;
@@ -38,13 +40,11 @@ describe("LSPManager", () => {
       subscriptions: [],
     };
 
-    const vscode = require("vscode");
     originalGetConfiguration = vscode.workspace.getConfiguration;
   });
 
   afterEach(() => {
     fs.rmSync(tempDir, { recursive: true, force: true });
-    const vscode = require("vscode");
     vscode.workspace.getConfiguration = originalGetConfiguration;
   });
 
@@ -56,8 +56,7 @@ describe("LSPManager", () => {
     });
 
     it("does not read proxy configuration while activating", () => {
-      const vscode = require("vscode");
-      vscode.workspace.getConfiguration = jest.fn();
+      vscode.workspace.getConfiguration = vi.fn();
 
       new LSPManager(mockContext);
 
@@ -124,7 +123,7 @@ describe("LSPManager", () => {
     });
 
     it("always disposes the binary manager", () => {
-      const dispose = jest.spyOn(BinaryManager.prototype, "dispose");
+      const dispose = vi.spyOn(BinaryManager.prototype, "dispose");
       const manager = new LSPManager(mockContext);
 
       manager.dispose();
@@ -133,13 +132,12 @@ describe("LSPManager", () => {
     });
 
     it("rejects a deferred update check after deactivate without proxy resurrection", async () => {
-      const vscode = require("vscode");
       const version = createDeferred<string | null>();
-      const getInstalledVersion = jest
+      const getInstalledVersion = vi
         .spyOn(BinaryManager.prototype, "getInstalledVersion")
         .mockReturnValue(version.promise);
 
-      vscode.workspace.getConfiguration = jest.fn();
+      vscode.workspace.getConfiguration = vi.fn();
       const manager = new LSPManager(mockContext);
       const updateCheck = manager.checkForUpdates();
 
@@ -166,8 +164,7 @@ describe("LSPManager", () => {
     });
 
     it("accepts Windows-style path with backslashes", () => {
-      const vscode = require("vscode");
-      vscode.workspace.getConfiguration = jest.fn().mockReturnValue({
+      vscode.workspace.getConfiguration = vi.fn().mockReturnValue({
         get: (key: string) => {
           if (key === "path") return "C:\\tools\\hledger-lsp.exe";
           return undefined;
@@ -180,8 +177,7 @@ describe("LSPManager", () => {
     });
 
     it("accepts path with shell metacharacters (no shell is spawned)", () => {
-      const vscode = require("vscode");
-      vscode.workspace.getConfiguration = jest.fn().mockReturnValue({
+      vscode.workspace.getConfiguration = vi.fn().mockReturnValue({
         get: (key: string) => {
           if (key === "path") return "/path/to/lsp; rm -rf /";
           return undefined;
@@ -195,8 +191,7 @@ describe("LSPManager", () => {
 
     it("returns custom path when valid and set", () => {
       const customPath = "/valid/path/to/hledger-lsp";
-      const vscode = require("vscode");
-      vscode.workspace.getConfiguration = jest.fn().mockReturnValue({
+      vscode.workspace.getConfiguration = vi.fn().mockReturnValue({
         get: (key: string) => {
           if (key === "path") return customPath;
           return undefined;
@@ -217,8 +212,7 @@ describe("LSPManager", () => {
     });
 
     it("throws when custom binary not found", async () => {
-      const vscode = require("vscode");
-      vscode.workspace.getConfiguration = jest.fn().mockReturnValue({
+      vscode.workspace.getConfiguration = vi.fn().mockReturnValue({
         get: (key: string) => {
           if (key === "path") return "/nonexistent/hledger-lsp";
           if (key === "debug") return false;
@@ -294,7 +288,7 @@ describe("LSPManager", () => {
       fs.writeFileSync(binaryPath, "#!/bin/bash\necho test");
       fs.chmodSync(binaryPath, 0o755);
 
-      const download = jest
+      const download = vi
         .spyOn(BinaryManager.prototype, "download")
         .mockRejectedValue(new Error("Signature verification failed"));
       const manager = new LSPManager(mockContext);
@@ -320,7 +314,7 @@ describe("LSPManager", () => {
       const manager = new LSPManager(mockContext);
       await manager.start();
       const runningClient = manager.getClient();
-      const download = jest
+      const download = vi
         .spyOn(BinaryManager.prototype, "download")
         .mockImplementation(async (_onProgress, beforeInstall) => {
           expect(manager.getClient()).toBe(runningClient);
@@ -344,7 +338,7 @@ describe("LSPManager", () => {
 
       const manager = new LSPManager(mockContext);
       await manager.start();
-      const download = jest
+      const download = vi
         .spyOn(BinaryManager.prototype, "download")
         .mockImplementation(async (_onProgress, beforeInstall) => {
           await beforeInstall?.();

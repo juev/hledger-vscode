@@ -1,3 +1,4 @@
+import type { Mock } from "vitest";
 import * as crypto from "crypto";
 import * as fs from "fs";
 import * as os from "os";
@@ -10,22 +11,23 @@ import {
   getBinaryName,
 } from "../BinaryManager";
 import { verify as verifyMinisign } from "../minisignVerify";
+import * as vscode from "vscode";
 
-jest.mock("undici", () => ({
-  fetch: jest.fn(),
-  EnvHttpProxyAgent: jest.fn(),
+vi.mock("undici", () => ({
+  fetch: vi.fn(),
+  EnvHttpProxyAgent: vi.fn(),
 }));
 
 interface UndiciMock {
-  fetch: jest.Mock;
-  EnvHttpProxyAgent: jest.Mock;
+  fetch: Mock;
+  EnvHttpProxyAgent: Mock;
 }
 
 const { fetch: mockUndiciFetch, EnvHttpProxyAgent: mockEnvHttpProxyAgent } =
-  jest.requireMock<UndiciMock>("undici");
+  (await vi.importMock<UndiciMock>("undici")) as UndiciMock;
 
-jest.mock("../minisignVerify", () => ({
-  verify: jest.fn(),
+vi.mock("../minisignVerify", () => ({
+  verify: vi.fn(),
 }));
 
 function createMockHeaders(contentLength?: number) {
@@ -69,7 +71,7 @@ function createStallingStream(initialChunk: Uint8Array): ReadableStream<Uint8Arr
 }
 
 function createSignalAwareHangingFetch() {
-  return jest.fn().mockImplementation((_url: string, init?: RequestInit) => {
+  return vi.fn().mockImplementation((_url: string, init?: RequestInit) => {
     return new Promise((_resolve, reject) => {
       const onAbort = () => {
         const err = new Error("The operation was aborted");
@@ -185,7 +187,7 @@ describe("BinaryManager", () => {
   beforeEach(() => {
     tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "hledger-lsp-test-"));
     manager = new BinaryManager(tempDir);
-    (verifyMinisign as jest.Mock).mockReturnValue(true);
+    (verifyMinisign as Mock).mockReturnValue(true);
   });
 
   afterEach(() => {
@@ -238,17 +240,20 @@ describe("BinaryManager", () => {
 
   describe("getLatestRelease", () => {
     it("creates a local proxy dispatcher lazily and caches it for default requests", async () => {
-      const vscode = require("vscode");
       const originalGetConfiguration = vscode.workspace.getConfiguration;
-      const dispatcher = { destroy: jest.fn().mockResolvedValue(undefined) };
+      const dispatcher = { destroy: vi.fn().mockResolvedValue(undefined) };
       const releaseResponse = {
         ok: true,
         json: () => Promise.resolve({ tag_name: "v0.2.0", assets: [] }),
       };
-      const configuration = { get: jest.fn().mockReturnValue("  http://proxy.example:8080  ") };
+      const configuration = { get: vi.fn().mockReturnValue("  http://proxy.example:8080  ") };
 
-      vscode.workspace.getConfiguration = jest.fn().mockReturnValue(configuration);
-      mockEnvHttpProxyAgent.mockReturnValue(dispatcher);
+      vscode.workspace.getConfiguration = vi.fn().mockReturnValue(configuration);
+      mockEnvHttpProxyAgent.mockImplementation(function () {
+        // Returning an object from a constructor call makes `new` yield it,
+        // which keeps dispatcher identity assertions below intact.
+        return dispatcher;
+      });
       mockUndiciFetch.mockResolvedValue(releaseResponse);
 
       try {
@@ -280,14 +285,17 @@ describe("BinaryManager", () => {
     });
 
     it("uses environment proxy settings when http.proxy is blank", async () => {
-      const vscode = require("vscode");
       const originalGetConfiguration = vscode.workspace.getConfiguration;
-      const dispatcher = { destroy: jest.fn().mockResolvedValue(undefined) };
+      const dispatcher = { destroy: vi.fn().mockResolvedValue(undefined) };
 
-      vscode.workspace.getConfiguration = jest.fn().mockReturnValue({
-        get: jest.fn().mockReturnValue("   "),
+      vscode.workspace.getConfiguration = vi.fn().mockReturnValue({
+        get: vi.fn().mockReturnValue("   "),
       });
-      mockEnvHttpProxyAgent.mockReturnValue(dispatcher);
+      mockEnvHttpProxyAgent.mockImplementation(function () {
+        // Returning an object from a constructor call makes `new` yield it,
+        // which keeps dispatcher identity assertions below intact.
+        return dispatcher;
+      });
       mockUndiciFetch.mockResolvedValue({
         ok: true,
         json: () => Promise.resolve({ tag_name: "v0.2.0", assets: [] }),
@@ -305,14 +313,13 @@ describe("BinaryManager", () => {
     });
 
     it("keeps injected fetch independent from proxy configuration", async () => {
-      const vscode = require("vscode");
       const originalGetConfiguration = vscode.workspace.getConfiguration;
-      const injectedFetch = jest.fn().mockResolvedValue({
+      const injectedFetch = vi.fn().mockResolvedValue({
         ok: true,
         json: () => Promise.resolve({ tag_name: "v0.2.0", assets: [] }),
       });
 
-      vscode.workspace.getConfiguration = jest.fn();
+      vscode.workspace.getConfiguration = vi.fn();
 
       try {
         manager = new BinaryManager(tempDir, injectedFetch);
@@ -328,11 +335,10 @@ describe("BinaryManager", () => {
     });
 
     it("rejects network use after disposal before proxy or fetch side effects", async () => {
-      const vscode = require("vscode");
       const originalGetConfiguration = vscode.workspace.getConfiguration;
-      const injectedFetch = jest.fn();
+      const injectedFetch = vi.fn();
 
-      vscode.workspace.getConfiguration = jest.fn();
+      vscode.workspace.getConfiguration = vi.fn();
 
       try {
         manager = new BinaryManager(tempDir, injectedFetch);
@@ -349,10 +355,9 @@ describe("BinaryManager", () => {
     });
 
     it("rejects default network use after disposal before proxy side effects", async () => {
-      const vscode = require("vscode");
       const originalGetConfiguration = vscode.workspace.getConfiguration;
 
-      vscode.workspace.getConfiguration = jest.fn();
+      vscode.workspace.getConfiguration = vi.fn();
 
       try {
         manager = new BinaryManager(tempDir);
@@ -371,12 +376,16 @@ describe("BinaryManager", () => {
     it("sets disposal state before destroying the cached dispatcher and destroys it once", async () => {
       let requestDuringDestroy: Promise<ReleaseInfo> | undefined;
       const dispatcher = {
-        destroy: jest.fn().mockImplementation(() => {
+        destroy: vi.fn().mockImplementation(() => {
           requestDuringDestroy = manager.getLatestRelease();
           return Promise.reject(new Error("destroy failed"));
         }),
       };
-      mockEnvHttpProxyAgent.mockReturnValue(dispatcher);
+      mockEnvHttpProxyAgent.mockImplementation(function () {
+        // Returning an object from a constructor call makes `new` yield it,
+        // which keeps dispatcher identity assertions below intact.
+        return dispatcher;
+      });
       mockUndiciFetch.mockResolvedValue({
         ok: true,
         json: () => Promise.resolve({ tag_name: "v0.2.0", assets: [] }),
@@ -398,7 +407,7 @@ describe("BinaryManager", () => {
     });
 
     it("fetches release info from GitHub API", async () => {
-      const mockFetch = jest.fn().mockResolvedValue({
+      const mockFetch = vi.fn().mockResolvedValue({
         ok: true,
         json: () =>
           Promise.resolve({
@@ -429,7 +438,7 @@ describe("BinaryManager", () => {
     });
 
     it("throws when GitHub API returns error", async () => {
-      const mockFetch = jest.fn().mockResolvedValue({
+      const mockFetch = vi.fn().mockResolvedValue({
         ok: false,
         status: 404,
         statusText: "Not Found",
@@ -443,7 +452,7 @@ describe("BinaryManager", () => {
     });
 
     it("throws when GitHub API returns invalid response - missing tag_name", async () => {
-      const mockFetch = jest.fn().mockResolvedValue({
+      const mockFetch = vi.fn().mockResolvedValue({
         ok: true,
         json: () =>
           Promise.resolve({
@@ -464,7 +473,7 @@ describe("BinaryManager", () => {
     });
 
     it("throws when GitHub API returns invalid response - missing assets", async () => {
-      const mockFetch = jest.fn().mockResolvedValue({
+      const mockFetch = vi.fn().mockResolvedValue({
         ok: true,
         json: () =>
           Promise.resolve({
@@ -480,7 +489,7 @@ describe("BinaryManager", () => {
     });
 
     it("throws when GitHub API returns non-object", async () => {
-      const mockFetch = jest.fn().mockResolvedValue({
+      const mockFetch = vi.fn().mockResolvedValue({
         ok: true,
         json: () => Promise.resolve(null),
       });
@@ -493,7 +502,7 @@ describe("BinaryManager", () => {
     });
 
     it("throws when GitHub API returns asset with missing name", async () => {
-      const mockFetch = jest.fn().mockResolvedValue({
+      const mockFetch = vi.fn().mockResolvedValue({
         ok: true,
         json: () =>
           Promise.resolve({
@@ -516,7 +525,7 @@ describe("BinaryManager", () => {
 
   describe("needsUpdate", () => {
     it("returns true when no version is installed", async () => {
-      const mockFetch = jest.fn().mockResolvedValue({
+      const mockFetch = vi.fn().mockResolvedValue({
         ok: true,
         json: () =>
           Promise.resolve({
@@ -535,7 +544,7 @@ describe("BinaryManager", () => {
       const versionPath = path.join(tempDir, "version.txt");
       fs.writeFileSync(versionPath, "v0.1.0");
 
-      const mockFetch = jest.fn().mockResolvedValue({
+      const mockFetch = vi.fn().mockResolvedValue({
         ok: true,
         json: () =>
           Promise.resolve({
@@ -554,7 +563,7 @@ describe("BinaryManager", () => {
       const versionPath = path.join(tempDir, "version.txt");
       fs.writeFileSync(versionPath, "v0.2.0");
 
-      const mockFetch = jest.fn().mockResolvedValue({
+      const mockFetch = vi.fn().mockResolvedValue({
         ok: true,
         json: () =>
           Promise.resolve({
@@ -577,7 +586,7 @@ describe("BinaryManager", () => {
       const checksumContent =
         `1d1801f753ccd9fa57966c46f360585caf83337a394a5f238d4e4e7d6005788d  hledger-lsp_${assetSuffix}\n`;
 
-      const mockFetch = jest.fn().mockImplementation((url: string) => {
+      const mockFetch = vi.fn().mockImplementation((url: string) => {
         if (url.includes("api.github.com")) {
           return Promise.resolve({
             ok: true,
@@ -634,7 +643,7 @@ describe("BinaryManager", () => {
     });
 
     it("throws when no matching asset found", async () => {
-      const mockFetch = jest.fn().mockImplementation((url: string) => {
+      const mockFetch = vi.fn().mockImplementation((url: string) => {
         if (url.includes("api.github.com")) {
           return Promise.resolve({
             ok: true,
@@ -671,7 +680,7 @@ describe("BinaryManager", () => {
     });
 
     it("throws when download fails", async () => {
-      const mockFetch = jest.fn().mockImplementation((url: string) => {
+      const mockFetch = vi.fn().mockImplementation((url: string) => {
         if (url.includes("api.github.com")) {
           return Promise.resolve({
             ok: true,
@@ -709,7 +718,7 @@ describe("BinaryManager", () => {
       const checksumContent =
         `cf5ac69ca412f9b3b1a8b8de27d368c5c05ed4b1b6aa40e6c38d9cbf23711342  hledger-lsp_${assetSuffix}\n`;
 
-      const mockFetch = jest.fn().mockImplementation((url: string) => {
+      const mockFetch = vi.fn().mockImplementation((url: string) => {
         if (url.includes("api.github.com")) {
           return Promise.resolve({
             ok: true,
@@ -761,7 +770,7 @@ describe("BinaryManager", () => {
       const checksumContent =
         `e6304a473c65ecd0ccffbd2f5925a8f51c44b11f59b66cfcc055e4bb911b8fa0  hledger-lsp_${assetSuffix}\n`;
 
-      const mockFetch = jest.fn().mockImplementation((url: string) => {
+      const mockFetch = vi.fn().mockImplementation((url: string) => {
         if (url.includes("api.github.com")) {
           return Promise.resolve({
             ok: true,
@@ -809,7 +818,7 @@ describe("BinaryManager", () => {
 
     it("throws when checksums.txt is missing", async () => {
       const binaryContent = Buffer.from("fake binary content");
-      const mockFetch = jest.fn().mockImplementation((url: string) => {
+      const mockFetch = vi.fn().mockImplementation((url: string) => {
         if (url.includes("api.github.com")) {
           return Promise.resolve({
             ok: true,
@@ -845,7 +854,7 @@ describe("BinaryManager", () => {
       const checksumContent =
         `0000000000000000000000000000000000000000000000000000000000000000  hledger-lsp_${assetSuffix}\n`;
 
-      const mockFetch = jest.fn().mockImplementation((url: string) => {
+      const mockFetch = vi.fn().mockImplementation((url: string) => {
         if (url.includes("api.github.com")) {
           return Promise.resolve({
             ok: true,
@@ -898,7 +907,7 @@ describe("BinaryManager", () => {
         `cf5ac69ca412f9b3b1a8b8de27d368c5c05ed4b1b6aa40e6c38d9cbf23711342  hledger-lsp_${assetSuffix}\n`;
 
       let binaryFetchCount = 0;
-      const mockFetch = jest.fn().mockImplementation((url: string) => {
+      const mockFetch = vi.fn().mockImplementation((url: string) => {
         if (url.includes("api.github.com")) {
           return Promise.resolve(makeGitHubReleaseMock(assetSuffix));
         }
@@ -936,7 +945,7 @@ describe("BinaryManager", () => {
       const checksumContent =
         `cf5ac69ca412f9b3b1a8b8de27d368c5c05ed4b1b6aa40e6c38d9cbf23711342  hledger-lsp_${assetSuffix}\n`;
 
-      const mockFetch = jest.fn().mockImplementation((url: string) => {
+      const mockFetch = vi.fn().mockImplementation((url: string) => {
         if (url.includes("api.github.com")) {
           return Promise.resolve(makeGitHubReleaseMock(assetSuffix));
         }
@@ -974,7 +983,7 @@ describe("BinaryManager", () => {
 
       const progressValues: number[] = [];
 
-      const mockFetch = jest.fn().mockImplementation((url: string) => {
+      const mockFetch = vi.fn().mockImplementation((url: string) => {
         if (url.includes("api.github.com")) {
           return Promise.resolve(makeGitHubReleaseMock(assetSuffix));
         }
@@ -1019,7 +1028,7 @@ describe("BinaryManager", () => {
       const checksumContent =
         `1d1801f753ccd9fa57966c46f360585caf83337a394a5f238d4e4e7d6005788d  hledger-lsp_${assetSuffix}\n`;
 
-      const mockFetch = jest.fn().mockImplementation((url: string) => {
+      const mockFetch = vi.fn().mockImplementation((url: string) => {
         if (url.includes("api.github.com")) {
           return Promise.resolve({
             ok: true,
@@ -1088,23 +1097,23 @@ describe("BinaryManager", () => {
 
   describe("timeout and retry", () => {
     it("getLatestRelease times out on slow API and retries 3 times", async () => {
-      jest.useFakeTimers();
+      vi.useFakeTimers();
       const mockFetch = createSignalAwareHangingFetch();
       manager = new BinaryManager(tempDir, mockFetch);
 
       const promise = manager.getLatestRelease();
       const assertion = expect(promise).rejects.toThrow(/timed out/i);
-      await jest.advanceTimersByTimeAsync(200_000);
+      await vi.advanceTimersByTimeAsync(200_000);
       await assertion;
 
       expect(mockFetch).toHaveBeenCalledTimes(3);
-      jest.useRealTimers();
+      vi.useRealTimers();
     });
 
     it("getLatestRelease retries on transient failure and succeeds", async () => {
-      jest.useFakeTimers();
+      vi.useFakeTimers();
       let callCount = 0;
-      const mockFetch = jest.fn().mockImplementation(() => {
+      const mockFetch = vi.fn().mockImplementation(() => {
         callCount++;
         if (callCount <= 2) {
           return Promise.reject(new Error("Network error"));
@@ -1126,30 +1135,30 @@ describe("BinaryManager", () => {
 
       manager = new BinaryManager(tempDir, mockFetch);
       const promise = manager.getLatestRelease();
-      await jest.advanceTimersByTimeAsync(50_000);
+      await vi.advanceTimersByTimeAsync(50_000);
 
       const release = await promise;
       expect(release.version).toBe("v0.1.0");
       expect(mockFetch).toHaveBeenCalledTimes(3);
-      jest.useRealTimers();
+      vi.useRealTimers();
     });
 
     it("getLatestRelease fails after MAX_RETRIES exhausted", async () => {
-      jest.useFakeTimers();
-      const mockFetch = jest.fn().mockRejectedValue(new Error("Network error"));
+      vi.useFakeTimers();
+      const mockFetch = vi.fn().mockRejectedValue(new Error("Network error"));
       manager = new BinaryManager(tempDir, mockFetch);
 
       const promise = manager.getLatestRelease();
       const assertion = expect(promise).rejects.toThrow(/Network error/);
-      await jest.advanceTimersByTimeAsync(50_000);
+      await vi.advanceTimersByTimeAsync(50_000);
       await assertion;
 
       expect(mockFetch).toHaveBeenCalledTimes(3);
-      jest.useRealTimers();
+      vi.useRealTimers();
     });
 
     it("passes AbortController signal to fetchFn", async () => {
-      const mockFetch = jest.fn().mockResolvedValue({
+      const mockFetch = vi.fn().mockResolvedValue({
         ok: true,
         json: () =>
           Promise.resolve({
@@ -1175,7 +1184,7 @@ describe("BinaryManager", () => {
 
       const progressValues: number[] = [];
 
-      const mockFetch = jest.fn().mockImplementation((url: string) => {
+      const mockFetch = vi.fn().mockImplementation((url: string) => {
         if (url.includes("api.github.com")) {
           return Promise.resolve(makeGitHubReleaseMock(assetSuffix));
         }
@@ -1222,7 +1231,7 @@ describe("BinaryManager", () => {
       const checksum = computeSha256(binaryContent);
       const checksumContent = `${checksum}  hledger-lsp_${assetSuffix}\n`;
 
-      const mockFetch = jest.fn().mockImplementation((url: string) => {
+      const mockFetch = vi.fn().mockImplementation((url: string) => {
         if (url.includes("api.github.com")) {
           return Promise.resolve(makeGitHubReleaseMock(assetSuffix));
         }
@@ -1259,7 +1268,7 @@ describe("BinaryManager", () => {
     });
 
     it("detects stall and retries download", async () => {
-      jest.useFakeTimers();
+      vi.useFakeTimers();
       const binaryContent = Buffer.alloc(2048, "x");
       const assetSuffix = getPlatformInfo(os.platform(), os.arch()).assetSuffix;
       const checksum = computeSha256(binaryContent);
@@ -1267,7 +1276,7 @@ describe("BinaryManager", () => {
 
       let binaryFetchCount = 0;
 
-      const mockFetch = jest.fn().mockImplementation((url: string) => {
+      const mockFetch = vi.fn().mockImplementation((url: string) => {
         if (url.includes("api.github.com")) {
           return Promise.resolve(makeGitHubReleaseMock(assetSuffix));
         }
@@ -1300,16 +1309,16 @@ describe("BinaryManager", () => {
 
       manager = new BinaryManager(tempDir, mockFetch);
       const promise = manager.download();
-      await jest.runAllTimersAsync();
+      await vi.runAllTimersAsync();
       await promise;
 
       expect(binaryFetchCount).toBe(2);
       expect(await manager.isInstalled()).toBe(true);
-      jest.useRealTimers();
+      vi.useRealTimers();
     });
 
     it("retries binary download on network failure", async () => {
-      jest.useFakeTimers();
+      vi.useFakeTimers();
       const binaryContent = Buffer.alloc(2048, "x");
       const assetSuffix = getPlatformInfo(os.platform(), os.arch()).assetSuffix;
       const checksum = computeSha256(binaryContent);
@@ -1317,7 +1326,7 @@ describe("BinaryManager", () => {
 
       let binaryFetchCount = 0;
 
-      const mockFetch = jest.fn().mockImplementation((url: string) => {
+      const mockFetch = vi.fn().mockImplementation((url: string) => {
         if (url.includes("api.github.com")) {
           return Promise.resolve(makeGitHubReleaseMock(assetSuffix));
         }
@@ -1351,26 +1360,26 @@ describe("BinaryManager", () => {
 
       manager = new BinaryManager(tempDir, mockFetch);
       const promise = manager.download();
-      await jest.runAllTimersAsync();
+      await vi.runAllTimersAsync();
       await promise;
 
       expect(binaryFetchCount).toBe(2);
       expect(await manager.isInstalled()).toBe(true);
-      jest.useRealTimers();
+      vi.useRealTimers();
     });
   });
 
   describe("signature verification", () => {
     it("rejects binary when signature verification fails", async () => {
-      (verifyMinisign as jest.Mock).mockReturnValue(false);
-      const beforeInstall = jest.fn().mockResolvedValue(undefined);
+      (verifyMinisign as Mock).mockReturnValue(false);
+      const beforeInstall = vi.fn().mockResolvedValue(undefined);
 
       const binaryContent = Buffer.alloc(2048, "x");
       const assetSuffix = getPlatformInfo(os.platform(), os.arch()).assetSuffix;
       const checksum = computeSha256(binaryContent);
       const checksumContent = `${checksum}  hledger-lsp_${assetSuffix}\n`;
 
-      const mockFetch = jest.fn().mockImplementation((url: string) => {
+      const mockFetch = vi.fn().mockImplementation((url: string) => {
         if (url.includes("api.github.com")) {
           return Promise.resolve(makeGitHubReleaseMock(assetSuffix));
         }
@@ -1414,7 +1423,7 @@ describe("BinaryManager", () => {
       const checksum = computeSha256(binaryContent);
       const checksumContent = `${checksum}  hledger-lsp_${assetSuffix}\n`;
 
-      const mockFetch = jest.fn().mockImplementation((url: string) => {
+      const mockFetch = vi.fn().mockImplementation((url: string) => {
         if (url.includes("api.github.com")) {
           return Promise.resolve({
             ok: true,
@@ -1467,7 +1476,7 @@ describe("BinaryManager", () => {
       const checksum = computeSha256(binaryContent);
       const checksumContent = `${checksum}  hledger-lsp_${assetSuffix}\n`;
 
-      const mockFetch = jest.fn().mockImplementation((url: string) => {
+      const mockFetch = vi.fn().mockImplementation((url: string) => {
         if (url.includes("api.github.com")) {
           return Promise.resolve(makeGitHubReleaseMock(assetSuffix));
         }
@@ -1506,14 +1515,14 @@ describe("BinaryManager", () => {
     });
 
     it("does not write binary to disk when signature is invalid", async () => {
-      (verifyMinisign as jest.Mock).mockReturnValue(false);
+      (verifyMinisign as Mock).mockReturnValue(false);
 
       const binaryContent = Buffer.alloc(2048, "x");
       const assetSuffix = getPlatformInfo(os.platform(), os.arch()).assetSuffix;
       const checksum = computeSha256(binaryContent);
       const checksumContent = `${checksum}  hledger-lsp_${assetSuffix}\n`;
 
-      const mockFetch = jest.fn().mockImplementation((url: string) => {
+      const mockFetch = vi.fn().mockImplementation((url: string) => {
         if (url.includes("api.github.com")) {
           return Promise.resolve(makeGitHubReleaseMock(assetSuffix));
         }

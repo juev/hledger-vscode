@@ -1,6 +1,6 @@
-// Jest Snapshot v1, https://jestjs.io/docs/snapshot-testing
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
-exports[`hledger-rules grammar snapshot tokenizes representative rules file 1`] = `
+exports[`hledger-rules grammar snapshot > tokenizes representative rules file 1`] = `
 [
   {
     "line": "# Bank CSV import rules",

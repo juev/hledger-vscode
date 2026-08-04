@@ -1,8 +1,9 @@
+import type { Mock } from "vitest";
 import * as vscode from "vscode";
 import { insertInferredAmount } from "../insertInferredAmount";
 
 interface MockLSPClient {
-  sendRequest: jest.Mock;
+  sendRequest: Mock;
 }
 
 const ACTION = {
@@ -25,13 +26,13 @@ const ACTION = {
 
 describe("insertInferredAmount", () => {
   let mockClient: MockLSPClient;
-  let applyEditMock: jest.Mock;
+  let applyEditMock: Mock;
 
   beforeEach(() => {
-    jest.clearAllMocks();
-    mockClient = { sendRequest: jest.fn() };
+    vi.clearAllMocks();
+    mockClient = { sendRequest: vi.fn() };
 
-    applyEditMock = jest.fn().mockResolvedValue(true);
+    applyEditMock = vi.fn().mockResolvedValue(true);
     (vscode.workspace as any).applyEdit = applyEditMock;
 
     (vscode.window as any).activeTextEditor = {

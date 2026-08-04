@@ -1,3 +1,4 @@
+import type { Mock } from "vitest";
 import * as vscode from 'vscode';
 import { KeybindingHintsStatusBar } from '../KeybindingHintsStatusBar';
 
@@ -7,7 +8,7 @@ describe('KeybindingHintsStatusBar', () => {
   let editorChangeCallback: ((editor: any) => void) | undefined;
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     editorChangeCallback = undefined;
 
     (vscode.window as any).activeTextEditor = undefined;
@@ -17,15 +18,15 @@ describe('KeybindingHintsStatusBar', () => {
       tooltip: '',
       name: undefined as string | undefined,
       command: undefined as string | undefined,
-      show: jest.fn(),
-      hide: jest.fn(),
-      dispose: jest.fn(),
+      show: vi.fn(),
+      hide: vi.fn(),
+      dispose: vi.fn(),
     };
-    (vscode.window.createStatusBarItem as jest.Mock).mockReturnValue(mockItem);
-    (vscode.window.onDidChangeActiveTextEditor as jest.Mock).mockImplementation(
+    (vscode.window.createStatusBarItem as Mock).mockReturnValue(mockItem);
+    (vscode.window.onDidChangeActiveTextEditor as Mock).mockImplementation(
       (callback: (editor: any) => void) => {
         editorChangeCallback = callback;
-        return { dispose: jest.fn() };
+        return { dispose: vi.fn() };
       }
     );
   });

@@ -240,9 +240,9 @@ describe("HLedgerLanguageClient", () => {
         payeeAccounts: { "Store": ["Expenses:Food"] },
         pairUsage: { "Store::Expenses:Food": 5 },
       };
-      const sendRequestSpy = jest.spyOn(internalClient!, "sendRequest").mockResolvedValue(mockResult);
-      const cancelSpy = jest.spyOn(vscode.CancellationTokenSource.prototype, "cancel");
-      const disposeSpy = jest.spyOn(vscode.CancellationTokenSource.prototype, "dispose");
+      const sendRequestSpy = vi.spyOn(internalClient!, "sendRequest").mockResolvedValue(mockResult);
+      const cancelSpy = vi.spyOn(vscode.CancellationTokenSource.prototype, "cancel");
+      const disposeSpy = vi.spyOn(vscode.CancellationTokenSource.prototype, "dispose");
 
       const result = await client.getPayeeAccountHistory("file:///test.journal");
       expect(result).toEqual(mockResult);
@@ -262,9 +262,9 @@ describe("HLedgerLanguageClient", () => {
       await client.start();
 
       const internalClient = client.getClient();
-      jest.spyOn(internalClient!, "sendRequest").mockRejectedValue(new Error("Network error"));
-      const cancelSpy = jest.spyOn(vscode.CancellationTokenSource.prototype, "cancel");
-      const disposeSpy = jest.spyOn(vscode.CancellationTokenSource.prototype, "dispose");
+      vi.spyOn(internalClient!, "sendRequest").mockRejectedValue(new Error("Network error"));
+      const cancelSpy = vi.spyOn(vscode.CancellationTokenSource.prototype, "cancel");
+      const disposeSpy = vi.spyOn(vscode.CancellationTokenSource.prototype, "dispose");
 
       const result = await client.getPayeeAccountHistory("file:///test.journal");
       expect(result).toBeNull();
@@ -279,29 +279,29 @@ describe("HLedgerLanguageClient", () => {
       await client.start();
 
       const internalClient = client.getClient();
-      jest.spyOn(internalClient!, "sendRequest").mockImplementation(
+      vi.spyOn(internalClient!, "sendRequest").mockImplementation(
         (_method: string, _params: unknown, token?: vscode.CancellationToken) => new Promise((_resolve, reject) => {
           token?.onCancellationRequested(() => reject(new Error("Request cancelled")));
         })
       );
 
-      jest.useFakeTimers();
-      const cancelSpy = jest.spyOn(vscode.CancellationTokenSource.prototype, "cancel");
-      const disposeSpy = jest.spyOn(vscode.CancellationTokenSource.prototype, "dispose");
+      vi.useFakeTimers();
+      const cancelSpy = vi.spyOn(vscode.CancellationTokenSource.prototype, "cancel");
+      const disposeSpy = vi.spyOn(vscode.CancellationTokenSource.prototype, "dispose");
 
       const resultPromise = client.getPayeeAccountHistory("file:///test.journal");
 
-      jest.advanceTimersByTime(4999);
+      vi.advanceTimersByTime(4999);
       expect(cancelSpy).not.toHaveBeenCalled();
 
-      jest.advanceTimersByTime(1);
+      vi.advanceTimersByTime(1);
 
       const result = await resultPromise;
       expect(result).toBeNull();
       expect(cancelSpy).toHaveBeenCalledTimes(1);
       expect(disposeSpy).toHaveBeenCalledTimes(1);
 
-      jest.useRealTimers();
+      vi.useRealTimers();
       client.dispose();
     });
   });

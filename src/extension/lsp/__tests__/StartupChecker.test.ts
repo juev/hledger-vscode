@@ -1,67 +1,67 @@
+import type { Mock } from "vitest";
 import { StartupChecker, CheckResult } from "../StartupChecker";
+import * as vscode from "vscode";
 
 interface MockLSPManager {
-  isServerAvailable: jest.Mock<Promise<boolean>>;
-  checkForUpdates: jest.Mock<
-    Promise<{
+  isServerAvailable: Mock<() => Promise<boolean>>;
+  checkForUpdates: Mock<
+    () => Promise<{
       hasUpdate: boolean;
       currentVersion: string | null;
       latestVersion: string;
     }>
   >;
-  download: jest.Mock<Promise<void>>;
-  update: jest.Mock<Promise<void>>;
-  start: jest.Mock<Promise<void>>;
-  stop: jest.Mock<Promise<void>>;
+  download: Mock<() => Promise<void>>;
+  update: Mock<() => Promise<void>>;
+  start: Mock<() => Promise<void>>;
+  stop: Mock<() => Promise<void>>;
 }
 
 describe("StartupChecker", () => {
   let mockLSPManager: MockLSPManager;
   let mockContext: any;
   let originalGetConfiguration: any;
-  let mockShowInformationMessage: jest.Mock;
-  let mockWithProgress: jest.Mock;
+  let mockShowInformationMessage: Mock;
+  let mockWithProgress: Mock;
 
   beforeEach(() => {
     mockLSPManager = {
-      isServerAvailable: jest.fn(),
-      checkForUpdates: jest.fn(),
-      download: jest.fn(),
-      update: jest.fn(),
-      start: jest.fn(),
-      stop: jest.fn(),
+      isServerAvailable: vi.fn(),
+      checkForUpdates: vi.fn(),
+      download: vi.fn(),
+      update: vi.fn(),
+      start: vi.fn(),
+      stop: vi.fn(),
     };
 
     // Mock ExtensionContext with globalState
     const globalStateStorage = new Map<string, any>();
     mockContext = {
       globalState: {
-        get: jest.fn((key: string, defaultValue?: any) => {
+        get: vi.fn((key: string, defaultValue?: any) => {
           return globalStateStorage.has(key) ? globalStateStorage.get(key) : defaultValue;
         }),
-        update: jest.fn((key: string, value: any) => {
+        update: vi.fn((key: string, value: any) => {
           globalStateStorage.set(key, value);
           return Promise.resolve();
         }),
       },
     };
 
-    const vscode = require("vscode");
     originalGetConfiguration = vscode.workspace.getConfiguration;
-    mockShowInformationMessage = vscode.window.showInformationMessage;
-    mockWithProgress = vscode.window.withProgress;
+    mockShowInformationMessage =
+      vscode.window.showInformationMessage as unknown as Mock;
+    mockWithProgress = vscode.window.withProgress as unknown as Mock;
 
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   afterEach(() => {
-    const vscode = require("vscode");
     vscode.workspace.getConfiguration = originalGetConfiguration;
   });
 
   function mockConfiguration(config: Record<string, unknown>) {
-    const vscode = require("vscode");
-    vscode.workspace.getConfiguration = jest.fn().mockReturnValue({
+    vscode.workspace.getConfiguration = vi.fn().mockReturnValue({
       get: (key: string, defaultValue?: unknown) => {
         const fullKey = key;
         if (fullKey in config) {
@@ -254,7 +254,7 @@ describe("StartupChecker", () => {
   describe("performInstall", () => {
     it("downloads and starts the LSP server", async () => {
       mockWithProgress.mockImplementation((_options: any, task: any) =>
-        task({ report: jest.fn() })
+        task({ report: vi.fn() })
       );
       mockLSPManager.download.mockResolvedValue(undefined);
       mockLSPManager.start.mockResolvedValue(undefined);
@@ -269,7 +269,7 @@ describe("StartupChecker", () => {
 
     it("shows success notification after install", async () => {
       mockWithProgress.mockImplementation((_options: any, task: any) =>
-        task({ report: jest.fn() })
+        task({ report: vi.fn() })
       );
       mockLSPManager.download.mockResolvedValue(undefined);
       mockLSPManager.start.mockResolvedValue(undefined);
@@ -287,7 +287,7 @@ describe("StartupChecker", () => {
   describe("performUpdate", () => {
     it("delegates the running-server update lifecycle to LSPManager", async () => {
       mockWithProgress.mockImplementation((_options: any, task: any) =>
-        task({ report: jest.fn() })
+        task({ report: vi.fn() })
       );
       mockLSPManager.update.mockResolvedValue(undefined);
 
@@ -303,7 +303,7 @@ describe("StartupChecker", () => {
 
     it("shows success notification after update", async () => {
       mockWithProgress.mockImplementation((_options: any, task: any) =>
-        task({ report: jest.fn() })
+        task({ report: vi.fn() })
       );
       mockLSPManager.update.mockResolvedValue(undefined);
 
@@ -351,8 +351,8 @@ describe("StartupChecker", () => {
 
       const mockContext2: any = {
         globalState: {
-          get: jest.fn((key: string, defaultValue?: any) => defaultValue),
-          update: jest.fn(() => Promise.resolve()),
+          get: vi.fn((key: string, defaultValue?: any) => defaultValue),
+          update: vi.fn(() => Promise.resolve()),
         },
       };
 

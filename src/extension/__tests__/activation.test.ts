@@ -1,82 +1,102 @@
+import type { Mock } from "vitest";
 import * as vscode from "vscode";
 import {
   commands as mockCommands,
   createMockExtensionContext,
 } from "../../__mocks__/vscode";
 
-jest.mock("../lsp/LSPStatusBar", () => ({
-  LSPStatusBar: jest.fn().mockImplementation(() => ({
-    update: jest.fn(),
-    dispose: jest.fn(),
-  })),
+// main.ts instantiates every mock below with `new`, so the implementations must
+// be plain functions: an arrow function is not a constructor. Returning an
+// object from a constructor call makes `new` yield that object.
+vi.mock("../lsp/LSPStatusBar", () => ({
+  LSPStatusBar: vi.fn().mockImplementation(function () {
+    return {
+      update: vi.fn(),
+      dispose: vi.fn(),
+    };
+  }),
 }));
 
-jest.mock("../KeybindingHintsStatusBar", () => ({
-  KeybindingHintsStatusBar: jest.fn().mockImplementation(() => ({
-    dispose: jest.fn(),
-  })),
+vi.mock("../KeybindingHintsStatusBar", () => ({
+  KeybindingHintsStatusBar: vi.fn().mockImplementation(function () {
+    return {
+      dispose: vi.fn(),
+    };
+  }),
 }));
 
-jest.mock("../lsp", () => ({
-  LSPManager: jest.fn().mockImplementation(() => ({
-    dispose: jest.fn(),
-    start: jest.fn().mockResolvedValue(undefined),
-    stop: jest.fn().mockResolvedValue(undefined),
-    isServerAvailable: jest.fn().mockResolvedValue(false),
-    getLanguageClient: jest.fn().mockReturnValue(null),
-    getStatus: jest.fn().mockReturnValue("stopped"),
-    onStatusChange: jest.fn().mockReturnValue({ dispose: jest.fn() }),
-  })),
-  StartupChecker: jest.fn().mockImplementation(() => ({
-    checkOnActivation: jest.fn().mockResolvedValue({ action: "none" }),
-  })),
+vi.mock("../lsp", () => ({
+  LSPManager: vi.fn().mockImplementation(function () {
+    return {
+      dispose: vi.fn(),
+      start: vi.fn().mockResolvedValue(undefined),
+      stop: vi.fn().mockResolvedValue(undefined),
+      isServerAvailable: vi.fn().mockResolvedValue(false),
+      getLanguageClient: vi.fn().mockReturnValue(null),
+      getStatus: vi.fn().mockReturnValue("stopped"),
+      onStatusChange: vi.fn().mockReturnValue({ dispose: vi.fn() }),
+    };
+  }),
+  StartupChecker: vi.fn().mockImplementation(function () {
+    return {
+      checkOnActivation: vi.fn().mockResolvedValue({ action: "none" }),
+    };
+  }),
 }));
 
-jest.mock("../services/HLedgerCliService", () => ({
-  HLedgerCliService: jest.fn().mockImplementation(() => ({
-    dispose: jest.fn(),
-  })),
+vi.mock("../services/HLedgerCliService", () => ({
+  HLedgerCliService: vi.fn().mockImplementation(function () {
+    return {
+      dispose: vi.fn(),
+    };
+  }),
 }));
 
-jest.mock("../HLedgerCliCommands", () => ({
-  HLedgerCliCommands: jest.fn().mockImplementation(() => ({
-    dispose: jest.fn(),
-    insertBalanceSheet: jest.fn(),
-    insertStats: jest.fn(),
-    insertIncomestatement: jest.fn(),
-  })),
+vi.mock("../HLedgerCliCommands", () => ({
+  HLedgerCliCommands: vi.fn().mockImplementation(function () {
+    return {
+      dispose: vi.fn(),
+      insertBalanceSheet: vi.fn(),
+      insertStats: vi.fn(),
+      insertIncomestatement: vi.fn(),
+    };
+  }),
 }));
 
-jest.mock("../HLedgerImportCommands", () => ({
-  HLedgerImportCommands: jest.fn().mockImplementation(() => ({
-    dispose: jest.fn(),
-    importFromSelection: jest.fn(),
-    importFromFile: jest.fn(),
-  })),
+vi.mock("../HLedgerImportCommands", () => ({
+  HLedgerImportCommands: vi.fn().mockImplementation(function () {
+    return {
+      dispose: vi.fn(),
+      importFromSelection: vi.fn(),
+      importFromFile: vi.fn(),
+    };
+  }),
 }));
 
-jest.mock("../inline/InlineCompletionProvider", () => ({
-  InlineCompletionProvider: jest.fn().mockImplementation(() => ({
-    dispose: jest.fn(),
-    provideInlineCompletionItems: jest.fn(),
-  })),
+vi.mock("../inline/InlineCompletionProvider", () => ({
+  InlineCompletionProvider: vi.fn().mockImplementation(function () {
+    return {
+      dispose: vi.fn(),
+      provideInlineCompletionItems: vi.fn(),
+    };
+  }),
 }));
 
 import { activate } from "../main";
 
 function getRegisteredCommandNames(): string[] {
   const fromRegisterCommand = (
-    mockCommands.registerCommand as jest.Mock
+    mockCommands.registerCommand as Mock
   ).mock.calls.map((call: unknown[]) => call[0] as string);
   const fromRegisterTextEditorCommand = (
-    mockCommands.registerTextEditorCommand as jest.Mock
+    mockCommands.registerTextEditorCommand as Mock
   ).mock.calls.map((call: unknown[]) => call[0] as string);
   return [...fromRegisterCommand, ...fromRegisterTextEditorCommand];
 }
 
 describe("activate", () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   it("should not register removed hledger.onEnter command", () => {
@@ -101,7 +121,7 @@ describe("activate", () => {
     activate(context);
 
     const editorCommands = (
-      mockCommands.registerTextEditorCommand as jest.Mock
+      mockCommands.registerTextEditorCommand as Mock
     ).mock.calls.map((call: unknown[]) => call[0] as string);
 
     expect(editorCommands).toContain("hledger.positionCursorAfterTemplate");
@@ -132,7 +152,7 @@ describe("activate", () => {
       createMockExtensionContext() as unknown as vscode.ExtensionContext;
     activate(context);
 
-    const registerCalls = (mockCommands.registerCommand as jest.Mock).mock
+    const registerCalls = (mockCommands.registerCommand as Mock).mock
       .calls;
     const getStartedCall = registerCalls.find(
       (call: unknown[]) => call[0] === "hledger.getStarted",

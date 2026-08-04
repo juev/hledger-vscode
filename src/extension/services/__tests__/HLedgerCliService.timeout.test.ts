@@ -1,15 +1,20 @@
 // HLedgerCliService.timeout.test.ts - Tests for CLI timeout protection
 
+import type { MockedFunction } from "vitest";
 import * as child_process from 'child_process';
 
-// Mock the exec function to verify timeout option is passed
-jest.mock('child_process');
+// Mock the exec function to verify timeout option is passed.
+// HLedgerCliService only promisifies exec and execFile, so the factory covers both.
+vi.mock('child_process', () => ({
+    exec: vi.fn(),
+    execFile: vi.fn(),
+}));
 
-const mockExec = child_process.exec as jest.MockedFunction<typeof child_process.exec>;
+const mockExec = child_process.exec as MockedFunction<typeof child_process.exec>;
 
 describe('HLedgerCliService - Timeout Protection', () => {
     beforeEach(() => {
-        jest.clearAllMocks();
+        vi.clearAllMocks();
     });
 
     describe('resolveHledgerPath', () => {
