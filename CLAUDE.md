@@ -24,19 +24,28 @@ VS Code extension for hledger plain text accounting. Supported file extensions: 
 ```bash
 npm run build          # Production build with esbuild
 npm run watch          # Watch mode with esbuild
-npm run test           # Run all Vitest tests
-npm run test:watch     # Tests in watch mode
-npm run test:coverage  # Tests with coverage report
+npm run test           # Type-check the tests, then run them
+npm run test:watch     # Tests in watch mode (no type check)
+npm run test:coverage  # Tests with coverage report (no type check)
 npm run lint           # ESLint check
 npm run lint:fix       # ESLint with auto-fix
 npm run package        # Create VSIX for distribution
 npx tsc --noEmit       # TypeScript strict type check (run before committing)
-npm run typecheck:test # Type-check the test sources (esbuild does not)
+npm run typecheck:test # Type-check the test sources on their own
 ```
 
 **Important:** Vitest transforms tests with esbuild, which strips types without
-checking them. A type error in a test no longer fails the run, so
-`npm run typecheck:test` is what catches it — CI runs it alongside lint.
+checking them, so a type error in a test cannot fail the test run itself. Only
+`tsc` catches it. Two places do:
+
+- `npm test` runs `typecheck:test` first, via a `pretest` script. This is what
+  keeps a type error from reaching CI — the failure shows up locally instead.
+- CI runs `typecheck:test` as its own step. That step is the guarantee; it stays
+  even though `npm test` would repeat it, so removing `pretest` cannot silently
+  drop the check.
+
+`test:watch` and `test:coverage` deliberately skip it — those are the fast inner
+loop. `npx vitest run <file>` skips it too. Run `npm test` before pushing.
 
 ### Running Single Tests
 
@@ -133,6 +142,7 @@ The extension's `InlineCompletionProvider` handles ghost text completions for tr
 - Vitest with globals enabled (`describe`/`it`/`expect`/`vi` need no import); config in `vitest.config.mts`
 - VS Code is mocked in `src/__mocks__/vscode.ts`, wired through `test.alias` — a CJS `require("vscode")` bypasses that alias, so always import it
 - Mocked classes must use `function` expressions, not arrow functions: Vitest calls them with `new`
+- `tsconfig.test.json` inherits full strictness from `tsconfig.json`; it overrides only how tests are run (ESM, Vitest globals), never how strictly they are checked. Reading a recorded call needs a guard: `mock.mock.calls[0]` is possibly `undefined`
 - Grammar tests use `vscode-textmate` and `vscode-oniguruma` for accurate scope testing
 - `rules-grammar-snapshot.test.ts` detects unintended grammar changes
 

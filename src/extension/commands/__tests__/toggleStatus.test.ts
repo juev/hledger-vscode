@@ -12,6 +12,22 @@ import {
   type StatusInfo,
 } from "../toggleStatus";
 
+type EditBuilder = { replace: Mock };
+
+/**
+ * Invokes the callback that the code under test passed to `editor.edit`.
+ *
+ * Reads the recorded call defensively so a missing one fails as a named
+ * assertion rather than "undefined is not a function" several frames away.
+ */
+function applyEdit(editMock: Mock, builder: EditBuilder): void {
+  const call = editMock.mock.calls[0];
+  if (!call) {
+    throw new Error("expected editor.edit to have been called");
+  }
+  (call[0] as (builder: EditBuilder) => void)(builder);
+}
+
 describe("isTransactionHeader", () => {
   it("matches standard date format YYYY-MM-DD", () => {
     expect(isTransactionHeader("2024-01-15 Grocery Store")).toBe(true);
@@ -577,7 +593,7 @@ describe("cycleStatus", () => {
     await cycleStatus();
     expect(editMock).toHaveBeenCalledTimes(1);
     const builder = { replace: vi.fn() };
-    editMock.mock.calls[0][0](builder);
+    applyEdit(editMock, builder);
     expect(builder.replace).toHaveBeenCalledWith(
       new vscode.Range(0, 11, 0, 11),
       "! ",
@@ -589,7 +605,7 @@ describe("cycleStatus", () => {
     await cycleStatus();
     expect(editMock).toHaveBeenCalledTimes(1);
     const builder = { replace: vi.fn() };
-    editMock.mock.calls[0][0](builder);
+    applyEdit(editMock, builder);
     expect(builder.replace).toHaveBeenCalledWith(
       new vscode.Range(0, 11, 0, 13),
       "* ",
@@ -601,7 +617,7 @@ describe("cycleStatus", () => {
     await cycleStatus();
     expect(editMock).toHaveBeenCalledTimes(1);
     const builder = { replace: vi.fn() };
-    editMock.mock.calls[0][0](builder);
+    applyEdit(editMock, builder);
     expect(builder.replace).toHaveBeenCalledWith(
       new vscode.Range(0, 11, 0, 13),
       "",
@@ -612,7 +628,7 @@ describe("cycleStatus", () => {
     setupEditor("2024-01-15 !");
     await cycleStatus();
     const builder = { replace: vi.fn() };
-    editMock.mock.calls[0][0](builder);
+    applyEdit(editMock, builder);
     expect(builder.replace).toHaveBeenCalledWith(
       new vscode.Range(0, 11, 0, 12),
       "* ",
@@ -646,7 +662,7 @@ describe("cycleStatus", () => {
     await cycleStatus();
 
     const builder = { replace: vi.fn() };
-    editMock.mock.calls[0][0](builder);
+    applyEdit(editMock, builder);
     expect(builder.replace).toHaveBeenCalledTimes(2);
     expect(builder.replace).toHaveBeenCalledWith(
       new vscode.Range(0, 11, 0, 11),
@@ -663,7 +679,7 @@ describe("cycleStatus", () => {
     await cycleStatus();
     expect(editMock).toHaveBeenCalledTimes(1);
     const builder = { replace: vi.fn() };
-    editMock.mock.calls[0][0](builder);
+    applyEdit(editMock, builder);
     expect(builder.replace).toHaveBeenCalledWith(
       new vscode.Range(1, 4, 1, 4),
       "! ",
@@ -675,7 +691,7 @@ describe("cycleStatus", () => {
     await cycleStatus();
     expect(editMock).toHaveBeenCalledTimes(1);
     const builder = { replace: vi.fn() };
-    editMock.mock.calls[0][0](builder);
+    applyEdit(editMock, builder);
     expect(builder.replace).toHaveBeenCalledWith(
       new vscode.Range(2, 4, 2, 6),
       "",
@@ -735,7 +751,7 @@ describe("setStatus", () => {
     await setStatus("*");
     expect(editMock).toHaveBeenCalledTimes(1);
     const builder = { replace: vi.fn() };
-    editMock.mock.calls[0][0](builder);
+    applyEdit(editMock, builder);
     expect(builder.replace).toHaveBeenCalledWith(
       new vscode.Range(0, 11, 0, 11),
       "* ",
@@ -747,7 +763,7 @@ describe("setStatus", () => {
     await setStatus("");
     expect(editMock).toHaveBeenCalledTimes(1);
     const builder = { replace: vi.fn() };
-    editMock.mock.calls[0][0](builder);
+    applyEdit(editMock, builder);
     expect(builder.replace).toHaveBeenCalledWith(
       new vscode.Range(0, 11, 0, 13),
       "",
@@ -765,7 +781,7 @@ describe("setStatus", () => {
     await setStatus("*");
     expect(editMock).toHaveBeenCalledTimes(1);
     const builder = { replace: vi.fn() };
-    editMock.mock.calls[0][0](builder);
+    applyEdit(editMock, builder);
     expect(builder.replace).toHaveBeenCalledWith(
       new vscode.Range(1, 4, 1, 4),
       "* ",
@@ -799,7 +815,7 @@ describe("setStatus", () => {
     await setStatus("*");
 
     const builder = { replace: vi.fn() };
-    editMock.mock.calls[0][0](builder);
+    applyEdit(editMock, builder);
     expect(builder.replace).toHaveBeenCalledTimes(2);
     expect(builder.replace).toHaveBeenCalledWith(
       new vscode.Range(0, 11, 0, 11),

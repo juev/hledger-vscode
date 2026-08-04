@@ -1170,8 +1170,7 @@ describe("BinaryManager", () => {
       manager = new BinaryManager(tempDir, mockFetch);
       await manager.getLatestRelease();
 
-      const callInit = mockFetch.mock.calls[0][1];
-      expect(callInit.signal).toBeInstanceOf(AbortSignal);
+      expect(mockFetch.mock.calls[0]?.[1]?.signal).toBeInstanceOf(AbortSignal);
     });
   });
 
