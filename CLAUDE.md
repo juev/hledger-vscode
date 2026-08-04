@@ -143,6 +143,7 @@ The extension's `InlineCompletionProvider` handles ghost text completions for tr
 - VS Code is mocked in `src/__mocks__/vscode.ts`, wired through `test.alias` — a CJS `require("vscode")` bypasses that alias, so always import it
 - Mocked classes must use `function` expressions, not arrow functions: Vitest calls them with `new`
 - `tsconfig.test.json` inherits full strictness from `tsconfig.json`; it overrides only how tests are run (ESM, Vitest globals), never how strictly they are checked. Reading a recorded call needs a guard: `mock.mock.calls[0]` is possibly `undefined`
+- ESLint covers tests and the vscode mock too, with `no-explicit-any` and `explicit-function-return-type` off for them. `no-floating-promises` stays on — it catches the un-awaited assertion that passes silently
 - Grammar tests use `vscode-textmate` and `vscode-oniguruma` for accurate scope testing
 - `rules-grammar-snapshot.test.ts` detects unintended grammar changes
 

@@ -695,7 +695,7 @@ export const createMockExtensionContext = (
 export const workspace = {
   getWorkspaceFolder: vi.fn((uri) => {
     // Return a mock workspace folder for test documents
-    if (uri && uri.fsPath && uri.fsPath.startsWith("/test")) {
+    if (uri?.fsPath?.startsWith("/test")) {
       return {
         uri: {
           scheme: "file",
@@ -1002,7 +1002,7 @@ export class SnippetString {
   }
 
   appendTabstop(number?: number): SnippetString {
-    this.value += number !== undefined ? `\$${number}` : "$0";
+    this.value += number !== undefined ? `$${number}` : "$0";
     return this;
   }
 
@@ -1038,7 +1038,7 @@ export class SnippetString {
         this.value += `\${${name}:${defaultValue}}`;
       }
     } else {
-      this.value += `\$${name}`;
+      this.value += `$${name}`;
     }
     return this;
   }
@@ -1056,6 +1056,10 @@ const createUriObject = (path: string): Uri => ({
   toJSON: () => ({ $mid: 1, fsPath: path, path, scheme: "file" }),
 });
 
+// The real vscode.Uri is a class, so `Uri` names both a type and a value.
+// Mirroring that here means an interface and a const share the name, which the
+// rule reports even though TypeScript keeps them in separate declaration spaces.
+// eslint-disable-next-line @typescript-eslint/no-redeclare
 export const Uri = {
   file: createUriObject,
   parse: vi.fn((uri: string) => createUriObject(uri)),
@@ -1207,7 +1211,7 @@ export class MockTextDocument implements TextDocument {
     const line = this.lines[position.line];
     if (!line) return undefined;
 
-    const wordRegex = regex || /[-?\.:a-zA-Z0-9_\s]+/;
+    const wordRegex = regex || /[-?.:a-zA-Z0-9_\s]+/;
     const matches = Array.from(line.matchAll(new RegExp(wordRegex, "g")));
 
     for (const match of matches) {

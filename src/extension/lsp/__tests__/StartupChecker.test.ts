@@ -1,5 +1,5 @@
 import type { Mock } from "vitest";
-import { StartupChecker, CheckResult } from "../StartupChecker";
+import { StartupChecker } from "../StartupChecker";
 import * as vscode from "vscode";
 
 interface MockLSPManager {

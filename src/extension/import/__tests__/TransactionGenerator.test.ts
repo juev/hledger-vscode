@@ -1,5 +1,5 @@
 import { TransactionGenerator } from '../TransactionGenerator';
-import { ParsedTabularData, ColumnMapping, ParsedRow, DEFAULT_IMPORT_OPTIONS } from '../types';
+import { ParsedTabularData, ColumnMapping, DEFAULT_IMPORT_OPTIONS } from '../types';
 import stringWidth from 'string-width';
 
 describe('TransactionGenerator', () => {

@@ -340,7 +340,7 @@ describe("HLedgerImportCommands", () => {
       const result = convertToPayeeAccountHistory(lspResult);
 
       expect(result.payeeAccounts.size).toBe(1);
-      const accounts = Array.from(result.payeeAccounts.get("Store" as any) || []);
+      const accounts = Array.from(result.payeeAccounts.get("Store" as any) ?? []);
       expect(accounts).toEqual(["Expenses:Food", "Expenses:Valid"]);
       expect(accounts.length).toBe(2);
     });

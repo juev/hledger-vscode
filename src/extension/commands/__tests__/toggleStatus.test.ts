@@ -8,7 +8,6 @@ import {
   buildStatusEdit,
   cycleStatus,
   setStatus,
-  type TransactionStatus,
   type StatusInfo,
 } from "../toggleStatus";
 
