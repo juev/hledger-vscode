@@ -1,5 +1,37 @@
 # Change Log
 
+## [0.5.43] - 2026-08-12
+
+### Added
+- chore(test): add coverage thresholds and enforce them in CI
+
+### Changed
+- docs: update testing commands for vitest
+
+### Fixed
+- fix(test): skip the permission-based path test when running as root
+- fix(mock): make SnippetString match the API it stands in for
+- fix(test): widen the branch coverage margin for platform variance
+- fix(test): remove the init race that made coverage non-deterministic
+- docs: correct the stale Jest reasoning left in tsconfig.json
+- fix(package): stop shipping the tsc debug build in the VSIX
+
+### Removed
+- chore(deps): override babel-plugin-istanbul to drop deprecated glob and inflight
+
+### Other
+- chore(deps-dev): bump eslint from 10.8.0 to 10.8.1
+- chore(deps-dev): bump esbuild from 0.28.1 to 0.28.2
+- chore(deps-dev): bump @types/node from 26.1.2 to 26.2.0
+- chore(build): make tsconfig.dev.json extend the base config
+- chore(lint): lint the whole source tree, tests included
+- chore(test): restore strict type checking for test sources
+- chore(test): exclude tests from the extension compile config
+- chore(test): replace jest with vitest
+- chore(deps): bump fast-uri from 3.1.4 to 3.1.5
+- chore(deps): bump undici from 7.28.0 to 7.29.0
+
+
 ## [0.5.42] - 2026-08-03
 
 ### Other
