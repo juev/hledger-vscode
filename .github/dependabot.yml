@@ -9,3 +9,6 @@ updates:
         versions: [">=3.0.0"]
       - dependency-name: "typescript"
         versions: [">=6.0.0"]
+      # Must match engines.vscode in package.json: vsce refuses to package when
+      # the types are newer. Bump it manually together with engines.vscode.
+      - dependency-name: "@types/vscode"
