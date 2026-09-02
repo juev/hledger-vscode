@@ -1,5 +1,22 @@
 # Change Log
 
+## [0.5.44] - 2026-09-02
+
+### Other
+- chore(deps-dev): bump @typescript-eslint/eslint-plugin
+- chore(deps-dev): bump eslint from 10.9.0 to 10.9.1
+- chore(deps-dev): bump @typescript-eslint/parser from 8.67.0 to 8.68.0
+- chore(deps-dev): bump @types/node from 26.2.0 to 26.4.0
+- chore(deps): bump vscode-languageclient from 10.1.0 to 10.1.1
+- chore(deps): pin @types/vscode to engines.vscode in dependabot
+- chore(deps-dev): bump eslint from 10.8.1 to 10.9.0 (#284)
+- chore(deps-dev): bump vitest from 4.1.10 to 4.1.11 (#285)
+- chore(deps-dev): bump @vitest/coverage-v8 from 4.1.10 to 4.1.11 (#283)
+- chore(deps-dev): bump @typescript-eslint/parser from 8.66.0 to 8.67.0
+- chore(deps-dev): bump @typescript-eslint/eslint-plugin
+- chore(deps-dev): bump ovsx from 1.1.0 to 1.1.1
+
+
 ## [0.5.43] - 2026-08-12
 
 ### Added
