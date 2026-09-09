@@ -322,6 +322,12 @@ The Language Server is auto-installed on first activation. If it is not installe
 
 4. **Corporate proxy:** Set VS Code's `http.proxy` to use that proxy for both HTTP and HTTPS Language Server downloads. If `http.proxy` is empty, downloads use `HTTP_PROXY` and `HTTPS_PROXY`; `NO_PROXY` still bypasses the proxy for matching hosts. Reload VS Code after changing proxy settings. Manual installation remains available if the network policy requires a proxy method the extension does not support.
 
+### Server Stays Old After an Update
+
+An earlier failed update could replace `version.txt` while leaving the old executable in place. This caused "Already up to date" to appear even when the server lacked newer features, such as inferred amount hints.
+
+Update the extension, then run **HLedger: Install/Update Language Server** again. Update checks now read the auto-downloaded executable's `--version` output, and the installer records the new version only after replacing the binary. A custom executable configured through `hledger.lsp.path` must still be updated separately.
+
 ### GitHub Rate Limit Errors
 
 **Symptoms:** "GitHub API rate limit exceeded" when installing/updating

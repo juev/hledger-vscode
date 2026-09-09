@@ -886,6 +886,8 @@ To manually reinstall or update:
 2. Run **HLedger: Install/Update Language Server**
 3. Wait for the download to complete
 
+Update checks read the version reported by the auto-downloaded executable. If an earlier update left an old binary with newer version metadata, running **HLedger: Install/Update Language Server** detects the old version and offers the update again.
+
 ### Status Bar
 
 The extension shows an LSP status indicator in the VS Code status bar (bottom-right). The indicator reflects the current state of the Language Server:

@@ -12,6 +12,20 @@ import {
 import { verify as verifyMinisign } from "../minisignVerify";
 import * as vscode from "vscode";
 
+const mockExecFile = vi.hoisted(() => vi.fn());
+vi.mock("child_process", () => ({ execFile: mockExecFile }));
+
+function mockBinaryVersion(stdout: string, error: Error | null = null) {
+  mockExecFile.mockImplementation((
+    _file: string,
+    _args: string[],
+    _options: unknown,
+    callback: (error: Error | null, stdout: string, stderr: string) => void,
+  ) => {
+    callback(error, stdout, "");
+  });
+}
+
 vi.mock("undici", () => ({
   fetch: vi.fn(),
   EnvHttpProxyAgent: vi.fn(),
@@ -187,6 +201,7 @@ describe("BinaryManager", () => {
     tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "hledger-lsp-test-"));
     manager = new BinaryManager(tempDir);
     (verifyMinisign as Mock).mockReturnValue(true);
+    mockBinaryVersion("", new Error("ENOENT"));
   });
 
   afterEach(() => {
@@ -221,19 +236,57 @@ describe("BinaryManager", () => {
   });
 
   describe("getInstalledVersion", () => {
-    it("returns null when version file does not exist", async () => {
+    it("returns null when the binary cannot be executed", async () => {
+      fs.writeFileSync(path.join(tempDir, "version.txt"), "v0.2.56");
       const version = await manager.getInstalledVersion();
 
       expect(version).toBeNull();
     });
 
-    it("returns version from version file", async () => {
-      const versionPath = path.join(tempDir, "version.txt");
-      fs.writeFileSync(versionPath, "v0.1.0");
+    it("returns the binary version even when metadata claims a newer release", async () => {
+      fs.writeFileSync(path.join(tempDir, "version.txt"), "v0.2.56");
+      mockBinaryVersion("hledger-lsp 0.2.49 (commit: 9851d3a, built: 2026-06-18T07:03:39Z)\r\n");
 
       const version = await manager.getInstalledVersion();
 
-      expect(version).toBe("v0.1.0");
+      expect(version).toBe("v0.2.49");
+    });
+
+    it.each(["0.2.56", "v0.2.56", "0.2.57-rc.1+build.2"])(
+      "reads release %s without a version file",
+      async (version) => {
+        mockBinaryVersion(`hledger-lsp ${version} (commit: test, built: unknown)\n`);
+
+        expect(await manager.getInstalledVersion()).toBe(`v${version.replace(/^v/, "")}`);
+      },
+    );
+
+    it.each(["", "hledger-lsp dev (commit: none, built: unknown)", "v0.2.56", "hledger-lsp 0.2.56broken"])(
+      "returns null for unrecognized version output %j",
+      async (stdout) => {
+        mockBinaryVersion(stdout);
+
+        expect(await manager.getInstalledVersion()).toBeNull();
+      },
+    );
+
+    it("does not trust version output from a failed process", async () => {
+      mockBinaryVersion("hledger-lsp 0.2.56", new Error("process timed out"));
+
+      expect(await manager.getInstalledVersion()).toBeNull();
+    });
+
+    it("probes the managed Windows executable directly with bounded execution", async () => {
+      manager = new BinaryManager(path.join(tempDir, "storage space & 中文"), undefined, getPlatformInfo("win32", "x64"));
+      mockBinaryVersion("hledger-lsp 0.2.56");
+
+      expect(await manager.getInstalledVersion()).toBe("v0.2.56");
+      expect(mockExecFile).toHaveBeenCalledWith(
+        manager.getBinaryPath(),
+        ["--version"],
+        expect.objectContaining({ timeout: 5000, maxBuffer: 64 * 1024, windowsHide: true, shell: false }),
+        expect.any(Function),
+      );
     });
   });
 
@@ -541,7 +594,8 @@ describe("BinaryManager", () => {
 
     it("returns true when installed version is older", async () => {
       const versionPath = path.join(tempDir, "version.txt");
-      fs.writeFileSync(versionPath, "v0.1.0");
+      fs.writeFileSync(versionPath, "v0.2.0");
+      mockBinaryVersion("hledger-lsp 0.1.0");
 
       const mockFetch = vi.fn().mockResolvedValue({
         ok: true,
@@ -560,7 +614,8 @@ describe("BinaryManager", () => {
 
     it("returns false when installed version is current", async () => {
       const versionPath = path.join(tempDir, "version.txt");
-      fs.writeFileSync(versionPath, "v0.2.0");
+      fs.writeFileSync(versionPath, "v0.1.0");
+      mockBinaryVersion("hledger-lsp 0.2.0");
 
       const mockFetch = vi.fn().mockResolvedValue({
         ok: true,
@@ -579,6 +634,53 @@ describe("BinaryManager", () => {
   });
 
   describe("download", () => {
+    it("preserves the installed version after a failed binary replacement and allows retry", async () => {
+      const platform = getPlatformInfo("win32", "x64");
+      const binaryContent = Buffer.alloc(2048, "x");
+      const mockFetch = vi.fn(async (url: string) => {
+        if (url.includes("api.github.com")) {
+          return Response.json(await makeGitHubReleaseMock(platform.assetSuffix).json());
+        }
+        if (url.endsWith("checksums.txt")) {
+          return new Response(`${computeSha256(binaryContent)}  hledger-lsp_${platform.assetSuffix}\n`);
+        }
+        if (url.endsWith(".minisig")) {
+          return new Response("test signature");
+        }
+        return new Response(binaryContent.toString("utf8"));
+      });
+      manager = new BinaryManager(tempDir, mockFetch, platform);
+      const binaryPath = manager.getBinaryPath();
+      const versionPath = path.join(tempDir, "version.txt");
+      fs.writeFileSync(binaryPath, "old server");
+      fs.writeFileSync(versionPath, "v0.0.1");
+      mockBinaryVersion("hledger-lsp 0.0.1");
+
+      const rename = fs.promises.rename;
+      const lockedBinary = Object.assign(new Error("executable is locked"), { code: "EPERM" });
+      const renameSpy = vi.spyOn(fs.promises, "rename").mockImplementation(async (source, destination) => {
+        if (destination === binaryPath) {
+          throw lockedBinary;
+        }
+        await rename(source, destination);
+      });
+
+      await expect(manager.download()).rejects.toThrow(lockedBinary);
+
+      expect(fs.readFileSync(binaryPath, "utf8")).toBe("old server");
+      expect(fs.readFileSync(versionPath, "utf8")).toBe("v0.0.1");
+      expect(fs.readdirSync(tempDir).sort()).toEqual(["hledger-lsp.exe", "version.txt"]);
+      expect(await manager.needsUpdate()).toBe(true);
+
+      renameSpy.mockRestore();
+      await manager.download();
+      mockBinaryVersion("hledger-lsp 0.1.0");
+
+      expect(fs.readFileSync(binaryPath)).toEqual(binaryContent);
+      expect(fs.readFileSync(versionPath, "utf8")).toBe("v0.1.0");
+      expect(await manager.needsUpdate()).toBe(false);
+    });
+
     it("downloads binary and saves version", async () => {
       const binaryContent = Buffer.alloc(2048, "x");
       const assetSuffix = getPlatformInfo(os.platform(), os.arch()).assetSuffix;
@@ -638,7 +740,8 @@ describe("BinaryManager", () => {
       await manager.download();
 
       expect(await manager.isInstalled()).toBe(true);
-      expect(await manager.getInstalledVersion()).toBe("v0.1.0");
+      expect(fs.readFileSync(manager.getBinaryPath())).toEqual(binaryContent);
+      expect(fs.readFileSync(path.join(tempDir, "version.txt"), "utf8")).toBe("v0.1.0");
     });
 
     it("throws when no matching asset found", async () => {
@@ -1262,7 +1365,8 @@ describe("BinaryManager", () => {
       await manager.download();
 
       expect(await manager.isInstalled()).toBe(true);
-      expect(await manager.getInstalledVersion()).toBe("v0.1.0");
+      expect(fs.readFileSync(manager.getBinaryPath())).toEqual(binaryContent);
+      expect(fs.readFileSync(path.join(tempDir, "version.txt"), "utf8")).toBe("v0.1.0");
     });
 
     it("detects stall and retries download", async () => {
