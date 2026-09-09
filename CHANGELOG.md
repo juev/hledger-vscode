@@ -1,5 +1,17 @@
 # Change Log
 
+## [0.5.45] - 2026-09-09
+
+### Other
+- chore(deps-dev): bump vitest from 4.1.11 to 5.0.0
+- chore(deps-dev): bump @vitest/coverage-v8 from 4.1.11 to 5.0.0
+- chore(deps): bump js-yaml from 4.3.1 to 4.3.2 (#299)
+- chore(deps-dev): bump @typescript-eslint/eslint-plugin (#298)
+- chore(deps): bump undici from 8.10.0 to 8.10.2 (#297)
+- chore(deps-dev): bump @types/node from 26.4.0 to 26.4.1 (#295)
+- chore(deps): bump fast-uri from 3.1.5 to 3.1.7
+
+
 ## [0.5.44] - 2026-09-02
 
 ### Other
