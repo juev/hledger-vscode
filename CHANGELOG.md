@@ -1,5 +1,11 @@
 # Change Log
 
+## [0.5.46] - 2026-09-09
+
+### Fixed
+- fix(lsp): recover from stale binary version metadata (#300)
+
+
 ## [0.5.45] - 2026-09-09
 
 ### Other
