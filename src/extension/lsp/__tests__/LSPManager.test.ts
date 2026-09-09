@@ -104,14 +104,30 @@ describe("LSPManager", () => {
       expect(version).toBeNull();
     });
 
-    it("returns version from version file", async () => {
+    it("returns null when only version metadata remains", async () => {
       fs.writeFileSync(path.join(tempDir, "version.txt"), "v0.1.0");
 
       const manager = new LSPManager(mockContext);
 
       const version = await manager.getVersion();
 
-      expect(version).toBe("v0.1.0");
+      expect(version).toBeNull();
+    });
+  });
+
+  describe("checkForUpdates", () => {
+    it("offers an update when the binary is older than its recorded version", async () => {
+      fs.writeFileSync(path.join(tempDir, "version.txt"), "v0.2.56");
+      vi.spyOn(BinaryManager.prototype, "getInstalledVersion").mockResolvedValue("v0.2.49");
+      vi.spyOn(BinaryManager.prototype, "getLatestRelease").mockResolvedValue({ version: "v0.2.56", assets: [] });
+      const manager = new LSPManager(mockContext);
+
+      expect(await manager.getVersion()).toBe("v0.2.49");
+      expect(await manager.checkForUpdates()).toEqual({
+        hasUpdate: true,
+        currentVersion: "v0.2.49",
+        latestVersion: "v0.2.56",
+      });
     });
   });
 

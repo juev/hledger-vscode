@@ -1,3 +1,4 @@
+import { execFile } from "child_process";
 import * as crypto from "crypto";
 import * as fs from "fs";
 import * as os from "os";
@@ -15,6 +16,8 @@ const GITHUB_REPO = "juev/hledger-lsp";
 const GITHUB_API_URL = `https://api.github.com/repos/${GITHUB_REPO}/releases/latest`;
 const MAX_BINARY_SIZE = 50 * 1024 * 1024;
 const MIN_BINARY_SIZE = 1024;
+const VERSION_TIMEOUT_MS = 5_000;
+const MAX_VERSION_OUTPUT_SIZE = 64 * 1024;
 
 const API_TIMEOUT_MS = 30_000;
 const DOWNLOAD_TIMEOUT_MS = 300_000;
@@ -364,12 +367,31 @@ export class BinaryManager {
   }
 
   async getInstalledVersion(): Promise<string | null> {
-    try {
-      const version = await fs.promises.readFile(this.getVersionPath(), "utf-8");
-      return version.trim();
-    } catch {
-      return null;
-    }
+    // A previous failed installation may have updated version.txt while leaving
+    // the old executable in place. Only the executable can identify its version.
+    return new Promise((resolve) => {
+      execFile(
+        this.getBinaryPath(),
+        ["--version"],
+        {
+          encoding: "utf8",
+          timeout: VERSION_TIMEOUT_MS,
+          maxBuffer: MAX_VERSION_OUTPUT_SIZE,
+          windowsHide: true,
+          shell: false,
+        },
+        (error, stdout) => {
+          if (error) {
+            resolve(null);
+            return;
+          }
+          const version = stdout.trim().match(
+            /^hledger-lsp v?(\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?(?:\+[0-9A-Za-z.-]+)?)(?:\s|$)/,
+          )?.[1];
+          resolve(version ? `v${version}` : null);
+        },
+      );
+    });
   }
 
   async getLatestRelease(): Promise<ReleaseInfo> {
@@ -589,9 +611,10 @@ export class BinaryManager {
       // the executable before the atomic replacement.
       await beforeInstall?.();
 
-      // Atomic rename: version file first, then binary (safer to have missing version than missing binary)
-      await fs.promises.rename(tempVersionPath, versionPath);
+      // Record the release only after its executable has replaced the old one.
+      // A locked Windows executable must not leave behind newer version metadata.
       await fs.promises.rename(tempBinaryPath, binaryPath);
+      await fs.promises.rename(tempVersionPath, versionPath);
     } catch (error) {
       // Cleanup temp files on error
       try {
