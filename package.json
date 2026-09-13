@@ -540,10 +540,21 @@
     ],
     "keybindings": [
       {
+        "command": "hledger.completion.trigger",
+        "key": "ctrl+space",
+        "mac": "ctrl+space",
+        "when": "editorTextFocus && editorLangId == hledger && !suggestWidgetVisible && hledger.completion.accountContext && config.hledger.keybindings.expandAccountCompletion"
+      },
+      {
         "command": "hledger.completion.showAllAccounts",
         "key": "ctrl+space",
         "mac": "ctrl+space",
         "when": "editorTextFocus && editorLangId == hledger && suggestWidgetVisible && hledger.completion.accountContext && config.hledger.keybindings.expandAccountCompletion"
+      },
+      {
+        "command": "hledger.completion.hide",
+        "key": "escape",
+        "when": "editorTextFocus && editorLangId == hledger && suggestWidgetVisible && hledger.completion.accountContext"
       },
       {
         "command": "acceptSelectedSuggestion",

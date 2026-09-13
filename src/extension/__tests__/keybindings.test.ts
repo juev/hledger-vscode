@@ -59,6 +59,22 @@ describe('keybinding contributions', () => {
     expect(pkg.contributes?.configuration?.properties?.['hledger.keybindings.expandAccountCompletion']?.default).toBe(true);
   });
 
+  it('resets account scope on Ctrl+Space with a closed list and Escape with an open list', () => {
+    const trigger = getKeybinding('hledger.completion.trigger');
+    expect(trigger?.key).toBe('ctrl+space');
+    expect(trigger?.when).toContain('!suggestWidgetVisible');
+    expect(trigger?.when).toContain('config.hledger.keybindings.expandAccountCompletion');
+    const hide = getKeybinding('hledger.completion.hide');
+    expect(hide?.key).toBe('escape');
+    expect(hide?.when).toContain('suggestWidgetVisible');
+    expect(hide?.when).not.toContain('!suggestWidgetVisible');
+    for (const binding of [trigger, hide]) {
+      expect(binding?.when).toContain('editorTextFocus');
+      expect(binding?.when).toContain('editorLangId == hledger');
+      expect(binding?.when).toContain('hledger.completion.accountContext');
+    }
+  });
+
   it('commits a visible inline suggestion with Tab and aligns otherwise', () => {
     const commitKeybinding = getKeybinding(
       'editor.action.inlineSuggest.commit'

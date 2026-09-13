@@ -4,6 +4,8 @@ import type { CompletionList as ProtocolCompletionList, Range as ProtocolRange }
 
 export const SHOW_ALL_ACCOUNTS = "hledger.completion.showAllAccounts";
 const ACCEPT_ACCOUNT = "hledger.completion.acceptAccount";
+const TRIGGER_SUGGESTIONS = "hledger.completion.trigger";
+const HIDE_SUGGESTIONS = "hledger.completion.hide";
 const ACCOUNT_CONTEXT = "hledger.completion.accountContext";
 
 interface ScopedCompletionResult {
@@ -34,7 +36,7 @@ function supportsAccountScope(client: LanguageClient): boolean {
     (capability as Record<string, unknown>)["accountScope"] === true;
 }
 
-/** Keeps the expanded scope for one account input, independently of widget visibility. */
+/** Keeps scope while editing an account and resets it on explicit open/dismiss actions. */
 export class AccountCompletionController implements vscode.Disposable {
   private readonly subscriptions: vscode.Disposable[] = [];
   private readonly statusBar = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, 98);
@@ -57,6 +59,14 @@ export class AccountCompletionController implements vscode.Disposable {
             !this.input.range.contains(event.selections[0].active))) {
           this.reset();
         }
+      }),
+      vscode.commands.registerCommand(TRIGGER_SUGGESTIONS, async () => {
+        this.reset();
+        await vscode.commands.executeCommand("editor.action.triggerSuggest");
+      }),
+      vscode.commands.registerCommand(HIDE_SUGGESTIONS, async () => {
+        this.reset();
+        await vscode.commands.executeCommand("hideSuggestWidget");
       }),
       vscode.commands.registerCommand(ACCEPT_ACCOUNT, async (original?: vscode.Command) => {
         this.reset();
@@ -207,7 +217,7 @@ export class AccountCompletionController implements vscode.Disposable {
     if (this.input) {
       this.statusBar.text = this.input.scope === "all" ? "Accounts: all" : "Accounts: nonzero";
       this.statusBar.tooltip = this.input.scope === "all"
-        ? "All matching accounts, including zero balances. This mode lasts while you edit this account name."
+        ? "All matching accounts, including zero balances. Escape closes suggestions and resets to nonzero accounts."
         : "Show all account suggestions, including zero balances and unused declared accounts.";
       this.statusBar.show();
     } else {

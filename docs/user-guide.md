@@ -140,10 +140,12 @@ Palette or click **Accounts: nonzero** in the status bar. These actions work
 when the initial list is empty. Assign another shortcut to
 `hledger.completion.showAllAccounts` if Ctrl+Space conflicts with another app.
 
-The full mode lasts while you edit the current account name, including `:`,
-Backspace, and closing and reopening suggestions with Escape. Accepting a
-suggestion, moving to the amount, leaving the account name, or switching editors
-resets it. **Tab** and **Enter** still accept the selected suggestion.
+Each Ctrl+Space invocation with the list closed starts with nonzero accounts.
+Press Ctrl+Space again in the open list to show all accounts. **Escape** closes
+the list and resets the scope, so the next invocation starts a new short/full
+cycle. Typing and Backspace within the open list keep the current scope.
+Accepting a suggestion, moving to the amount, leaving the account name, or
+switching editors also resets it. **Tab** and **Enter** accept the selection.
 
 Set `hledger.keybindings.expandAccountCompletion` to `false` to restore
 Ctrl+Space's usual suggestion details action. Details also remain available
@@ -1230,6 +1232,7 @@ All commands accessible via Command Palette (`Ctrl+Shift+P` or `Cmd+Shift+P`):
 | `Cmd+K 2` / `Ctrl+K 2` | Set status to cleared (*) | In hledger files |
 | `Ctrl+Space` | Open completion | When completion widget is closed |
 | `Ctrl+Space` again | Show all matching accounts | In account suggestions, with the expansion binding enabled |
+| `Escape` | Close suggestions and reset to nonzero accounts | In account suggestions |
 
 **On-type formatting** (Enter/Tab) is handled by the Language Server when `editor.formatOnType` is enabled.
 

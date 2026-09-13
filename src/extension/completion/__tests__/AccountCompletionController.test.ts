@@ -12,6 +12,8 @@ describe("AccountCompletionController", () => {
   let changeSelection: (event: vscode.TextEditorSelectionChangeEvent) => void;
   let changeEditor: (editor: vscode.TextEditor | undefined) => void;
   let accept: (original?: vscode.Command) => Promise<void>;
+  let trigger: () => Promise<void>;
+  let hide: () => Promise<void>;
   let sendRequest: ReturnType<typeof vi.fn>;
   let client: LanguageClient;
   const context = { triggerKind: vscode.CompletionTriggerKind.Invoke, triggerCharacter: undefined };
@@ -71,6 +73,8 @@ describe("AccountCompletionController", () => {
     });
     vi.mocked(vscode.commands.registerCommand).mockImplementation((name, callback) => {
       if (name === "hledger.completion.acceptAccount") { accept = callback; }
+      if (name === "hledger.completion.trigger") { trigger = callback; }
+      if (name === "hledger.completion.hide") { hide = callback; }
       return { dispose: vi.fn() };
     });
     vi.mocked(vscode.commands.executeCommand).mockResolvedValue(undefined);
@@ -111,9 +115,49 @@ describe("AccountCompletionController", () => {
     expect(result).toMatchObject({ items: [{ label: "assets:active" }, { label: "assets:zero" }, { label: "assets:unused" }] });
     expect(sendRequest).toHaveBeenCalledTimes(2);
     expect(text).toBe("    assets:");
-    // Escape has no public event. A subsequent invocation belongs to the same input.
+    // Recomputing an open list keeps its scope.
     await provide();
     expect(lastScope()).toBe("all");
+  });
+
+  it("starts a fresh short/full cycle after Escape closes suggestions", async () => {
+    for (let cycle = 0; cycle < 2; cycle++) {
+      await provide();
+      expect(lastScope()).toBe("nonzero");
+      await controller.showAll();
+      await provide();
+      expect(lastScope()).toBe("all");
+      await hide();
+      expect(vscode.commands.executeCommand).toHaveBeenLastCalledWith("hideSuggestWidget");
+    }
+    await provide();
+    expect(lastScope()).toBe("nonzero");
+    expect(text).toBe("    assets:");
+  });
+
+  it("starts with nonzero accounts when manually reopening a closed list", async () => {
+    await controller.showAll();
+    // The closed-widget binding must discard even a prepared full response.
+    await trigger();
+    expect(vscode.commands.executeCommand).toHaveBeenLastCalledWith("editor.action.triggerSuggest");
+    await provide();
+    expect(lastScope()).toBe("nonzero");
+    expect(text).toBe("    assets:");
+  });
+
+  it("does not reopen suggestions when Escape cancels a pending expansion", async () => {
+    await provide();
+    let resolve!: (value: ReturnType<typeof response>) => void;
+    sendRequest.mockReturnValueOnce(new Promise(done => { resolve = done; }));
+    const pending = controller.showAll();
+    const requestToken = sendRequest.mock.calls[sendRequest.mock.calls.length - 1]?.[2] as vscode.CancellationToken;
+    await hide();
+    expect(requestToken.isCancellationRequested).toBe(true);
+    resolve(response(["assets:active", "assets:unused"]));
+    await pending;
+    expect(vscode.commands.executeCommand).not.toHaveBeenCalledWith("editor.action.triggerSuggest");
+    await provide();
+    expect(lastScope()).toBe("nonzero");
   });
 
   it("keeps all accounts while typing colons, Unicode, single spaces and Backspace", async () => {
