@@ -34,6 +34,9 @@ jobs:
     - name: Type-check sources
       run: npm run typecheck
 
+    - name: Test publishing checks
+      run: node --test .github/scripts/check-ovsx-token.test.mjs
+
     - name: Run lint
       run: npm run lint
 

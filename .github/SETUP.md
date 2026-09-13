@@ -1,93 +1,84 @@
 # GitHub Actions Setup
 
-This repository uses GitHub Actions for automated building and publishing of the VS Code extension.
+Release tags publish the extension to Visual Studio Marketplace using Microsoft Entra ID and, when configured, to Open VSX using a personal access token. The workflow also uploads the packaged `.vsix` to GitHub Releases.
 
-## Required Secrets
+## Marketplace authentication
 
-To enable automatic publishing to the Visual Studio Marketplace and Open VSX Registry, add the following secrets in your GitHub repository:
+Create a GitHub environment named `marketplace`. Allow the `main` branch for credential checks and tags matching `v*` for releases. Add these environment variables:
 
-### 1. VSCE_PAT (Visual Studio Code Extension Personal Access Token)
+| Variable | Value |
+| --- | --- |
+| `AZURE_CLIENT_ID` | Application (client) ID of the publishing app |
+| `AZURE_TENANT_ID` | Directory (tenant) ID of the publishing app |
 
-1. Go to https://dev.azure.com/
-2. Create a new organization (if you don't have one)
-3. Go to User Settings → Personal Access Tokens
-4. Create a new token with the following scopes:
-   - **Marketplace**: `manage`
-5. Add this token as a secret named `VSCE_PAT` in your GitHub repository settings
+Configure the app once:
 
-### 2. OVSX_PAT (Open VSX Registry Personal Access Token)
+1. Create a single-tenant app registration and service principal in Microsoft Entra ID.
+2. Add a federated credential with issuer `https://token.actions.githubusercontent.com`, audience `api://AzureADTokenExchange`, and subject `repo:juev/hledger-vscode:environment:marketplace`.
+3. Add the service principal to an Azure DevOps organization connected to the same Entra tenant. Use the service principal object ID, which differs from the app registration object ID and the client ID.
+4. Authenticate as the app and retrieve its Azure DevOps profile ID. The **Publishing credentials** workflow prints this ID in the **Show Marketplace profile identity** step. Run it on `main` after configuring the environment and federation; the subsequent publisher-access check is expected to fail until step 5 is complete. The equivalent command in an app-authenticated session is:
+   ```bash
+   az rest --url https://app.vssps.visualstudio.com/_apis/profile/profiles/me \
+     --resource 499b84ac-1321-427f-aa17-267ca6975798 --query id --output tsv
+   ```
+5. In the existing Marketplace publisher `evsyukov`, add that profile ID as a member with the **Contributor** role, then rerun **Publishing credentials**. Use the Profile API result rather than the service principal entitlement ID returned by the organization API.
 
-Required if you want to publish to Open VSX (used by VSCodium and other editors).
+The workflows use `azure/login` with `allow-no-subscriptions: true`, followed by `vsce --azure-credential`. They obtain credentials through GitHub OIDC. This app-registration setup does not require an Azure subscription or a client secret.
 
-1. Go to https://open-vsx.org/
-2. Sign in with your GitHub account
-3. Go to your profile → Access Tokens
-4. Create a new token
-5. Add this token as a secret named `OVSX_PAT` in your GitHub repository settings
+Keep the existing `VSCE_PAT` during migration. Remove the GitHub secret and revoke the old PAT only after a release succeeds with Entra authentication. The new workflows do not pass that PAT to `vsce`.
 
-## Open VSX Namespace Configuration
+References: [Entra federation for GitHub Actions](https://learn.microsoft.com/en-us/entra/workload-id/workload-identity-federation-create-trust), [Azure DevOps identity registration](https://learn.microsoft.com/en-us/azure/devops/integrate/get-started/authentication/service-principal-managed-identity), [Marketplace publishing](https://code.visualstudio.com/api/working-with-extensions/publishing-extension#secure-automated-publishing-to-visual-studio-marketplace).
 
-Before publishing to Open VSX, make sure the following is set up:
-- The `publisher` in `package.json` matches an existing Open VSX namespace you own or maintain (current value: `evsyukov`).
-- If the namespace does not exist, create/claim it from your Open VSX profile (Profile → Namespaces) and add maintainers as needed.
-- For organization namespaces, verify the GitHub organization in Open VSX and ensure the publishing user is a maintainer.
-- You can verify your namespace at: https://open-vsx.org/namespace/evsyukov
+## Open VSX authentication
 
-## Workflows
+Open VSX publication is optional. To enable it:
 
-### CI Workflow (`ci.yml`)
-- **Trigger**: Every push and pull request to any branch
-- **Actions**:
-  - Installs dependencies
-  - Compiles TypeScript
-  - Runs tests
-  - Packages the extension
-  - Uploads VSIX artifact
+1. Sign in to [Open VSX](https://open-vsx.org/) and create a personal access token under Settings → Access Tokens.
+2. Save it as the repository secret `OVSX_PAT`.
+3. Set the repository variable `OVSX_PAT_EXPIRES_AT` to the expiration date shown by Open VSX, in `YYYY-MM-DD` format (UTC). Use `never` only when Open VSX explicitly shows **Expires: never**.
+4. Ensure the publishing account owns or maintains the namespace [evsyukov](https://open-vsx.org/namespace/evsyukov), matching `publisher` in `package.json`.
 
-### Release Workflow (`release.yml`)
-- **Trigger**: When a tag starting with 'v' is pushed (e.g., `v1.0.0`)
-- **Actions**:
-  - Runs full CI pipeline
-  - Updates package.json version from tag
-  - Publishes to Visual Studio Marketplace
-  - Publishes to Open VSX Registry (optional)
-  - Creates GitHub Release
-  - Uploads VSIX as release asset
+When replacing a token, update both `OVSX_PAT` and `OVSX_PAT_EXPIRES_AT`. GitHub's secret update timestamp is not the token's expiration date.
 
-## Publishing a Release
+## Credential checks
 
-To publish a new version:
+The **Publishing credentials** workflow runs daily at 08:17 UTC and can also be run manually on `main` from the Actions page. It does not publish an extension.
 
-1. Ensure the main branch is green (CI passing).
-2. Create and push a semantic version tag (the workflow will update package.json and CHANGELOG.md automatically):
+- The Marketplace job checks GitHub OIDC login and publisher membership using `vsce verify-pat evsyukov --azure-credential`. Membership verification also accepts a Reader role, so it does not replace checking the app's Contributor assignment or validating an actual release.
+- The Open VSX job calls the registry's namespace token-verification API. It fails for invalid tokens, missing permissions, failed requests, or missing expiration metadata. For dated tokens it also fails starting 14 days before expiration; the recorded date is treated as midnight UTC. Tokens marked `never` still undergo API validation. If `OVSX_PAT` is absent, this optional check is skipped.
+
+Enable email notifications for failed GitHub Actions workflows in your GitHub notification settings. Check that the scheduled workflow remains enabled: GitHub can disable scheduled workflows in public repositories after 60 days without repository activity.
+
+Run the helper's tests locally with:
+
+```bash
+node --test .github/scripts/check-ovsx-token.test.mjs
+```
+
+## Publishing a release
+
+1. Ensure `main` passes CI and the Publishing credentials workflow passes.
+2. Create and push a semantic version tag:
    ```bash
    git tag v1.0.0
    git push origin v1.0.0
    ```
-3. Wait for the Release workflow to complete. It will:
-   - Publish to Visual Studio Marketplace (requires `VSCE_PAT`)
-   - Publish to Open VSX (requires `OVSX_PAT`)
-   - Create a GitHub Release and upload the packaged `.vsix`
-4. Verify the listings:
-   - Marketplace: https://marketplace.visualstudio.com/items?itemName=evsyukov.hledger
-   - Open VSX: https://open-vsx.org/extension/evsyukov/hledger
+3. The Release workflow checks source types, runs tests, updates the package version and changelog, packages the extension, publishes to both configured registries, and creates a GitHub Release with the `.vsix` asset.
+4. Verify the new version in [Marketplace](https://marketplace.visualstudio.com/items?itemName=evsyukov.hledger), [Open VSX](https://open-vsx.org/extension/evsyukov/hledger), and GitHub Releases.
 
-## Manual Publishing (optional)
+CI runs source and test type checks, lint, publishing-helper tests, extension tests with coverage, and VSIX packaging. A registry failure in the Release workflow currently prevents the later publication steps from running.
 
-You can also publish locally if needed:
+## Manual publishing
 
-- Visual Studio Marketplace:
-  ```bash
-  npx vsce publish -p "$VSCE_PAT"
-  ```
-- Open VSX:
-  ```bash
-  npx ovsx publish -p "$OVSX_PAT"
-  ```
+For Marketplace, sign in to Azure CLI as an identity with publishing rights, then run:
 
-## Publisher Setup
+```bash
+env -u VSCE_PAT npx vsce verify-pat evsyukov --azure-credential
+env -u VSCE_PAT npx vsce publish --azure-credential
+```
 
-Make sure your `package.json` has a valid `publisher` that:
-- Exists as a Publisher in the Visual Studio Marketplace.
-- Exists as a Namespace in Open VSX (or is claimed by you).
-Both listings must use the same `publisher` value for automated publishing to succeed.
+For Open VSX, supply the token through the environment:
+
+```bash
+npx ovsx publish -p "$OVSX_PAT"
+```

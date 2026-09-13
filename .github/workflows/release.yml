@@ -8,6 +8,10 @@ on:
 jobs:
   publish:
     runs-on: ubuntu-latest
+    environment: marketplace
+    permissions:
+      contents: write
+      id-token: write
     env:
       OVSX_PAT: ${{ secrets.OVSX_PAT }}
 
@@ -43,7 +47,7 @@ jobs:
             echo "Error: Version '$VERSION' is not in semantic version format (x.y.z)"
             exit 1
           fi
-          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
           echo "Extracted version: $VERSION"
 
       - name: Update package.json version
@@ -60,16 +64,21 @@ jobs:
       - name: Package extension
         run: npx vsce package
 
+      - name: Sign in to Microsoft Entra ID
+        uses: azure/login@v3
+        with:
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          allow-no-subscriptions: true
+
       # Retry transient Marketplace failures (e.g. "Request timeout" from the
       # gallery API, which has flaked before). If a prior attempt actually
       # registered the version, the next one reports "already exists" — treat
       # that as success rather than failing the release.
       - name: Publish to Visual Studio Marketplace
-        env:
-          VSCE_PAT: ${{ secrets.VSCE_PAT }}
         run: |
           for attempt in 1 2 3; do
-            out=$(npx vsce publish --packagePath *.vsix -p "$VSCE_PAT" 2>&1) && status=0 || status=$?
+            out=$(npx vsce publish --packagePath ./*.vsix --azure-credential 2>&1) && status=0 || status=$?
             echo "$out"
             if [ "$status" -eq 0 ]; then
               echo "Published to Marketplace on attempt $attempt"
@@ -89,7 +98,7 @@ jobs:
         if: ${{ env.OVSX_PAT != '' }}
         run: |
           for attempt in 1 2 3; do
-            out=$(npx ovsx publish *.vsix 2>&1) && status=0 || status=$?
+            out=$(npx ovsx publish ./*.vsix 2>&1) && status=0 || status=$?
             echo "$out"
             if [ "$status" -eq 0 ]; then
               echo "Published to Open VSX on attempt $attempt"
@@ -113,9 +122,11 @@ jobs:
           # Generate release notes
           RELEASE_NOTES=$(node .github/scripts/generate-release-notes.js)
           # Handle multiline output for GitHub Actions
-          echo "release_notes<<EOF" >> $GITHUB_OUTPUT
-          echo "$RELEASE_NOTES" >> $GITHUB_OUTPUT
-          echo "EOF" >> $GITHUB_OUTPUT
+          {
+            echo "release_notes<<EOF"
+            echo "$RELEASE_NOTES"
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
         env:
           GITHUB_REF_NAME: ${{ github.ref_name }}
           GITHUB_REPOSITORY: ${{ github.repository }}

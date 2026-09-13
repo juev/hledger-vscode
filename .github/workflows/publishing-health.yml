@@ -1,0 +1,54 @@
+name: Publishing credentials
+
+on:
+  schedule:
+    - cron: "17 8 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  marketplace:
+    name: Marketplace identity
+    runs-on: ubuntu-latest
+    environment: marketplace
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Sign in to Microsoft Entra ID
+        uses: azure/login@v3
+        with:
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          allow-no-subscriptions: true
+      - name: Show Marketplace profile identity
+        run: >-
+          az rest
+          --url 'https://app.vssps.visualstudio.com/_apis/profile/profiles/me?api-version=7.1-preview.3'
+          --resource 499b84ac-1321-427f-aa17-267ca6975798
+          --query '{id:id,displayName:displayName}'
+          --output json
+      - name: Check publisher access
+        run: npx vsce verify-pat evsyukov --azure-credential
+
+  open-vsx:
+    name: Open VSX token
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+      - name: Check token validity and expiration
+        run: node .github/scripts/check-ovsx-token.mjs
+        env:
+          OVSX_PAT: ${{ secrets.OVSX_PAT }}
+          OVSX_PAT_EXPIRES_AT: ${{ vars.OVSX_PAT_EXPIRES_AT }}
