@@ -1,5 +1,12 @@
 # Change Log
 
+## [0.5.47] - 2026-09-13
+
+### Added
+- feat(completion): expand account suggestions on repeated Ctrl+Space (#302)
+- feat(completion): expand account suggestions on repeated Ctrl+Space (#302)
+
+
 ## [0.5.46] - 2026-09-09
 
 ### Fixed
