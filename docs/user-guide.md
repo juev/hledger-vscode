@@ -129,6 +129,28 @@ The extension provides context-aware completions that activate automatically as 
 
 **Trigger**: Type on an indented line (posting context) or type `:` anywhere
 
+The initial list shows accounts with a nonzero balance in at least one commodity.
+Balances include loaded journal files and exclude the transaction being edited.
+To include zero-balance and unused declared accounts, press **Ctrl+Space** while
+account suggestions are open (Control, also on macOS). Nonzero accounts stay
+first; the full account list is not capped by `hledger.completion.maxResults`.
+
+You can also run **HLedger: Show All Account Suggestions** from the Command
+Palette or click **Accounts: nonzero** in the status bar. These actions work
+when the initial list is empty. Assign another shortcut to
+`hledger.completion.showAllAccounts` if Ctrl+Space conflicts with another app.
+
+The full mode lasts while you edit the current account name, including `:`,
+Backspace, and closing and reopening suggestions with Escape. Accepting a
+suggestion, moving to the amount, leaving the account name, or switching editors
+resets it. **Tab** and **Enter** still accept the selected suggestion.
+
+Set `hledger.keybindings.expandAccountCompletion` to `false` to restore
+Ctrl+Space's usual suggestion details action. Details also remain available
+with Ctrl+I (Cmd+I on macOS). Full account suggestions require an LSP that
+supports account scopes; an older server keeps standard completion and shows
+an update message when you invoke the new command.
+
 **Features**:
 - **Frequency-based sorting**: Most-used accounts appear first
 - **Hierarchical navigation**: Type `:` to drill into sub-accounts
@@ -950,8 +972,9 @@ Control which Language Server features are enabled:
 | `hledger.completion.snippets` | boolean | `true` | Enable snippet completions for payees |
 | `hledger.completion.fuzzyMatching` | boolean | `true` | Enable fuzzy matching |
 | `hledger.completion.showCounts` | boolean | `true` | Show usage counts in completions |
-| `hledger.completion.maxResults` | number | `50` | Maximum number of completion items (5-200) |
+| `hledger.completion.maxResults` | number | `50` | Maximum number of completion items (5-200); explicit full account suggestions bypass this limit |
 | `hledger.completion.includeNotes` | boolean | `true` | Include notes in payee completions |
+| `hledger.keybindings.expandAccountCompletion` | boolean | `true` | Use Ctrl+Space in account suggestions to include zero-balance accounts |
 
 ### LSP Diagnostics Settings
 
@@ -1128,7 +1151,7 @@ The `amountAlignmentTarget` setting applies to postings that carry cost notation
 | `hledger.completion.snippets` | boolean | `true` | Enable snippet completions for payees |
 | `hledger.completion.fuzzyMatching` | boolean | `true` | Enable fuzzy matching |
 | `hledger.completion.showCounts` | boolean | `true` | Show usage counts in completions |
-| `hledger.completion.maxResults` | number | `50` | Maximum number of completion items (5-200) |
+| `hledger.completion.maxResults` | number | `50` | Maximum number of completion items (5-200); explicit full account suggestions bypass this limit |
 | `hledger.completion.includeNotes` | boolean | `true` | Include notes in payee completions |
 
 ### LSP Diagnostics Settings
@@ -1179,6 +1202,7 @@ All commands accessible via Command Palette (`Ctrl+Shift+P` or `Cmd+Shift+P`):
 | `hledger.lsp.update` | HLedger: Install/Update Language Server | Install or update LSP binary |
 | `hledger.lsp.showVersion` | HLedger: Show Language Server Version | Show LSP version info |
 | `hledger.lsp.restart` | HLedger: Restart Language Server | Restart the LSP server |
+| `hledger.completion.showAllAccounts` | HLedger: Show All Account Suggestions | Include zero-balance and unused declared accounts for the current account name |
 | `hledger.editor.alignAmount` | HLedger: Align Amount to Column | Align amount at cursor via LSP |
 | `hledger.editor.insertInferredAmount` | HLedger: Insert Inferred Amount | Write the inferred balancing amount at the amount column |
 | `hledger.editor.cycleStatus` | HLedger: Cycle Transaction/Posting Status | Cycle status: unmarked → ! → * → unmarked |
@@ -1196,6 +1220,7 @@ All commands accessible via Command Palette (`Ctrl+Shift+P` or `Cmd+Shift+P`):
 | Key | Action | Condition |
 |-----|--------|-----------|
 | `Enter` | Accept completion | When completion widget is visible |
+| `Tab` | Accept completion | When completion widget is visible |
 | `Enter` | Accept inline suggestion | When ghost text is visible |
 | `Tab` | Align amount to column | When no suggestions/snippets active |
 | `Cmd+K =` / `Ctrl+K =` | Insert inferred amount | On a posting hledger can infer an amount for |
@@ -1203,7 +1228,8 @@ All commands accessible via Command Palette (`Ctrl+Shift+P` or `Cmd+Shift+P`):
 | `Cmd+K 0` / `Ctrl+K 0` | Set status to unmarked | In hledger files |
 | `Cmd+K 1` / `Ctrl+K 1` | Set status to pending (!) | In hledger files |
 | `Cmd+K 2` / `Ctrl+K 2` | Set status to cleared (*) | In hledger files |
-| `Ctrl+Space` | Manual completion trigger | Always |
+| `Ctrl+Space` | Open completion | When completion widget is closed |
+| `Ctrl+Space` again | Show all matching accounts | In account suggestions, with the expansion binding enabled |
 
 **On-type formatting** (Enter/Tab) is handled by the Language Server when `editor.formatOnType` is enabled.
 

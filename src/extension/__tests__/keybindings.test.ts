@@ -48,6 +48,17 @@ describe('keybinding contributions', () => {
     expect(enterKeybinding?.when).not.toContain('!inlineSuggestionVisible');
   });
 
+  it('expands accounts only in an open account list and allows disabling the binding', () => {
+    const binding = getKeybinding('hledger.completion.showAllAccounts');
+    expect(binding?.key).toBe('ctrl+space');
+    expect(binding?.when).toContain('editorTextFocus');
+    expect(binding?.when).toContain('editorLangId == hledger');
+    expect(binding?.when).toContain('suggestWidgetVisible');
+    expect(binding?.when).toContain('hledger.completion.accountContext');
+    expect(binding?.when).toContain('config.hledger.keybindings.expandAccountCompletion');
+    expect(pkg.contributes?.configuration?.properties?.['hledger.keybindings.expandAccountCompletion']?.default).toBe(true);
+  });
+
   it('commits a visible inline suggestion with Tab and aligns otherwise', () => {
     const commitKeybinding = getKeybinding(
       'editor.action.inlineSuggest.commit'

@@ -15,6 +15,7 @@ import { KeybindingHintsStatusBar } from "./KeybindingHintsStatusBar";
 import { Logger } from "./Logger";
 import { LSPStatusBar } from "./lsp/LSPStatusBar";
 import { formatErrorWithContext } from "./ErrorContext";
+import { SHOW_ALL_ACCOUNTS } from "./completion/AccountCompletionController";
 
 export function activate(context: vscode.ExtensionContext): void {
   try {
@@ -228,6 +229,17 @@ export function activate(context: vscode.ExtensionContext): void {
         "hledger.editor.enterAndSuggest",
         enterAndSuggest,
       ),
+    );
+
+    context.subscriptions.push(
+      vscode.commands.registerCommand(SHOW_ALL_ACCOUNTS, async () => {
+        const client = lspManager.getClient();
+        if (client?.isReady()) {
+          await client.showAllAccountSuggestions();
+        } else {
+          await vscode.window.showInformationMessage("Start the HLedger Language Server to show account suggestions.");
+        }
+      }),
     );
 
     // Register status toggle commands
