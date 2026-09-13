@@ -42,31 +42,39 @@ When replacing a token, update both `OVSX_PAT` and `OVSX_PAT_EXPIRES_AT`. GitHub
 
 ## Credential checks
 
-The **Publishing credentials** workflow runs daily at 08:17 UTC and can also be run manually on `main` from the Actions page. It does not publish an extension.
+The **Publishing credentials** workflow runs only when started manually on `main` from the Actions page. Use it to diagnose access problems after changing credentials or publisher permissions. It does not publish an extension.
 
 - The Marketplace job checks GitHub OIDC login and publisher membership using `vsce verify-pat evsyukov --azure-credential`. Membership verification also accepts a Reader role, so it does not replace checking the app's Contributor assignment or validating an actual release.
 - The Open VSX job calls the registry's namespace token-verification API. It fails for invalid tokens, missing permissions, failed requests, or missing expiration metadata. For dated tokens it also fails starting 14 days before expiration; the recorded date is treated as midnight UTC. Tokens marked `never` still undergo API validation. If `OVSX_PAT` is absent, this optional check is skipped.
 
-Enable email notifications for failed GitHub Actions workflows in your GitHub notification settings. Check that the scheduled workflow remains enabled: GitHub can disable scheduled workflows in public repositories after 60 days without repository activity.
-
-Run the helper's tests locally with:
+Run the publishing checks and workflow regression tests locally with:
 
 ```bash
-node --test .github/scripts/check-ovsx-token.test.mjs
+node --test .github/scripts/*.test.mjs
 ```
 
 ## Publishing a release
 
-1. Ensure `main` passes CI and the Publishing credentials workflow passes.
+1. Ensure `main` passes CI. If credentials or publisher permissions have changed, run **Publishing credentials** manually to check access before releasing.
 2. Create and push a semantic version tag:
    ```bash
    git tag v1.0.0
    git push origin v1.0.0
    ```
-3. The Release workflow checks source types, runs tests, updates the package version and changelog, packages the extension, publishes to both configured registries, and creates a GitHub Release with the `.vsix` asset.
+3. The Release workflow checks source types, runs tests, updates the package version and changelog, and builds one `.vsix`. Three independent jobs use that artifact to publish to Marketplace, Open VSX (when configured), and GitHub Releases. Only the Marketplace job uses the `marketplace` environment and Microsoft authentication. A failure in one publication job does not block the others; a build failure prevents all publications.
 4. Verify the new version in [Marketplace](https://marketplace.visualstudio.com/items?itemName=evsyukov.hledger), [Open VSX](https://open-vsx.org/extension/evsyukov/hledger), and GitHub Releases.
 
-CI runs source and test type checks, lint, publishing-helper tests, extension tests with coverage, and VSIX packaging. A registry failure in the Release workflow currently prevents the later publication steps from running.
+CI runs source and test type checks, lint, publishing-helper and workflow tests, extension tests with coverage, and VSIX packaging.
+
+### Retrying a partial release
+
+Use **Re-run failed jobs** after fixing the failed channel. Successful publication jobs stay complete, and failed jobs download the original build artifact, retained for 30 days.
+
+**Re-run all jobs** also handles existing versions. Both registry CLIs use `--skip-duplicate`, so an already published version counts as success. GitHub Release reuses the existing release and preserves assets with matching names. Each build attempt uploads a separate artifact; publication jobs download the ID returned by that build, including when only failed jobs are rerun.
+
+Registry commands retry failures up to three times, with 30 seconds between attempts. A persistent error still fails that job and the overall workflow. To publish changed contents, create a new version and tag: rerunning the same version does not replace packages already published to a registry.
+
+Reruns use the original commit and workflow definition. Runs started before this workflow change keep the previous sequential publication behavior. See [GitHub's rerun documentation](https://docs.github.com/en/actions/how-tos/manage-workflow-runs/re-run-workflows-and-jobs).
 
 ## Manual publishing
 
