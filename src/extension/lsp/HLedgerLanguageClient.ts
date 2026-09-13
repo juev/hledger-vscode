@@ -6,6 +6,7 @@ import {
   Executable,
 } from "vscode-languageclient/node";
 import { mapVSCodeSettingsToLSP, VSCodeSettings } from "./settingsMapper";
+import { AccountCompletionController } from "../completion/AccountCompletionController";
 
 export enum LanguageClientState {
   Stopped = "stopped",
@@ -170,6 +171,7 @@ export class HLedgerLanguageClient implements vscode.Disposable {
   private readonly binaryPath: string;
   private readonly config: ServerOptionsConfig;
   private client: LanguageClient | null = null;
+  private accountCompletion: AccountCompletionController | null = null;
   private state: LanguageClientState = LanguageClientState.Stopped;
 
   constructor(binaryPath: string, config?: ServerOptionsConfig) {
@@ -201,6 +203,8 @@ export class HLedgerLanguageClient implements vscode.Disposable {
       this.config
     );
     const clientOptions = createClientOptions();
+    this.accountCompletion = new AccountCompletionController(() => this.client);
+    clientOptions.middleware = this.accountCompletion.middleware;
 
     this.client = new LanguageClient(
       "hledger-lsp",
@@ -213,6 +217,8 @@ export class HLedgerLanguageClient implements vscode.Disposable {
       await this.client.start();
       this.state = LanguageClientState.Running;
     } catch (error) {
+      this.accountCompletion?.dispose();
+      this.accountCompletion = null;
       this.state = LanguageClientState.Stopped;
       this.client = null;
       throw error;
@@ -220,6 +226,8 @@ export class HLedgerLanguageClient implements vscode.Disposable {
   }
 
   async stop(): Promise<void> {
+    this.accountCompletion?.dispose();
+    this.accountCompletion = null;
     if (this.client === null) {
       return;
     }
@@ -239,6 +247,10 @@ export class HLedgerLanguageClient implements vscode.Disposable {
 
   getClient(): LanguageClient | null {
     return this.client;
+  }
+
+  async showAllAccountSuggestions(): Promise<void> {
+    await this.accountCompletion?.showAll();
   }
 
   async getPayeeAccountHistory(uri: string): Promise<PayeeAccountHistoryResult | null> {
@@ -292,6 +304,8 @@ export class HLedgerLanguageClient implements vscode.Disposable {
    * 2. The client reference is nulled to prevent further use
    */
   dispose(): void {
+    this.accountCompletion?.dispose();
+    this.accountCompletion = null;
     if (this.client !== null) {
       const clientToStop = this.client;
       this.client = null;

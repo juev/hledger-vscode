@@ -268,6 +268,11 @@
           "default": false,
           "description": "Show the total cost of postings that carry a per-unit price"
         },
+        "hledger.keybindings.expandAccountCompletion": {
+          "type": "boolean",
+          "default": true,
+          "description": "Use Ctrl+Space in account suggestions to include accounts with zero balances. Disable to restore the default suggestion details shortcut."
+        },
         "hledger.keybindings.enterAndSuggest": {
           "type": "boolean",
           "default": true,
@@ -440,6 +445,12 @@
     ],
     "commands": [
       {
+        "command": "hledger.completion.showAllAccounts",
+        "title": "HLedger: Show All Account Suggestions",
+        "category": "HLedger",
+        "enablement": "editorLangId == hledger"
+      },
+      {
         "command": "hledger.cli.balance",
         "title": "HLedger: Insert Balance Sheet",
         "category": "HLedger",
@@ -528,6 +539,23 @@
       }
     ],
     "keybindings": [
+      {
+        "command": "hledger.completion.trigger",
+        "key": "ctrl+space",
+        "mac": "ctrl+space",
+        "when": "editorTextFocus && editorLangId == hledger && !suggestWidgetVisible && hledger.completion.accountContext && config.hledger.keybindings.expandAccountCompletion"
+      },
+      {
+        "command": "hledger.completion.showAllAccounts",
+        "key": "ctrl+space",
+        "mac": "ctrl+space",
+        "when": "editorTextFocus && editorLangId == hledger && suggestWidgetVisible && hledger.completion.accountContext && config.hledger.keybindings.expandAccountCompletion"
+      },
+      {
+        "command": "hledger.completion.hide",
+        "key": "escape",
+        "when": "editorTextFocus && editorLangId == hledger && suggestWidgetVisible && hledger.completion.accountContext"
+      },
       {
         "command": "acceptSelectedSuggestion",
         "key": "enter",
@@ -630,6 +658,10 @@
         }
       ],
       "commandPalette": [
+        {
+          "command": "hledger.completion.showAllAccounts",
+          "when": "editorLangId == hledger"
+        },
         {
           "command": "hledger.cli.balance",
           "when": "editorLangId == hledger"
@@ -758,6 +790,7 @@
     "rimraf": "^6.1.3",
     "typescript": "^5.9.3",
     "vitest": "^5.0.0",
+    "vscode-languageserver-protocol": "3.18.3",
     "vscode-oniguruma": "^2.0.1",
     "vscode-textmate": "^9.3.2"
   },

@@ -693,6 +693,7 @@ export const createMockExtensionContext = (
 });
 
 export const workspace = {
+  onDidChangeTextDocument: vi.fn(() => ({ dispose: vi.fn() })),
   getWorkspaceFolder: vi.fn((uri) => {
     // Return a mock workspace folder for test documents
     if (uri?.fsPath?.startsWith("/test")) {
@@ -862,6 +863,7 @@ export const window = {
     edit: vi.fn(),
   },
   onDidChangeActiveTextEditor: vi.fn(() => ({ dispose: vi.fn() })),
+  onDidChangeTextEditorSelection: vi.fn(() => ({ dispose: vi.fn() })),
   withProgress: vi.fn((options, task) =>
     task(
       { report: vi.fn() },
@@ -904,7 +906,7 @@ export const env = {
 export const commands = {
   registerCommand: vi.fn(() => ({ dispose: vi.fn() })),
   registerTextEditorCommand: vi.fn(() => ({ dispose: vi.fn() })),
-  executeCommand: vi.fn(),
+  executeCommand: vi.fn().mockResolvedValue(undefined),
 };
 
 export class SemanticTokensLegend {

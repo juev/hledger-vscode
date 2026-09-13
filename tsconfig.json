@@ -31,6 +31,8 @@
     // vscode-languageclient v10 exposes its node entrypoint only via the
     // package.json "exports" map, which the classic "node" resolver ignores.
     // Mapping the subpath to the real types works around that.
+    // The protocol package uses the same exports-only layout; mapping it also
+    // keeps the client's completion converter signatures typed.
     //
     // The alternative is moduleResolution "bundler", under which this mapping
     // is unnecessary. It is blocked by "module": "commonjs" (TS5095: bundler
@@ -39,7 +41,8 @@
     // requires CommonJS. Drop this mapping if that build ever stops being CJS.
     "baseUrl": ".",
     "paths": {
-      "vscode-languageclient/node": ["node_modules/vscode-languageclient/lib/node/main"]
+      "vscode-languageclient/node": ["node_modules/vscode-languageclient/lib/node/main"],
+      "vscode-languageserver-protocol": ["node_modules/vscode-languageserver-protocol/lib/common/api"]
     },
     "esModuleInterop": true,
     "skipLibCheck": true,
