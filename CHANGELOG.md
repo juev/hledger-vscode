@@ -1,5 +1,15 @@
 # Change Log
 
+## [0.5.48] - 2026-09-15
+
+### Fixed
+- fix(editor): restore account suggestions and blank-line outdent
+
+### Other
+- ci(release): isolate publication channels and support safe retries
+- ci(publishing): migrate Marketplace authentication to Entra ID
+
+
 ## [0.5.47] - 2026-09-13
 
 ### Added
