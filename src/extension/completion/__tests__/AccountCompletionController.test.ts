@@ -228,6 +228,17 @@ describe("AccountCompletionController", () => {
     expect(lastScope()).toBe("all");
   });
 
+  it("keeps full scope when another consumer requests completion elsewhere in the active document", async () => {
+    await controller.showAll();
+    sendRequest.mockResolvedValueOnce(response(["Payee"], false));
+    const result = await controller.middleware.provideCompletionItem!(document, new vscode.Position(0, 0), context, token, next);
+    expect(result).toMatchObject({ items: [{ label: "Payee" }] });
+    expect(lastScope()).toBe("nonzero");
+    await provide();
+    await provide();
+    expect(lastScope()).toBe("all");
+  });
+
   it.each([undefined, {}, { hledgerCompletion: { accountScope: false } }])("falls back to standard completion for unsupported capability %j", async experimental => {
     Object.assign(client.initializeResult!.capabilities, { experimental });
     await provide();
@@ -262,6 +273,75 @@ describe("AccountCompletionController", () => {
     source.dispose();
   });
 
+  it.each(["initial", "incomplete"])("keeps an %s response when typing advances before the server replies", async phase => {
+    if (phase === "incomplete") {
+      await controller.showAll();
+      await provide();
+    }
+    const previous = response();
+    let resolve!: (value: ReturnType<typeof response>) => void;
+    sendRequest.mockReturnValueOnce(new Promise(done => { resolve = done; }));
+    const pending = provide();
+    edit(text.length, text.length, "a");
+    resolve(previous);
+
+    // VS Code needs the incomplete list to request results for the new prefix.
+    // Returning null here makes it keep only the built-in word suggestions.
+    expect(await pending).toMatchObject({ items: [{ label: "assets:active" }], isIncomplete: true });
+    await provide();
+    expect(lastScope()).toBe(phase === "incomplete" ? "all" : "nonzero");
+    expect(vscode.commands.executeCommand).toHaveBeenLastCalledWith("setContext", "hledger.completion.accountContext", true);
+  });
+
+  it("keeps an incomplete list when typing advances during conversion", async () => {
+    let resolve!: (value: vscode.CompletionList) => void;
+    vi.spyOn(client.protocol2CodeConverter, "asCompletionResult").mockImplementationOnce(() => {
+      edit(text.length, text.length, "a");
+      return new Promise(done => { resolve = done; });
+    });
+    const pending = provide();
+    await vi.waitFor(() => { expect(resolve).toBeDefined(); });
+    resolve(new vscode.CompletionList([new vscode.CompletionItem("assets:active")], true));
+    expect(await pending).toMatchObject({ items: [{ label: "assets:active" }], isIncomplete: true });
+  });
+
+  it.each(["cancelled", "edited"])("does not report a server cancellation after the request is %s", async reason => {
+    const source = new vscode.CancellationTokenSource();
+    let reject!: (error: Error) => void;
+    sendRequest.mockReturnValueOnce(new Promise((_, fail) => { reject = fail; }));
+    const pending = provide(source.token);
+    if (reason === "cancelled") {
+      source.cancel();
+    } else {
+      edit(text.length, text.length, "a");
+    }
+    reject(Object.assign(new Error("context canceled"), { code: 0 }));
+    expect(await pending).toBeNull();
+    expect(client.handleFailedRequest).not.toHaveBeenCalled();
+    source.dispose();
+  });
+
+  it("returns suggestions to concurrent consumers at the same document position", async () => {
+    let resolve!: (value: ReturnType<typeof response>) => void;
+    sendRequest.mockReturnValueOnce(new Promise(done => { resolve = done; }));
+    const suggestions = provide();
+    const otherConsumer = await provide();
+    resolve(response());
+    expect(otherConsumer).toMatchObject({ items: [{ label: "assets:active" }] });
+    expect(await suggestions).toMatchObject({ items: [{ label: "assets:active" }] });
+  });
+
+  it("keeps suggestions and the expansion shortcut when a concurrent request is cancelled", async () => {
+    const source = new vscode.CancellationTokenSource();
+    const suggestions = provide();
+    const otherConsumer = provide(source.token);
+    source.cancel();
+    expect(await otherConsumer).toBeNull();
+    expect(await suggestions).toMatchObject({ items: [{ label: "assets:active" }] });
+    expect(vscode.commands.executeCommand).toHaveBeenCalledWith("setContext", "hledger.completion.accountContext", true);
+    source.dispose();
+  });
+
   it("discards an expansion if the document changes while it is pending", async () => {
     let resolve!: (value: ReturnType<typeof response>) => void;
     sendRequest.mockReturnValue(new Promise(done => { resolve = done; }));
@@ -293,7 +373,9 @@ describe("AccountCompletionController", () => {
     expect(vscode.window.showWarningMessage).toHaveBeenCalledWith(expect.stringContaining("Could not load"));
     expect(vscode.commands.executeCommand).not.toHaveBeenCalledWith("hideSuggestWidget");
     expect(await provide()).toBeNull();
-    expect(client.handleFailedRequest).toHaveBeenCalled();
+    expect(client.handleFailedRequest).toHaveBeenCalledWith(
+      expect.objectContaining({ method: "hledger/completion" }), token, expect.any(Error), null,
+    );
   });
 
   it("discards pending work after disposal", async () => {

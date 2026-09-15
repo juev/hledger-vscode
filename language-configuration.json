@@ -27,13 +27,14 @@
   },
   "onEnterRules": [
     {
-      "beforeText": "^\\s*$",
+      "beforeText": "^$",
       "action": {
         "indent": "none"
       }
     },
     {
       "beforeText": "^\\s+$",
+      "afterText": "^\\s*$",
       "action": {
         "indent": "outdent"
       }

@@ -1,6 +1,7 @@
 import * as vscode from "vscode";
 import type { LanguageClient, Middleware } from "vscode-languageclient/node";
 import type { CompletionList as ProtocolCompletionList, Range as ProtocolRange } from "vscode-languageserver-protocol";
+import { ProtocolRequestType } from "vscode-languageserver-protocol";
 
 export const SHOW_ALL_ACCOUNTS = "hledger.completion.showAllAccounts";
 const ACCEPT_ACCOUNT = "hledger.completion.acceptAccount";
@@ -12,6 +13,9 @@ interface ScopedCompletionResult {
   completionList: ProtocolCompletionList;
   accountRange?: ProtocolRange;
 }
+
+const SCOPED_COMPLETION_METHOD = "hledger/completion";
+const SCOPED_COMPLETION = new ProtocolRequestType<unknown, ScopedCompletionResult, never, void, void>(SCOPED_COMPLETION_METHOD);
 
 interface AccountInput {
   document: vscode.TextDocument;
@@ -83,11 +87,16 @@ export class AccountCompletionController implements vscode.Disposable {
       if (!client || document.languageId !== "hledger" || !supportsAccountScope(client)) {
         return next(document, position, context, token);
       }
-      // Programmatic completion for another editor must not inherit or replace this input.
-      const active = vscode.window.activeTextEditor?.document === document;
+      // Programmatic completion away from the cursor must not change this input.
+      const editor = vscode.window.activeTextEditor;
+      const active = editor?.document === document && editor.selections.length === 1 &&
+        editor.selection.isEmpty && editor.selection.active.isEqual(position);
       const scope = active && this.input?.document === document && this.input.range.contains(position)
         ? this.input.scope : "nonzero";
-      const sequence = active ? ++this.requestSequence : undefined;
+      // The suggest widget and other completion consumers can request the same
+      // input concurrently. Only leaving the input or changing scope invalidates
+      // their results; typing is handled by VS Code's incomplete-list retrigger.
+      const sequence = active ? this.requestSequence : undefined;
       const version = document.version;
       try {
         const prepared = active ? this.prepared : undefined;
@@ -97,17 +106,19 @@ export class AccountCompletionController implements vscode.Disposable {
         const result = prepared?.document === document && prepared.version === version && prepared.position.isEqual(position)
           ? prepared.result
           : await this.request(client, document, position, context, scope, token);
-        if (token.isCancellationRequested || document.version !== version || this.disposed ||
+        if (token.isCancellationRequested || this.disposed ||
           (active && (sequence !== this.requestSequence || vscode.window.activeTextEditor?.document !== document))) {
           return null;
         }
-        if (active) {
+        // Keep the response for VS Code to retrigger after typing, but never
+        // replace the current account range with coordinates from an older edit.
+        if (active && document.version === version) {
           this.setInput(document, result.accountRange, scope);
         }
         const converted = await client.protocol2CodeConverter.asCompletionResult(
           result.completionList, client.initializeResult?.capabilities.completionProvider?.allCommitCharacters, token,
         );
-        if (token.isCancellationRequested || document.version !== version || this.disposed ||
+        if (token.isCancellationRequested || this.disposed ||
           (active && sequence !== this.requestSequence)) {
           return null;
         }
@@ -118,7 +129,13 @@ export class AccountCompletionController implements vscode.Disposable {
         }
         return converted;
       } catch (error) {
-        return client.handleFailedRequest("hledger/completion", token, error, null);
+        // Some servers return a plain error for cancellation instead of an LSP
+        // cancellation code. Obsolete requests must not surface that as a failure.
+        if (token.isCancellationRequested || document.version !== version || this.disposed ||
+          (active && sequence !== this.requestSequence)) {
+          return null;
+        }
+        return client.handleFailedRequest(SCOPED_COMPLETION, token, error, null);
       }
     },
   };
@@ -172,7 +189,7 @@ export class AccountCompletionController implements vscode.Disposable {
 
   private request(client: LanguageClient, document: vscode.TextDocument, position: vscode.Position,
     context: vscode.CompletionContext, accountScope: "nonzero" | "all", token: vscode.CancellationToken): Promise<ScopedCompletionResult> {
-    return client.sendRequest<ScopedCompletionResult>("hledger/completion", {
+    return client.sendRequest<ScopedCompletionResult>(SCOPED_COMPLETION_METHOD, {
       ...client.code2ProtocolConverter.asCompletionParams(document, position, context), accountScope,
     }, token);
   }
@@ -187,7 +204,6 @@ export class AccountCompletionController implements vscode.Disposable {
       return;
     }
     if (event.document === vscode.window.activeTextEditor?.document) {
-      ++this.requestSequence;
       this.pendingExpansion?.cancel();
       this.prepared = undefined;
     }
