@@ -30,7 +30,8 @@ export class HLedgerCliService implements vscode.Disposable {
 
     constructor() {
         this.configChangeDisposable = vscode.workspace.onDidChangeConfiguration(event => {
-            if (event.affectsConfiguration('hledger.cli.path')) {
+            if (event.affectsConfiguration('hledger.cli.path') ||
+                event.affectsConfiguration('hledger.cli.enabled')) {
                 this.resetHledgerPath();
             }
         });
@@ -76,7 +77,14 @@ export class HLedgerCliService implements vscode.Disposable {
     }
 
     private async resolveHledgerPath(): Promise<string | null> {
-        const customPath = vscode.workspace.getConfiguration('hledger').get<string>('cli.path', '').trim();
+        const config = vscode.workspace.getConfiguration('hledger');
+        if (!config.get<boolean>('cli.enabled', true)) {
+            // CLI integration is off: do not probe for the executable at all,
+            // and never execute a configured path just to learn its version.
+            return null;
+        }
+
+        const customPath = config.get<string>('cli.path', '').trim();
         if (customPath.length > 0) {
             return this.validateHledgerPath(customPath);
         }
