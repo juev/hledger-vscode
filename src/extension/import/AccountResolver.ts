@@ -39,6 +39,13 @@ const CONFIDENCE = {
 } as const;
 
 /**
+ * Wall-clock budget for probing one user-supplied pattern against inputs that
+ * make a catastrophically backtracking regexp explode. A safe pattern answers
+ * each probe in microseconds; a pathological one takes seconds to minutes.
+ */
+const MAX_PATTERN_PROBE_MS = 250;
+
+/**
  * Cache for compiled regex patterns to avoid recompilation
  */
 interface PatternCache {
@@ -433,12 +440,13 @@ export class AccountResolver {
     }
 
     /**
-     * Validate regex pattern for safety (prevent ReDoS attacks)
+     * Validate regex pattern for safety (prevent ReDoS attacks).
      * Rejects patterns with constructs that can cause catastrophic backtracking:
      * - Nested quantifiers: (a+)+, (a*)+, (a+)*, (a*)*
-     * - Overlapping alternations with quantifiers: (a|a)+, (a|ab)+
+     * - Repeated alternations with quantified branches: (ab|ab)*
+     * - Wildcards inside a quantified group: (.+)+
      * - Backreferences with quantifiers: (.+)\1+
-     * - Exponential patterns: (a|b|ab)+
+     * - Patterns that still blow up when matched at run time (see probePatternCost)
      */
     private validateRegexSafety(pattern: string): boolean {
         // Limit pattern length to prevent ReDoS complexity attacks.
@@ -448,12 +456,7 @@ export class AccountResolver {
             return false;
         }
 
-        // Check for dangerous ReDoS patterns
         if (this.hasNestedQuantifiers(pattern)) {
-            return false;
-        }
-
-        if (this.hasOverlappingAlternations(pattern)) {
             return false;
         }
 
@@ -461,57 +464,298 @@ export class AccountResolver {
             return false;
         }
 
+        if (this.probePatternCost(pattern)) {
+            return false;
+        }
+
         return true;
     }
 
     /**
-     * Detect nested quantifiers: (a+)+, (a*)+, (a+)*, (a*)*, (a+){n}, etc.
-     * These cause exponential backtracking on non-matching input.
+     * Detect a quantified group whose body can itself match a variable amount of
+     * text. A single-level pattern like `(abc|abd)+` is linear in practice, so
+     * only nesting or a repeated alternative counts as dangerous.
+     *
+     * The pattern is scanned with a small recursive-descent walk so that inner
+     * groups are visited: a flat regex like `/\([^)]*[+*}]\)[+*{]/` cannot see
+     * past the first `)`, which is how `^((a+))+$` used to slip through.
      */
     private hasNestedQuantifiers(pattern: string): boolean {
-        // Pattern: group with quantifier inside, followed by another quantifier
-        // Matches: (a+)+, (a*)+, (a+)*, (a*)*, (a+){2}, etc.
-        // Also catches nested groups: ((a)+)+
-        const nestedQuantifierPattern = /\([^)]*[+*}]\)[+*{]/;
-        if (nestedQuantifierPattern.test(pattern)) {
-            return true;
-        }
-
-        // Check for quantified groups containing quantified content
-        // Matches patterns like: (a{2,})+, (.+)+, (.*)+
-        const quantifiedGroupContent = /\([^)]*\{[^}]*\}\)[+*{]|\([^)]*[.][+*]\)[+*{]/;
-        if (quantifiedGroupContent.test(pattern)) {
-            return true;
-        }
-
-        return false;
+        return this.findQuantifiedAmbiguity(pattern, 0, pattern.length);
     }
 
     /**
-     * Detect overlapping alternations with quantifiers: (a|a)+, (a|ab)+, (.|a)+
-     * These create ambiguous matches that cause exponential backtracking.
+     * Walk `pattern[from..to)` looking for a quantified group with an ambiguous
+     * body. Returns true as soon as one is found.
      */
-    private hasOverlappingAlternations(pattern: string): boolean {
-        // Find all groups with alternations followed by quantifiers
-        const groupWithAltAndQuantifier = /\(([^)]+)\)[+*{]/g;
-        let match: RegExpExecArray | null;
+    private findQuantifiedAmbiguity(pattern: string, from: number, to: number): boolean {
+        let i = from;
 
-        while ((match = groupWithAltAndQuantifier.exec(pattern)) !== null) {
-            const groupContent = match[1];
-            if (groupContent === undefined) continue;
+        while (i < to) {
+            const char = pattern[i];
 
-            // Check if group contains alternation
-            if (!groupContent.includes('|')) {
+            // Skip escaped characters so \( does not open a group.
+            if (char === '\\') {
+                i += 2;
                 continue;
             }
 
-            // Extract alternatives
-            const alternatives = groupContent.split('|');
-            if (alternatives.length < 2) continue;
+            if (char === '[') {
+                i = this.skipCharacterClass(pattern, i, to);
+                continue;
+            }
 
-            // Check for overlapping patterns
-            if (this.hasOverlappingPatterns(alternatives)) {
+            if (char !== '(') {
+                i++;
+                continue;
+            }
+
+            const close = this.findGroupEnd(pattern, i, to);
+            if (close === -1) {
+                // Unbalanced: let RegExp reject it later.
+                return false;
+            }
+
+            const afterGroup = this.skipQuantifier(pattern, close + 1, to);
+            // A group and its own quantifier are a single element; skipping the
+            // quantifier here keeps it from being read as part of whatever
+            // follows, which would hide a nested quantifier inside a group.
+            const quantified = afterGroup > close + 1;
+
+            if (quantified && this.isAmbiguousGroupBody(pattern, i + 1, close)) {
                 return true;
+            }
+
+            // Recurse into the group's body so nested groups are inspected even
+            // when the outer group is not quantified. The body ends at `close`:
+            // `afterGroup` belongs to this element, and handing it to the scan
+            // would expose this group's own quantifier to the level below as a
+            // stray character.
+            if (this.findQuantifiedAmbiguity(pattern, i + 1, close)) {
+                return true;
+            }
+
+            i = afterGroup;
+        }
+
+        return false;
+    }
+
+    /**
+     * Index just past the quantifier starting at `index`, or `index` itself when
+     * there is none. Handles `+`, `*`, `?` and `{n}`, `{n,}`, `{n,m}`.
+     */
+    private skipQuantifier(pattern: string, index: number, to: number): number {
+        const char = pattern[index];
+        if (char === '+' || char === '*' || char === '?') {
+            return index + 1;
+        }
+
+        if (char !== '{') {
+            return index;
+        }
+
+        // A brace that is not a quantifier (for example a literal `{` in a
+        // pattern without an escape) does not consume anything.
+        const match = /^\{\d+(?:,\d*)?\}/.exec(pattern.slice(index, to));
+        return match ? index + match[0].length : index;
+    }
+
+    /** Index of the `)` matching the `(` at `open`, or -1 if unbalanced. */
+    private findGroupEnd(pattern: string, open: number, to: number): number {
+        let depth = 0;
+        let i = open;
+
+        while (i < to) {
+            const char = pattern[i];
+
+            if (char === '\\') {
+                i += 2;
+                continue;
+            }
+
+            if (char === '[') {
+                i = this.skipCharacterClass(pattern, i, to);
+                continue;
+            }
+
+            if (char === '(') {
+                depth++;
+            } else if (char === ')') {
+                depth--;
+                if (depth === 0) {
+                    return i;
+                }
+            }
+
+            i++;
+        }
+
+        return -1;
+    }
+
+    /** Index just past the character class starting at `open`. */
+    private skipCharacterClass(pattern: string, open: number, to: number): number {
+        let i = open + 1;
+        // A `]` in the first position is a literal, not the closing bracket.
+        if (pattern[i] === '^') {
+            i++;
+        }
+        if (pattern[i] === ']') {
+            i++;
+        }
+
+        while (i < to) {
+            if (pattern[i] === '\\') {
+                i += 2;
+                continue;
+            }
+            if (pattern[i] === ']') {
+                return i + 1;
+            }
+            i++;
+        }
+
+        return to;
+    }
+
+    /**
+     * True when a group body can match a variable-length string, which is what
+     * makes an enclosing quantifier exponential: it contains a quantified atom,
+     * a wildcard, or ambiguous alternatives.
+     */
+    private isAmbiguousGroupBody(pattern: string, from: number, to: number): boolean {
+        let i = from;
+
+        while (i < to) {
+            const char = pattern[i];
+
+            if (char === '\\') {
+                i += 2;
+                continue;
+            }
+
+            if (char === '[') {
+                i = this.skipCharacterClass(pattern, i, to);
+                continue;
+            }
+
+            // A wildcard matches a variable amount of text on its own.
+            if (char === '.') {
+                return true;
+            }
+
+            if (char === '(') {
+                const close = this.findGroupEnd(pattern, i, to);
+                if (close === -1) {
+                    return false;
+                }
+                // A quantified nested group makes the enclosing repetition
+                // ambiguous, as in ((a)+)+. A non-quantified wrapper is
+                // transparent: whether the wrap repeats depends on the body
+                // inside it, so keep looking at the same level.
+                if (this.skipQuantifier(pattern, close + 1, to) > close + 1) {
+                    return true;
+                }
+                i = close + 1;
+                continue;
+            }
+
+            i++;
+        }
+
+        return this.hasQuantifiedAtom(pattern, from, to) ||
+            this.hasRepeatedAlternationBranch(pattern, from, to);
+    }
+
+    /**
+     * True when the body quantifies something that can match a variable amount
+     * of text: `a+`, `\w*`, `[abc]{2,}`, or a quantified group. A non-quantified
+     * wrapper around such an atom counts too, which is what makes `(((a+)))+`
+     * ambiguous.
+     */
+    private hasQuantifiedAtom(pattern: string, from: number, to: number): boolean {
+        let i = from;
+
+        while (i < to) {
+            const char = pattern[i];
+
+            if (char === '\\') {
+                if (this.skipQuantifier(pattern, i + 2, to) > i + 2) {
+                    return true;
+                }
+                i += 2;
+                continue;
+            }
+
+            if (char === '[') {
+                const afterClass = this.skipCharacterClass(pattern, i, to);
+                if (this.skipQuantifier(pattern, afterClass, to) > afterClass) {
+                    return true;
+                }
+                i = afterClass;
+                continue;
+            }
+
+            if (char === '(') {
+                const close = this.findGroupEnd(pattern, i, to);
+                if (close === -1) {
+                    return false;
+                }
+                if (this.skipQuantifier(pattern, close + 1, to) > close + 1) {
+                    return true;
+                }
+                if (this.hasQuantifiedAtom(pattern, i + 1, close)) {
+                    return true;
+                }
+                i = close + 1;
+                continue;
+            }
+
+            if (this.skipQuantifier(pattern, i + 1, to) > i + 1) {
+                return true;
+            }
+
+            i++;
+        }
+
+        return false;
+    }
+
+    /**
+     * True when a group's alternatives are ambiguous under repetition: one
+     * branch repeats, or one branch is a prefix/suffix of another, as in
+     * `(a|ab)*`. Distinct alternatives of equal footing like `(abc|abd)+` stay
+     * allowed — they are linear in practice, and rejecting them would refuse
+     * ordinary merchant patterns.
+     */
+    private hasRepeatedAlternationBranch(pattern: string, from: number, to: number): boolean {
+        const body = pattern.slice(from, to);
+        if (!body.includes('|')) {
+            return false;
+        }
+
+        const branches = body
+            .split('|')
+            .map((branch) => branch.trim())
+            .filter((branch) => branch.length > 0);
+
+        // An alternative that repeats gives the engine several ways to match
+        // the same text, so the enclosing quantifier backtracks exponentially.
+        if (new Set(branches).size < branches.length) {
+            return true;
+        }
+
+        for (let i = 0; i < branches.length; i++) {
+            for (let j = i + 1; j < branches.length; j++) {
+                const a = branches[i];
+                const b = branches[j];
+                if (a === undefined || b === undefined) {
+                    continue;
+                }
+                if (a.startsWith(b) || b.startsWith(a) || a.endsWith(b) || b.endsWith(a)) {
+                    return true;
+                }
             }
         }
 
@@ -519,53 +763,32 @@ export class AccountResolver {
     }
 
     /**
-     * Check if any alternatives overlap (one is prefix/suffix of another,
-     * or they share common prefixes, or one is a wildcard).
+     * Last-resort guard: run the compiled pattern against inputs that make a
+     * catastrophically backtracking regexp explode, and reject it if it does.
+     * Patterns whose ambiguity the structural checks cannot see (`a*a*a*a*b`
+     * style) are caught here instead of freezing the extension host.
      */
-    private hasOverlappingPatterns(alternatives: string[]): boolean {
-        for (let i = 0; i < alternatives.length; i++) {
-            const alt1 = alternatives[i];
-            if (alt1 === undefined) continue;
+    private probePatternCost(pattern: string): boolean {
+        const inputLength = 24;
+        const probes = [
+            'a'.repeat(inputLength),
+            'a'.repeat(inputLength) + 'X',
+            `SHOP ${'a'.repeat(inputLength)}`,
+        ];
 
-            // Wildcard patterns like . or .* match everything
-            if (alt1 === '.' || alt1 === '.*' || alt1 === '.+') {
+        let regex: RegExp;
+        try {
+            regex = new RegExp(pattern, 'i');
+        } catch {
+            // Invalid patterns are reported separately by the compiler.
+            return false;
+        }
+
+        for (const probe of probes) {
+            const started = Date.now();
+            regex.test(probe);
+            if (Date.now() - started > MAX_PATTERN_PROBE_MS) {
                 return true;
-            }
-
-            for (let j = i + 1; j < alternatives.length; j++) {
-                const alt2 = alternatives[j];
-                if (alt2 === undefined) continue;
-
-                // Identical alternatives
-                if (alt1 === alt2) {
-                    return true;
-                }
-
-                // One is prefix of another: (a|ab) - "a" matches prefix of "ab"
-                if (alt1.startsWith(alt2) || alt2.startsWith(alt1)) {
-                    return true;
-                }
-
-                // One is suffix of another: (b|ab)
-                if (alt1.endsWith(alt2) || alt2.endsWith(alt1)) {
-                    return true;
-                }
-
-                // Check for common prefix with optional suffix: (ab|ac)
-                // This is less dangerous but still problematic with quantifiers
-                const minLen = Math.min(alt1.length, alt2.length);
-                let commonPrefixLen = 0;
-                for (let k = 0; k < minLen; k++) {
-                    if (alt1[k] === alt2[k]) {
-                        commonPrefixLen++;
-                    } else {
-                        break;
-                    }
-                }
-                // More than half of the shorter string is common prefix
-                if (commonPrefixLen > minLen / 2 && commonPrefixLen > 0) {
-                    return true;
-                }
             }
         }
 
@@ -583,25 +806,17 @@ export class AccountResolver {
     }
 
     /**
-     * Compile regex patterns for merchant matching
+     * Compile regex patterns for merchant matching.
+     *
+     * User patterns are checked first so that a configured pattern overrides a
+     * built-in one for the same payee, and built-ins are ordered most-specific
+     * first: `AMAZON PRIME` must reach its own account before the generic
+     * `AMAZON` entry claims it.
      */
     private compilePatterns(userPatterns: Record<string, string>): PatternCache[] {
         const patterns: PatternCache[] = [];
 
-        // Add built-in patterns first
-        for (const [pattern, account] of Object.entries(BUILTIN_MERCHANT_PATTERNS)) {
-            try {
-                patterns.push({
-                    regex: new RegExp(pattern, 'i'),
-                    account,
-                });
-            } catch {
-                // Skip invalid regex patterns
-                console.warn(`Invalid built-in pattern: ${pattern}`);
-            }
-        }
-
-        // Add user patterns (they can override built-in by coming later)
+        // User patterns take precedence; they are matched before the built-ins.
         for (const [pattern, account] of Object.entries(userPatterns)) {
             // Validate pattern safety before compilation
             if (!this.validateRegexSafety(pattern)) {
@@ -622,6 +837,24 @@ export class AccountResolver {
                 vscode.window.showWarningMessage(
                     `Invalid merchant pattern "${pattern}": ${error instanceof Error ? error.message : 'Invalid regex'}. Pattern will be ignored.`
                 );
+            }
+        }
+
+        const builtIns = Object.entries(BUILTIN_MERCHANT_PATTERNS)
+            // Longest pattern text first, so a specific entry is never shadowed
+            // by a broader one; ties keep the table's own order.
+            .map(([pattern, account], index) => ({ pattern, account, index }))
+            .sort((a, b) => b.pattern.length - a.pattern.length || a.index - b.index);
+
+        for (const { pattern, account } of builtIns) {
+            try {
+                patterns.push({
+                    regex: new RegExp(pattern, 'i'),
+                    account,
+                });
+            } catch {
+                // Skip invalid regex patterns
+                console.warn(`Invalid built-in pattern: ${pattern}`);
             }
         }
 

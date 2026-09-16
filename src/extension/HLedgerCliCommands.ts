@@ -142,7 +142,9 @@ export class HLedgerCliCommands implements vscode.Disposable {
     const installMessage =
       "hledger CLI not found. Would you like to install it?";
 
-    while (!isAvailable) {
+    // One retry after the user configures a path: a path that still fails to
+    // verify must not send the user back into the same prompt forever.
+    for (let attempt = 0; attempt < 2 && !isAvailable; attempt++) {
       const installChoice = await vscode.window.showInformationMessage(
         installMessage,
         "Open Installation Guide",
@@ -175,20 +177,18 @@ export class HLedgerCliCommands implements vscode.Disposable {
         );
 
         isAvailable = await this.cliService.isHledgerAvailable();
-        if (isAvailable) {
-          return true;
+        if (!isAvailable) {
+          vscode.window.showErrorMessage(
+            "Configured hledger path could not be verified. Please check the path and try again.",
+          );
         }
-
-        vscode.window.showErrorMessage(
-          "Configured hledger path could not be verified. Please check the path and try again.",
-        );
         continue;
       }
 
       return false;
     }
 
-    return true;
+    return isAvailable;
   }
 
   /**
@@ -242,12 +242,25 @@ export class HLedgerCliCommands implements vscode.Disposable {
     return document.uri.fsPath;
   }
 
+  /**
+   * Insert a report comment at the cursor of the document it was prepared for.
+   *
+   * The report takes seconds to produce, and the user may switch tabs while it
+   * runs. The captured editor still points at the right document, but its
+   * selection is historical, so the document is brought back to the front and
+   * the cursor is read from the live editor before inserting.
+   */
   private async insertCommentAtCursor(
     editor: vscode.TextEditor,
     comment: string,
   ): Promise<void> {
-    const position = editor.selection.active;
-    await editor.edit((editBuilder) => {
+    let target = editor;
+    if (vscode.window.activeTextEditor?.document !== editor.document) {
+      target = await vscode.window.showTextDocument(editor.document);
+    }
+
+    const position = target.selection.active;
+    await target.edit((editBuilder) => {
       editBuilder.insert(position, comment);
     });
   }

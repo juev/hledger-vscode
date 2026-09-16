@@ -27,6 +27,38 @@ const MAX_AMOUNT_INPUT_LENGTH = 100;
 const DecimalAmount = Decimal.clone({ precision: 2 * MAX_AMOUNT_INPUT_LENGTH + 2 });
 
 /**
+ * Values that mean "nothing in this column". Bank exports commonly fill the
+ * unused half of a debit/credit pair with a dash or N/A rather than leaving it
+ * empty, and reading those as malformed amounts drops every row.
+ */
+const EMPTY_PLACEHOLDER_RE = /^(?:[-–—−]+|n\/?a|н\/?д|нет|none|null)$/i;
+
+function isEmptyPlaceholder(value: string): boolean {
+    return value.length === 0 || EMPTY_PLACEHOLDER_RE.test(value.trim());
+}
+
+/**
+ * Strips the characters that cannot survive a round trip through a journal file.
+ *
+ * A transaction header has no continuation lines and its description ends at the
+ * first `;`, so a newline inside a CSV field produces a line at column 0 that
+ * makes hledger reject the whole file, and a semicolon silently truncates the
+ * payee. `|` splits a description into the payee and note fields, so a value
+ * carrying one changes the meaning of the field it lands in.
+ */
+function sanitizeJournalInlineText(value: string): string {
+    return value
+        .replace(/[\r\n]+/g, ' ')
+        // A run of separators collapses to one comma; leading and trailing
+        // commas are trimmed so a value made only of them becomes empty.
+        .replace(/[;|]+/g, ',')
+        .trim()
+        .replace(/\s{2,}/g, ' ')
+        .replace(/^,+|,+$/g, '')
+        .trim();
+}
+
+/**
  * Generator for hledger transactions from tabular data
  */
 export class TransactionGenerator {
@@ -92,7 +124,11 @@ export class TransactionGenerator {
 
     /**
      * Detect date format from column samples and reconfigure the parser.
-     * Uses disambiguateSlashFormat to resolve DD/MM vs MM/DD ambiguity.
+     *
+     * Both `DD/MM/YYYY` and `DD-MM-YYYY` are indistinguishable from their
+     * month-first twins for most dates, so the samples are scanned for a value
+     * above 12 to decide, and the user is warned when nothing decides it —
+     * otherwise `01-02-2024` would silently import as 1 February.
      */
     private detectAndApplyDateFormat(data: ParsedTabularData, warnings: ImportWarning[]): void {
         const dateMapping = ColumnDetector.findMapping(data.columnMappings, 'date');
@@ -110,20 +146,22 @@ export class TransactionGenerator {
 
         const detected = this.dateParser.detectFormat(samples);
 
-        if (detected === 'DD/MM/YYYY' || detected === 'MM/DD/YYYY') {
-            const resolved = DateParser.disambiguateSlashFormat(samples);
-            this.dateParser = new DateParser(resolved);
+        const ambiguousPair =
+            detected === 'DD/MM/YYYY' || detected === 'MM/DD/YYYY'
+                ? { separator: '/' as const, resolved: DateParser.disambiguateSlashFormat(samples) }
+                : detected === 'DD-MM-YYYY' || detected === 'MM-DD-YYYY'
+                    ? { separator: '-' as const, resolved: DateParser.disambiguateDashFormat(samples) }
+                    : null;
 
-            const hasDecisiveEvidence = samples.some((s) => {
-                const m = s.match(/^(\d{1,2})\/(\d{1,2})\/\d{4}$/);
-                if (!m) return false;
-                return parseInt(m[1] ?? '', 10) > 12 || parseInt(m[2] ?? '', 10) > 12;
-            });
+        if (ambiguousPair) {
+            this.dateParser = new DateParser(ambiguousPair.resolved);
 
-            if (!hasDecisiveEvidence) {
+            const evidence = DateParser.collectOrderEvidence(samples, ambiguousPair.separator);
+            if (!evidence.decisive) {
                 warnings.push({
                     lineNumber: 0,
-                    message: `Ambiguous date format: assuming ${resolved} (no day value > 12 found to disambiguate)`,
+                    message: `Ambiguous date format: assuming ${ambiguousPair.resolved} (no day value > 12 found to disambiguate). ` +
+                        `Set hledger.import.dateFormat to override.`,
                     field: 'date',
                 });
             }
@@ -188,11 +226,17 @@ export class TransactionGenerator {
         }
 
         // Extract description
-        const description = this.extractDescription(row, mappings);
+        const rawDescription = this.extractDescription(row, mappings);
+        const sanitized = rawDescription ? sanitizeJournalInlineText(rawDescription) : '';
+        // An empty result falls back to the placeholder, exactly as an empty
+        // cell does, so the transaction is never built with a blank payee.
+        const description = sanitized || undefined;
         if (!description) {
             warnings.push({
                 lineNumber: row.lineNumber,
-                message: 'Empty description, using placeholder',
+                message: rawDescription
+                    ? 'Empty description after removing characters a journal cannot store'
+                    : 'Empty description, using placeholder',
                 field: 'description',
             });
         }
@@ -295,6 +339,11 @@ export class TransactionGenerator {
                 const parsed = this.parseAmountString(amountStr);
                 if (parsed !== null) {
                     const amount = this.options.invertAmounts ? parsed.negated() : parsed;
+                    if (amount.isZero()) {
+                        // A zero has no sign to infer an account from, so it
+                        // would become an unrelated placeholder transaction.
+                        return { success: false, error: 'Zero amount: nothing to import for this row' };
+                    }
                     return { success: true, amount };
                 }
                 return { success: false, error: `Invalid amount: ${amountStr}` };
@@ -310,7 +359,7 @@ export class TransactionGenerator {
 
             if (debitMapping) {
                 const debitStr = this.getCellValue(row, debitMapping.index);
-                if (debitStr) {
+                if (!isEmptyPlaceholder(debitStr)) {
                     const parsed = this.parseAmountString(debitStr);
                     if (parsed === null) {
                         return { success: false, error: `Invalid amount: ${debitStr}` };
@@ -321,7 +370,7 @@ export class TransactionGenerator {
 
             if (creditMapping) {
                 const creditStr = this.getCellValue(row, creditMapping.index);
-                if (creditStr) {
+                if (!isEmptyPlaceholder(creditStr)) {
                     const parsed = this.parseAmountString(creditStr);
                     if (parsed === null) {
                         return { success: false, error: `Invalid amount: ${creditStr}` };
@@ -334,6 +383,11 @@ export class TransactionGenerator {
                 const finalAmount = this.options.invertAmounts ? amount.negated() : amount;
                 return { success: true, amount: finalAmount };
             }
+
+            // Both sides are zero or empty. A zero carries no sign, so there is
+            // nothing to infer the account from and the row is reported instead
+            // of turning into an unrelated placeholder transaction.
+            return { success: false, error: 'Zero amount: nothing to import for this row' };
         }
 
         return { success: false, error: 'No valid amount found' };
@@ -368,7 +422,11 @@ export class TransactionGenerator {
     }
 
     /**
-     * Extract a field value by column type
+     * Extract a field value by column type.
+     *
+     * Values are sanitized: they end up in a single journal line (memo as a
+     * comment, reference inside the header's parentheses), so newlines and
+     * semicolons would break or truncate the generated transaction.
      */
     private extractFieldValue(
         row: ParsedRow,
@@ -377,7 +435,8 @@ export class TransactionGenerator {
     ): string | undefined {
         const mapping = ColumnDetector.findMapping(mappings, type);
         if (mapping) {
-            return this.getCellValue(row, mapping.index) || undefined;
+            const raw = this.getCellValue(row, mapping.index);
+            return raw ? sanitizeJournalInlineText(raw) || undefined : undefined;
         }
         return undefined;
     }
@@ -613,16 +672,20 @@ export class TransactionGenerator {
     formatTransaction(tx: ImportedTransaction, includeAnnotations = true): string {
         const lines: string[] = [];
 
-        // Transaction header: date description
-        let header = `${tx.date} ${tx.description}`;
+        // Transaction header: date description.
+        // Sanitized again here: formatTransaction is public, so a caller can
+        // hand it an ImportedTransaction built without going through generate().
+        const description = sanitizeJournalInlineText(tx.description);
+        let header = `${tx.date} ${description}`;
         if (tx.reference) {
-            header = `${tx.date} (${tx.reference}) ${tx.description}`;
+            header = `${tx.date} (${sanitizeJournalInlineText(tx.reference)}) ${description}`;
         }
         lines.push(header);
 
         // Add memo as comment if present
-        if (tx.memo) {
-            lines.push(`    ; ${tx.memo}`);
+        const memo = tx.memo ? sanitizeJournalInlineText(tx.memo) : '';
+        if (memo) {
+            lines.push(`    ; ${memo}`);
         }
 
         // Calculate padding for alignment
@@ -677,7 +740,9 @@ export class TransactionGenerator {
         if (result.warnings.length > 0) {
             lines.push('; Warnings:');
             for (const warning of result.warnings.slice(0, 10)) {
-                lines.push(`; - Line ${warning.lineNumber}: ${warning.message}`);
+                // The message may quote a cell value, so it needs the same
+                // single-line treatment as a description.
+                lines.push(`; - Line ${warning.lineNumber}: ${sanitizeJournalInlineText(warning.message)}`);
             }
             if (result.warnings.length > 10) {
                 lines.push(`; - ... and ${result.warnings.length - 10} more warnings`);

@@ -369,9 +369,19 @@ export class BinaryManager {
   async getInstalledVersion(): Promise<string | null> {
     // A previous failed installation may have updated version.txt while leaving
     // the old executable in place. Only the executable can identify its version.
+    return this.getVersionOfBinary(this.getBinaryPath());
+  }
+
+  /**
+   * Read the version of a specific hledger-lsp executable.
+   *
+   * Returns null when the file is missing, not executable, or does not answer
+   * `--version` in the expected shape.
+   */
+  async getVersionOfBinary(binaryPath: string): Promise<string | null> {
     return new Promise((resolve) => {
       execFile(
-        this.getBinaryPath(),
+        binaryPath,
         ["--version"],
         {
           encoding: "utf8",

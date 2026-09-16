@@ -4,6 +4,7 @@ import {
   LanguageClientOptions,
   ServerOptions,
   Executable,
+  State,
 } from "vscode-languageclient/node";
 import { mapVSCodeSettingsToLSP, VSCodeSettings } from "./settingsMapper";
 import { AccountCompletionController } from "../completion/AccountCompletionController";
@@ -173,6 +174,13 @@ export class HLedgerLanguageClient implements vscode.Disposable {
   private client: LanguageClient | null = null;
   private accountCompletion: AccountCompletionController | null = null;
   private state: LanguageClientState = LanguageClientState.Stopped;
+  private stateSubscription: vscode.Disposable | null = null;
+  /**
+   * The in-flight `client.start()`. `stop()` waits for it so the shutdown is
+   * not attempted while the library is still in its Starting state, where it
+   * refuses to stop and would leave the server process running.
+   */
+  private pendingStart: Promise<void> | null = null;
 
   constructor(binaryPath: string, config?: ServerOptionsConfig) {
     this.binaryPath = binaryPath;
@@ -192,52 +200,104 @@ export class HLedgerLanguageClient implements vscode.Disposable {
   }
 
   async start(): Promise<void> {
-    if (this.state !== LanguageClientState.Stopped) {
-      return;
+    if (this.state === LanguageClientState.Running || this.pendingStart !== null) {
+      return this.pendingStart ?? undefined;
     }
 
-    this.state = LanguageClientState.Starting;
+    const clientOptions = createClientOptions();
+    this.accountCompletion = new AccountCompletionController(() => this.client);
+    clientOptions.middleware = this.accountCompletion.middleware;
 
     const serverOptions: ServerOptions = createServerOptions(
       this.binaryPath,
       this.config
     );
-    const clientOptions = createClientOptions();
-    this.accountCompletion = new AccountCompletionController(() => this.client);
-    clientOptions.middleware = this.accountCompletion.middleware;
-
     this.client = new LanguageClient(
       "hledger-lsp",
       "HLedger Language Server",
       serverOptions,
       clientOptions
     );
+    this.state = LanguageClientState.Starting;
 
-    try {
-      await this.client.start();
-      this.state = LanguageClientState.Running;
-    } catch (error) {
-      this.accountCompletion?.dispose();
-      this.accountCompletion = null;
-      this.state = LanguageClientState.Stopped;
-      this.client = null;
-      throw error;
-    }
+    const startedClient = this.client;
+    // The library gives up on a server that keeps crashing and reports Stopped
+    // on its own. Without this subscription the extension kept claiming the
+    // server was running and never restarted it.
+    this.stateSubscription = startedClient.onDidChangeState((event: { newState: State }) => {
+      if (event.newState === State.Stopped && this.state === LanguageClientState.Running) {
+        this.state = LanguageClientState.Stopped;
+        this.disposeAccountCompletion();
+        if (this.client === startedClient) {
+          this.client = null;
+        }
+        this.disposeStateSubscription();
+      }
+    });
+
+    const startPromise = startedClient
+      .start()
+      .then(() => {
+        this.state = LanguageClientState.Running;
+      })
+      .catch((error: unknown) => {
+        this.disposeAccountCompletion();
+        this.disposeStateSubscription();
+        this.client = null;
+        this.state = LanguageClientState.Stopped;
+        throw error;
+      })
+      .finally(() => {
+        if (this.pendingStart === startPromise) {
+          this.pendingStart = null;
+        }
+      });
+
+    this.pendingStart = startPromise;
+    return startPromise;
   }
 
   async stop(): Promise<void> {
-    this.accountCompletion?.dispose();
-    this.accountCompletion = null;
-    if (this.client === null) {
+    try {
+      // A start that is still running must finish first: the library cannot be
+      // stopped from its Starting state.
+      await this.pendingStart;
+    } catch {
+      // The start failed on its own; it has already cleaned up.
+    }
+
+    this.disposeAccountCompletion();
+
+    this.disposeStateSubscription();
+
+    const client = this.client;
+    if (client === null) {
+      this.state = LanguageClientState.Stopped;
       return;
     }
 
     try {
-      await this.client.stop();
-    } finally {
+      await client.stop();
+    } catch (error) {
+      // A failed shutdown must not leave the instance unusable: the reference
+      // is dropped and the state reset, so the next start can retry.
       this.client = null;
       this.state = LanguageClientState.Stopped;
+      throw error;
     }
+
+    this.client = null;
+    this.state = LanguageClientState.Stopped;
+  }
+
+  private disposeStateSubscription(): void {
+    this.stateSubscription?.dispose();
+    this.stateSubscription = null;
+  }
+
+  private disposeAccountCompletion(): void {
+    this.accountCompletion?.dispose();
+    this.accountCompletion = null;
   }
 
   async restart(): Promise<void> {
@@ -304,6 +364,7 @@ export class HLedgerLanguageClient implements vscode.Disposable {
    * 2. The client reference is nulled to prevent further use
    */
   dispose(): void {
+    this.disposeStateSubscription();
     this.accountCompletion?.dispose();
     this.accountCompletion = null;
     if (this.client !== null) {

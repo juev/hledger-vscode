@@ -449,11 +449,24 @@ describe('AccountResolver', () => {
                 expect(patternAccepted('(a*)*', 'aaaa')).toBe(false);
             });
 
-            it('should accept ((a)+)+ - limitation: deeply nested groups not detected', () => {
-                // Known limitation: validator regex uses [^)]* which stops at first )
-                // So ((a)+)+ is not detected as nested quantifier
-                // This is acceptable because such patterns are rare in merchant matching
-                expect(patternAccepted('((a)+)+', 'aaaa')).toBe(true);
+            it('should reject ((a)+)+ - deeply nested groups', () => {
+                // The scanner descends into nested groups, so the inner quantifier
+                // is seen even though a flat regex cannot look past the first ")".
+                expect(patternAccepted('((a)+)+', 'aaaa')).toBe(false);
+            });
+
+            it('should reject ((((a+))))+ - four levels of nesting', () => {
+                expect(patternAccepted('((((a+))))+', 'aaaa')).toBe(false);
+            });
+
+            it('should reject (a+)+ - flat nested quantifier', () => {
+                expect(patternAccepted('(a+)+', 'aaaa')).toBe(false);
+            });
+
+            it('should reject a*a*a*a*a*a*a*a*a*a*b - ambiguous repetition without groups', () => {
+                // No group for the structural checks to inspect; the runtime probe
+                // is the guard that catches this shape.
+                expect(patternAccepted('a*a*a*a*a*a*a*a*a*a*b', 'a'.repeat(30))).toBe(false);
             });
 
             it('should reject (a+){2} - plus with curly brace quantifier', () => {
@@ -530,8 +543,10 @@ describe('AccountResolver', () => {
                 expect(patternAccepted('(.+|x)+', 'xxxx')).toBe(false);
             });
 
-            it('should reject (abc|abd)+ - significant common prefix', () => {
-                expect(patternAccepted('(abc|abd)+', 'abcabd')).toBe(false);
+            it('should accept (abc|abd)+ - distinct alternatives with a shared prefix', () => {
+                // A shared prefix alone is linear in practice; rejecting it would
+                // refuse ordinary merchant patterns such as (SHOP|STORE)+.
+                expect(patternAccepted('(abc|abd)+', 'abcabd')).toBe(true);
             });
 
             it('should accept (cat|dog)+ - non-overlapping alternatives (safe)', () => {
@@ -623,10 +638,10 @@ describe('AccountResolver', () => {
                 expect(patternAccepted('(a|ab)+', 'ababab')).toBe(false);
             });
 
-            it('should accept ((a|ab)+) - limitation: nested group without outer quantifier', () => {
-                // Without outer quantifier, this is not detected as dangerous
-                // The overlapping alternations ARE inside a quantified group, but wrapped in another group
-                expect(patternAccepted('((a|ab)+)', 'ababab')).toBe(true);
+            it('should reject ((a|ab)+) - ambiguous group wrapped in another group', () => {
+                // The scanner recurses into the outer group, so the unsafe inner
+                // quantifier is found even without a quantifier on the wrapper.
+                expect(patternAccepted('((a|ab)+)', 'ababab')).toBe(false);
             });
         });
 

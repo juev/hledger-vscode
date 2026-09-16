@@ -170,7 +170,7 @@ Insert hledger reports directly into your journals as formatted comments.
 2. `hledger.cli.journalFile` setting (validated for security)
 3. Current open file (trusted from VS Code)
 
-> **Security Note:** Paths from environment variables and configuration settings are validated to prevent command injection attacks. Shell metacharacters and inaccessible paths are rejected.
+> **Security Note:** hledger runs with an argument list and never through a shell, so paths from environment variables and settings are data rather than shell syntax. Only paths that cannot be used at all (a NUL byte or a line break) and inaccessible paths are rejected - a path containing spaces or parentheses, such as `~/Documents/Taxes (2024)/main.journal`, works.
 
 ---
 
@@ -234,6 +234,11 @@ Import bank statements and transaction data from CSV/TSV files.
   // CLI integration
   "hledger.cli.path": "",  // Auto-detected if empty
   "hledger.cli.journalFile": "",  // Uses LEDGER_FILE if empty
+
+  // CSV/TSV import
+  "hledger.import.dateFormat": "auto",  // Or YYYY-MM-DD, DD/MM/YYYY, MM-DD-YYYY, ...
+  "hledger.import.decimalSeparatorHint": "auto",  // "comma" when 1,234 means 1.234
+  "hledger.import.merchantPatterns": {},  // e.g. { "^NETFLIX": "expenses:subscriptions:netflix" }
 
   // Optional: Disable semantic highlighting to use only TextMate grammar
   "hledger.features.semanticTokens": true,  // Enabled by default

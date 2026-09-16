@@ -187,42 +187,37 @@ export class ColumnDetector {
             // Skip undefined or empty headers - rely on content analysis
             if (!header?.trim()) continue;
 
-            // First try header matching
+            // Header matching wins whenever it recognises anything: it carries
+            // the file author's intent, while content analysis can only guess.
+            // Letting content outrank a recognised header is how a numeric
+            // "Card Number" column used to be typed as the amount and displace
+            // the real "Amount" column.
             const headerMatch = this.matchHeader(header);
-
-            if (headerMatch.confidence >= 0.8) {
+            if (headerMatch.type !== 'unknown') {
                 mappings.push({
                     index: i,
                     type: headerMatch.type,
                     headerName: header,
                     confidence: headerMatch.confidence,
+                    headerConfidence: headerMatch.confidence,
                 });
-            } else {
-                // Fall back to content analysis
-                const columnValues = sampleRows
-                    .slice(0, 20) // Sample first 20 rows
-                    .map((row) => (i < row.cells.length ? row.cells[i] : ''))
-                    .filter((v): v is string => v !== undefined && v.trim().length > 0);
-
-                const contentMatch = this.analyzeColumnContent(columnValues);
-
-                // Use the best match
-                if (contentMatch.confidence > headerMatch.confidence) {
-                    mappings.push({
-                        index: i,
-                        type: contentMatch.type,
-                        headerName: header,
-                        confidence: contentMatch.confidence,
-                    });
-                } else {
-                    mappings.push({
-                        index: i,
-                        type: headerMatch.type,
-                        headerName: header,
-                        confidence: headerMatch.confidence,
-                    });
-                }
+                continue;
             }
+
+            const columnValues = sampleRows
+                .slice(0, 20) // Sample first 20 rows
+                .map((row) => (i < row.cells.length ? row.cells[i] : ''))
+                .filter((v): v is string => v !== undefined && v.trim().length > 0);
+
+            const contentMatch = this.analyzeColumnContent(columnValues);
+
+            mappings.push({
+                index: i,
+                type: contentMatch.type,
+                headerName: header,
+                confidence: contentMatch.confidence,
+                headerConfidence: 0,
+            });
         }
 
         return this.resolveConflicts(mappings);
@@ -403,6 +398,13 @@ export class ColumnDetector {
         // Remove currency symbols and whitespace
         const cleaned = value.replace(/[$€£¥₽₴₸₹\s]/g, '').trim();
 
+        // Identifiers such as card or account numbers are runs of digits far
+        // longer than any real amount; without this bound a 16-digit card
+        // number reads as a valid integer amount.
+        if (/^\d{12,}$/.test(cleaned)) {
+            return false;
+        }
+
         // Check for various number formats
         const amountPatterns = [
             /^-?[\d,]+\.\d{1,2}$/, // 1,234.56 or -1,234.56
@@ -433,6 +435,14 @@ export class ColumnDetector {
      */
     private isReferenceLike(value: string): boolean {
         const trimmed = value.trim();
+
+        // A pure digit run of this length is a card or account number, not a
+        // document reference, and putting it in the transaction header as a
+        // code only adds noise that has to be deleted by hand.
+        if (/^\d{12,}$/.test(trimmed)) {
+            return false;
+        }
+
         // Alphanumeric codes, typically 6+ characters
         return /^[A-Za-z0-9]{6,}$/.test(trimmed) && /\d/.test(trimmed);
     }
@@ -460,52 +470,52 @@ export class ColumnDetector {
     }
 
     /**
-     * Resolve conflicts when multiple columns have the same type
+     * Resolve conflicts when several columns claim the same type.
+     *
+     * The best claim wins the type and the losers become `unknown`. A column
+     * whose own header named the type outranks one that was only guessed from
+     * its values, so a numeric "Check" column can never take the amount type
+     * away from the column actually headed "Amount".
      */
     private resolveConflicts(mappings: ColumnMapping[]): ColumnMapping[] {
-        // Track which types have been assigned
-        const assignedTypes = new Map<ColumnType, ColumnMapping>();
-
-        // First pass: assign high-confidence mappings
-        const resolved: ColumnMapping[] = [];
+        const bestForType = new Map<ColumnType, ColumnMapping>();
 
         for (const mapping of mappings) {
             if (mapping.type === 'unknown') {
-                resolved.push(mapping);
                 continue;
             }
 
-            const existing = assignedTypes.get(mapping.type);
-
-            if (!existing || mapping.confidence > existing.confidence) {
-                // Replace existing with higher confidence
-                if (existing) {
-                    // Mark existing as unknown
-                    const existingIndex = resolved.findIndex(
-                        (m) => m.index === existing.index
-                    );
-                    if (existingIndex >= 0) {
-                        resolved[existingIndex] = {
-                            ...existing,
-                            type: 'unknown',
-                            confidence: 0,
-                        };
-                    }
-                }
-
-                assignedTypes.set(mapping.type, mapping);
-                resolved.push(mapping);
-            } else {
-                // Mark this as unknown (lower confidence)
-                resolved.push({
-                    ...mapping,
-                    type: 'unknown',
-                    confidence: 0,
-                });
+            const existing = bestForType.get(mapping.type);
+            if (!existing || this.claimBeats(mapping, existing)) {
+                bestForType.set(mapping.type, mapping);
             }
         }
 
-        return resolved;
+        // Rebuild in column order; every column that lost its type keeps its
+        // own entry, so the caller can still see which column it was.
+        return mappings.map((mapping) => {
+            if (mapping.type === 'unknown' || bestForType.get(mapping.type) === mapping) {
+                return mapping;
+            }
+            return { ...mapping, type: 'unknown', confidence: 0 };
+        });
+    }
+
+    /** True when `candidate` has a stronger claim to its type than `existing`. */
+    private claimBeats(candidate: ColumnMapping, existing: ColumnMapping): boolean {
+        const candidateHeader = candidate.headerConfidence ?? 0;
+        const existingHeader = existing.headerConfidence ?? 0;
+
+        // A header that names the type beats a guess made from the values.
+        if ((candidateHeader > 0) !== (existingHeader > 0)) {
+            return candidateHeader > 0;
+        }
+
+        if (candidate.confidence !== existing.confidence) {
+            return candidate.confidence > existing.confidence;
+        }
+
+        return candidateHeader > existingHeader;
     }
 
     /**

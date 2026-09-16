@@ -82,10 +82,25 @@ interface LSPInlineCompletionList {
  * Provides inline (ghost text) completions for hledger files.
  * Implements VS Code's InlineCompletionItemProvider interface.
  */
+/**
+ * Sink for non-fatal failures. Defaults to the console, which is all that is
+ * available when the provider is constructed outside the extension host.
+ */
+export interface InlineCompletionLogger {
+  warn(message: string): void;
+}
+
+const consoleLogger: InlineCompletionLogger = {
+  warn: (message: string) => console.warn(message),
+};
+
 export class InlineCompletionProvider
   implements vscode.InlineCompletionItemProvider
 {
-  constructor(private readonly getClient: () => LSPClient | null) {}
+  constructor(
+    private readonly getClient: () => LSPClient | null,
+    private readonly logger: InlineCompletionLogger = consoleLogger,
+  ) {}
 
   /**
    * Provides inline completion items for the current cursor position.
@@ -155,7 +170,10 @@ export class InlineCompletionProvider
         return new vscode.InlineCompletionItem(item.insertText, range);
       });
     } catch (error: unknown) {
-      console.debug("[InlineCompletionProvider] Request failed:", error);
+      // The default console.debug level hides this, and a server that stops
+      // answering then looks like "ghost text just stopped working".
+      const message = error instanceof Error ? error.message : String(error);
+      this.logger.warn(`[InlineCompletionProvider] Request failed: ${message}`);
       return undefined;
     }
   }

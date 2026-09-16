@@ -162,6 +162,48 @@ describe('ColumnDetector', () => {
             expect(currMapping).toBeDefined();
             expect(currMapping?.index).toBe(3);
         });
+
+        it('should not let a numeric column with an unrelated header become the amount', () => {
+            const headers = ['Date', 'Card Number', 'Description', 'Amount'];
+            const rows = createRows([
+                ['2024-01-05', '4147202212345678', 'COFFEE SHOP', '-4.50'],
+                ['2024-01-06', '4147202212345679', 'BOOK SHOP', '-19.99'],
+            ]);
+
+            const mappings = detector.detectColumns(headers, rows);
+            const amountMapping = mappings.find(m => m.type === 'amount');
+            const cardMapping = mappings.find(m => m.headerName === 'Card Number');
+
+            // The real Amount column keeps its type; the card column is not an
+            // amount, so a 16-digit number can never be imported as money.
+            expect(amountMapping?.index).toBe(3);
+            expect(cardMapping?.type).not.toBe('amount');
+        });
+
+        it('should keep a recognized header when a numeric column competes for the same type', () => {
+            const headers = ['Date', 'Description', 'Check', 'Amount'];
+            const rows = createRows([
+                ['2024-01-05', 'COFFEE SHOP', '1042', '-4.50'],
+                ['2024-01-06', 'BOOK SHOP', '1043', '-19.99'],
+            ]);
+
+            const mappings = detector.detectColumns(headers, rows);
+            const amountMapping = mappings.find(m => m.type === 'amount');
+
+            expect(amountMapping?.index).toBe(3);
+        });
+
+        it('should not treat a long digit run as an amount', () => {
+            const headers = ['Date', 'Col2', 'Reference'];
+            const rows = createRows([
+                ['2024-01-05', 'COFFEE SHOP', '4147202212345678'],
+            ]);
+
+            const mappings = detector.detectColumns(headers, rows);
+            const amountMapping = mappings.find(m => m.type === 'amount');
+
+            expect(amountMapping).toBeUndefined();
+        });
     });
 
     describe('findMapping helper', () => {

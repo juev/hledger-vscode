@@ -335,6 +335,10 @@ export class HLedgerImportCommands implements vscode.Disposable {
         "categoryMapping",
         DEFAULT_IMPORT_OPTIONS.categoryMapping,
       ),
+      decimalSeparatorHint: config.get(
+        "decimalSeparatorHint",
+        DEFAULT_IMPORT_OPTIONS.decimalSeparatorHint ?? "auto",
+      ),
     };
 
     // Only include dateFormat if it has a value

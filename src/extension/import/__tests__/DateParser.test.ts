@@ -169,6 +169,43 @@ describe('DateParser', () => {
         });
     });
 
+    describe('disambiguateDashFormat', () => {
+        it('should detect DD-MM-YYYY when first part > 12', () => {
+            const format = DateParser.disambiguateDashFormat(['15-01-2024', '20-02-2024']);
+            expect(format).toBe('DD-MM-YYYY');
+        });
+
+        it('should detect MM-DD-YYYY when second part > 12', () => {
+            const format = DateParser.disambiguateDashFormat(['01-15-2024', '02-20-2024']);
+            expect(format).toBe('MM-DD-YYYY');
+        });
+
+        it('should default to DD-MM-YYYY when ambiguous', () => {
+            const format = DateParser.disambiguateDashFormat(['01-02-2024', '03-04-2024']);
+            expect(format).toBe('DD-MM-YYYY');
+        });
+
+        it('should not treat ISO dates as ordering evidence', () => {
+            const evidence = DateParser.collectOrderEvidence(['2024-01-15'], '-');
+            expect(evidence).toEqual({ ddmm: 0, mmdd: 0, decisive: false });
+        });
+    });
+
+    describe('MM-DD-YYYY format', () => {
+        it('should parse an explicit US dash format', () => {
+            const result = new DateParser('MM-DD-YYYY').parse('01-15-2024');
+
+            expect(result.success).toBe(true);
+            if (result.success) {
+                expect(result.value).toBe('2024-01-15');
+            }
+        });
+
+        it('should reject a day above 12 in the month position', () => {
+            expect(new DateParser('MM-DD-YYYY').parse('15-01-2024').success).toBe(false);
+        });
+    });
+
     describe('edge cases', () => {
         let parser: DateParser;
 

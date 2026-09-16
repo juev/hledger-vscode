@@ -488,3 +488,39 @@ describe("HLedgerImportCommands", () => {
     });
   });
 });
+
+describe("HLedgerImportCommands - import options wiring", () => {
+  it("passes decimalSeparatorHint and user mappings through to the generator", () => {
+    const values: Record<string, unknown> = {
+      decimalSeparatorHint: "comma",
+      merchantPatterns: { "^NETFLIX": "expenses:subscriptions:netflix" },
+      categoryMapping: { groceries: "expenses:food:groceries" },
+    };
+    (vscode.workspace as any).getConfiguration = vi.fn(() => ({
+      get: (key: string, fallback: unknown) =>
+        key in values ? values[key] : fallback,
+    }));
+
+    const commands = new HLedgerImportCommands(() => null);
+    const options = (commands as any).getImportOptions();
+
+    // These settings used to be declared by the types but never read from
+    // configuration, so the feature was unreachable from the UI.
+    expect(options.decimalSeparatorHint).toBe("comma");
+    expect(options.merchantPatterns).toEqual({ "^NETFLIX": "expenses:subscriptions:netflix" });
+    expect(options.categoryMapping).toEqual({ groceries: "expenses:food:groceries" });
+  });
+
+  it("falls back to auto and empty maps when nothing is configured", () => {
+    (vscode.workspace as any).getConfiguration = vi.fn(() => ({
+      get: (_key: string, fallback: unknown) => fallback,
+    }));
+
+    const commands = new HLedgerImportCommands(() => null);
+    const options = (commands as any).getImportOptions();
+
+    expect(options.decimalSeparatorHint).toBe("auto");
+    expect(options.merchantPatterns).toEqual({});
+    expect(options.categoryMapping).toEqual({});
+  });
+});

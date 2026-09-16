@@ -4,6 +4,7 @@ import * as os from "os";
 import * as path from "path";
 import { BinaryManager } from "../BinaryManager";
 import { LSPManager, LSPStatus } from "../LSPManager";
+import { LanguageClient } from "vscode-languageclient/node";
 import * as vscode from "vscode";
 
 vi.mock("undici", () => ({
@@ -153,7 +154,12 @@ describe("LSPManager", () => {
         .spyOn(BinaryManager.prototype, "getInstalledVersion")
         .mockReturnValue(version.promise);
 
-      vscode.workspace.getConfiguration = vi.fn();
+      // getVersion() consults the custom-path setting before the managed
+      // binary, so the mock needs a shape the settings reader accepts; the
+      // network settings must still not be read after dispose.
+      vscode.workspace.getConfiguration = vi.fn().mockReturnValue({
+        get: () => undefined,
+      });
       const manager = new LSPManager(mockContext);
       const updateCheck = manager.checkForUpdates();
 
@@ -253,6 +259,62 @@ describe("LSPManager", () => {
       expect(manager.getStatus()).toBe(LSPStatus.Running);
       expect(manager.getClient()).not.toBeNull();
 
+      manager.dispose();
+    });
+  });
+
+  describe("lifecycle serialization", () => {
+    const deferred = () => {
+      let resolve!: () => void;
+      const promise = new Promise<void>((res) => { resolve = res; });
+      return { promise, resolve };
+    };
+
+    it("reuses one client when start is requested twice", async () => {
+      const binaryPath = path.join(tempDir, "hledger-lsp");
+      fs.writeFileSync(binaryPath, "#!/bin/bash\necho test");
+      fs.chmodSync(binaryPath, 0o755);
+
+      const gate = deferred();
+      const startSpy = vi
+        .spyOn(LanguageClient.prototype, "start")
+        .mockImplementation(async () => { await gate.promise; });
+
+      const manager = new LSPManager(mockContext);
+      const first = manager.start();
+      const second = manager.start();
+
+      gate.resolve();
+      await Promise.all([first, second]);
+
+      expect(startSpy).toHaveBeenCalledTimes(1);
+      expect(manager.getStatus()).toBe(LSPStatus.Running);
+
+      startSpy.mockRestore();
+      manager.dispose();
+    });
+
+    it("stops and restarts without leaving a client behind", async () => {
+      const binaryPath = path.join(tempDir, "hledger-lsp");
+      fs.writeFileSync(binaryPath, "#!/bin/bash\necho test");
+      fs.chmodSync(binaryPath, 0o755);
+
+      const startSpy = vi
+        .spyOn(LanguageClient.prototype, "start")
+        .mockResolvedValue(undefined);
+      const stopSpy = vi
+        .spyOn(LanguageClient.prototype, "stop")
+        .mockResolvedValue(undefined);
+
+      const manager = new LSPManager(mockContext);
+      await manager.start();
+      await manager.restart();
+
+      expect(manager.getStatus()).toBe(LSPStatus.Running);
+      expect(manager.getClient()).not.toBeNull();
+
+      startSpy.mockRestore();
+      stopSpy.mockRestore();
       manager.dispose();
     });
   });

@@ -708,6 +708,192 @@ describe('TransactionGenerator', () => {
         });
     });
 
+    describe('journal-unsafe characters', () => {
+        /**
+         * Every generated line must be a comment, blank, an indented posting,
+         * or a transaction header. A line at column 0 that is none of those is
+         * what makes hledger reject the whole file.
+         */
+        const expectStructurallyValidJournal = (output: string): void => {
+            for (const line of output.split('\n')) {
+                const valid = line === '' ||
+                    line.startsWith(';') ||
+                    line.startsWith(' ') ||
+                    line.startsWith('\t') ||
+                    /^\d{4}-\d{2}-\d{2} /.test(line);
+                expect(valid, `unexpected line: ${JSON.stringify(line)}`).toBe(true);
+            }
+        };
+
+        const generateWithDescription = (description: string) => {
+            const data = createData(
+                ['Date', 'Description', 'Amount'],
+                [['2024-01-15', description, '-12.34']],
+                createMappings([
+                    { type: 'date', index: 0 },
+                    { type: 'description', index: 1 },
+                    { type: 'amount', index: 2 },
+                ])
+            );
+            return generator.generate(data);
+        };
+
+        it('should keep a newline in the payee from breaking the transaction line', () => {
+            const result = generateWithDescription('AMAZON.COM\nSEATTLE WA');
+
+            expect(result.transactions).toHaveLength(1);
+            expect(result.transactions[0]!.description).toBe('AMAZON.COM SEATTLE WA');
+            expectStructurallyValidJournal(generator.formatAll(result, 'x.csv'));
+        });
+
+        it('should keep a carriage return in the payee on one line', () => {
+            const result = generateWithDescription('AMAZON.COM\r\nSEATTLE WA');
+
+            expect(result.transactions[0]!.description).toBe('AMAZON.COM SEATTLE WA');
+        });
+
+        it('should not let a semicolon truncate the payee', () => {
+            const result = generateWithDescription('PAYPAL *;4029357733');
+
+            // hledger reads everything after ";" as a comment, so the character
+            // itself cannot be stored in a description.
+            expect(result.transactions[0]!.description).toBe('PAYPAL *,4029357733');
+        });
+
+        it('should not let a pipe split the description into payee and note', () => {
+            const result = generateWithDescription('Shop | online');
+
+            expect(result.transactions[0]!.description).toBe('Shop , online');
+        });
+
+        it('should warn when sanitizing leaves no description at all', () => {
+            // A value made only of the characters that cannot be stored
+            // verbatim: the commas that replace them are then trimmed away.
+            const result = generateWithDescription(';;;');
+
+            expect(result.transactions).toHaveLength(1);
+            expect(result.transactions[0]!.description).toBe('Unknown transaction');
+            expect(result.warnings.some((w) => w.message.includes('journal cannot store'))).toBe(true);
+        });
+
+        it('should keep a payee without semicolons intact', () => {
+            const result = generateWithDescription('ACME Store');
+
+            expect(result.transactions[0]!.description).toBe('ACME Store');
+            expect(result.warnings).toHaveLength(0);
+        });
+
+        it('should report an empty cell as an empty description', () => {
+            const result = generateWithDescription('   ');
+
+            expect(result.transactions[0]!.description).toBe('Unknown transaction');
+            expect(result.warnings.some((w) => w.message.includes('Empty description'))).toBe(true);
+        });
+
+        it('should sanitize the memo comment', () => {
+            const data = createData(
+                ['Date', 'Description', 'Amount', 'Memo'],
+                [['2024-01-15', 'Store', '-12.34', 'first line\nsecond line']],
+                createMappings([
+                    { type: 'date', index: 0 },
+                    { type: 'description', index: 1 },
+                    { type: 'amount', index: 2 },
+                    { type: 'memo', index: 3 },
+                ])
+            );
+
+            const output = generator.formatAll(generator.generate(data), 'x.csv');
+
+            expect(output).toContain('    ; first line second line');
+        });
+
+        it('should sanitize a multi-line cell quoted in a warning', () => {
+            const data = createData(
+                ['Date', 'Description', 'Amount'],
+                [['2024-01-15', 'Store', 'not a number\nreally']],
+                createMappings([
+                    { type: 'date', index: 0 },
+                    { type: 'description', index: 1 },
+                    { type: 'amount', index: 2 },
+                ])
+            );
+
+            const output = generator.formatAll(generator.generate(data), 'x.csv');
+
+            expectStructurallyValidJournal(output);
+        });
+    });
+
+    describe('debit/credit placeholders and zero amounts', () => {
+        const debitCreditData = (rows: string[][]) =>
+            createData(
+                ['Date', 'Description', 'Debit', 'Credit'],
+                rows,
+                createMappings([
+                    { type: 'date', index: 0 },
+                    { type: 'description', index: 1 },
+                    { type: 'debit', index: 2 },
+                    { type: 'credit', index: 3 },
+                ])
+            );
+
+        it('should treat a dash as an empty debit/credit cell', () => {
+            const result = generator.generate(debitCreditData([
+                ['2024-01-05', 'Coffee', '4.50', '-'],
+                ['2024-01-06', 'Salary', '-', '1000.00'],
+            ]));
+
+            expect(result.transactions).toHaveLength(2);
+            expect(result.transactions[0]!.amount.toNumber()).toBe(-4.5);
+            expect(result.transactions[1]!.amount.toNumber()).toBe(1000);
+            expect(result.errors).toHaveLength(0);
+        });
+
+        it('should treat an en dash and N/A as empty debit/credit cells', () => {
+            const result = generator.generate(debitCreditData([
+                ['2024-01-05', 'Coffee', '4.50', '—'],
+                ['2024-01-06', 'Tea', '1.00', 'N/A'],
+            ]));
+
+            expect(result.transactions).toHaveLength(2);
+        });
+
+        it('should not import a zero amount as a placeholder transaction', () => {
+            const result = generator.generate(debitCreditData([
+                ['2024-01-05', 'Nothing', '0.00', ''],
+            ]));
+
+            expect(result.transactions).toHaveLength(0);
+            expect(result.warnings.some((w) => w.message.includes('Zero amount'))).toBe(true);
+        });
+
+        it('should not import a zero from a single amount column', () => {
+            const data = createData(
+                ['Date', 'Description', 'Amount'],
+                [['2024-01-15', 'Nothing', '0.00']],
+                createMappings([
+                    { type: 'date', index: 0 },
+                    { type: 'description', index: 1 },
+                    { type: 'amount', index: 2 },
+                ])
+            );
+
+            const result = generator.generate(data);
+
+            expect(result.transactions).toHaveLength(0);
+            expect(result.warnings.some((w) => w.message.includes('Zero amount'))).toBe(true);
+        });
+
+        it('should still reject a genuinely invalid amount', () => {
+            const result = generator.generate(debitCreditData([
+                ['2024-01-05', 'Coffee', 'abc', ''],
+            ]));
+
+            expect(result.transactions).toHaveLength(0);
+            expect(result.warnings.some((w) => w.message.includes('Invalid amount: abc'))).toBe(true);
+        });
+    });
+
     describe('custom configuration', () => {
         it('should use custom default accounts', () => {
             const customGenerator = new TransactionGenerator({

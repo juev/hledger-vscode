@@ -81,6 +81,10 @@ export async function insertInferredAmount(
   const { document, selection } = editor;
   const position = selection.active;
   const cursor = { line: position.line, character: position.character };
+  // The server computes its edits against the document as it is now. Anything
+  // typed while the request is in flight shifts those ranges, so the document
+  // version is checked before the edits are applied.
+  const documentVersion = document.version;
 
   const actions = await requestWithTimeout(
     client,
@@ -100,6 +104,12 @@ export async function insertInferredAmount(
   const edits =
     changes?.[document.uri.toString()] ?? Object.values(changes ?? {})[0];
   if (!edits || edits.length === 0) {
+    return;
+  }
+
+  if (document.version !== documentVersion || editor !== vscode.window.activeTextEditor) {
+    // The document moved on: applying the server's ranges now would overwrite
+    // whatever the user typed in the meantime.
     return;
   }
 

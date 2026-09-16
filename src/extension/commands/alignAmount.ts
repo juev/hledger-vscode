@@ -73,6 +73,9 @@ export async function alignAmount(
 
   const { document, selection } = editor;
   const position = selection.active;
+  // The alignment range is computed by the server against the document as it
+  // is now; anything typed while the request is in flight shifts it.
+  const documentVersion = document.version;
 
   const config = vscode.workspace.getConfiguration("editor");
   const tabSize = config.get<number>("tabSize", 4);
@@ -89,6 +92,11 @@ export async function alignAmount(
     timeoutMs,
   );
 
+  if (document.version !== documentVersion || editor !== vscode.window.activeTextEditor) {
+    // The document moved on: the server's ranges no longer describe it.
+    return;
+  }
+
   if (edits && edits.length > 0) {
     const workspaceEdit = new vscode.WorkspaceEdit();
     for (const edit of edits) {
@@ -103,7 +111,11 @@ export async function alignAmount(
         edit.newText,
       );
     }
-    await vscode.workspace.applyEdit(workspaceEdit);
+    if (!(await vscode.workspace.applyEdit(workspaceEdit))) {
+      // The edit was refused (read-only document, for example); fall back so
+      // Tab still does something instead of disappearing.
+      await fallbackTab();
+    }
   } else {
     await fallbackTab();
   }

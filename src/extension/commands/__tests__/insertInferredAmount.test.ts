@@ -39,9 +39,42 @@ describe("insertInferredAmount", () => {
       document: {
         uri: { toString: () => "file:///test.journal" },
         languageId: "hledger",
+        version: 1,
       },
       selection: { active: new vscode.Position(2, 17) },
     };
+  });
+
+  it("drops the edit when the document changed while the request was in flight", async () => {
+    const editor = (vscode.window as any).activeTextEditor;
+    mockClient.sendRequest.mockImplementation(async () => {
+      // Simulate the user typing before the server answers.
+      editor.document.version = 2;
+      return [ACTION];
+    });
+
+    await insertInferredAmount(() => mockClient);
+
+    expect(applyEditMock).not.toHaveBeenCalled();
+  });
+
+  it("applies the edit when the document is unchanged", async () => {
+    mockClient.sendRequest.mockResolvedValue([ACTION]);
+
+    await insertInferredAmount(() => mockClient);
+
+    expect(applyEditMock).toHaveBeenCalled();
+  });
+
+  it("drops the edit when the active editor changed", async () => {
+    mockClient.sendRequest.mockImplementation(async () => {
+      (vscode.window as any).activeTextEditor = { document: {}, selection: {} };
+      return [ACTION];
+    });
+
+    await insertInferredAmount(() => mockClient);
+
+    expect(applyEditMock).not.toHaveBeenCalled();
   });
 
   it("asks the server for the inferred amount action at the cursor", async () => {
