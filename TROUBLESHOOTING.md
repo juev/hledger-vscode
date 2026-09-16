@@ -208,7 +208,7 @@ Set explicitly in settings:
 "hledger.cli.journalFile": "/path/to/main.journal"
 ```
 
-**Security Note:** Paths from environment variables and settings are validated to prevent command injection. Paths with shell metacharacters (`;`, `&`, `|`, `` ` ``, `$`, `()`, `[]`, `{}`, `^`, `"`, `\`, `<`, `>`) are rejected.
+**Security Note:** hledger is invoked with an argument list, never through a shell, so shell metacharacters in a path are ordinary characters. A path is rejected only when it cannot be used at all: it contains a NUL byte or a line break, or the file is missing or unreadable. If a CLI command reports "Path does not exist or is not accessible", check the value of `LEDGER_FILE`, `hledger.cli.journalFile`, and whether the file is readable by your user.
 
 ### Progress Indicators
 
@@ -353,6 +353,43 @@ Update the extension, then run **HLedger: Install/Update Language Server** again
 1. Run: `Ctrl+Shift+P` → "HLedger: Restart Language Server"
 2. Check Output panel for crash details
 3. Report persistent crashes with reproduction steps
+
+The status bar reflects the real server state: if the server process exits, the extension notices and the status stops reporting "Running". The extension does not restart a server that keeps crashing on its own - use the restart command.
+
+---
+
+## Import Issues
+
+### Amounts or Dates Look Wrong After an Import
+
+**Symptoms:** The wrong column was imported as the amount, or dates came out day/month swapped
+
+**Solutions:**
+
+1. Check the generated header comment: it lists the detected column types and any warnings. A column whose header is not recognized is typed from its values, and a column headed `Amount` always keeps the amount type.
+2. Digit runs of 12 or more characters (card, account, or reference numbers) are never treated as amounts. If a genuinely numeric column is being ignored, rename its header to `Amount` or `Sum`.
+3. For dates, the import warns when it cannot tell day-first from month-first. Set `hledger.import.dateFormat` explicitly (for example `MM-DD-YYYY` for US dashed dates) to remove the guess.
+4. European amounts such as `1,234` need `hledger.import.decimalSeparatorHint` set to `comma` when the comma is a decimal mark.
+
+### Some Rows Were Skipped
+
+**Symptoms:** "N rows skipped" in the import summary, or fewer transactions than expected
+
+**Solutions:**
+
+1. Rows with a zero amount are skipped on purpose: a zero carries no sign, so the account cannot be inferred from it.
+2. A row whose debit and credit cells are both empty is skipped; a placeholder such as `-` or `N/A` counts as empty.
+3. Read the warnings listed at the top of the generated file - each names the source line number.
+
+### The Imported File Does Not Open in hledger
+
+**Symptoms:** hledger reports a parse error in a generated journal
+
+**Solutions:**
+
+1. Update to the latest extension version. Payee text is normalized before it is written (line breaks and `;`/`|` are replaced), because a transaction header cannot contain a line break and a `;` would start a comment.
+2. If a payee contains characters you need preserved verbatim, fix the cell in the CSV before importing.
+3. If the error persists, report it with the failing CSV row.
 
 ---
 

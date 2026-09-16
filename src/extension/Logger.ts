@@ -16,6 +16,10 @@ export class Logger implements vscode.Disposable {
     this.channel.appendLine(`${this.timestamp()} [ERROR] ${message}${errorDetail}`);
   }
 
+  warn(message: string): void {
+    this.channel.appendLine(`${this.timestamp()} [WARN] ${message}`);
+  }
+
   debug(message: string): void {
     const isDebug = vscode.workspace
       .getConfiguration('hledger.lsp')

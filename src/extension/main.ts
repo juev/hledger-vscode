@@ -146,8 +146,9 @@ export function activate(context: vscode.ExtensionContext): void {
     );
 
     // Register inline completion provider (ghost text)
-    const inlineProvider = new InlineCompletionProvider(() =>
-      lspManager.getLanguageClient(),
+    const inlineProvider = new InlineCompletionProvider(
+      () => lspManager.getLanguageClient(),
+      logger,
     );
     context.subscriptions.push(
       vscode.languages.registerInlineCompletionItemProvider(

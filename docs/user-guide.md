@@ -753,10 +753,12 @@ The extension determines which journal file to use in this priority:
 
 ### Security
 
-Paths from environment variables and settings are validated to prevent command injection:
-- Shell metacharacters (`;`, `&`, `|`, `` ` ``, `$`, etc.) are rejected
+hledger is invoked with an argument list (`execFile`), never through a shell, so a path is data rather than shell syntax. Validation therefore only rejects what cannot be a path at all:
+- A NUL byte or a line break in a path from an environment variable or setting is rejected
 - Inaccessible paths show error messages
 - Current file paths (from VS Code) are trusted
+
+Paths that contain shell metacharacters - for example `~/Documents/Taxes (2024)/main.journal` - are accepted, because nothing interprets them as shell syntax.
 
 ### Configuration
 
@@ -829,6 +831,24 @@ The extension recognizes columns by header names (English and Russian):
 | Balance | Balance |
 | Currency | Currency |
 
+A recognized header always wins over a guess made from the values. This matters for statements that carry an extra numeric column: with `Date,Card Number,Description,Amount`, the card column is not imported as the amount, and `Amount` keeps its type. Both a header match and a value guess are needed before a column is typed, and value detection ignores digit runs of 12 characters or more, which are identifiers rather than money.
+
+### Payees and Descriptions
+
+An hledger transaction header is a single line, and its description ends at the first `;`. The importer therefore normalizes the payee, description and memo:
+
+- line breaks become spaces
+- `;` and `|` become commas (`;` would start a comment, `|` would split the payee from the note)
+
+Without this, an embedded line break would produce a line at column 0 and make hledger reject the whole generated file, and a semicolon would silently truncate the payee.
+
+### Amounts and Zero Rows
+
+- The unused half of a debit/credit pair may be empty or a placeholder (`-`, `–`, `—`, `N/A`, `н/д`); both are read as "nothing".
+- A row whose amount is zero is reported as a warning and skipped. A zero carries no sign, so the account cannot be inferred from it, and importing it would only produce a placeholder transaction.
+
+### Import Settings
+
 ### Account Resolution
 
 The import feature tries to match payees to accounts using multiple strategies:
@@ -840,6 +860,8 @@ The import feature tries to match payees to accounts using multiple strategies:
 | 3 | Category (exact) | 80% | Direct category column match |
 | 4 | Category (partial) | 75% | Partial category match (contains/contained by) |
 | 5 | Merchant pattern | 70% | Regex patterns for common merchants |
+
+Merchant patterns are checked case-insensitively against the payee, and patterns configured in `hledger.import.merchantPatterns` are checked before the built-in table, so a configured pattern overrides a built-in match for the same merchant. Within the built-in table the most specific pattern wins, which is why `AMAZON PRIME` reaches the subscriptions account while a plain `AMAZON` charge reaches `expenses:shopping:amazon`.
 | 6 | Amount sign | 50% | Positive=income, negative=expense |
 | 7 | Default accounts | 0% | Configured defaults |
 
@@ -854,6 +876,9 @@ The import feature tries to match payees to accounts using multiple strategies:
 | `MM/DD/YYYY` | 01/15/2025 |
 | `DD.MM.YYYY` | 15.01.2025 |
 | `DD-MM-YYYY` | 15-01-2025 |
+| `MM-DD-YYYY` | 01-15-2025 |
+
+When `auto` cannot tell `DD/MM` from `MM/DD` (or `DD-MM` from `MM-DD`) because no day value above 12 appears in the data, the import assumes the day-first reading and reports an ambiguity warning. Set `hledger.import.dateFormat` explicitly to choose the other reading.
 
 ### Import Settings
 
@@ -865,6 +890,9 @@ The import feature tries to match payees to accounts using multiple strategies:
 | `hledger.import.defaultBalancingAccount` | Balancing posting account | `TODO:account` |
 | `hledger.import.invertAmounts` | Invert amount signs | `false` |
 | `hledger.import.useJournalHistory` | Learn from existing transactions | `true` |
+| `hledger.import.decimalSeparatorHint` | How to read `1,234` (`auto`, `comma`, `period`) | `auto` |
+| `hledger.import.merchantPatterns` | Payee regex to account, checked before the built-ins | `{}` |
+| `hledger.import.categoryMapping` | Category name to account, overrides the built-ins | `{}` |
 
 ---
 
@@ -1120,6 +1148,9 @@ The `amountAlignmentTarget` setting applies to postings that carry cost notation
 | `hledger.import.defaultBalancingAccount` | string | `TODO:account` | Default balancing account |
 | `hledger.import.invertAmounts` | boolean | `false` | Invert amount signs |
 | `hledger.import.useJournalHistory` | boolean | `true` | Use journal history for account matching |
+| `hledger.import.decimalSeparatorHint` | enum | `auto` | How to read an amount whose only separator is a comma |
+| `hledger.import.merchantPatterns` | object | `{}` | Payee regex to account, checked before the built-in patterns |
+| `hledger.import.categoryMapping` | object | `{}` | Category name to account, overrides the built-in mapping |
 
 ### Language Server Settings
 
