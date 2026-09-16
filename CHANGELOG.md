@@ -1,5 +1,15 @@
 # Change Log
 
+## [0.5.49] - 2026-09-16
+
+### Other
+- chore(deps-dev): bump js-yaml from 4.3.2 to 5.4.2
+- chore(deps-dev): bump ovsx from 1.1.1 to 1.2.0
+- chore(deps-dev): bump @typescript-eslint/parser from 8.69.0 to 8.70.0
+- chore(deps-dev): bump eslint from 10.9.1 to 10.10.0
+- chore(deps-dev): bump @types/node from 26.4.1 to 26.5.1
+
+
 ## [0.5.48] - 2026-09-15
 
 ### Fixed
