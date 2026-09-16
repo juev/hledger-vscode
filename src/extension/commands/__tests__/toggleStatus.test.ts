@@ -832,3 +832,69 @@ describe("setStatus", () => {
     expect(editMock).not.toHaveBeenCalled();
   });
 });
+
+describe('toggleStatus - journal-valid edits', () => {
+  it('should not treat a whitespace-only line as a posting', () => {
+    // Pressing Enter after a transaction header leaves an indented blank line.
+    expect(isPostingLine('    ')).toBe(false);
+    expect(isPostingLine('\t')).toBe(false);
+    expect(parseLineStatus('    ')).toBeUndefined();
+    expect(buildStatusEdit('    ', 1, '!')).toBeUndefined();
+  });
+
+  it('should recognize a transaction status written without a trailing space', () => {
+    const info = parseLineStatus('2024-01-15 !Grocery');
+    expect(info).toEqual({
+      type: 'transaction',
+      status: '!',
+      statusStart: 11,
+      statusEnd: 12,
+    });
+  });
+
+  it('should add the missing space when cycling a no-space status', () => {
+    const edit = buildStatusEdit('2024-01-15 !Grocery', 1, '*');
+    // Replacing [11,12] with "* " restores the separator hledger expects and
+    // leaves the payee untouched.
+    expect(edit?.newText).toBe('* ');
+    expect(edit?.range.start.character).toBe(11);
+    expect(edit?.range.end.character).toBe(12);
+  });
+
+  it('should leave the description intact when clearing a no-space status', () => {
+    const edit = buildStatusEdit('2024-01-15 !Grocery', 1, '');
+    expect(edit?.newText).toBe('');
+    expect(edit?.range.start.character).toBe(11);
+    expect(edit?.range.end.character).toBe(12);
+  });
+
+  it('should recognize a posting status written without a trailing space', () => {
+    const info = parseLineStatus('    *assets:cash  $1');
+    expect(info?.type).toBe('posting');
+    expect(info?.status).toBe('*');
+  });
+
+  it('should not insert a space into an account name when cycling a posting status', () => {
+    const edit = buildStatusEdit('    *assets:cash  $1', 1, '!');
+    // Inserting a space here would rename the account to "* assets:cash".
+    expect(edit?.newText).toBe('!');
+    expect(edit?.range.start.character).toBe(4);
+    expect(edit?.range.end.character).toBe(5);
+  });
+
+  it('should drop the separator when a posting status is cleared', () => {
+    const edit = buildStatusEdit('    *assets:cash  $1', 1, '');
+    expect(edit?.newText).toBe('');
+    expect(edit?.range.start.character).toBe(4);
+    expect(edit?.range.end.character).toBe(5);
+  });
+
+  it('should keep a deliberate extra space after the status mark', () => {
+    const edit = buildStatusEdit('2024-01-15 *  Grocery', 1, '!');
+    // The range covers the mark plus the pair of spaces it was written with;
+    // the replacement leaves one space between the mark and the description.
+    expect(edit?.newText).toBe('! ');
+    expect(edit?.range.start.character).toBe(11);
+    expect(edit?.range.end.character).toBe(14);
+  });
+});
