@@ -57,6 +57,7 @@ export class DateParser {
             'DD/MM/YYYY',
             'DD-MM-YYYY',
             'MM/DD/YYYY',
+            'MM-DD-YYYY',
         ];
 
         for (const format of formats) {
@@ -89,6 +90,7 @@ export class DateParser {
             'DD/MM/YYYY',
             'DD-MM-YYYY',
             'MM/DD/YYYY',
+            'MM-DD-YYYY',
         ];
 
         const scores: Map<DateFormat, number> = new Map();
@@ -155,6 +157,7 @@ export class DateParser {
             'MM/DD/YYYY': /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/,
             'DD.MM.YYYY': /^(\d{1,2})\.(\d{1,2})\.(\d{4})$/,
             'DD-MM-YYYY': /^(\d{1,2})-(\d{1,2})-(\d{4})$/,
+            'MM-DD-YYYY': /^(\d{1,2})-(\d{1,2})-(\d{4})$/,
         };
 
         const pattern = patterns[format];
@@ -188,6 +191,7 @@ export class DateParser {
                 break;
 
             case 'MM/DD/YYYY':
+            case 'MM-DD-YYYY':
                 month = parseInt(part1, 10);
                 day = parseInt(part2, 10);
                 year = parseInt(part3, 10);
@@ -290,27 +294,49 @@ export class DateParser {
      * Returns the more likely interpretation based on values
      */
     static disambiguateSlashFormat(samples: readonly string[]): 'DD/MM/YYYY' | 'MM/DD/YYYY' {
-        let ddmmCount = 0;
-        let mmddCount = 0;
+        const evidence = DateParser.collectOrderEvidence(samples, '/');
+        return evidence.mmdd > evidence.ddmm ? 'MM/DD/YYYY' : 'DD/MM/YYYY';
+    }
+
+    /**
+     * Try to disambiguate between DD-MM-YYYY and MM-DD-YYYY.
+     *
+     * Dashed dates have the same day-first/month-first ambiguity as slashed
+     * ones, and ISO dates never reach here because they start with the year.
+     */
+    static disambiguateDashFormat(samples: readonly string[]): 'DD-MM-YYYY' | 'MM-DD-YYYY' {
+        const evidence = DateParser.collectOrderEvidence(samples, '-');
+        return evidence.mmdd > evidence.ddmm ? 'MM-DD-YYYY' : 'DD-MM-YYYY';
+    }
+
+    /**
+     * Count how many samples can only be day-first or only be month-first.
+     * A value above 12 in the first position proves day-first, and in the
+     * second position proves month-first.
+     */
+    static collectOrderEvidence(
+        samples: readonly string[],
+        separator: '/' | '-'
+    ): { ddmm: number; mmdd: number; decisive: boolean } {
+        let ddmm = 0;
+        let mmdd = 0;
+
+        const pattern = new RegExp(`^(\\d{1,2})\\${separator}(\\d{1,2})[\\${separator}.](\\d{4})$`);
 
         for (const sample of samples) {
-            const match = sample.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+            const match = sample.trim().match(pattern);
             if (!match) continue;
 
             const first = parseInt(match[1] ?? '', 10);
             const second = parseInt(match[2] ?? '', 10);
 
-            // If first > 12, must be DD/MM
             if (first > 12) {
-                ddmmCount++;
-            }
-            // If second > 12, must be MM/DD
-            else if (second > 12) {
-                mmddCount++;
+                ddmm++;
+            } else if (second > 12) {
+                mmdd++;
             }
         }
 
-        // Default to DD/MM/YYYY (more common globally) if no decisive evidence
-        return mmddCount > ddmmCount ? 'MM/DD/YYYY' : 'DD/MM/YYYY';
+        return { ddmm, mmdd, decisive: ddmm > 0 || mmdd > 0 };
     }
 }

@@ -163,7 +163,8 @@
             "DD/MM/YYYY",
             "MM/DD/YYYY",
             "DD.MM.YYYY",
-            "DD-MM-YYYY"
+            "DD-MM-YYYY",
+            "MM-DD-YYYY"
           ],
           "default": "auto",
           "description": "Expected date format in import data. Use 'auto' for automatic detection"
@@ -177,6 +178,34 @@
           "type": "boolean",
           "default": true,
           "description": "Use existing journal transactions to auto-detect accounts for similar payees"
+        },
+        "hledger.import.decimalSeparatorHint": {
+          "type": "string",
+          "enum": [
+            "auto",
+            "comma",
+            "period"
+          ],
+          "default": "auto",
+          "description": "How to read an amount whose only separator is a comma, e.g. \"1,234\". 'auto' treats two or fewer digits after the comma as a decimal mark. Use 'comma' for European exports where 1,234 means 1.234, or 'period' where it means 1234."
+        },
+        "hledger.import.merchantPatterns": {
+          "type": "object",
+          "default": {},
+          "additionalProperties": {
+            "type": "string"
+          },
+          "markdownDescription": "Merchant patterns for account resolution during import, as `\"regex\": \"account\"` pairs. Patterns are matched case-insensitively against the payee and are checked before the built-in table, so a pattern here overrides a built-in match. Example: `{\"^NETFLIX\": \"expenses:subscriptions:netflix\"}`.",
+          "description": "Merchant patterns for account resolution during import: a map of regular expression to account name"
+        },
+        "hledger.import.categoryMapping": {
+          "type": "object",
+          "default": {},
+          "additionalProperties": {
+            "type": "string"
+          },
+          "markdownDescription": "Category-to-account mapping used when the imported data has a category column. Keys are matched case-insensitively and override the built-in mapping. Example: `{\"groceries\": \"expenses:food:groceries\"}`.",
+          "description": "Category-to-account mapping used during import: a map of category name to account name"
         },
         "hledger.lsp.path": {
           "type": "string",

@@ -50,6 +50,12 @@ export interface ColumnMapping {
     readonly type: ColumnType;
     readonly headerName: string;
     readonly confidence: number; // 0.0-1.0
+    /**
+     * Confidence the column's own header earned, or 0 when the type was only
+     * guessed from the values. Used to settle conflicts between columns: a
+     * named header outranks a numeric column that merely looks like an amount.
+     */
+    readonly headerConfidence?: number;
 }
 
 /** Parsed tabular row */
@@ -121,7 +127,8 @@ export type DateFormat =
     | 'DD/MM/YYYY'
     | 'MM/DD/YYYY'
     | 'DD.MM.YYYY'
-    | 'DD-MM-YYYY';
+    | 'DD-MM-YYYY'
+    | 'MM-DD-YYYY';
 
 /** Import result with statistics */
 export interface ImportResult {
@@ -274,93 +281,103 @@ export const BUILTIN_CATEGORY_MAPPING: Record<string, string> = {
     перевод: 'transfers',
 };
 
-/** Built-in merchant patterns (regex -> account) */
+/**
+ * Built-in merchant patterns (regex -> account).
+ *
+ * Every keyword is enclosed in ASCII-letter lookarounds rather than plain
+ * `\b`: `\b` does not fire next to a Cyrillic letter, so `\bМТС\b` would never
+ * match "ОПЛАТА МТС". Without a boundary, short keywords match inside unrelated
+ * words: "IVI" hits "PRIVILEGE", "ATT" hits "MATTRESS".
+ *
+ * Matching is first-match-wins over the most specific pattern first, so the
+ * longer entries below intentionally shadow the shorter ones they refine.
+ */
 export const BUILTIN_MERCHANT_PATTERNS: Record<string, string> = {
     // Shopping
-    'AMAZON|AMZN|АМАЗОН': 'expenses:shopping:amazon',
-    'EBAY|ЕБЕЙ': 'expenses:shopping:ebay',
-    'ALIEXPRESS|АЛИЭКСПРЕСС': 'expenses:shopping:aliexpress',
-    'WALMART|ВОЛМАРТ': 'expenses:shopping:walmart',
-    'TARGET': 'expenses:shopping:target',
-    'COSTCO': 'expenses:shopping:costco',
-    'IKEA|ИКЕА': 'expenses:shopping:ikea',
+    '(?<![A-Z0-9])(?:AMAZON|AMZN|АМАЗОН)(?![A-Z0-9])': 'expenses:shopping:amazon',
+    '(?<![A-Z0-9])(?:EBAY|ЕБЕЙ)(?![A-Z0-9])': 'expenses:shopping:ebay',
+    '(?<![A-Z0-9])(?:ALIEXPRESS|АЛИЭКСПРЕСС)(?![A-Z0-9])': 'expenses:shopping:aliexpress',
+    '(?<![A-Z0-9])(?:WALMART|ВОЛМАРТ)(?![A-Z0-9])': 'expenses:shopping:walmart',
+    '(?<![A-Z0-9])TARGET(?![A-Z0-9])': 'expenses:shopping:target',
+    '(?<![A-Z0-9])COSTCO(?![A-Z0-9])': 'expenses:shopping:costco',
+    '(?<![A-Z0-9])(?:IKEA|ИКЕА)(?![A-Z0-9])': 'expenses:shopping:ikea',
 
     // Groceries
-    'WHOLE\\s*FOODS': 'expenses:food:groceries',
-    'TRADER\\s*JOE': 'expenses:food:groceries',
-    'KROGER': 'expenses:food:groceries',
-    'SAFEWAY': 'expenses:food:groceries',
-    'ALDI': 'expenses:food:groceries',
-    'LIDL|ЛИДЛ': 'expenses:food:groceries',
-    'ПЯТЕРОЧКА|PYATEROCHKA|5KA': 'expenses:food:groceries',
-    'ПЕРЕКРЕСТОК|PEREKRESTOK': 'expenses:food:groceries',
-    'МАГНИТ|MAGNIT': 'expenses:food:groceries',
-    'ЛЕНТА|LENTA': 'expenses:food:groceries',
-    'АШАН|AUCHAN': 'expenses:food:groceries',
-    'METRO\\s*C': 'expenses:food:groceries',
+    '(?<![A-Z0-9])WHOLE\\s*FOODS(?![A-Z0-9])': 'expenses:food:groceries',
+    '(?<![A-Z0-9])TRADER\\s*JOE(?![A-Z0-9])': 'expenses:food:groceries',
+    '(?<![A-Z0-9])KROGER(?![A-Z0-9])': 'expenses:food:groceries',
+    '(?<![A-Z0-9])SAFEWAY(?![A-Z0-9])': 'expenses:food:groceries',
+    '(?<![A-Z0-9])ALDI(?![A-Z0-9])': 'expenses:food:groceries',
+    '(?<![A-Z0-9])(?:LIDL|ЛИДЛ)(?![A-Z0-9])': 'expenses:food:groceries',
+    '(?<![A-Z0-9])(?:ПЯТЕРОЧКА|PYATEROCHKA|5KA)(?![A-Z0-9])': 'expenses:food:groceries',
+    '(?<![A-Z0-9])(?:ПЕРЕКРЕСТОК|PEREKRESTOK)(?![A-Z0-9])': 'expenses:food:groceries',
+    '(?<![A-Z0-9])(?:МАГНИТ|MAGNIT)(?![A-Z0-9])': 'expenses:food:groceries',
+    '(?<![A-Z0-9])(?:ЛЕНТА|LENTA)(?![A-Z0-9])': 'expenses:food:groceries',
+    '(?<![A-Z0-9])(?:АШАН|AUCHAN)(?![A-Z0-9])': 'expenses:food:groceries',
+    '(?<![A-Z0-9])METRO\\s*C(?![A-Z0-9])': 'expenses:food:groceries',
 
     // Fast food & Restaurants
-    'MCDONALD|МАКДОНАЛЬДС|MCD': 'expenses:food:dining:fastfood',
-    'BURGER\\s*KING|БУРГЕР\\s*КИНГ': 'expenses:food:dining:fastfood',
-    'KFC|КФС': 'expenses:food:dining:fastfood',
-    'SUBWAY|САБВЕЙ': 'expenses:food:dining:fastfood',
-    'STARBUCKS|СТАРБАКС': 'expenses:food:dining:coffee',
-    'DUNKIN': 'expenses:food:dining:coffee',
-    'DOMINO|ДОМИНОС': 'expenses:food:dining:delivery',
-    'PIZZA\\s*HUT': 'expenses:food:dining:delivery',
-    'UBER\\s*EATS': 'expenses:food:dining:delivery',
-    'DOORDASH': 'expenses:food:dining:delivery',
-    'GRUBHUB': 'expenses:food:dining:delivery',
-    'ЯНДЕКС\\s*ЕДА|YANDEX\\s*EDA': 'expenses:food:dining:delivery',
-    'DELIVERY\\s*CLUB': 'expenses:food:dining:delivery',
+    '(?<![A-Z0-9])(?:MCDONALD|МАКДОНАЛЬДС|MCD)(?![A-Z0-9])': 'expenses:food:dining:fastfood',
+    '(?<![A-Z0-9])(?:BURGER\\s*KING|БУРГЕР\\s*КИНГ)(?![A-Z0-9])': 'expenses:food:dining:fastfood',
+    '(?<![A-Z0-9])(?:KFC|КФС)(?![A-Z0-9])': 'expenses:food:dining:fastfood',
+    '(?<![A-Z0-9])(?:SUBWAY|САБВЕЙ)(?![A-Z0-9])': 'expenses:food:dining:fastfood',
+    '(?<![A-Z0-9])(?:STARBUCKS|СТАРБАКС)(?![A-Z0-9])': 'expenses:food:dining:coffee',
+    '(?<![A-Z0-9])DUNKIN(?![A-Z0-9])': 'expenses:food:dining:coffee',
+    '(?<![A-Z0-9])(?:DOMINO|ДОМИНОС)(?![A-Z0-9])': 'expenses:food:dining:delivery',
+    '(?<![A-Z0-9])PIZZA\\s*HUT(?![A-Z0-9])': 'expenses:food:dining:delivery',
+    '(?<![A-Z0-9])UBER\\s*EATS(?![A-Z0-9])': 'expenses:food:dining:delivery',
+    '(?<![A-Z0-9])DOORDASH(?![A-Z0-9])': 'expenses:food:dining:delivery',
+    '(?<![A-Z0-9])GRUBHUB(?![A-Z0-9])': 'expenses:food:dining:delivery',
+    '(?<![A-Z0-9])(?:ЯНДЕКС\\s*ЕДА|YANDEX\\s*EDA)(?![A-Z0-9])': 'expenses:food:dining:delivery',
+    '(?<![A-Z0-9])DELIVERY\\s*CLUB(?![A-Z0-9])': 'expenses:food:dining:delivery',
 
     // Subscriptions & Streaming
-    'NETFLIX|НЕТФЛИКС': 'expenses:subscriptions:streaming',
-    'SPOTIFY|СПОТИФАЙ': 'expenses:subscriptions:streaming',
-    'APPLE\\s*MUSIC': 'expenses:subscriptions:streaming',
-    'AMAZON\\s*PRIME': 'expenses:subscriptions:streaming',
-    'DISNEY\\s*\\+|DISNEY\\s*PLUS': 'expenses:subscriptions:streaming',
-    'HBO\\s*MAX': 'expenses:subscriptions:streaming',
-    'HULU': 'expenses:subscriptions:streaming',
-    'YOUTUBE\\s*PREMIUM': 'expenses:subscriptions:streaming',
-    'КИНОПОИСК|KINOPOISK': 'expenses:subscriptions:streaming',
-    'IVI': 'expenses:subscriptions:streaming',
+    '(?<![A-Z0-9])AMAZON\\s*PRIME(?![A-Z0-9])': 'expenses:subscriptions:streaming',
+    '(?<![A-Z0-9])(?:NETFLIX|НЕТФЛИКС)(?![A-Z0-9])': 'expenses:subscriptions:streaming',
+    '(?<![A-Z0-9])(?:SPOTIFY|СПОТИФАЙ)(?![A-Z0-9])': 'expenses:subscriptions:streaming',
+    '(?<![A-Z0-9])APPLE\\s*MUSIC(?![A-Z0-9])': 'expenses:subscriptions:streaming',
+    '(?<![A-Z0-9])DISNEY\\s*(?:\\+|PLUS)(?![A-Z0-9])': 'expenses:subscriptions:streaming',
+    '(?<![A-Z0-9])HBO\\s*MAX(?![A-Z0-9])': 'expenses:subscriptions:streaming',
+    '(?<![A-Z0-9])HULU(?![A-Z0-9])': 'expenses:subscriptions:streaming',
+    '(?<![A-Z0-9])YOUTUBE\\s*PREMIUM(?![A-Z0-9])': 'expenses:subscriptions:streaming',
+    '(?<![A-Z0-9])(?:КИНОПОИСК|KINOPOISK)(?![A-Z0-9])': 'expenses:subscriptions:streaming',
+    '(?<![A-Z0-9])IVI(?![A-Z0-9])': 'expenses:subscriptions:streaming',
 
     // Transportation
-    'UBER(?!\\s*EATS)|УБЕР': 'expenses:transport:rideshare',
-    'LYFT': 'expenses:transport:rideshare',
-    'BOLT': 'expenses:transport:rideshare',
-    'ЯНДЕКС\\s*ТАКСИ|YANDEX\\s*TAXI': 'expenses:transport:taxi',
-    'GETT': 'expenses:transport:taxi',
-    'SHELL': 'expenses:transport:fuel',
-    'EXXON|ESSO': 'expenses:transport:fuel',
-    'BP\\s': 'expenses:transport:fuel',
-    'CHEVRON': 'expenses:transport:fuel',
-    'ЛУКОЙЛ|LUKOIL': 'expenses:transport:fuel',
-    'ГАЗПРОМ|GAZPROM': 'expenses:transport:fuel',
-    'РОСНЕФТЬ|ROSNEFT': 'expenses:transport:fuel',
+    '(?<![A-Z0-9])UBER(?!\\s*EATS)(?![A-Z0-9])|(?<![A-Z0-9])УБЕР(?![A-Z0-9])': 'expenses:transport:rideshare',
+    '(?<![A-Z0-9])LYFT(?![A-Z0-9])': 'expenses:transport:rideshare',
+    '(?<![A-Z0-9])BOLT(?![A-Z0-9])': 'expenses:transport:rideshare',
+    '(?<![A-Z0-9])(?:ЯНДЕКС\\s*ТАКСИ|YANDEX\\s*TAXI)(?![A-Z0-9])': 'expenses:transport:taxi',
+    '(?<![A-Z0-9])GETT(?![A-Z0-9])': 'expenses:transport:taxi',
+    '(?<![A-Z0-9])SHELL(?![A-Z0-9])': 'expenses:transport:fuel',
+    '(?<![A-Z0-9])(?:EXXON|ESSO)(?![A-Z0-9])': 'expenses:transport:fuel',
+    '(?<![A-Z0-9])BP(?![A-Z0-9])': 'expenses:transport:fuel',
+    '(?<![A-Z0-9])CHEVRON(?![A-Z0-9])': 'expenses:transport:fuel',
+    '(?<![A-Z0-9])(?:ЛУКОЙЛ|LUKOIL)(?![A-Z0-9])': 'expenses:transport:fuel',
+    '(?<![A-Z0-9])(?:ГАЗПРОМ|GAZPROM)(?![A-Z0-9])': 'expenses:transport:fuel',
+    '(?<![A-Z0-9])(?:РОСНЕФТЬ|ROSNEFT)(?![A-Z0-9])': 'expenses:transport:fuel',
 
     // Utilities & Bills
-    'VERIZON': 'expenses:bills:telecom',
-    'AT\\s*&\\s*T|ATT': 'expenses:bills:telecom',
-    'T-MOBILE': 'expenses:bills:telecom',
-    'COMCAST|XFINITY': 'expenses:bills:internet',
-    'МТС|MTS': 'expenses:bills:telecom',
-    'БИЛАЙН|BEELINE': 'expenses:bills:telecom',
-    'МЕГАФОН|MEGAFON': 'expenses:bills:telecom',
-    'ТЕЛЕ2|TELE2': 'expenses:bills:telecom',
+    '(?<![A-Z0-9])VERIZON(?![A-Z0-9])': 'expenses:bills:telecom',
+    '(?<![A-Z0-9])(?:AT\\s*&\\s*T|ATT)(?![A-Z0-9])': 'expenses:bills:telecom',
+    '(?<![A-Z0-9])T-MOBILE(?![A-Z0-9])': 'expenses:bills:telecom',
+    '(?<![A-Z0-9])(?:COMCAST|XFINITY)(?![A-Z0-9])': 'expenses:bills:internet',
+    '(?<![A-Z0-9])(?:МТС|MTS)(?![A-Z0-9])': 'expenses:bills:telecom',
+    '(?<![A-Z0-9])(?:БИЛАЙН|BEELINE)(?![A-Z0-9])': 'expenses:bills:telecom',
+    '(?<![A-Z0-9])(?:МЕГАФОН|MEGAFON)(?![A-Z0-9])': 'expenses:bills:telecom',
+    '(?<![A-Z0-9])(?:ТЕЛЕ2|TELE2)(?![A-Z0-9])': 'expenses:bills:telecom',
 
     // Income patterns
-    'SALARY|PAYROLL|ЗАРПЛАТА|ЗП': 'income:salary',
-    'DIRECT\\s*DEPOSIT|DIRECT\\s*DEP': 'income:salary',
-    'DIVIDEND': 'income:dividends',
-    'INTEREST\\s*PAYMENT': 'income:interest',
-    'TAX\\s*REFUND|ВОЗВРАТ\\s*НАЛОГ': 'income:refunds:tax',
+    '(?<![A-Z0-9])(?:SALARY|PAYROLL|ЗАРПЛАТА|ЗП)(?![A-Z0-9])': 'income:salary',
+    '(?<![A-Z0-9])DIRECT\\s*(?:DEPOSIT|DEP)(?![A-Z0-9])': 'income:salary',
+    '(?<![A-Z0-9])DIVIDEND(?![A-Z0-9])': 'income:dividends',
+    '(?<![A-Z0-9])INTEREST\\s*PAYMENT(?![A-Z0-9])': 'income:interest',
+    '(?<![A-Z0-9])(?:TAX\\s*REFUND|ВОЗВРАТ\\s*НАЛОГ)(?![A-Z0-9])': 'income:refunds:tax',
 
     // Transfers
-    'TRANSFER|ПЕРЕВОД': 'transfers',
-    'ZELLE': 'transfers',
-    'VENMO': 'transfers',
-    'PAYPAL\\s*TRANSFER': 'transfers',
-    'СБП|SBP': 'transfers',
+    '(?<![A-Z0-9])(?:TRANSFER|ПЕРЕВОД)(?![A-Z0-9])': 'transfers',
+    '(?<![A-Z0-9])ZELLE(?![A-Z0-9])': 'transfers',
+    '(?<![A-Z0-9])VENMO(?![A-Z0-9])': 'transfers',
+    '(?<![A-Z0-9])PAYPAL\\s*TRANSFER(?![A-Z0-9])': 'transfers',
+    '(?<![A-Z0-9])(?:СБП|SBP)(?![A-Z0-9])': 'transfers',
 };
