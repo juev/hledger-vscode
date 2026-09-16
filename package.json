@@ -781,7 +781,7 @@
     "@types/node": "26.x",
     "@types/vscode": "^1.110.0",
     "@typescript-eslint/eslint-plugin": "^8.69.0",
-    "@typescript-eslint/parser": "^8.68.0",
+    "@typescript-eslint/parser": "^8.70.0",
     "@vitest/coverage-v8": "^5.0.0",
     "@vscode/vsce": "^3.9.2",
     "esbuild": "^0.28.2",
