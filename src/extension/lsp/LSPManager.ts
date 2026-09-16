@@ -43,6 +43,12 @@ export class LSPManager implements vscode.Disposable {
   private client: HLedgerLanguageClient | null = null;
   private status: LSPStatus = LSPStatus.NotInstalled;
   private statusListener: StatusChangeListener | null = null;
+  /**
+   * Serializes start/stop/restart. Each operation waits for the previous one,
+   * so a second restart cannot build a second client on top of a start that is
+   * still in flight — which used to leave a live server process unreferenced.
+   */
+  private lifecycle: Promise<void> = Promise.resolve();
 
   constructor(context: LSPManagerContext) {
     this.storagePath = context.globalStorageUri.fsPath;
@@ -55,11 +61,13 @@ export class LSPManager implements vscode.Disposable {
   }
 
   private async initializeStatus(): Promise<void> {
-    if (await this.binaryManager.isInstalled()) {
-      this.setStatus(LSPStatus.Stopped);
-    } else {
-      this.setStatus(LSPStatus.NotInstalled);
+    const installed = await this.binaryManager.isInstalled();
+    // A start or a download may already have reported a newer state; the disk
+    // check must not overwrite it.
+    if (this.status !== LSPStatus.NotInstalled) {
+      return;
     }
+    this.setStatus(installed ? LSPStatus.Stopped : LSPStatus.NotInstalled);
   }
 
   getStatus(): LSPStatus {
@@ -89,6 +97,11 @@ export class LSPManager implements vscode.Disposable {
   }
 
   async getVersion(): Promise<string | null> {
+    if (hasCustomLSPPath()) {
+      // The managed binary may not exist at all, so the configured server is
+      // the one whose version matters.
+      return this.binaryManager.getVersionOfBinary(this.getBinaryPath());
+    }
     return this.binaryManager.getInstalledVersion();
   }
 
@@ -142,7 +155,9 @@ export class LSPManager implements vscode.Disposable {
         } catch {
           this.setStatus(LSPStatus.Error);
         }
-      } else if (!stoppedForInstall) {
+      } else if (!stoppedForInstall && this.status !== LSPStatus.Error) {
+        // A failed start already reported Error; restoring the status from
+        // before the update would hide it from the status bar.
         this.setStatus(previousStatus);
       }
       throw error;
@@ -170,51 +185,91 @@ export class LSPManager implements vscode.Disposable {
     const latestRelease = await this.binaryManager.getLatestRelease();
 
     return {
-      hasUpdate: currentVersion !== latestRelease.version,
+      // An unreadable version is not an update: the caller checks installation
+      // separately, and forcing a download here would replace a working custom
+      // binary with the managed one.
+      hasUpdate: currentVersion !== null && currentVersion !== latestRelease.version,
       currentVersion,
       latestVersion: latestRelease.version,
     };
   }
 
+  /**
+   * Queue a lifecycle transition behind the previous one.
+   *
+   * `run` receives the client it should operate on, or null when there is
+   * nothing to stop. Both values are read at the moment the operation actually
+   * runs, not when it was requested.
+   */
+  private queueLifecycle<P>(
+    run: () => Promise<P>,
+  ): Promise<P> {
+    const result = this.lifecycle.then(run, run);
+    // Keep the chain itself alive: a rejected step must not poison the next one.
+    this.lifecycle = result.then(
+      () => undefined,
+      () => undefined,
+    );
+    return result;
+  }
+
   async start(): Promise<void> {
-    if (this.client !== null && this.client.getState() === LanguageClientState.Running) {
-      return;
-    }
-
-    const binaryPath = this.getBinaryPath();
-
-    if (hasCustomLSPPath()) {
-      try {
-        await fs.promises.access(binaryPath, fs.constants.X_OK);
-      } catch {
-        throw new Error(`Custom LSP binary not found at: ${binaryPath}`);
+    return this.queueLifecycle(async () => {
+      if (this.client !== null && this.client.getState() === LanguageClientState.Running) {
+        return;
       }
-    } else if (!await this.isServerAvailable()) {
-      throw new Error("Language server is not installed. Run 'HLedger: Install/Update Language Server' first.");
-    }
 
-    this.setStatus(LSPStatus.Starting);
+      const binaryPath = this.getBinaryPath();
 
-    try {
-      const debug = vscode.workspace.getConfiguration("hledger.lsp").get<boolean>("debug") ?? false;
-      this.client = new HLedgerLanguageClient(binaryPath, { debug });
-      await this.client.start();
-      this.setStatus(LSPStatus.Running);
-    } catch (error) {
-      this.setStatus(LSPStatus.Error);
-      this.client = null;
-      throw error;
-    }
+      if (hasCustomLSPPath()) {
+        try {
+          await fs.promises.access(binaryPath, fs.constants.X_OK);
+        } catch {
+          throw new Error(`Custom LSP binary not found at: ${binaryPath}`);
+        }
+      } else if (!await this.isServerAvailable()) {
+        throw new Error("Language server is not installed. Run 'HLedger: Install/Update Language Server' first.");
+      }
+
+      this.setStatus(LSPStatus.Starting);
+
+      // Reuse the client when a previous start was interrupted: its own state
+      // machine tolerates being stopped while starting, a fresh object does not.
+      let client = this.client;
+      if (client === null) {
+        const debug = vscode.workspace.getConfiguration("hledger.lsp").get<boolean>("debug") ?? false;
+        client = new HLedgerLanguageClient(binaryPath, { debug });
+        this.client = client;
+      }
+
+      try {
+        await client.start();
+        this.setStatus(LSPStatus.Running);
+      } catch (error) {
+        this.setStatus(LSPStatus.Error);
+        this.client = null;
+        throw error;
+      }
+    });
   }
 
   async stop(): Promise<void> {
-    if (this.client === null) {
-      return;
-    }
+    return this.queueLifecycle(async () => {
+      const client = this.client;
+      if (client === null) {
+        return;
+      }
 
-    await this.client.stop();
-    this.client = null;
-    this.setStatus(LSPStatus.Stopped);
+      try {
+        await client.stop();
+      } finally {
+        // Undo the assignment start() made for this client, whoever it is now.
+        if (this.client === client) {
+          this.client = null;
+        }
+        this.setStatus(LSPStatus.Stopped);
+      }
+    });
   }
 
   async restart(): Promise<void> {

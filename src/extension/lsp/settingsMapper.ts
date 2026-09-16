@@ -263,7 +263,9 @@ export function mapVSCodeSettingsToLSP(settings: VSCodeSettings): LSPSettings {
         settings.diagnostics?.balanceTolerance,
         DEFAULT_SETTINGS.diagnostics.balanceTolerance,
         0,
-        1
+        // package.json sets no maximum; the schema's own bound is 1 only for
+        // the negative side. Anything the user can enter must reach the server.
+        Number.MAX_SAFE_INTEGER
       ),
       undeclaredAccounts: settings.diagnostics?.undeclaredAccounts ?? DEFAULT_SETTINGS.diagnostics.undeclaredAccounts,
       undeclaredCommodities: settings.diagnostics?.undeclaredCommodities ?? DEFAULT_SETTINGS.diagnostics.undeclaredCommodities,

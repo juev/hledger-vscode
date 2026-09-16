@@ -2,6 +2,7 @@ import * as fs from "fs";
 import * as os from "os";
 import * as path from "path";
 import * as vscode from "vscode";
+import { LanguageClient } from "vscode-languageclient/node";
 import {
   HLedgerLanguageClient,
   LanguageClientState,
@@ -122,6 +123,108 @@ describe("HLedgerLanguageClient", () => {
       const client = new HLedgerLanguageClient(binaryPath);
 
       expect(client.getServerPath()).toBe(binaryPath);
+    });
+  });
+
+  describe("lifecycle serialization", () => {
+    const deferred = () => {
+      let resolve!: () => void;
+      let reject!: (error: Error) => void;
+      const promise = new Promise<void>((res, rej) => {
+        resolve = res;
+        reject = rej;
+      });
+      return { promise, resolve, reject };
+    };
+
+    it("does not start a second library client while the first is starting", async () => {
+      const gate = deferred();
+      const startSpy = vi
+        .spyOn(LanguageClient.prototype, "start")
+        .mockImplementation(async () => { await gate.promise; });
+      const stopSpy = vi
+        .spyOn(LanguageClient.prototype, "stop")
+        .mockResolvedValue(undefined);
+
+      const client = new HLedgerLanguageClient(binaryPath);
+
+      const first = client.start();
+      const second = client.start();
+
+      expect(startSpy).toHaveBeenCalledTimes(1);
+
+      gate.resolve();
+      await Promise.all([first, second]);
+
+      expect(startSpy).toHaveBeenCalledTimes(1);
+      expect(client.getState()).toBe(LanguageClientState.Running);
+
+      startSpy.mockRestore();
+      stopSpy.mockRestore();
+      client.dispose();
+    });
+
+    it("waits for a pending start before stopping", async () => {
+      const gate = deferred();
+      const order: string[] = [];
+      const startSpy = vi
+        .spyOn(LanguageClient.prototype, "start")
+        .mockImplementation(async () => {
+          await gate.promise;
+          order.push("started");
+        });
+      const stopSpy = vi
+        .spyOn(LanguageClient.prototype, "stop")
+        .mockImplementation(async () => { order.push("stopped"); });
+
+      const client = new HLedgerLanguageClient(binaryPath);
+
+      const starting = client.start();
+      const stopping = client.stop();
+
+      // The shutdown must not run while the library is still Starting: it
+      // refuses then, and the server process would survive unreferenced.
+      expect(order).toEqual([]);
+
+      gate.resolve();
+      await Promise.all([starting, stopping]);
+
+      expect(order).toEqual(["started", "stopped"]);
+      expect(client.getState()).toBe(LanguageClientState.Stopped);
+      expect(client.getClient()).toBeNull();
+
+      startSpy.mockRestore();
+      stopSpy.mockRestore();
+      client.dispose();
+    });
+
+    it("notices when the library gives up on the server", async () => {
+      const spies = {
+        start: vi.spyOn(LanguageClient.prototype, "start").mockResolvedValue(undefined),
+        stop: vi.spyOn(LanguageClient.prototype, "stop").mockResolvedValue(undefined),
+      };
+
+      const client = new HLedgerLanguageClient(binaryPath);
+      await client.start();
+      expect(client.getState()).toBe(LanguageClientState.Running);
+
+      const internal = client.getClient();
+      expect(internal).not.toBeNull();
+
+      // The library reports Stopped on its own when it stops restarting a
+      // crashing server. Simulate that transition.
+      (internal as unknown as { _state: number })._state = 1;
+      (internal as unknown as {
+        _onDidChangeStateCallbacks: Array<(e: { oldState: number; newState: number }) => void>;
+      })._onDidChangeStateCallbacks.forEach((cb) => cb({ oldState: 3, newState: 1 }));
+
+      expect(client.getState()).toBe(LanguageClientState.Stopped);
+      expect(client.getClient()).toBeNull();
+      expect(client.isReady()).toBe(false);
+
+      spies.start.mockRestore();
+      spies.stop.mockRestore();
+      client.dispose();
     });
   });
 
