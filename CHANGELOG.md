@@ -1,5 +1,11 @@
 # Change Log
 
+## [0.5.50] - 2026-09-16
+
+### Fixed
+- fix: resolve logic defects found in a full extension audit (#308)
+
+
 ## [0.5.49] - 2026-09-16
 
 ### Other
