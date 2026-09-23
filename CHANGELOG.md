@@ -1,5 +1,15 @@
 # Change Log
 
+## [0.5.51] - 2026-09-23
+
+### Other
+- chore(deps-dev): bump @vitest/coverage-v8 from 5.0.0 to 5.0.1
+- chore(deps-dev): bump eslint from 10.10.0 to 10.11.0
+- chore(deps-dev): bump @typescript-eslint/eslint-plugin
+- chore(deps-dev): bump @types/node from 26.5.1 to 26.6.2
+- chore(deps-dev): bump @vscode/vsce from 3.9.2 to 4.0.0
+
+
 ## [0.5.50] - 2026-09-16
 
 ### Fixed
