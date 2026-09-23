@@ -814,7 +814,7 @@
     "@vitest/coverage-v8": "^5.0.0",
     "@vscode/vsce": "^3.9.2",
     "esbuild": "^0.28.2",
-    "eslint": "^10.10.0",
+    "eslint": "^10.11.0",
     "js-yaml": "^5.4.2",
     "ovsx": "^1.2.0",
     "rimraf": "^6.1.3",
