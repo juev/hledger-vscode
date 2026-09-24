@@ -11,7 +11,7 @@ describe("enterAndSuggest", () => {
     executeCommandMock.mockResolvedValue(undefined);
   });
 
-  it("inserts a newline then triggers inline suggestion", async () => {
+  it("inserts a newline then requests only hledger inline suggestions", async () => {
     await enterAndSuggest();
 
     expect(executeCommandMock).toHaveBeenCalledTimes(2);
@@ -21,6 +21,7 @@ describe("enterAndSuggest", () => {
     expect(executeCommandMock).toHaveBeenNthCalledWith(
       2,
       "editor.action.inlineSuggest.trigger",
+      { providerId: "evsyukov.hledger:*" },
     );
   });
 
@@ -34,6 +35,7 @@ describe("enterAndSuggest", () => {
 
     expect(executeCommandMock).toHaveBeenCalledWith(
       "editor.action.inlineSuggest.trigger",
+      { providerId: "evsyukov.hledger:*" },
     );
   });
 });

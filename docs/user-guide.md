@@ -251,26 +251,26 @@ Inline completions show suggestions as "ghost text" - semi-transparent text that
 
 ### How It Works
 
-1. Start typing a payee name on a new transaction line
-2. After typing minimum characters (default: 2), ghost text appears
-3. Press **Enter** to accept the suggestion
-4. Press **Escape** or continue typing to dismiss
+1. Type a date and payee on a transaction line
+2. Press **Enter** to start the first posting
+3. If the payee matches a previous transaction, its postings appear as ghost text
+4. Press **Tab** to insert the postings, or **Escape** to dismiss them
 
-### Payee Inline Completion
+### Payee Completion
 
-Shows the remainder of matching payee names:
+Payee name suggestions appear in the completion menu while typing a transaction header:
 
 ```hledger
-2025-01-15 Amaz|on Prime     ; "on Prime" shown as ghost text
+2025-01-15 Amaz|             ; "Amazon Prime" offered in the completion menu
 ```
 
 ### Template Inline Completion
 
-Shows complete posting structure as ghost text:
+After Enter, a matching previous transaction supplies the posting structure as ghost text:
 
 ```hledger
-2025-01-15 Amazon Prime|
-    Expenses:Shopping    $12.99    ; shown as ghost text
+2025-01-15 Amazon Prime
+    |Expenses:Shopping    $12.99    ; shown as ghost text
     Assets:Credit Card
 ```
 
@@ -1254,7 +1254,8 @@ All commands accessible via Command Palette (`Ctrl+Shift+P` or `Cmd+Shift+P`):
 |-----|--------|-----------|
 | `Enter` | Accept completion | When completion widget is visible |
 | `Tab` | Accept completion | When completion widget is visible |
-| `Enter` | Accept inline suggestion | When ghost text is visible |
+| `Enter` | Start a posting and request an inline suggestion | When the completion widget is closed |
+| `Tab` | Accept inline suggestion | When ghost text is visible |
 | `Tab` | Align amount to column | When no suggestions/snippets active |
 | `Cmd+K =` / `Ctrl+K =` | Insert inferred amount | On a posting hledger can infer an amount for |
 | `Cmd+K S` / `Ctrl+K S` | Cycle transaction/posting status | In hledger files |
