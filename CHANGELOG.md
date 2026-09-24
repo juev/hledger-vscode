@@ -1,5 +1,11 @@
 # Change Log
 
+## [0.5.52] - 2026-09-24
+
+### Fixed
+- fix(inline): scope Enter suggestions to hledger provider
+
+
 ## [0.5.51] - 2026-09-23
 
 ### Other
