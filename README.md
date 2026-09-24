@@ -24,7 +24,7 @@ Transform your plain text accounting experience with powerful IDE capabilities:
 - **Context-aware** suggestions based on cursor position
 - **Frequency-based** prioritization for accounts and payees
 - **Transaction templates** - type a payee name to insert complete transactions with accounts and amounts based on history
-- **Inline ghost text** - see suggestions as you type, press Enter to accept
+- **Inline ghost text** - press Enter after a transaction payee to preview postings, then Tab to insert them
 - Complete support for dates, accounts, payees, commodities, tags, and directives
 - Works as you type - no keyboard shortcuts needed
 

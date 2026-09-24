@@ -8,5 +8,6 @@ export async function enterAndSuggest(): Promise<void> {
   }
   await vscode.commands.executeCommand(
     "editor.action.inlineSuggest.trigger",
+    { providerId: "evsyukov.hledger:*" },
   );
 }

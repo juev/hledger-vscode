@@ -86,15 +86,15 @@ Quick Navigation:
 
 ### Inline Completions Not Showing
 
-**Symptoms:** No ghost text suggestions when typing payee names
+**Symptoms:** No posting template appears as ghost text after pressing Enter on a transaction header
 
 **Solutions:**
 
 1. Check setting: `hledger.features.inlineCompletion` should be `true`
 2. Ensure payee exists in journal history (inline completions learn from existing transactions)
-4. Check cursor position: Must be on new line after date, not inside existing transaction
-5. Ensure not in snippet mode: Ghost text disabled during snippet editing (Tab navigation)
-6. **Ensure Language Server is running:** Inline completions require hledger-lsp. Check with `Ctrl+Shift+P` → "HLedger: Show Language Server Version"
+3. Check cursor position: it must be on the new indented line after a transaction header
+4. Ensure not in snippet mode: ghost text is disabled during snippet editing (Tab navigation)
+5. **Ensure Language Server is running:** Inline completions require hledger-lsp. Check with `Ctrl+Shift+P` → "HLedger: Show Language Server Version"
 
 ### Cursor Jumps After Pressing Tab
 
