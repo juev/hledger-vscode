@@ -1,5 +1,15 @@
 # Change Log
 
+## [0.5.53] - 2026-09-30
+
+### Other
+- chore(deps): bump brace-expansion from 5.0.9 to 5.0.12
+- chore(deps): bump undici from 8.10.2 to 8.11.2
+- chore(deps-dev): bump @vitest/coverage-v8 from 5.0.1 to 5.0.2
+- chore(deps-dev): bump vscode-languageserver-protocol
+- chore(deps-dev): bump @typescript-eslint/eslint-plugin
+
+
 ## [0.5.52] - 2026-09-24
 
 ### Fixed
