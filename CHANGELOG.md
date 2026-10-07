@@ -1,5 +1,15 @@
 # Change Log
 
+## [0.5.54] - 2026-10-07
+
+### Other
+- chore(deps-dev): bump source-map-js from 1.2.1 to 1.2.2
+- chore(deps-dev): bump vitest from 5.0.2 to 5.0.3
+- chore(deps-dev): bump @typescript-eslint/eslint-plugin
+- chore(deps-dev): bump @types/node from 26.6.2 to 26.6.4
+- chore(deps): bump vscode-languageclient from 10.1.1 to 10.1.2
+
+
 ## [0.5.53] - 2026-09-30
 
 ### Other
