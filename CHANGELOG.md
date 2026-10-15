@@ -1,5 +1,15 @@
 # Change Log
 
+## [0.5.55] - 2026-10-15
+
+### Other
+- chore(deps-dev): bump eslint from 10.11.0 to 10.12.0
+- chore(deps-dev): bump @typescript-eslint/parser from 8.71.0 to 8.71.1
+- chore(deps-dev): bump @types/node from 26.6.4 to 26.6.5
+- chore(deps-dev): bump js-yaml from 5.4.2 to 5.4.3
+- chore(deps): bump string-width from 8.2.2 to 8.3.0
+
+
 ## [0.5.54] - 2026-10-07
 
 ### Other
