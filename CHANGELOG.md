@@ -1,5 +1,15 @@
 # Change Log
 
+## [0.5.56] - 2026-10-21
+
+### Other
+- chore(deps-dev): bump eslint from 10.12.0 to 10.13.0 (#338)
+- chore(deps-dev): bump vitest from 5.0.3 to 5.0.5 (#337)
+- chore(deps-dev): bump @vitest/coverage-v8 from 5.0.3 to 5.0.5 (#336)
+- chore(deps-dev): bump @typescript-eslint/parser from 8.71.1 to 8.71.2 (#335)
+- chore(deps-dev): bump ovsx from 1.2.0 to 1.3.0 (#334)
+
+
 ## [0.5.55] - 2026-10-15
 
 ### Other
