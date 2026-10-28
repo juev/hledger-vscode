@@ -1,5 +1,17 @@
 # Change Log
 
+## [0.5.57] - 2026-10-28
+
+### Other
+- chore(deps): bump qs from 6.15.3 to 6.17.0
+- chore(deps): align vscode-languageserver-protocol with languageclient 11
+- chore(deps): bump vscode-languageclient from 10.1.2 to 11.0.0
+- chore(deps-dev): bump @typescript-eslint/eslint-plugin
+- chore(deps): bump undici from 8.11.2 to 8.12.3
+- chore(deps-dev): bump @typescript-eslint/parser from 8.71.2 to 8.72.0
+- chore(deps-dev): bump js-yaml from 5.4.3 to 5.5.0
+
+
 ## [0.5.56] - 2026-10-21
 
 ### Other
