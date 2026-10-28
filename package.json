@@ -809,7 +809,7 @@
     "@eslint/js": "^10.0.1",
     "@types/node": "26.x",
     "@types/vscode": "^1.110.0",
-    "@typescript-eslint/eslint-plugin": "^8.71.0",
+    "@typescript-eslint/eslint-plugin": "^8.72.0",
     "@typescript-eslint/parser": "^8.72.0",
     "@vitest/coverage-v8": "^5.0.5",
     "@vscode/vsce": "^4.0.0",
