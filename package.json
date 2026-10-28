@@ -839,6 +839,6 @@
     "decimal.js": "^10.6.0",
     "string-width": "^8.3.0",
     "undici": "^8.12.3",
-    "vscode-languageclient": "^10.1.2"
+    "vscode-languageclient": "^11.0.0"
   }
 }
