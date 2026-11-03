@@ -1,5 +1,11 @@
 # Change Log
 
+## [0.5.58] - 2026-11-03
+
+### Fixed
+- fix(lsp): start a server set in hledger.lsp.path on activation
+
+
 ## [0.5.57] - 2026-10-28
 
 ### Other
