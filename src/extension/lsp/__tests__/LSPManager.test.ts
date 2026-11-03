@@ -32,9 +32,26 @@ describe("LSPManager", () => {
   let tempDir: string;
   let mockContext: any;
   let originalGetConfiguration: any;
+  // Outside globalStorage, so a custom binary is never mistaken for the
+  // managed download.
+  let customDir: string;
+
+  function writeCustomBinary(): string {
+    const binaryPath = path.join(customDir, "hledger-lsp-custom");
+    fs.writeFileSync(binaryPath, "#!/bin/bash\necho test");
+    fs.chmodSync(binaryPath, 0o755);
+    return binaryPath;
+  }
+
+  function useCustomPath(customPath: string): void {
+    vscode.workspace.getConfiguration = vi.fn().mockReturnValue({
+      get: (key: string) => (key === "path" ? customPath : undefined),
+    });
+  }
 
   beforeEach(() => {
     tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "hledger-lsp-test-"));
+    customDir = fs.mkdtempSync(path.join(os.tmpdir(), "hledger-lsp-custom-"));
 
     mockContext = {
       globalStorageUri: { fsPath: tempDir },
@@ -46,6 +63,7 @@ describe("LSPManager", () => {
 
   afterEach(() => {
     fs.rmSync(tempDir, { recursive: true, force: true });
+    fs.rmSync(customDir, { recursive: true, force: true });
     vscode.workspace.getConfiguration = originalGetConfiguration;
   });
 
@@ -54,6 +72,19 @@ describe("LSPManager", () => {
       const manager = new LSPManager(mockContext);
 
       expect(manager.getStatus()).toBe(LSPStatus.NotInstalled);
+    });
+
+    it("reports stopped, not not-installed, for an executable custom path", async () => {
+      useCustomPath(writeCustomBinary());
+      const listener = vi.fn();
+
+      const manager = new LSPManager(mockContext);
+      manager.onStatusChange(listener);
+
+      await vi.waitFor(() => {
+        expect(manager.getStatus()).toBe(LSPStatus.Stopped);
+      });
+      expect(listener).toHaveBeenCalledWith(LSPStatus.Stopped);
     });
 
     it("does not read proxy configuration while activating", () => {
@@ -93,6 +124,28 @@ describe("LSPManager", () => {
       const available = await manager.isServerAvailable();
 
       expect(available).toBe(true);
+    });
+
+    // Issue #347: a server set in hledger.lsp.path was not started on
+    // activation because only the managed download was looked for.
+    it("returns true for an executable custom path without a managed binary", async () => {
+      const customPath = writeCustomBinary();
+      useCustomPath(customPath);
+
+      const manager = new LSPManager(mockContext);
+
+      expect(await manager.isServerAvailable()).toBe(true);
+    });
+
+    it("returns false for a missing custom path even with a managed binary", async () => {
+      const managedPath = path.join(tempDir, "hledger-lsp");
+      fs.writeFileSync(managedPath, "#!/bin/bash\necho test");
+      fs.chmodSync(managedPath, 0o755);
+      useCustomPath(path.join(customDir, "missing-hledger-lsp"));
+
+      const manager = new LSPManager(mockContext);
+
+      expect(await manager.isServerAvailable()).toBe(false);
     });
   });
 

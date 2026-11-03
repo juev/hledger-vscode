@@ -322,6 +322,12 @@ The Language Server is auto-installed on first activation. If it is not installe
 
 4. **Corporate proxy:** Set VS Code's `http.proxy` to use that proxy for both HTTP and HTTPS Language Server downloads. If `http.proxy` is empty, downloads use `HTTP_PROXY` and `HTTPS_PROXY`; `NO_PROXY` still bypasses the proxy for matching hosts. Reload VS Code after changing proxy settings. Manual installation remains available if the network policy requires a proxy method the extension does not support.
 
+### Custom Server Starts Only After a Restart
+
+Earlier versions did not start a server set in `hledger.lsp.path` when VS Code opened a journal. The status bar showed the server as not installed until **HLedger: Restart Language Server** was run or the status bar item was clicked.
+
+Update the extension. It now starts the configured executable on activation. If the server still does not start, check that the path points to the executable itself, not to the folder or the downloaded archive.
+
 ### Server Stays Old After an Update
 
 An earlier failed update could replace `version.txt` while leaving the old executable in place. This caused "Already up to date" to appear even when the server lacked newer features, such as inferred amount hints.

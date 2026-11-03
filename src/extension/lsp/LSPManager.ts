@@ -61,7 +61,7 @@ export class LSPManager implements vscode.Disposable {
   }
 
   private async initializeStatus(): Promise<void> {
-    const installed = await this.binaryManager.isInstalled();
+    const installed = await this.isServerAvailable();
     // A start or a download may already have reported a newer state; the disk
     // check must not overwrite it.
     if (this.status !== LSPStatus.NotInstalled) {
@@ -92,8 +92,21 @@ export class LSPManager implements vscode.Disposable {
     return this.storagePath;
   }
 
+  /**
+   * Whether the server that start() would launch exists: the binary from
+   * `hledger.lsp.path` when it is set, the managed download otherwise.
+   */
   async isServerAvailable(): Promise<boolean> {
-    return this.binaryManager.isInstalled();
+    const customPath = getCustomLSPPath();
+    if (customPath === null) {
+      return this.binaryManager.isInstalled();
+    }
+    try {
+      await fs.promises.access(customPath, fs.constants.X_OK);
+      return true;
+    } catch {
+      return false;
+    }
   }
 
   async getVersion(): Promise<string | null> {
