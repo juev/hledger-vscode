@@ -1,5 +1,14 @@
 # Change Log
 
+## [0.5.59] - 2026-11-04
+
+### Other
+- chore(deps-dev): bump @types/node from 26.6.5 to 26.6.6
+- chore(deps-dev): bump eslint from 10.13.0 to 10.14.0
+- chore(deps-dev): bump @vscode/vsce from 4.0.0 to 4.1.0
+- chore(deps-dev): bump @typescript-eslint/eslint-plugin
+
+
 ## [0.5.58] - 2026-11-03
 
 ### Fixed
