@@ -838,7 +838,7 @@
     "blakejs": "1.2.1",
     "decimal.js": "^10.6.0",
     "string-width": "^8.3.0",
-    "undici": "^8.12.3",
+    "undici": "^8.12.4",
     "vscode-languageclient": "^11.0.0"
   }
 }
