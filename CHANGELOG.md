@@ -1,5 +1,13 @@
 # Change Log
 
+## [0.5.60] - 2026-11-11
+
+### Other
+- chore(deps-dev): bump vitest from 5.0.5 to 5.1.0
+- chore(deps-dev): bump rimraf from 6.1.3 to 6.1.4
+- chore(deps): bump undici from 8.12.3 to 8.12.4
+
+
 ## [0.5.59] - 2026-11-04
 
 ### Other
