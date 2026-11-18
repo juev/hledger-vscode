@@ -1,5 +1,18 @@
 # Change Log
 
+## [0.5.61] - 2026-11-18
+
+### Fixed
+- fix(deps): bump @azure/msal-node to 7.2.2 via @azure/identity 4.14.1
+
+### Other
+- chore(deps-dev): align @typescript-eslint/parser range to ^8.72.2
+- chore(deps-dev): bump @typescript-eslint/eslint-plugin (#359)
+- chore(deps-dev): bump ovsx from 1.3.0 to 1.4.0 (#362)
+- chore(deps-dev): bump eslint from 10.14.0 to 10.15.0 (#361)
+- chore(deps): bump string-width from 8.3.0 to 9.0.0 (#363)
+
+
 ## [0.5.60] - 2026-11-11
 
 ### Other
