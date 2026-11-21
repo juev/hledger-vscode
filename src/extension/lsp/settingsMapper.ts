@@ -45,6 +45,8 @@ export interface VSCodeSettings {
     amountAlignmentColumn?: number;
     indentSize?: number;
     alignAmounts?: boolean;
+    alignBalanceAssertions?: boolean;
+    alignCostPostings?: boolean;
     amountAlignmentMode?: "left" | "right" | "decimal";
     minAlignmentColumn?: number;
     amountAlignmentTarget?: "cost" | "posting";
@@ -105,6 +107,8 @@ export interface LSPSettings {
     amountAlignmentColumn: number;
     indentSize: number;
     alignAmounts: boolean;
+    alignBalanceAssertions: boolean;
+    alignCostPostings: boolean;
     amountAlignmentMode: "left" | "right" | "decimal";
     minAlignmentColumn: number;
     amountAlignmentTarget: "cost" | "posting";
@@ -158,6 +162,8 @@ const DEFAULT_SETTINGS: LSPSettings = {
     amountAlignmentColumn: 0,
     indentSize: 4,
     alignAmounts: true,
+    alignBalanceAssertions: true,
+    alignCostPostings: true,
     amountAlignmentMode: "right",
     minAlignmentColumn: 0,
     amountAlignmentTarget: "cost",
@@ -285,6 +291,9 @@ export function mapVSCodeSettingsToLSP(settings: VSCodeSettings): LSPSettings {
         8
       ),
       alignAmounts: settings.formatting?.alignAmounts ?? DEFAULT_SETTINGS.formatting.alignAmounts,
+      alignBalanceAssertions:
+        settings.formatting?.alignBalanceAssertions ?? DEFAULT_SETTINGS.formatting.alignBalanceAssertions,
+      alignCostPostings: settings.formatting?.alignCostPostings ?? DEFAULT_SETTINGS.formatting.alignCostPostings,
       amountAlignmentMode: validateAlignmentMode(settings.formatting?.amountAlignmentMode),
       minAlignmentColumn: validateNumber(
         settings.formatting?.minAlignmentColumn,

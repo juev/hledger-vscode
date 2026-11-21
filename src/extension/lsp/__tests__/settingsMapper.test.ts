@@ -44,6 +44,8 @@ describe("mapVSCodeSettingsToLSP", () => {
           amountAlignmentColumn: 0,
           indentSize: 4,
           alignAmounts: true,
+          alignBalanceAssertions: true,
+          alignCostPostings: true,
           amountAlignmentMode: "right",
           minAlignmentColumn: 0,
           amountAlignmentTarget: "cost",
@@ -300,6 +302,27 @@ describe("mapVSCodeSettingsToLSP", () => {
 
       expect(result.formatting.indentSize).toBe(2);
       expect(result.formatting.alignAmounts).toBe(false);
+    });
+
+    it("defaults assertion and cost-posting alignment to true", () => {
+      const result = mapVSCodeSettingsToLSP({});
+
+      expect(result.formatting.alignBalanceAssertions).toBe(true);
+      expect(result.formatting.alignCostPostings).toBe(true);
+    });
+
+    it("maps assertion and cost-posting alignment opt-outs", () => {
+      const settings: VSCodeSettings = {
+        formatting: {
+          alignBalanceAssertions: false,
+          alignCostPostings: false,
+        },
+      };
+
+      const result = mapVSCodeSettingsToLSP(settings);
+
+      expect(result.formatting.alignBalanceAssertions).toBe(false);
+      expect(result.formatting.alignCostPostings).toBe(false);
     });
 
     it("defaults amountAlignmentMode to 'right'", () => {

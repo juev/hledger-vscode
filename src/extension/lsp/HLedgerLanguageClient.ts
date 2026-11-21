@@ -127,6 +127,8 @@ function getVSCodeSettings(): VSCodeSettings {
       amountAlignmentColumn: config.get<number>("formatting.amountAlignmentColumn"),
       indentSize: config.get<number>("formatting.indentSize"),
       alignAmounts: config.get<boolean>("formatting.alignAmounts"),
+      alignBalanceAssertions: config.get<boolean>("formatting.alignBalanceAssertions"),
+      alignCostPostings: config.get<boolean>("formatting.alignCostPostings"),
       amountAlignmentMode: config.get<string>("formatting.amountAlignmentMode"),
       minAlignmentColumn: config.get<number>("formatting.minAlignmentColumn"),
       amountAlignmentTarget: config.get<"cost" | "posting">("formatting.amountAlignmentTarget"),
