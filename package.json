@@ -371,6 +371,16 @@
           "default": true,
           "description": "Align amounts in postings"
         },
+        "hledger.formatting.alignBalanceAssertions": {
+          "type": "boolean",
+          "default": true,
+          "description": "Align balance assertions by their decimal points within each transaction"
+        },
+        "hledger.formatting.alignCostPostings": {
+          "type": "boolean",
+          "default": true,
+          "description": "Align cost signs, preceding amounts, and lot annotations within each transaction"
+        },
         "hledger.formatting.amountAlignmentMode": {
           "type": "string",
           "enum": [

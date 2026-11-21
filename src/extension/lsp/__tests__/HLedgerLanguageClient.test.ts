@@ -84,6 +84,8 @@ describe("createClientOptions", () => {
     expect(init.formatting.amountAlignmentColumn).toBe(0);
     expect(init.formatting.minAlignmentColumn).toBe(0);
     expect(init.formatting.amountAlignmentTarget).toBe("cost");
+    expect(init.formatting.alignBalanceAssertions).toBe(true);
+    expect(init.formatting.alignCostPostings).toBe(true);
     expect(init.cli.timeout).toBe(30000);
     expect(init.limits.maxFileSizeBytes).toBe(10485760);
   });

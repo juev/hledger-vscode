@@ -1020,6 +1020,8 @@ Control which Language Server features are enabled:
 |---------|------|---------|-------------|
 | `hledger.formatting.indentSize` | number | `4` | Number of spaces for posting indentation (2-8) |
 | `hledger.formatting.alignAmounts` | boolean | `true` | Align amounts in postings |
+| `hledger.formatting.alignBalanceAssertions` | boolean | `true` | Align balance assertions by their decimal points within each transaction |
+| `hledger.formatting.alignCostPostings` | boolean | `true` | Align cost signs, preceding amounts, and lot annotations within each transaction |
 
 ### CLI Integration Settings (LSP)
 
@@ -1201,6 +1203,8 @@ The `amountAlignmentTarget` setting applies to postings that carry cost notation
 |---------|------|---------|-------------|
 | `hledger.formatting.indentSize` | number | `4` | Posting indentation (2-8 spaces) |
 | `hledger.formatting.alignAmounts` | boolean | `true` | Align amounts in postings |
+| `hledger.formatting.alignBalanceAssertions` | boolean | `true` | Align balance assertions by their decimal points within each transaction |
+| `hledger.formatting.alignCostPostings` | boolean | `true` | Align cost signs, preceding amounts, and lot annotations within each transaction |
 | `hledger.formatting.amountAlignmentMode` | string | `"right"` | `"left"` (start), `"right"` (right edge), or `"decimal"` (decimal point) |
 | `hledger.formatting.minAlignmentColumn` | number | `0` | Minimum column floor for amount alignment (0 = auto) |
 | `hledger.formatting.amountAlignmentTarget` | string | `"cost"` | Cost-notation anchor: `"cost"` or `"posting"` |
