@@ -1,5 +1,11 @@
 # Change Log
 
+## [0.5.62] - 2026-11-21
+
+### Added
+- feat(formatting): expose assertion and cost alignment settings
+
+
 ## [0.5.61] - 2026-11-18
 
 ### Fixed
