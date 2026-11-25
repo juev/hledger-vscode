@@ -1,5 +1,13 @@
 # Change Log
 
+## [0.5.63] - 2026-11-25
+
+### Other
+- chore(deps-dev): bump vitest from 5.1.0 to 5.1.1 (#370)
+- chore(deps-dev): bump @vscode/vsce from 4.1.0 to 4.1.1 (#366)
+- chore(deps): bump undici from 8.12.4 to 8.13.1 (#367)
+
+
 ## [0.5.62] - 2026-11-21
 
 ### Added
