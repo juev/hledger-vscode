@@ -829,7 +829,7 @@
     "ovsx": "^1.4.0",
     "rimraf": "^6.1.4",
     "typescript": "^5.9.3",
-    "vitest": "^5.1.0",
+    "vitest": "^5.1.1",
     "vscode-languageserver-protocol": "3.18.5",
     "vscode-oniguruma": "^2.0.1",
     "vscode-textmate": "^9.3.2"
